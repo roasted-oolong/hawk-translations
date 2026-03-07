@@ -298,6 +298,7 @@ COMMAND_MAP = {
 }
 
 
+
 def print_status(session: dict):
     state = session["state"]
     completed = session["completed"]
