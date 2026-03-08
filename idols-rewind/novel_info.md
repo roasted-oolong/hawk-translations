@@ -31,6 +31,10 @@ First-person past tense. Tight internal monologue — the reader lives inside Hy
 
 Kang frequently thinks through ideas on the page rather than simply delivering conclusions — rhetorical questions, self-corrections (*"Maybe. No. Definitely."*), reasoning chains that build out loud before arriving somewhere. This is core to his voice. During localization, resist the pull to collapse these into clean declarative statements. The reader should watch him think, not just receive his conclusions. Crispness that removes the thinking removes the character.
 
+## Narrator Note
+
+The narrator is Hyuk Kang. Before writing any passage of internal monologue, reflection, or emotional weight, re-read the Voice Calibration section and confirm you can hear his voice — not just his conclusion.
+
 ## Korean Language Notes
 
 
