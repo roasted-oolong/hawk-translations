@@ -1,10 +1,10 @@
 """
-voice_collaboration.py
+calibrate-voice.py
 ---------
 Entry point for the voice review pipeline.
 
 Run with:
-    python voice_collaboration.py [novel-name] [chapter-number]
+    python calibrate-voice.py [novel-name] [chapter-number]
 
 If no chapter number is provided, defaults to the most recently translated
 chapter. If no novel name is provided, follows the same resolution logic
@@ -20,7 +20,7 @@ This script is responsible for orchestration only:
   6. For each retirement candidate, confirm before removing from
      voice_calibration.md
 
-Domain logic lives in src/voice_collaboration/.
+Domain logic lives in src/voice_calibration/.
 API logic lives in src/agent.py.
 Configuration lives in config.py.
 This file does not make decisions about voice -- it connects the pieces.
@@ -39,15 +39,15 @@ sys.path.insert(0, str(Path(__file__).parent))
 from config import PROJECT_ROOT, OPUS_MODEL, MAX_TOKENS
 from src.agent import call, make_client
 from src.novel_resolver import resolve_novel
-from src.voice_collaboration.chapter_reader import (
+from src.voice_calibration.chapter_reader import (
     find_latest_translated_chapter,
     read_translated_chapter,
     read_voice_calibration,
 )
-from src.voice_collaboration.prompt_builder import ReviewContext, build_system_prompt, build_user_message
-from src.voice_collaboration.response_parser import parse_response
-from src.voice_collaboration.calibration_writer import append_pattern, remove_passage
-from src.voice_collaboration.discussion import run_discussion
+from src.voice_calibration.prompt_builder import ReviewContext, build_system_prompt, build_user_message
+from src.voice_calibration.response_parser import parse_response
+from src.voice_calibration.calibration_writer import append_pattern, remove_passage
+from src.voice_calibration.discussion import run_discussion
 
 
 # ---------------------------------------------------------------------------
