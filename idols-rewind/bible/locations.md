@@ -51,3 +51,12 @@ Last Updated: [date]
 - First appearance: 2
 - Last Updated: 2026-03-08
 - Significance: Rented from another small agency; basement of a villa, poor ventilation, temperature extremes. Where Kang evaluates the members' skills in the regression timeline.
+
+---
+
+## Rooftop Room — English
+- Korean name: 옥탑방 (okdabang)
+- Romanisation: okdabang
+- First appearance: 1
+- Last Updated: 2026-03-08
+- Significance: Kang's present-day living situation at rock bottom — a rooftop room, cheap and isolated, surrounded by empty soju bottles. The regression begins here under the full moon. Hee-yeon's presence here is marked as incongruous given her star status.

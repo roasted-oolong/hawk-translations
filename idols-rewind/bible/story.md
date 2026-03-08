@@ -76,3 +76,27 @@ Last Updated: [date]
 - Director Park's three-proverb sequence in Ch. 1 is a single rhetorical unit; the escalation from flattery to threat must read as a deliberate move, not three separate observations. See Cultural Phrases entries.
 - Kang's internal assessment of each member in Ch. 3 mixes present-tense observation with foreknowledge of their post-collapse futures. The tense handling in Korean is fluid; English rendering should keep the "I know what she will become, and I'm seeing her now" layering clear without making it clunky.
 - "기적의 회사" (miracle company) is used mockingly in the story's past and will presumably become ironic/reclaimed in the regression timeline. The first usage in translation should carry the derisive tone.
+
+---
+
+**Main Plot** — Chapter 1 establishes the full before/after arc. Scene 1 (past): Kang's farewell dinner at HS Entertainment — Director Park attempts retention via flattery then veiled threats; Kang refuses and walks out. Scene 2 (present): Kang at rock bottom in his rooftop room, years later. Hee-yeon visits unexpectedly to urge him to try again; he refuses but her words crack something open. He falls asleep staring at the full moon, wishing he could go back — and the moon shimmers with a mysterious glow, triggering the regression.
+
+---
+
+**Subplot** — Hee-yeon's visit thread opened. She states she is successful but not happy, feels completely alone without Kang and the members, and came specifically to repay a debt and urge him to restart. Kang refuses and tells her never to return. She says she will come back. Whether this thread continues in the post-regression timeline or functions only as the emotional catalyst for regression is TBD.
+
+---
+
+**Watch List** — Director Park's threat — "Think about what happens to a lion cub that leaves its mother. What do the hyenas do to it?" — implies active opposition to Kang's independent venture. Whether Park's interference is a direct cause of the agency's collapse has not yet been confirmed on-page. Worth tracking as the backstory is revealed.
+
+---
+
+**Watch List** — Team Lead Na's silence at the farewell dinner. He is described as the most trustworthy person in the company and the one Kang respects most, yet he does not support Kang when Kang looks to him for help, and only objects once (to the "protruding stone" proverb). His motivations — whether he wanted Kang to stay, feared Park, or something else — are unresolved.
+
+---
+
+**Themes & Motifs** — Regret and second chances established as the core emotional engine. Kang's self-assessment swings between deflection ("results are all that matter") and private admission ("I miss those days too"). The regression wish is sincere — "If I could go back... I really think I could get it right" — establishing that the premise is driven by genuine grief, not just ambition.
+
+---
+
+**Themes & Motifs** — The lion/hyena metaphor introduced in Ch. 1 as a through-line for Kang's self-understanding. Director Park uses it as a threat; Kang reverses it in the room ("I was the only lion among all those hyenas") and then undercuts it alone on the rooftop ("Turns out I was just another hyena"). His relationship to this metaphor tracks his shifting self-assessment.
