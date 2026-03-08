@@ -13,6 +13,8 @@ format, section order — edit only this file. Nothing else needs to change.
 
 from dataclasses import dataclass
 
+from src.prompt_utils import section
+
 
 # ---------------------------------------------------------------------------
 # Context type
@@ -50,31 +52,6 @@ class PrereadContext:
     terminology: str
     chapters: dict[int, str]
     today: str
-
-
-# ---------------------------------------------------------------------------
-# Empty-content detection (mirrors translate.py's prompt_builder logic)
-# ---------------------------------------------------------------------------
-
-_EMPTY_MARKERS = [
-    "[Character Name",
-    "[Term —",
-    "[Phrase —",
-    "[Location Name",
-    "Current summary: \n- Key turning points:",
-]
-
-
-def _is_empty(content: str) -> bool:
-    if not content or not content.strip():
-        return True
-    return any(marker in content for marker in _EMPTY_MARKERS)
-
-
-def _section(heading: str, content: str) -> str:
-    if _is_empty(content):
-        return ""
-    return f"## {heading}\n\n{content.strip()}\n"
 
 
 # ---------------------------------------------------------------------------
@@ -235,7 +212,7 @@ If you are unsure whether something meets the recording threshold, flag it:
 
 ## Date and Chapter Fields
 
-- Set "Last Updated" to: {today}
+- Set "Last Updated" to: {{today}}
 - Set "First appearance" to the chapter number where the element first appears in THIS batch.
   If it was already in the bible, update "Last Updated" only if you are adding new information.
 """.format(
@@ -243,7 +220,6 @@ If you are unsure whether something meets the recording threshold, flag it:
     location_template=_LOCATION_TEMPLATE,
     terminology_template=_TERMINOLOGY_TEMPLATE,
     cultural_phrase_template=_CULTURAL_PHRASE_TEMPLATE,
-    today="{today}",  # filled at call time
 )
 
 
@@ -288,12 +264,12 @@ def build_user_message(context: PrereadContext) -> str:
         The user message to send to the API.
     """
     reference_sections = [
-        _section("Novel Info", context.novel_info),
-        _section("Current Characters Bible", context.characters),
-        _section("Current Locations Bible", context.locations),
-        _section("Current Terminology Bible", context.terminology),
-        _section("Current Cultural Phrases Bible", context.cultural_phrases),
-        _section("Current Story Bible", context.story),
+        section("Novel Info", context.novel_info),
+        section("Current Characters Bible", context.characters),
+        section("Current Locations Bible", context.locations),
+        section("Current Terminology Bible", context.terminology),
+        section("Current Cultural Phrases Bible", context.cultural_phrases),
+        section("Current Story Bible", context.story),
     ]
     references = "\n---\n\n".join(s for s in reference_sections if s)
 

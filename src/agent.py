@@ -14,16 +14,34 @@ needs to change.
 
 Model selection and token limits are controlled by the caller via parameters.
 Defaults are imported from config.py so there is a single source of truth.
+
+Usage
+-----
+For simple one-off calls, use the module-level `call()` function — it builds
+a client from the environment automatically:
+
+    from src.agent import call
+    result = call(system_prompt="...", user_message="...")
+
+For batch operations (e.g. the preread loop), build a client once and inject
+it to avoid recreating it per call:
+
+    from src.agent import make_client, call
+    client = make_client()
+    result = call(system_prompt="...", user_message="...", client=client)
+
+The `ApiCallFn` Protocol is exported for type-checking callers that accept
+an api_call_fn argument.
 """
 
 import os
 import sys
 from pathlib import Path
+from typing import Protocol
+
 import anthropic
 from dotenv import load_dotenv
 
-# Ensure the project root is on the path so config.py is importable
-# regardless of where this module is imported from.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config import OPUS_MODEL, MAX_TOKENS
@@ -31,11 +49,57 @@ from config import OPUS_MODEL, MAX_TOKENS
 load_dotenv()
 
 
+# ---------------------------------------------------------------------------
+# Protocol for injectable API call functions
+# ---------------------------------------------------------------------------
+
+class ApiCallFn(Protocol):
+    """
+    Protocol for a function that takes a system prompt and user message
+    and returns the model's text response.
+
+    Used to type-check api_call_fn parameters in modules like runner.py
+    that receive the function as a dependency rather than importing agent
+    directly.
+    """
+    def __call__(self, system_prompt: str, user_message: str) -> str: ...
+
+
+# ---------------------------------------------------------------------------
+# Client construction
+# ---------------------------------------------------------------------------
+
+def make_client() -> anthropic.Anthropic:
+    """
+    Build and return an Anthropic client from the environment.
+
+    Call this once at application startup and pass the client into `call()`
+    for batch operations, rather than letting `call()` rebuild it each time.
+
+    Raises
+    ------
+    EnvironmentError
+        If ANTHROPIC_API_KEY is not set in the environment.
+    """
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise EnvironmentError(
+            "ANTHROPIC_API_KEY is not set. "
+            "Add it to your .env file and try again."
+        )
+    return anthropic.Anthropic(api_key=api_key)
+
+
+# ---------------------------------------------------------------------------
+# API call
+# ---------------------------------------------------------------------------
+
 def call(
     system_prompt: str,
     user_message: str,
     model: str = OPUS_MODEL,
     max_tokens: int = MAX_TOKENS,
+    client: anthropic.Anthropic | None = None,
 ) -> str:
     """
     Send a request to the Anthropic API and return the model's text response.
@@ -50,6 +114,10 @@ def call(
         The model to use. Defaults to OPUS_MODEL from config.py.
     max_tokens : int
         Maximum tokens in the response. Defaults to MAX_TOKENS from config.py.
+    client : anthropic.Anthropic | None
+        Optional pre-built client. If None, one is created from the environment.
+        Pass a pre-built client for batch operations to avoid recreating it
+        on every call.
 
     Returns
     -------
@@ -59,18 +127,12 @@ def call(
     Raises
     ------
     EnvironmentError
-        If ANTHROPIC_API_KEY is not set in the environment.
+        If ANTHROPIC_API_KEY is not set and no client is provided.
     anthropic.APIError
         If the API call fails for any reason.
     """
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise EnvironmentError(
-            "ANTHROPIC_API_KEY is not set. "
-            "Add it to your .env file and try again."
-        )
-
-    client = anthropic.Anthropic(api_key=api_key)
+    if client is None:
+        client = make_client()
 
     response = client.messages.create(
         model=model,
@@ -81,8 +143,6 @@ def call(
         ],
     )
 
-    # Extract text from the response content blocks.
-    # The API can return multiple blocks; we join all text blocks in order.
     return "".join(
         block.text
         for block in response.content

@@ -1,70 +1,23 @@
 """
 src/preread/chapter_resolver.py
 -------------------------------
-Responsible for one thing: determining which chapters exist, which are
-untranslated, and resolving a user-supplied selection string into a
-sorted list of chapter numbers.
+Responsible for one thing: resolving a user-supplied chapter selection string
+into a sorted list of chapter numbers.
 
-Accepts both strict input ("1-20", "all") and natural language
-("chapters 1 through 20", "all of them", "just 13 and 15").
+Chapter discovery (which chapters exist, which are untranslated) now lives in
+src/novel_resolver.py, which is the single source of truth shared by both
+entry points. This module re-exports find_untranslated_chapters from there
+for convenience, and focuses on natural-language selection parsing.
 
-This module has no knowledge of the API, bible files, or prompts.
-It reads the filesystem and applies selection logic. Nothing more.
+Accepted selection inputs include both strict ("1-20", "all") and natural
+language ("chapters 1 through 20", "just 13 and 15").
 """
 
 import re
 from pathlib import Path
 
-
-# ---------------------------------------------------------------------------
-# Filename parsing
-# ---------------------------------------------------------------------------
-
-def extract_chapter_number(filename: str) -> int | None:
-    """Return the first integer found in a filename, or None if absent."""
-    match = re.search(r"(\d+)", filename)
-    return int(match.group(1)) if match else None
-
-
-# ---------------------------------------------------------------------------
-# Chapter discovery
-# ---------------------------------------------------------------------------
-
-def find_all_korean_chapters(chapters_dir: Path) -> list[int]:
-    """Return sorted list of all chapter numbers with a *_korean source file."""
-    nums = []
-    for f in chapters_dir.iterdir():
-        if "korean" in f.name.lower() and f.is_file():
-            n = extract_chapter_number(f.name)
-            if n is not None:
-                nums.append(n)
-    return sorted(nums)
-
-
-def find_translated_chapter_numbers(chapters_dir: Path) -> set[int]:
-    """Return the set of chapter numbers that already have a translated .txt file."""
-    translated = set()
-    for f in chapters_dir.iterdir():
-        if not f.is_file():
-            continue
-        if f.suffix.lower() != ".txt":
-            continue
-        if "korean" in f.name.lower():
-            continue
-        n = extract_chapter_number(f.name)
-        if n is not None:
-            translated.add(n)
-    return translated
-
-
-def find_untranslated_chapters(chapters_dir: Path) -> list[int]:
-    """
-    Return sorted list of chapter numbers that have a Korean source file
-    but no corresponding translated .txt file.
-    """
-    all_korean = find_all_korean_chapters(chapters_dir)
-    translated = find_translated_chapter_numbers(chapters_dir)
-    return [n for n in all_korean if n not in translated]
+# Re-export from novel_resolver so callers of this module don't need to change.
+from src.novel_resolver import find_untranslated_chapters  # noqa: F401
 
 
 # ---------------------------------------------------------------------------
