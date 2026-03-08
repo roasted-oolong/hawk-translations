@@ -6,16 +6,20 @@ OPUS_MODEL   = "claude-opus-4-6"              # Quality-critical: Phase 2, voice
 # ── Project root ──────────────────────────────────────────────────────────────
 PROJECT_ROOT = "/home/jenna/hawk-translations"
 
-# ── Bible file map ────────────────────────────────────────────────────────────
-# chapter_log.md is intentionally excluded — archive only, never sent to API
-BIBLE_FILES = {
-    "characters":       "characters.md",
-    "cultural_phrases": "cultural_phrases.md",
-    "locations":        "locations.md",
-    "story":            "story.md",
-    "terminology":      "terminology.md",
+# ── Reference file map ───────────────────────────────────────────────────────
+# Keys map to TranslationContext field names.
+# Paths are relative to the novel root (novel_dir) or bible subdirectory.
+# chapter_log.md is intentionally excluded — archive only, never sent to API.
+NOVEL_FILES = {
+    "novel_info":             ("novel_info.md",             "novel"),
+    "translation_guidelines": ("translation_guidelines.md", "novel"),
+    "voice_calibration":      ("voice_calibration.md",      "bible"),
+    "characters":             ("characters.md",             "bible"),
+    "cultural_phrases":       ("cultural_phrases.md",       "bible"),
+    "locations":              ("locations.md",              "bible"),
+    "story":                  ("story.md",                  "bible"),
+    "terminology":            ("terminology.md",            "bible"),
 }
 
 # ── API settings ──────────────────────────────────────────────────────────────
 MAX_TOKENS = 16000
-CACHE_TYPE = "ephemeral"
