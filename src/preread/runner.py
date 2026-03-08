@@ -15,6 +15,7 @@ import time
 from datetime import date
 from pathlib import Path
 
+from src.agent import ApiCallFn
 from .bible_reader import read_novel_info, read_bible_files, read_chapter_file
 from .prompt_builder import PrereadContext, build_system_prompt, build_user_message
 from .response_parser import parse_response
@@ -31,7 +32,7 @@ def run_preread(
     chapter_nums: list[int],
     batch_size: int,
     resume_from: int | None,
-    api_call_fn,  # callable(system: str, user: str) -> str
+    api_call_fn: ApiCallFn,
 ) -> None:
     """
     Execute the full preread operation: read chapters in batches, call the
@@ -47,8 +48,8 @@ def run_preread(
         Number of chapters per API call.
     resume_from : int | None
         If set, skip all chapters before this number (resume after crash).
-    api_call_fn : callable
-        Function with signature (system_prompt: str, user_message: str) -> str.
+    api_call_fn : ApiCallFn
+        Callable with signature (system_prompt: str, user_message: str) -> str.
         Injected so this module has no direct dependency on agent.py.
     """
     today = date.today().isoformat()
@@ -84,9 +85,10 @@ def run_preread(
         novel_info = read_novel_info(novel_dir)
 
         # Read chapter files for this batch.
-        chapters_content: dict[int, str] = {}
-        for n in batch_nums:
-            chapters_content[n] = read_chapter_file(chapters_dir, n)
+        chapters_content: dict[int, str] = {
+            n: read_chapter_file(chapters_dir, n)
+            for n in batch_nums
+        }
 
         # Build context and messages.
         context = PrereadContext(

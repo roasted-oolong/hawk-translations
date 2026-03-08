@@ -7,21 +7,29 @@ novel into memory, returning plain strings.
 This module has no knowledge of the API, prompts, or chapter content.
 It reads files. Nothing more.
 
-Mirrors the reference-loading pattern from translate.py, restricted to the
-files the preread function actually needs (no translation_guidelines,
-no voice_calibration).
+The set of bible files to load is derived from config.NOVEL_FILES, filtered
+to the subset the preread function actually needs. This means adding a new
+bible file to config.py is sufficient — no changes needed here.
 """
 
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-# Bible files that the preread function reads and may update.
-PREREAD_BIBLE_FILES = [
-    "bible/characters.md",
-    "bible/cultural_phrases.md",
-    "bible/locations.md",
-    "bible/story.md",
-    "bible/terminology.md",
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+from config import NOVEL_FILES
+
+# Keys from NOVEL_FILES that preread does not need.
+# Translation-specific files are excluded — preread has no use for them.
+_PREREAD_SKIP = {"translation_guidelines", "voice_calibration", "novel_info"}
+
+# Relative paths (from novel_dir) of the bible files preread reads and may update.
+# Derived from config so there is a single source of truth.
+PREREAD_BIBLE_FILES: list[str] = [
+    f"bible/{filename}"
+    for key, (filename, location) in NOVEL_FILES.items()
+    if key not in _PREREAD_SKIP and location == "bible"
 ]
 
 

@@ -21,6 +21,8 @@ To add a new reference file to the prompt:
 
 from dataclasses import dataclass
 
+from src.prompt_utils import section
+
 
 # ---------------------------------------------------------------------------
 # Context type
@@ -77,41 +79,6 @@ class TranslationContext:
 # Prompt assembly
 # ---------------------------------------------------------------------------
 
-# Strings that indicate a bible file contains only its blank template.
-# Sections matching any of these are omitted from the prompt.
-_EMPTY_MARKERS = [
-    "[Character Name",
-    "[Term —",
-    "[Phrase —",
-    "[Location Name",
-    "Current summary: \n- Key turning points:",
-]
-
-
-def _is_empty(content: str) -> bool:
-    """
-    Return True if a bible file contains only blank template content.
-
-    Checks for known placeholder strings that indicate the file has not been
-    populated yet. An empty string is also treated as empty.
-    """
-    if not content or not content.strip():
-        return True
-    return any(marker in content for marker in _EMPTY_MARKERS)
-
-
-def _section(heading: str, content: str) -> str:
-    """
-    Format a single prompt section with a heading and its content.
-
-    Returns an empty string if the content is empty or unpopulated, so the
-    caller can safely join all sections without worrying about blank entries.
-    """
-    if _is_empty(content):
-        return ""
-    return f"## {heading}\n\n{content.strip()}\n"
-
-
 def build_translation_prompt(context: TranslationContext) -> str:
     """
     Assemble the full system prompt from a TranslationContext.
@@ -133,21 +100,18 @@ def build_translation_prompt(context: TranslationContext) -> str:
     str
         The complete system prompt, ready to pass to agent.call().
     """
-
-    # Build each reference section, skipping unpopulated files.
     reference_sections = [
-        _section("Novel Info", context.novel_info),
-        _section("Translation Guidelines", context.translation_guidelines),
-        _section("Voice Calibration", context.voice_calibration),
-        _section("Narrator Note", context.narrator_note),
-        _section("Character Bible", context.characters),
-        _section("Cultural Phrases", context.cultural_phrases),
-        _section("Locations", context.locations),
-        _section("Story Bible", context.story),
-        _section("Terminology", context.terminology),
+        section("Novel Info", context.novel_info),
+        section("Translation Guidelines", context.translation_guidelines),
+        section("Voice Calibration", context.voice_calibration),
+        section("Narrator Note", context.narrator_note),
+        section("Character Bible", context.characters),
+        section("Cultural Phrases", context.cultural_phrases),
+        section("Locations", context.locations),
+        section("Story Bible", context.story),
+        section("Terminology", context.terminology),
     ]
 
-    # Join non-empty sections with a divider between them.
     references = "\n---\n\n".join(s for s in reference_sections if s)
 
     return f"""You are a professional Korean-to-English literary translator \

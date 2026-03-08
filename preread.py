@@ -12,6 +12,7 @@ batch size, and confirmation before running. Once confirmed, it runs
 unattended to completion.
 """
 
+import math
 import sys
 from pathlib import Path
 
@@ -22,67 +23,12 @@ load_dotenv()
 sys.path.insert(0, str(Path(__file__).parent))
 
 from config import PROJECT_ROOT, SONNET_MODEL, MAX_TOKENS
-from src.agent import call
-from src.preread.chapter_resolver import (
-    find_untranslated_chapters,
-    parse_chapter_selection,
-)
+from src.agent import call, make_client
+from src.novel_resolver import resolve_novel, find_untranslated_chapters
+from src.preread.chapter_resolver import parse_chapter_selection
 from src.preread.runner import run_preread
 
 DEFAULT_BATCH_SIZE = 7
-
-
-# ---------------------------------------------------------------------------
-# Novel resolution
-# ---------------------------------------------------------------------------
-
-def _list_novels(project_root: Path) -> list[Path]:
-    return sorted(
-        d for d in project_root.iterdir()
-        if d.is_dir()
-        and not d.name.startswith("_")
-        and not d.name.startswith(".")
-        and (d / "chapters").is_dir()
-        and (d / "bible").is_dir()
-    )
-
-
-def _prompt_novel(project_root: Path) -> Path:
-    """Ask the user which novel to work on. Returns the resolved novel dir."""
-    novels = _list_novels(project_root)
-    if not novels:
-        print("\n  No novel directories found. Exiting.")
-        sys.exit(1)
-
-    if len(novels) == 1:
-        print(f"  Novel: {novels[0].name}")
-        return novels[0]
-
-    print("\n  Available novels:")
-    for i, n in enumerate(novels, 1):
-        print(f"    {i}. {n.name}")
-
-    while True:
-        raw = input("\n  Which novel? ").strip()
-        if not raw:
-            continue
-
-        # Accept a number
-        if raw.isdigit():
-            idx = int(raw) - 1
-            if 0 <= idx < len(novels):
-                return novels[idx]
-            print("  Not a valid number. Try again.")
-            continue
-
-        # Accept a name (partial match)
-        matches = [n for n in novels if raw.lower() in n.name.lower()]
-        if len(matches) == 1:
-            return matches[0]
-        if len(matches) > 1:
-            print(f"  '{raw}' matches more than one novel. Be more specific.")
-            continue
-        print(f"  No novel matching '{raw}'. Try again.")
 
 
 # ---------------------------------------------------------------------------
@@ -135,7 +81,6 @@ def _prompt_batch_size() -> int:
 
 def _prompt_confirm(novel_name: str, selected: list[int], batch_size: int) -> bool:
     """Show the plan and ask for confirmation. Returns True if confirmed."""
-    import math
     total_batches = math.ceil(len(selected) / batch_size)
     ch_range = (
         f"{selected[0]}–{selected[-1]}"
@@ -171,7 +116,7 @@ def main() -> None:
 
     project_root = Path(PROJECT_ROOT)
 
-    novel_dir = _prompt_novel(project_root)
+    novel_dir = resolve_novel(project_root, name=None)
     chapters_dir = novel_dir / "chapters"
 
     untranslated = find_untranslated_chapters(chapters_dir)
@@ -186,12 +131,15 @@ def main() -> None:
         print("\n  Cancelled.\n")
         return
 
+    client = make_client()
+
     def api_call(system_prompt: str, user_message: str) -> str:
         return call(
             system_prompt=system_prompt,
             user_message=user_message,
             model=SONNET_MODEL,
             max_tokens=MAX_TOKENS,
+            client=client,
         )
 
     run_preread(
