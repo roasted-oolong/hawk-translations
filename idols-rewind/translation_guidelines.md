@@ -11,7 +11,8 @@ Translate the Korean source into clear, natural English written for a middle to 
 At the end of Phase 1, write the translation to the output file immediately. Phase 2 begins by reading that file fresh — not from memory, not from what was just written in the session. The file is the source of truth. Treat Phase 2 as a different person picking up where Phase 1 left off.
 
 ### Preserve Formatting & Narrative Style
-Keep the original layout including paragraph breaks and pacing. Match the flow and rhythm of the original writing as closely as possible.
+- Keep the original layout including paragraph breaks and pacing. Match the flow and rhythm of the original writing as closely as possible.
+- Preserve all symbolic formatting characters exactly as they appear in the Korean source — *, **, ***, -, and any structural symbols. Do not introduce or substitute formatting elements not present in the original.
 
 ### Cultural Localization with Context
 Balance Korean cultural nuance with English readability. Localize idioms and phrases where appropriate. If a cultural element cannot be easily localized:
@@ -137,7 +138,7 @@ After Phase 3, conduct a final read of the complete chapter for overall consiste
 
 ### Formatting
 - Paragraph breaks and pacing match the source structure
-- Internal monologue formatting (italics) applied consistently
+- Preserve all symbolic formatting characters exactly as they appear in the Korean source — *, **, ***, -, and any structural symbols. Do not introduce or substitute formatting elements not present in the original.
 - Kill count formatting consistent throughout action sequences
 
 ---
