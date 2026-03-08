@@ -45,14 +45,3 @@ Last Updated: [date]
 - Status: [watching, confirmed, resolved]
 
 ---
-
-## Chapter Log
-### Chapter [##]
-- Korean read: [date]
-- Translated: [date]
-- Summary: 
-- New elements added to bible: 
-- Flagged uncertainties: 
-- Open questions: 
-
----
