@@ -11,12 +11,17 @@ Confirmed edits are applied by exact string replacement: the runner presents
 each proposed edit to the user and passes approved ones here. This module
 does not make decisions about what to write — it only writes what it is told.
 
+Deduplication key logic lives in src/bible_utils.py and is shared across
+all pipeline modules that read or write bible files.
+
 This module has no knowledge of the API, prompts, interaction flow, or how
 findings were generated. It receives content strings and paths. Nothing more.
 """
 
 import re
 from pathlib import Path
+
+from src.bible_utils import extract_heading_keys
 
 SECTION_TO_FILE = {
     "characters":       "bible/characters.md",
@@ -28,26 +33,8 @@ SECTION_TO_FILE = {
 
 
 # ---------------------------------------------------------------------------
-# Heading extraction and deduplication (mirrors preread/bible_writer.py)
+# Entry splitting
 # ---------------------------------------------------------------------------
-
-def _extract_headings(text: str) -> set[str]:
-    """
-    Return the set of normalised ## headings found in a markdown string.
-
-    Normalisation:
-    - Lowercased and stripped
-    - "— English" / "— Korean" suffix dropped
-    - Parenthetical content dropped
-    """
-    headings = set()
-    for match in re.finditer(r"^##\s+(.+)$", text, re.MULTILINE):
-        raw = match.group(1)
-        raw = re.split(r"\s+[—–-]\s+", raw)[0]
-        raw = re.sub(r"\(.*?\)", "", raw)
-        headings.add(raw.strip().lower())
-    return headings
-
 
 def _split_into_entries(content: str) -> list[str]:
     """Split a markdown block into individual ## entries."""
@@ -84,17 +71,17 @@ def append_new_entry(novel_dir: Path, section_key: str, content: str) -> None:
         file_path.write_text("", encoding="utf-8")
 
     existing = file_path.read_text(encoding="utf-8")
-    existing_headings = _extract_headings(existing)
+    existing_keys = extract_heading_keys(existing)
 
     new_entries = []
     skipped = []
 
     for entry in _split_into_entries(content):
-        entry_headings = _extract_headings(entry)
-        if not entry_headings:
+        entry_keys = extract_heading_keys(entry)
+        if not entry_keys:
             new_entries.append(entry)
             continue
-        duplicate = entry_headings & existing_headings
+        duplicate = entry_keys & existing_keys
         if duplicate:
             skipped.extend(duplicate)
         else:

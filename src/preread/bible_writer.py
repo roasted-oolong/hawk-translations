@@ -8,11 +8,8 @@ Before writing, each incoming entry is checked against the headings already
 present in the file. Entries whose heading already exists are skipped.
 
 The Korean name/term is the canonical unique identifier for every entry.
-When a heading contains a parenthetical with Korean characters, that Korean
-string is extracted and used as the deduplication key. This means variant
-romanisations (e.g. "LOAN" vs "Ro-an") for the same Korean name (로안) will
-correctly be identified as duplicates. When no Korean is present in the
-heading, the normalised English text is used as a fallback key.
+Deduplication key logic lives in src/bible_utils.py and is shared across
+all pipeline modules that read or write bible files.
 
 This module has no knowledge of the API, prompts, or chapter discovery.
 It receives parsed content strings and writes them to the correct files.
@@ -21,6 +18,8 @@ Nothing more.
 
 import re
 from pathlib import Path
+
+from src.bible_utils import extract_heading_keys
 
 # Maps canonical section key → relative path within novel_dir.
 SECTION_TO_FILE = {
@@ -33,66 +32,8 @@ SECTION_TO_FILE = {
 
 
 # ---------------------------------------------------------------------------
-# Heading extraction
+# Entry splitting
 # ---------------------------------------------------------------------------
-
-def _heading_key(raw_heading: str) -> str:
-    """
-    Derive a canonical deduplication key from a raw ## heading string
-    (everything after the leading "## ").
-
-    Key selection priority:
-    1. If the heading contains a parenthetical with Korean characters,
-       use the Korean string as the key (lowercased, stripped).
-       This makes the Korean name the single source of truth regardless
-       of how the English romanisation is spelled.
-    2. Otherwise, normalise the English text:
-       - Strip everything after " — " (drops "— English" label suffixes)
-       - Drop any remaining parentheticals
-       - Lowercase and strip whitespace
-
-    Examples
-    --------
-    "Hee-yeon Lee (이희연)"  → "이희연"
-    "LOAN (로안)"            → "로안"
-    "Ro-an (로안)"           → "로안"   ← same key as above
-    "SM Entertainment"       → "sm entertainment"
-    "Debut"                  → "debut"
-    """
-    # Try to extract Korean from a parenthetical.
-    korean_match = re.search(r"\(([^)]*[\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F][^)]*)\)", raw_heading)
-    if korean_match:
-        return korean_match.group(1).strip().lower()
-
-    # Fallback: normalise English text.
-    text = raw_heading
-    # Drop "— English" / "— Korean" label suffix (em dash, en dash, or hyphen)
-    text = re.split(r"\s+[—–-]\s+", text)[0]
-    # Drop any remaining parentheticals
-    text = re.sub(r"\(.*?\)", "", text)
-    return text.strip().lower()
-
-
-def _extract_heading_keys(text: str) -> set[str]:
-    """
-    Return the set of canonical deduplication keys for all ## headings
-    found in a markdown string.
-
-    Parameters
-    ----------
-    text : str
-        Full contents of a bible file or a single entry block.
-
-    Returns
-    -------
-    set[str]
-        One key per ## heading found, derived via _heading_key().
-    """
-    keys = set()
-    for match in re.finditer(r"^##\s+(.+)$", text, re.MULTILINE):
-        keys.add(_heading_key(match.group(1)))
-    return keys
-
 
 def _split_into_entries(content: str) -> list[str]:
     """
@@ -153,7 +94,7 @@ def append_to_bible(novel_dir: Path, section_key: str, content: str) -> None:
         file_path.write_text("", encoding="utf-8")
 
     existing = file_path.read_text(encoding="utf-8")
-    existing_keys = _extract_heading_keys(existing)
+    existing_keys = extract_heading_keys(existing)
 
     entries = _split_into_entries(content)
 
@@ -161,7 +102,7 @@ def append_to_bible(novel_dir: Path, section_key: str, content: str) -> None:
     skipped_headings = []
 
     for entry in entries:
-        entry_keys = _extract_heading_keys(entry)
+        entry_keys = extract_heading_keys(entry)
 
         if not entry_keys:
             # No ## heading — plain prose (e.g. STORY section). Always include.
