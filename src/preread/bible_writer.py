@@ -53,11 +53,11 @@ def _heading_key(raw_heading: str) -> str:
 
     Examples
     --------
-    "Hee-yeon Lee (이희연) — English"  → "이희연"
-    "LOAN (로안) — English"            → "로안"
-    "Ro-an (로안) — English"           → "로안"   ← same key as above
-    "SM Entertainment — English"       → "sm entertainment"
-    "Debut — English"                  → "debut"
+    "Hee-yeon Lee (이희연)"  → "이희연"
+    "LOAN (로안)"            → "로안"
+    "Ro-an (로안)"           → "로안"   ← same key as above
+    "SM Entertainment"       → "sm entertainment"
+    "Debut"                  → "debut"
     """
     # Try to extract Korean from a parenthetical.
     korean_match = re.search(r"\(([^)]*[\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F][^)]*)\)", raw_heading)
