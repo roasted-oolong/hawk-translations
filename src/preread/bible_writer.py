@@ -6,9 +6,13 @@ without creating duplicate entries.
 
 Before writing, each incoming entry is checked against the headings already
 present in the file. Entries whose heading already exists are skipped.
-Heading matching is case-insensitive and strips Korean-name parentheticals
-so that variant romanisations (e.g. "LOAN" vs "Ro-an") do not produce
-duplicate entries.
+
+The Korean name/term is the canonical unique identifier for every entry.
+When a heading contains a parenthetical with Korean characters, that Korean
+string is extracted and used as the deduplication key. This means variant
+romanisations (e.g. "LOAN" vs "Ro-an") for the same Korean name (로안) will
+correctly be identified as duplicates. When no Korean is present in the
+heading, the normalised English text is used as a fallback key.
 
 This module has no knowledge of the API, prompts, or chapter discovery.
 It receives parsed content strings and writes them to the correct files.
@@ -32,31 +36,62 @@ SECTION_TO_FILE = {
 # Heading extraction
 # ---------------------------------------------------------------------------
 
-def _extract_headings(text: str) -> set[str]:
+def _heading_key(raw_heading: str) -> str:
     """
-    Return the set of normalised ## headings found in a markdown string.
+    Derive a canonical deduplication key from a raw ## heading string
+    (everything after the leading "## ").
 
-    Normalisation:
-    - Lowercased
-    - Leading/trailing whitespace stripped
-    - Everything after " — " removed (drops the "— English" suffix)
-    - Content inside parentheses removed (drops Korean-name clarifications)
+    Key selection priority:
+    1. If the heading contains a parenthetical with Korean characters,
+       use the Korean string as the key (lowercased, stripped).
+       This makes the Korean name the single source of truth regardless
+       of how the English romanisation is spelled.
+    2. Otherwise, normalise the English text:
+       - Strip everything after " — " (drops "— English" label suffixes)
+       - Drop any remaining parentheticals
+       - Lowercase and strip whitespace
 
     Examples
     --------
-    "## Hee-yeon Lee — English"  → "hee-yeon lee"
-    "## LOAN (로안) — English"   → "loan"
-    "## Ro-an — English"         → "ro-an"
+    "Hee-yeon Lee (이희연) — English"  → "이희연"
+    "LOAN (로안) — English"            → "로안"
+    "Ro-an (로안) — English"           → "로안"   ← same key as above
+    "SM Entertainment — English"       → "sm entertainment"
+    "Debut — English"                  → "debut"
     """
-    headings = set()
+    # Try to extract Korean from a parenthetical.
+    korean_match = re.search(r"\(([^)]*[\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F][^)]*)\)", raw_heading)
+    if korean_match:
+        return korean_match.group(1).strip().lower()
+
+    # Fallback: normalise English text.
+    text = raw_heading
+    # Drop "— English" / "— Korean" label suffix (em dash, en dash, or hyphen)
+    text = re.split(r"\s+[—–-]\s+", text)[0]
+    # Drop any remaining parentheticals
+    text = re.sub(r"\(.*?\)", "", text)
+    return text.strip().lower()
+
+
+def _extract_heading_keys(text: str) -> set[str]:
+    """
+    Return the set of canonical deduplication keys for all ## headings
+    found in a markdown string.
+
+    Parameters
+    ----------
+    text : str
+        Full contents of a bible file or a single entry block.
+
+    Returns
+    -------
+    set[str]
+        One key per ## heading found, derived via _heading_key().
+    """
+    keys = set()
     for match in re.finditer(r"^##\s+(.+)$", text, re.MULTILINE):
-        raw = match.group(1)
-        # Drop "— English" / "— Korean" suffix
-        raw = re.split(r"\s+[—–-]\s+", raw)[0]
-        # Drop parenthetical content
-        raw = re.sub(r"\(.*?\)", "", raw)
-        headings.add(raw.strip().lower())
-    return headings
+        keys.add(_heading_key(match.group(1)))
+    return keys
 
 
 def _split_into_entries(content: str) -> list[str]:
@@ -89,7 +124,8 @@ def _split_into_entries(content: str) -> list[str]:
 def append_to_bible(novel_dir: Path, section_key: str, content: str) -> None:
     """
     Append a parsed section's content to the appropriate bible file,
-    skipping any entries whose heading already exists in the file.
+    skipping any entries whose Korean name (or normalised English fallback)
+    already exists in the file.
 
     Parameters
     ----------
@@ -117,7 +153,7 @@ def append_to_bible(novel_dir: Path, section_key: str, content: str) -> None:
         file_path.write_text("", encoding="utf-8")
 
     existing = file_path.read_text(encoding="utf-8")
-    existing_headings = _extract_headings(existing)
+    existing_keys = _extract_heading_keys(existing)
 
     entries = _split_into_entries(content)
 
@@ -125,15 +161,15 @@ def append_to_bible(novel_dir: Path, section_key: str, content: str) -> None:
     skipped_headings = []
 
     for entry in entries:
-        entry_headings = _extract_headings(entry)
+        entry_keys = _extract_heading_keys(entry)
 
-        if not entry_headings:
+        if not entry_keys:
             # No ## heading — plain prose (e.g. STORY section). Always include.
             new_entries.append(entry)
             continue
 
-        # Check each heading in this entry against what's already in the file.
-        duplicate = entry_headings & existing_headings
+        # Check each key in this entry against what's already in the file.
+        duplicate = entry_keys & existing_keys
         if duplicate:
             skipped_headings.extend(duplicate)
         else:
