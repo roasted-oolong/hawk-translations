@@ -1,46 +1,43 @@
 """
 src/formatter/runner.py
 ------------------------
-Responsible for one thing: orchestrating the formatting loop across batches
-of chapter numbers.
+Responsible for one thing: orchestrating chapter formatting via the Anthropic
+Batch API.
 
-This module composes chapter_io, prompt_builder, response_parser, and the
-injected API call function. It contains no domain logic, prompt text, or
-file I/O details — it delegates each concern to the appropriate module.
+Each chapter is submitted as an independent request in a single batch job.
+The batch is polled until complete, then results are parsed and written.
 
-Batching: multiple chapters are grouped into a single API call. Each batch
-produces one response that is parsed back into individual chapter texts, then
-each chapter is written (overwriting the original source file).
+This replaces the previous synchronous loop. The prompt format, file I/O,
+and response parsing are unchanged — only the API interaction pattern differs.
 
-To change loop behavior (error handling, progress reporting, etc.),
-edit only this file.
+To change polling behavior or error handling, edit only this file.
 """
 
 import time
 from pathlib import Path
 
-from src.agent import ApiCallFn
+import anthropic
+
+from config import HAIKU_MODEL, FORMAT_MAX_TOKENS
 from .chapter_io import read_korean_chapter, overwrite_chapter_file
 from .prompt_builder import build_system_prompt, build_user_message
 from .response_parser import parse_response
 
 
-def _make_batches(chapter_list: list[int], batch_size: int) -> list[list[int]]:
-    """Split a list of chapter numbers into sequential batches."""
-    return [chapter_list[i : i + batch_size] for i in range(0, len(chapter_list), batch_size)]
+# How long to wait between polling the batch for completion (seconds).
+_POLL_INTERVAL = 30
 
 
 def run_formatter(
     novel_dir: Path,
     chapter_nums: list[int],
-    batch_size: int,
-    api_call_fn: ApiCallFn,
+    client: anthropic.Anthropic,
 ) -> None:
     """
-    Format each chapter in chapter_nums and overwrite its source file.
+    Format each chapter in chapter_nums using the Anthropic Batch API.
 
-    Chapters are grouped into batches and sent to the API together. The
-    response is parsed back into individual chapter texts before writing.
+    Each chapter is submitted as a separate request within a single batch job.
+    Results are retrieved once the batch completes and written back to source files.
 
     Parameters
     ----------
@@ -48,56 +45,102 @@ def run_formatter(
         Root directory of the novel.
     chapter_nums : list[int]
         Sorted list of chapter numbers to format.
-    batch_size : int
-        Number of chapters per API call.
-    api_call_fn : ApiCallFn
-        Callable with signature (system_prompt: str, user_message: str) -> str.
-        Injected so this module has no direct dependency on agent.py.
+    client : anthropic.Anthropic
+        Pre-built Anthropic client.
     """
     chapters_dir = novel_dir / "chapters"
     system_prompt = build_system_prompt()
-    batches = _make_batches(chapter_nums, batch_size)
-    total_batches = len(batches)
 
-    print(f"\n  Chapters to format : {chapter_nums[0]}–{chapter_nums[-1]} "
-          f"({len(chapter_nums)} total)")
-    print(f"  Batch size         : {batch_size}")
-    print(f"  Total batches      : {total_batches}\n")
+    # ── Read all chapters ────────────────────────────────────────────────────
+    chapters_content: dict[int, str] = {}
+    skipped: list[int] = []
 
+    for num in chapter_nums:
+        try:
+            chapters_content[num] = read_korean_chapter(chapters_dir, num)
+        except FileNotFoundError as e:
+            print(f"  [error] {e} — skipping chapter {num}.")
+            skipped.append(num)
+
+    if not chapters_content:
+        print("  No readable chapters found — aborting.")
+        return
+
+    # ── Build batch requests (one per chapter) ───────────────────────────────
+    requests = []
+    for num in sorted(chapters_content.keys()):
+        user_message = build_user_message({num: chapters_content[num]})
+        requests.append({
+            "custom_id": f"chapter-{num}",
+            "params": {
+                "model": HAIKU_MODEL,
+                "max_tokens": FORMAT_MAX_TOKENS,
+                "system": system_prompt,
+                "messages": [{"role": "user", "content": user_message}],
+            },
+        })
+
+    print(f"\n  Submitting {len(requests)} chapter(s) to Batch API...")
+
+    # ── Submit batch ─────────────────────────────────────────────────────────
+    batch = client.messages.batches.create(requests=requests)
+    batch_id = batch.id
+    print(f"  Batch ID : {batch_id}")
+    print(f"  Status   : {batch.processing_status}")
+
+    # ── Poll until complete ──────────────────────────────────────────────────
+    print(f"\n  Waiting for batch to complete (polling every {_POLL_INTERVAL}s)...")
+    while True:
+        time.sleep(_POLL_INTERVAL)
+        batch = client.messages.batches.retrieve(batch_id)
+        counts = batch.request_counts
+        print(
+            f"  [{batch.processing_status}] "
+            f"processing: {counts.processing}  "
+            f"succeeded: {counts.succeeded}  "
+            f"errored: {counts.errored}"
+        )
+        if batch.processing_status == "ended":
+            break
+
+    # ── Retrieve and write results ───────────────────────────────────────────
+    print("\n  Retrieving results...")
     written = 0
-    skipped = 0
+    errors: list[str] = []
 
-    for batch_index, batch_nums in enumerate(batches, start=1):
-        print(f"── Batch {batch_index}/{total_batches}: chapters {batch_nums} ──")
+    for result in client.messages.batches.results(batch_id):
+        custom_id = result.custom_id
+        chapter_num = int(custom_id.removeprefix("chapter-"))
 
-        # Read all chapters in this batch.
-        chapters_content: dict[int, str] = {}
-        for num in batch_nums:
-            try:
-                chapters_content[num] = read_korean_chapter(chapters_dir, num)
-            except FileNotFoundError as e:
-                print(f"  [error] {e} — skipping chapter {num}.")
-                skipped += 1
-
-        if not chapters_content:
-            print("  No readable chapters in this batch — skipping.")
+        if result.result.type == "error":
+            err = result.result.error
+            errors.append(f"  [error] Chapter {chapter_num}: {err.type} — {err.message}")
             continue
 
-        # Format via API.
-        print(f"  Formatting {len(chapters_content)} chapter(s)...")
-        user_message = build_user_message(chapters_content)
-        raw_response = api_call_fn(system_prompt, user_message)
+        raw_response = "".join(
+            block.text
+            for block in result.result.message.content
+            if hasattr(block, "text")
+        )
 
-        # Parse response and write each chapter.
-        parsed = parse_response(raw_response, list(chapters_content.keys()))
-        for num, formatted_text in parsed.items():
-            path = overwrite_chapter_file(chapters_dir, num, formatted_text)
-            print(f"  ✓ Chapter {num} — overwritten {path.name}")
-            written += 1
+        parsed = parse_response(raw_response, [chapter_num])
+        if chapter_num not in parsed:
+            errors.append(
+                f"  [error] Chapter {chapter_num}: response parsed but chapter missing from output."
+            )
+            continue
 
-        # Brief pause between batches.
-        if batch_index < total_batches:
-            time.sleep(0.5)
+        path = overwrite_chapter_file(chapters_dir, chapter_num, parsed[chapter_num])
+        print(f"  ✓ Chapter {chapter_num} — overwritten {path.name}")
+        written += 1
 
-    print(f"\n  ✓ Formatting complete. "
-          f"{written} chapter(s) written, {skipped} skipped.")
+    # ── Summary ──────────────────────────────────────────────────────────────
+    print(f"\n  ✓ Formatting complete. {written} chapter(s) written.", end="")
+    if skipped:
+        print(f" {len(skipped)} skipped (missing files): {skipped}.", end="")
+    if errors:
+        print(f"\n\n  Errors encountered:")
+        for e in errors:
+            print(e)
+    else:
+        print()
