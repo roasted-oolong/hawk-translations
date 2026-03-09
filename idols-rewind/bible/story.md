@@ -467,3 +467,27 @@ Last Updated: [date]
 - Ch. 69: The film's plot synopsis delivered mid-chapter is not summary filler — it establishes the dramatic irony of Choo Mi-yeon playing the "luck-hoarding villain" character (아람) while being visibly the most hostile and least talented person in the room. Translator should not compress this section.
 - Ch. 68: Kang's "쉿" to Gwak Team Leader is a single syllable delivered mid-observation of Hee-yeon. The casualness of the dismissal is the entire beat — any expansion loses it.
 - The Hee-yeon/Choo Mi-yeon dialogue in both chapters is built on the contrast between Choo Mi-yeon's escalating rhetoric and Hee-yeon's flat, minimal, factually accurate responses. Every line of Hee-yeon's should be as short and undecorated as possible — adding warmth, hesitation, or politeness markers will break the comedy.
+
+---
+
+**Main Plot** — Ch. 69 — 「네 운수를 조금만 빌려도 될까?」 table read completed. Hee-yeon's acting debut in a professional setting is a demonstrated success: her performance as Hyun-ah is assessed as monster-level for a newcomer, and she receives unsolicited post-read notes from Son Chul-hwan and Park Sung-hyun — the two most senior cast members. Director Sung Min-woo's emotional approval is legible through pen behavior (light/dancing when she performs). The Mi-yeon Chu confrontation is fully resolved in Hee-yeon's favor without Kang's intervention; Sung-ah closes it with authority. Kang's two antagonist encounters (Team Lead Kwak, Mi-yeon Chu) are both preempted by Sung-ah before he can act on them.
+
+---
+
+**Subplot** — Ch. 69 — Kang/Sung-ah dynamic: Sung-ah claims developmental credit for Hee-yeon's acting in front of the senior cast ("I've been coaching her plenty well"). Kang's internal reaction is mild possessive irritation ("Excuse me. I was the one who developed her"). This is the first explicit instance of Kang and Sung-ah having adjacent but slightly competing claims of investment in a third party. Not yet a conflict, but worth watching.
+
+---
+
+**Subplot** — Ch. 69 — Team Lead Kwak subplot: Two confrontation attempts, both neutralized. Kang signals he expects to encounter Kwak again on set and intends to deal with him then. The threat is suspended, not resolved.
+
+---
+
+**Watch List** — Ch. 69 — The film's in-universe plot (「Could I Borrow a Little of Your Luck?」 detailed here for the first time via the table read script): idol trainee Min-ah has the ability to see and steal luck from others; her childhood friend Hyun-ah (Hee-yeon's role) is an external foil. The Hyun-ah character is explicitly confrontational and protective — Hee-yeon's scene work leans into unscripted reckless laughter as a character choice. This is the first time the film's actual plot is shown in detail through the read-through; the thematic parallel (luck, second chances, using others' fortune) with the novel's regression premise may be intentional.
+
+---
+
+**Themes & Motifs** — Ch. 69 — Deflection as power: The Mayweather boxing metaphor (not striking back, winning by not engaging) is applied to Hee-yeon's handling of Mi-yeon Chu, confirming a recurring pattern. Kang previously won by strategic patience (존버); Hee-yeon wins by the same logic in a social/interpersonal context. The chapter extends the novel's thesis that the most effective resistance is non-resistance.
+
+---
+
+**Themes & Motifs** — Ch. 69 — Who gets credit for developing artists: Sung-ah publicly claims coaching credit for Hee-yeon. Kang objects internally but says nothing aloud. This mirrors the broader industry dynamic the novel tracks — Kang's contributions are repeatedly absorbed or claimed by institutions and individuals with more visible power. The possessiveness is new for Kang re: Hee-yeon specifically; prior instances (LOAN, Jin-ah) have been less emotionally charged.

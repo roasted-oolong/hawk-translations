@@ -33,7 +33,7 @@ Last Updated: 2026-03-08
 - Honorifics they use toward others: 사장님 (to Kang in regression timeline)
 - Relationships: Hyuk Kang (former manager/protector; unresolved bond). Separated from other Blue Sherbet members after the group's collapse.
 - Story bible reference: —
-- Notes: In the pre-regression scene, she sought Kang out to repay a debt and offer to work together again; he refused. In the regression timeline she is a trainee who speaks to him with straightforward deference. The contrast between the two versions is narratively significant — translator should be alert to how her speech shifts between timelines. Chs. 38–39 — rock comeback teaser materials released (concept trailer, photo teaser, MV teaser); song/MV not yet public. Online community divided: supporters vs. detractors. Session recording and MV filming both complete. Full promotional rollout now being staged deliberately as noise marketing.
+- Notes: In the pre-regression scene, she sought Kang out to repay a debt and offer to work together again; he refused. In the regression timeline she is a trainee who speaks to him with straightforward deference. The contrast between the two versions is narratively significant — translator should be alert to how her speech shifts between timelines. Chs. 38–39 — rock comeback teaser materials released (concept trailer, photo teaser, MV teaser); song/MV not yet public. Online community divided: supporters vs. detractors. Session recording and MV filming both complete. Full promotional rollout now being staged deliberately as noise marketing. Ch. 69 — table read for 「네 운수를 조금만 빌려도 될까?」: her performance as Hyun-ah is described as monster-level for a newcomer; she fully embodies the character work developed with Sung-ah, notably adding unscripted reckless laughter at a key moment. Her scene-partner performance (against Mi-yeon Chu) is described as like watching a Mayweather fight — she deflects every provocation without taking damage. Receives detailed personal notes from both Son Chul-hwan and Park Sung-hyun after the read-through; both treat her as worth investing in.
 
 ---
 
@@ -356,7 +356,7 @@ Last Updated: 2026-03-08
 - Honorifics they use toward others: —
 - Relationships: Kang Hyuk (former manager; close enough for 오빠; clear mutual regard); Jin-ah (instant affection, protective); CEO Choi (top talent/employer — familiar); Executive Director Kim (friction, contained).
 - Story bible reference: HS Entertainment
-- Notes: Kang recalls after leaving HS she made two failed projects; likely on a third at the time of Ch. 30. Her reappearance is unexpected — Kang had chosen not to think about her. Her combination of softness and bluntness is key: she ends the salon confrontation simply by being present. The moment where Jin-ah calls her "성아 언니" immediately is character-revealing for both. Translation-relevant: softness and bluntness coexist — do not flatten either. Ch. 38 — her film "포토그래퍼" (Photographer) is underperforming; projected audience 2.5M; described as a film with neither fun nor emotion. Third consecutive failure (two films + one drama). Ch. 41 — unexpectedly calls Kang post-broadcast; call deferred. Reason unknown. Ch. 42 — Kang engineers her as lead for Min-woo Sung's film. Ch. 45 — in open friction with Executive Director Kim at HS meeting, with CEO Choi watching.
+- Notes: Kang recalls after leaving HS she made two failed projects; likely on a third at the time of Ch. 30. Her reappearance is unexpected — Kang had chosen not to think about her. Her combination of softness and bluntness is key: she ends the salon confrontation simply by being present. The moment where Jin-ah calls her "성아 언니" immediately is character-revealing for both. Translation-relevant: softness and bluntness coexist — do not flatten either. Ch. 38 — her film "포토그래퍼" (Photographer) is underperforming; projected audience 2.5M; described as a film with neither fun nor emotion. Third consecutive failure (two films + one drama). Ch. 41 — unexpectedly calls Kang post-broadcast; call deferred. Reason unknown. Ch. 42 — Kang engineers her as lead for Min-woo Sung's film. Ch. 45 — in open friction with Executive Director Kim at HS meeting, with CEO Choi watching. Ch. 69 — coaches Hee-yeon's "Hyun-ah" character acting; claims credit for Hee-yeon's performance in front of seniors; shuts down Mi-yeon Chu's post-read-through outburst with a single devastating sequence ("Did you crease your script on purpose?... Getting outperformed by someone who just started learning to act? That's when you should be embarrassed."); dismisses Team Lead Kwak in one line; preempts Kang before he can engage with either antagonist. Kang's internal reaction: mild possessive irritation that she is claiming developmental credit for Hee-yeon.
 
 ---
 
@@ -645,7 +645,7 @@ Last Updated: 2026-03-08
 - Honorifics they use toward others: —
 - Relationships: Works alongside Team Lead Kim; inherited Team 3 after the mass departure. Accompanied Sung-ah Kim to the read-through (Ch. 69).
 - Story bible reference: HS Entertainment
-- Notes: Ch. 49 — internally dismisses Team Lead Kim's "gift" of difficult personnel as obviously self-serving but doesn't say so aloud. Ch. 69 — attempts to confront Kang during the read-through; Kang silences him with a single "쉿" (shh) and defers him to "handle later." Sung-ah Kim pre-empts further confrontation by taking Kang away. Kang's internal register: mild contempt, treats him as a minor irritant.
+- Notes: Ch. 49 — internally dismisses Team Lead Kim's "gift" of difficult personnel as obviously self-serving but doesn't say so aloud. Ch. 69 — attempts to confront Kang twice during the read-through/aftermath; Kang silences him with a single "쉿" (shh) the first time. Post-read-through, attempts again; Sung-ah pre-empts with a single dismissive line ("Don't pick a fight you can't win. Just go.") and takes Kang away. Kang's internal register: mild contempt, treats him as a minor irritant, notes they may meet again on set.
 
 ---
 
@@ -696,7 +696,7 @@ Last Updated: 2026-03-08
 - Honorifics they use toward others: —
 - Relationships: Noo-hee Pictures / Oh Representative (production company); Aligator's Toe Dance / Yoon-jung (choreography); Kang Hyuk (indirect via investment/Sung-ah connection); Sung-ah Kim (lead actress secured by Kang); Hee-yeon (auditioned for supporting role).
 - Story bible reference: Noo-hee Pictures
-- Notes: Ch. 41 — Kang recognises him from future knowledge as maker of an unexpected hit film; project involves substantial dance content. Ch. 42 — Kang knows this film becomes a massive hit ("화제란 화제는 죄다 쓸어버리고, 유행으로까지 번지게 된다"). Cannot invest directly (no spare capital); engineers HS Entertainment financing and secures Sung-ah Kim as lead; pushes for Hee-yeon's audition for a supporting role. His production team (Noo-hee Pictures) approached Aligator's Toe Dance and Yoon-jung for choreography. Ch. 63 — at pre-audition meeting, argues for bringing in external singers for the OST rather than insisting on cast-only vocals, citing the film's in-universe idol group was never "given life" by the script. Oh Representative finds this amusing. After Hee-yeon's audition: visibly overwhelmed — rushed scene requests, rapid breathing. Ch. 69 — present at the read-through; pokerface throughout. Emotional state readable only through pen pressure and speed: light/dancing for top performers, heavy/pressing for weaker ones.
+- Notes: Ch. 41 — Kang recognises him from future knowledge as maker of an unexpected hit film; project involves substantial dance content. Ch. 42 — Kang knows this film becomes a massive hit ("화제란 화제는 죄다 쓸어버리고, 유행으로까지 번지게 된다"). Cannot invest directly (no spare capital); engineers HS Entertainment financing and secures Sung-ah Kim as lead; pushes for Hee-yeon's audition for a supporting role. His production team (Noo-hee Pictures) approached Aligator's Toe Dance and Yoon-jung for choreography. Ch. 63 — at pre-audition meeting, argues for bringing in external singers for the OST rather than insisting on cast-only vocals, citing the film's in-universe idol group was never "given life" by the script. Oh Representative finds this amusing. After Hee-yeon's audition: visibly overwhelmed — rushed scene requests, rapid breathing. Ch. 69 — maintains complete poker face throughout the table read; emotional state readable only through pen pressure and speed (light/dancing for Hee-yeon, Sung-ah, Sung-hyun, Son; heavy/pressing for Mi-yeon and weaker actors). His direction note to Hee-yeon re: wistful expression is delivered through Son, not directly. Ch. 69 — present at the read-through; pokerface throughout. Emotional state readable only through pen pressure and speed: light/dancing for top performers, heavy/pressing for weaker ones.
 
 ---
 
@@ -781,7 +781,7 @@ Last Updated: 2026-03-08
 - Honorifics they use toward others: —
 - Relationships: Established rapport with Chul-hwan Son (veteran senior); neutral/watchful toward Hee-yeon and Mi-yeon Chu.
 - Story bible reference: —
-- Notes: Audibly laughs twice during the Hee-yeon/Mi-yeon Chu confrontation — unable to suppress amusement. After the read-through, stays to give Hee-yeon detailed notes. His pen-dancing description of Hee-yeon's read as reminiscent of his own newcomer annotation style is a quiet compliment.
+- Notes: Audibly laughs twice during the Hee-yeon/Mi-yeon Chu confrontation — unable to suppress amusement (laugh count confirmed: two). After the read-through, looks at Hee-yeon's annotated script and comments it reminds him of his own newcomer style; shares this observation with Son Chul-hwan. Gives Hee-yeon detailed on-set notes alongside Son. His warmth is genuine: describes Hee-yeon as having taught herself well.
 
 ---
 
@@ -798,7 +798,7 @@ Last Updated: 2026-03-08
 - Honorifics they use toward others: —
 - Relationships: —
 - Story bible reference: —
-- Notes: Does not intervene in the Hee-yeon/Mi-yeon Chu confrontation but watches with visible amusement. After the read-through, explicitly calls Hee-yeon over to give directorial notes — treating her as worth investing in. Expresses contempt for Mi-yeon Chu with a single tongue-click.
+- Notes: Does not intervene in the Hee-yeon/Mi-yeon Chu confrontation but watches with visible amusement. After the read-through, explicitly calls Hee-yeon over (gesture, not words: points to a script section) to give directorial notes — treating her as worth investing in. Specific note: the wistful expression over self-deprecating approach on a particular scene. Expresses contempt for Mi-yeon Chu with a single tongue-click.
 
 ---
 
@@ -815,7 +815,7 @@ Last Updated: 2026-03-08
 - Honorifics they use toward others: —
 - Relationships: —
 - Story bible reference: —
-- Notes: Has a known industry reputation for bad temper — all other cast members are aware of it before she arrives. Her intimidation attempts against Hee-yeon completely fail; Hee-yeon's calm single-sentence responses leave her with nowhere to go. During the read-through her performance is visibly poor compared to the top four — director's pen described as pressing hard/heavily. After the read-through, publicly blames Hee-yeon for "ruining" the character — immediately shut down by Sung-ah. Her script is described as deliberately creased to fake heavy use.
+- Notes: Has a known industry reputation for bad temper — all other cast members are aware of it before she arrives. Her intimidation attempts against Hee-yeon completely fail; Hee-yeon's calm single-sentence responses leave her with nowhere to go. During the read-through her performance is visibly poor compared to the top four — director's pen described as pressing hard/heavily. She bites her tongue and her voice wavers on a key line; lifts her script to hide her face. After the read-through, publicly blames Hee-yeon for "ruining" the character — immediately shut down by Sung-ah with a pointed observation about her deliberately creased script. Exits the room with bloodshot eyes. Kang's internal read: like a cartoon villain; no survival instinct except basic capitulation to Sung-ah.
 
 ---
 
