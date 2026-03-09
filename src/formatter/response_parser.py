@@ -40,8 +40,9 @@ def parse_response(raw: str, expected_chapters: list[int]) -> dict[int, str]:
     results: dict[int, str] = {}
 
     # Match === CHAPTER N === ... === END CHAPTER N === blocks.
+    # Tolerant of extra/missing spaces around the marker text.
     pattern = re.compile(
-        r"=== CHAPTER (\d+) ===\s*(.*?)\s*=== END CHAPTER \1 ===",
+        r"===\s*CHAPTER\s+(\d+)\s*===\s*(.*?)\s*===\s*END CHAPTER\s+\1\s*===",
         re.DOTALL,
     )
 
