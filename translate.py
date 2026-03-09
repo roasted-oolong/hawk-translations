@@ -135,10 +135,10 @@ def derive_output_filename(korean_file: Path) -> str:
     """
     Derive the output filename from the chapter number.
 
-    Format: "Chapter {N}.txt"
+    Format: "Chapter_{N}.txt"
     """
     chapter_num = extract_chapter_number(korean_file.name)
-    return f"Chapter {chapter_num}.txt"
+    return f"Chapter_{chapter_num}.txt"
 
 
 def write_output(output_path: Path, content: str) -> None:
