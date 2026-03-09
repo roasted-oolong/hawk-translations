@@ -78,3 +78,898 @@ Last Updated: [date]
 - Usage notes: Used with bitter irony by Kang in the present-day timeline — "Super manager, my ass. I went from has-been to straight-up scrap."
 - Story bible reference: characters.md (Hyuk Kang)
 - Notes:
+
+---
+
+## K Management — English [New]
+- Korean term: K매니지먼트
+- Category: Organization (talent agency)
+- First appearance: 4
+- Last Updated: 2026-03-08
+- Definition: Kang Hyuk's independent agency. Small, financially constrained. Houses Blue Sherbet and Yoo Jeong-han. Full name used by Kang when introducing himself to Loan.
+- Usage notes: Referred to as "우리 회사" (our company) in most scenes. "K Management" appears as the formal name.
+- Notes: —
+
+## Bluff Queen / Bravado Queen — English [New]
+- Korean term: 허세퀸
+- Category: Concept / character nickname
+- First appearance: 2
+- Last Updated: 2026-03-08
+- Definition: Kang's internal label for Jin-ah Choi. Portmanteau of 허세 (bluster/bravado) + 퀸 (queen). Affectionate.
+- Usage notes: Internal monologue only; not said aloud to Jin-ah. Captures her personality tic of bold claims she then actually backs up.
+- Notes: Translation options — "Bluff Queen," "Bravado Queen," "Queen of Hot Air." YA register should keep it light and fond, not dismissive.
+
+## Avengers Plan — English [New]
+- Korean term: 어벤져스 계획 (chapter title; referenced internally)
+- Category: Concept / strategic framework
+- First appearance: 3
+- Last Updated: 2026-03-08
+- Definition: Kang's revised management strategy: instead of developing the four members as a unit (where individual brilliance is subordinated to group identity), develop each as a shining individual talent first — so that when they combine, the fanbase expects synergy rather than fearing that one member "holds back" their favourite.
+- Usage notes: Opposed to what he calls the "Freshmen" (후레시맨) model — where individual members only complete a picture together. The Avengers model means each member is already a star in her own right.
+- Notes: "후레시맨" (Freshmen) is a reference to the Korean superhero team concept where individual heroes are incomplete alone. Translator may need to localise or gloss.
+
+## Ecosystem Destroyer — English [New]
+- Korean term: 생태계 파괴자
+- Category: Concept / community label
+- First appearance: 5
+- Last Updated: 2026-03-08
+- Definition: Label applied to Yoon-jung by the streaming community after her first broadcast. Means someone whose debut performance is so dominant it disrupts the established hierarchy of the platform.
+- Usage notes: Used admiringly/in disbelief, not negatively.
+- Notes: Common Korean internet/gaming community expression. Standard translation: "ecosystem destroyer" works in English gaming contexts.
+
+## Donation (streaming) — English [New]
+- Korean term: 도네이션 / 도네
+- Category: Idol/streaming industry concept
+- First appearance: 5
+- Last Updated: 2026-03-08
+- Definition: Monetary tip sent by viewers during a live stream, read aloud by an AI voice. Standard on Korean streaming platforms. Yoon-jung receives her first donation in Ch. 5.
+- Usage notes: "도네" is the colloquial short form. The AI reading donations aloud is a platform feature, not a separate character.
+- Notes: Render as "donation" or "superchat" depending on target reader familiarity. The "촤륵" sound is the platform's donation alert chime.
+
+## Head Producer — English [New]
+- Korean term: 헤드 프로듀서
+- Category: Title (industry)
+- First appearance: 4
+- Last Updated: 2026-03-08
+- Definition: Senior creative leadership role at a talent agency overseeing all music production. Loan's eventual position at HS Entertainment in the original timeline.
+- Usage notes: Used in Kang's future-knowledge narration only. Not yet a real title for Loan in the current timeline.
+- Notes: —
+
+## Battle Royale — English [New]
+- Korean term: 배틀로얄
+- Category: Item/concept (gaming)
+- First appearance: 5
+- Last Updated: 2026-03-08
+- Definition: The game genre Yoon-jung streams. 100 players drop into a zone, scavenge weapons, last one standing wins. Specific game unnamed but mechanics match PlayerUnknown's Battlegrounds (배그/PUBG).
+- Usage notes: In-story the game is referred to generically. Key weapons referenced: Double Barrel (더블 배럴), AWM (에땁 — community nickname for AWM sniper rifle). "Milbe" (밀베) = Military Base, the highest-traffic, highest-risk drop zone.
+- Notes: "에땁" is phonetic slang for AWM derived from the weapon's Korean community nickname. Render as "AWM" with "Etab" gloss only if the nickname recurs with significance.
+
+---
+
+## Wish Upon A Moon — English [New]
+- Korean term: 달에게 소원을
+- Category: Song title (Blue Sherbet / Hee-yeon solo)
+- First appearance: 8
+- Last Updated: 2026-03-08
+- Definition: Hee-yeon Lee's solo debut single. Composed by Loan, produced to fit Hee-yeon's vocal colour and character. Bright, trendy sound with a lyrically melancholic core that is designed to read as light unless closely attended to.
+- Usage notes: Full title "달에게 소원을 (Wish Upon A Moon)" — both forms used. English subtitle present in-text. Lyrics appear across Chs. 8, 10.
+- Notes: Instrumental texture described in detail (Ch. 8): repetitive violin line, drum/bass, synth whistle melody, water droplet and frequency sound effects. Intentionally keeps emotional distance — "희화화 혹은 객관화" (satirisation or objectification of sadness).
+
+## Yeol-i's Music Note — English [New]
+- Korean term: 열이의 음악노트
+- Category: Television program (music/variety hybrid)
+- First appearance: 9
+- Last Updated: 2026-03-08
+- Definition: Music programme hosted by Yoo Hae-yeol. Hybrid of music performance and light variety. Cannot be pressured by HS Entertainment due to Hae-yeol's personal industry standing. First aired Blue Sherbet once before (Ch. 9 — Kang's recollection of their debut-era appearance).
+- Usage notes: The program name should be rendered consistently. "열이" is Hae-yeol's shortened name/nickname — the title is a personal brand.
+- Notes: Kang explicitly uses this program as the primary promotional vehicle because (a) HS cannot block it and (b) it suits Hee-yeon's limited variety ability — music-first format.
+
+## Music Show / Music Broadcast (음방) — English [New]
+- Korean term: 음방 (음악방송)
+- Category: Idol industry concept
+- First appearance: 9
+- Last Updated: 2026-03-08
+- Definition: Standard idol music chart/performance shows (e.g. public and cable broadcast music programs). Kang explicitly bypasses all of these for Hee-yeon's solo promotion because HS Entertainment can block appearances.
+- Usage notes: "음방" used as shorthand throughout. Distinct from "열이의 음악노트" which is a hybrid, not a standard chart program.
+- Notes: —
+
+## Lee Hae-chun — English [New]
+- Korean term: 이해춘
+- Category: Fictional persona / performance concept
+- First appearance: 10
+- Last Updated: 2026-03-08
+- Definition: A fictional "character" Kang invents on the spot to help Hee-yeon manage stage fright. Full description: "최고의 가수 이해춘" (the greatest singer, Lee Hae-chun). Hee-yeon is instructed to "act as Lee Hae-chun" rather than perform as herself. The name accidentally gets announced on air.
+- Usage notes: "최고의 가수 이해춘" is the full phrase used on air. Becomes a running joke and a breakout moment for Hee-yeon's public image.
+- Notes: The "이해춘" moment is translation-critical: the comedy lands on the character name being (a) plausible as a real name, (b) announced with total sincerity, and (c) immediately followed by total obliviousness. Retain the name as "Lee Hae-chun" in English; gloss "the greatest singer" on first use.
+
+## Publishing /퍼블리싱 — English [New]
+- Korean term: 퍼블리싱
+- Category: Music industry concept
+- First appearance: 10
+- Last Updated: 2026-03-08
+- Definition: Music publishing — the release of a track to digital distribution platforms. Kang confirms they published immediately once the broadcast appearance was confirmed, without advance teasers or banner placements.
+- Usage notes: HS Entertainment contacts Loan via SoundCloud about joining their "퍼블리싱팀" (publishing team) — render as "publishing team."
+- Notes: —
+
+## Chart Entry / 100위 — English [New]
+- Korean term: 100위 (백위)
+- Category: Idol industry concept / chart milestone
+- First appearance: 11
+- Last Updated: 2026-03-08
+- Definition: Entry into the top 100 of a Korean music streaming chart. Kang describes this as the inflection point: once a track enters the top 100, it gets played in public venues (bars, restaurants, cafes) automatically, which self-sustains momentum.
+- Usage notes: Jeong-han announces it as "백위입니다!" Kang uses the sailing metaphor "순풍에 돛 단 배" (wind in the sails).
+- Notes: Kang states they don't need to "row" anymore — the public will carry the track from here. Translation should preserve the confidence/relief of this moment.
+
+## SoundCloud — English [New]
+- Korean term: 사운드 클라우드
+- Category: Platform (music)
+- First appearance: 11
+- Last Updated: 2026-03-08
+- Definition: Music sharing platform where Loan receives DMs from industry contacts, including an HS Entertainment recruitment offer. Kang had Loan remove contact information from his profile, so only the message inbox accumulates.
+- Usage notes: Render as "SoundCloud" — standard transliteration.
+- Notes: —
+
+---
+
+## Golden Tree — English [New]
+- Korean term: 골든트리
+- Category: Group name / organization
+- First appearance: 12
+- Last Updated: 2026-03-08
+- Definition: A currently active, top-tier idol group whose fandom is used by Director Park to attack Kang's image via planted media articles. Their album "With You" (위드유) is the subject of Hee-yeon's cover video in Ch. 12.
+- Usage notes: Not affiliated with HS Entertainment directly — Park uses them as a third party to pit against Kang. They later become temporary allies after Hee-yeon's full-album cover video.
+- Notes: In-universe equivalent of a major idol group at peak popularity. Their fandom is referred to by Kang as having learned to recognise manipulation patterns ("패턴이 어떤 식인지 질리도록 알고 있다").
+
+## Aligator's Toe Dance (앨토) — English [New]
+- Korean term: 앨토 (abbreviated); 앨리게이터스 토 댄스 (full)
+- Category: Organization (dance team / YouTube channel)
+- First appearance: 16
+- Last Updated: 2026-03-08
+- Definition: A professional choreography team and active YouTube channel with 5 million subscribers (mostly international). Known for choreographing idol groups. Abbreviated to "앨토" in fan/community usage.
+- Usage notes: Their head-level choreographer is Kim A-young. In the prior timeline they had a collaborative relationship with Yoon-jung after she reached 10M subscribers. Kang is now engineering this relationship earlier.
+- Notes: "앨토" should be rendered as "Algo" or "ATD" in English shorthand — or left as "Algo" following the phonetic. [uncertain — included because the abbreviation will recur; confirm preferred short form with translation team.]
+
+## Noise Marketing (노이즈 마케팅) — English [New]
+- Korean term: 노이즈 마케팅
+- Category: Concept / industry term
+- First appearance: 13
+- Last Updated: 2026-03-08
+- Definition: Controversy-based publicity — generating attention through conflict or scandal rather than conventional promotion. Shin Sil-jang uses this phrase to describe how Kang turned Director Park's attack into a positive outcome.
+- Usage notes: Standard Korean marketing/media term. Render as "noise marketing" or "controversy marketing."
+- Notes: —
+
+## Direct-cam / 직캠 — English [Edited]
+- Korean term: 직캠
+- Category: Idol industry concept
+- First appearance: 2
+- Last Updated: 2026-03-08
+- Notes: Ch. 12 — direct-cam footage of Hee-yeon's event performances noted as accumulating; described as "breaking records" (격파중) in fan commentary. Confirmed function: proof of live performance skill, ongoing promotional asset.
+
+## Cover Video (커버영상) — English [New]
+- Korean term: 커버영상
+- Category: Content concept (idol/YouTube)
+- First appearance: 12
+- Last Updated: 2026-03-08
+- Definition: A video in which an artist performs (covers) another artist's song(s). In Ch. 12, Hee-yeon covers all 11 tracks of Golden Tree's "With You" album with Yoo-mi's arrangements, in a single 40-minute video.
+- Usage notes: Distinguished from 직캠 (fan-shot footage of live performance). The 40-minute format and full-album scope is noted as unprecedented by Kang.
+- Notes: Translation-relevant: the video's strategic purpose is exoneration (누명을 벗김), not promotion. The length and completeness signals sincerity to the opposing fandom.
+
+## Corporation / Legal Entity (법인) — English [New]
+- Korean term: 법인
+- Category: Business/legal concept
+- First appearance: 14
+- Last Updated: 2026-03-08
+- Definition: A formally registered corporate entity. Kang advises Loan to establish one rather than continuing as a freelancer, so Loan can properly manage equipment purchases, contracts, and workspace.
+- Usage notes: Kang frames establishing a 법인 as the professional standard for a composer of Loan's calibre.
+- Notes: —
+
+## Dance Battle (댄스 배틀) — English [New]
+- Korean term: 댄스 배틀
+- Category: Content concept (YouTube/dance)
+- First appearance: 16
+- Last Updated: 2026-03-08
+- Definition: Structured dance competition video format. In Ch. 16, the planned format has both Yoon-jung and Kim A-young dancing the same segment of the same song back-to-back with different choreography, for direct comparison.
+- Usage notes: Kang explicitly frames this as "판을 까는 것" (laying out a challenge/calling someone out openly). The video is designed to generate controversy and views.
+- Notes: Song chosen: Led Zeppelin "Whole Lotta Love" (intro section, 0:00–1:20). The difficulty of choreographing to this track is a plot point.
+
+---
+
+## Krump — English [New]
+- Korean term: 크럼프
+- Category: Dance genre
+- First appearance: 17
+- Last Updated: 2026-03-08
+- Definition: An aggressive, highly energetic new-school street dance style. Characterised by stomps (스톰프), chest pops (체스트 팝), arm swings (암 스윙), and large, unrestrained movement. Contrasted in Ch. 17 with popping/animation as old-school vs. new-school.
+- Usage notes: Yoon-jung's chosen style for the Algo battle video. Ch. 17 community commentary explicitly educates detractors on why krump mixed with broadcast dance is legitimate. "크럼프" renders directly as "krump."
+- Notes: In-story expert post notes that krump is "the most popular new-school dance genre in the world" but rarely seen in Korea. Relevant for conveying the impact of Yoon-jung's choice.
+
+## Popping / Poppin — English [New]
+- Korean term: 팝핀
+- Category: Dance genre
+- First appearance: 17
+- Last Updated: 2026-03-08
+- Definition: Old-school street dance style incorporating popping, boogaloo, animation, roboting, waving, tutting, gliding. Kim A-young's style for the battle video. Described as "절제된" (restrained/controlled), contrasted with krump's abandon.
+- Usage notes: "팝핀" in Korean (phonetic loan from "poppin'"). Render as "popping" in standard English or "poppin'" if the text's register calls for it.
+- Notes: Ch. 17 community post references "팝핀현진" (Poppin' Hyun-jun) — a real Korean dancer — as a parallel for being criticised for mixing styles. Translation may naturalise the reference or retain the name.
+
+## Dubstep Dance — English [New]
+- Korean term: 덥스텝 댄스
+- Category: Dance genre
+- First appearance: 17
+- Last Updated: 2026-03-08
+- Definition: A style of dance set to dubstep music, incorporating popping, animation, and waving. Used by Kim A-young in the battle video alongside popping. Described as one formalised style within the broader popping family.
+- Usage notes: Render as "dubstep dance." No special treatment needed.
+- Notes: —
+
+## Broadcast Dance / K-pop Dance — English [New]
+- Korean term: 방송댄스
+- Category: Dance genre/concept
+- First appearance: 17
+- Last Updated: 2026-03-08
+- Definition: The umbrella term for Korean idol/TV performance dance — a hybrid form drawing from jazz, sports dance, popping, locking, waacking, etc. Both Yoon-jung and Kim A-young's primary discipline.
+- Usage notes: Literal translation "broadcast dance" is accurate. May also render as "K-pop choreography" or "stage dance" depending on context. The Ch. 17 expert post is explicitly defending broadcast dancers doing other genres — the term's meaning is load-bearing there.
+- Notes: —
+
+## Animated Music Video (애니메이션 뮤직비디오) — English [New]
+- Korean term: 애니메이션 뮤직비디오 / 뮤비
+- Category: Content concept
+- First appearance: 21
+- Last Updated: 2026-03-08
+- Definition: Animated-format music video. Kang commissions one for Yoo-mi's EDM single specifically to conceal her identity and age from a predominantly Western EDM audience who might dismiss the track on that basis.
+- Usage notes: Render as "animated music video" or "animated MV." The strategic rationale (identity concealment) is plot-relevant.
+- Notes: —
+
+## French House — English [New]
+- Korean term: 프렌치 하우스
+- Category: Music genre
+- First appearance: 20
+- Last Updated: 2026-03-08
+- Definition: A subgenre of house music associated with late-1990s/early-2000s artists including Daft Punk. DJ Sharkin describes Yoo-mi's music as evoking French house "at its super-peak" — meaning the Daft Punk era specifically, not its current form.
+- Usage notes: Render as "French house." The "super-peak era" distinction is Sharkin's point — he explicitly argues the current iteration is not the peak.
+- Notes: —
+
+## Daft Punk — English [New]
+- Korean term: 다프트 펑크
+- Category: Reference artist
+- First appearance: 20
+- Last Updated: 2026-03-08
+- Definition: Legendary French electronic music duo. Yoo-mi has remixed tracks from their 2nd and 3rd albums. Kang describes them as having made EDM mainstream through "mega-hit" output. Their 2nd album is referenced as "과한 샘플링으로 논란된 앨범" (the album controversial for heavy sampling).
+- Usage notes: Real-world artist. Render name as "Daft Punk." Albums not named in text but internally consistent with real discography (2nd = Discovery / 3rd = Human After All by context of "1 track" expanded).
+- Notes: Translation-relevant: Kang's internal reaction to Yoo-mi's finished track explicitly parallels hearing Daft Punk's "Human After All" for the first time. The comparison is the emotional apex of the scene.
+
+## Sports London — English [New]
+- Korean term: 스포츠런던
+- Category: Organization (media outlet)
+- First appearance: 19
+- Last Updated: 2026-03-08
+- Definition: Korean sports/entertainment news outlet. Reporter Choi Ho-woo published the fabricated Hee-yeon romance exclusive through this outlet.
+- Usage notes: Render as "Sports London" — appears to be a fictional Korean media outlet name.
+- Notes: —
+
+---
+
+## Empress / Female Emperor Concept (여제) — English [New]
+- Korean term: 여제 (女帝)
+- Category: Concept / performance framework
+- First appearance: 23
+- Last Updated: 2026-03-08
+- Definition: The performance concept Kang assigns to Jin-ah Choi's solo debut. Literally "female emperor/empress." Framed as an evolution beyond the 여전사 (female warrior) concept — more regal, commanding, and overwhelming. Characterized by charisma, sharp stage presence, and dominating performance energy.
+- Usage notes: Contrasted with 여전사 (female warrior) as a lesser, more dated concept. Kang describes the ideal as: "카리스마 뿜뿜. 날카로운 눈빛 빡! 관객들 확 사로잡아버리는 압도적인 퍼포먼스" (overflowing charisma, sharp eyes, overwhelming performance that seizes the audience).
+- Notes: MV concept built around this: a fantasy palace, a small retinue of attendants (who double as dancers), no subjects — because the world has no one left but her. Budget: 100M KRW.
+
+## Dance Singer (댄스 가수) — English [New]
+- Korean term: 댄스 가수
+- Category: Idol industry concept / performer classification
+- First appearance: 22
+- Last Updated: 2026-03-08
+- Definition: A performer whose primary identity is as both a dancer and a live vocalist simultaneously — not a dancer who also sings, nor a vocalist who also dances, but someone whose core value is the balance and stability between both. Kang uses this specifically to distinguish Jin-ah from a generic idol, a pure vocalist, or a pure dancer.
+- Usage notes: Kang explicitly says Jin-ah's talent is not as a 댄서 (dancer) or a 가수 (singer) in isolation but as a 댄스 가수 specifically. The distinction is load-bearing for why he refuses to let her prioritize the dance difficulty at the expense of her live.
+- Notes: Future fandom commentary (quoted in Ch. 22 via retrospective internet comments) confirms this becomes her defining identity: "최진아는 '댄스가수는 이런 것이다!'라고 정의 내려버림" (Jin-ah redefined what a dance singer is). Translation should preserve the compound — "dance singer" or "performer-singer" — rather than collapsing it.
+
+## Visible Radio (보이는 라디오) — English [New]
+- Korean term: 보이는 라디오
+- Category: Media format / idol industry concept
+- First appearance: 23
+- Last Updated: 2026-03-08
+- Definition: A radio broadcast format that is simultaneously streamed as video, allowing audiences to watch as well as listen. Allows real-time viewer interaction (comments/chat) similar to internet streaming. Kang plans this as Jin-ah's first promotional platform — it suits her variety/entertainment skills and serves as a low-stakes rehearsal space before major TV appearances.
+- Usage notes: Positioned between internet streaming (Yoon-jung's territory) and full TV variety appearances. Kang frames it as a training ground for Jin-ah's on-camera personality before she graduates to mainstream entertainment programs.
+- Notes: Render as "visible radio" or "video radio" — the Korean term is descriptive and translates directly.
+
+## 100M KRW MV Budget (1억) — English [New]
+- Korean term: 1억 (일억)
+- Category: Production/budget milestone
+- First appearance: 24
+- Last Updated: 2026-03-08
+- Definition: 100 million Korean won — the budget allocated for Jin-ah's music video. Represents a significant escalation from Kim Jong-woo's previous maximum (5M KRW). Kang frames this as reflective of Jong-woo's undervalued true worth — "the cheapest person who returns more than you invest."
+- Usage notes: The number lands as a shock beat in the scene; Jong-woo's expression visibly changes. Render as "a hundred million won" or "100 million won" — the numeral is the dramatic point.
+- Notes: —
+
+## Mise-en-scène / 미쟝센 — English [New]
+- Korean term: 미쟝센
+- Category: Film/MV production concept
+- First appearance: 24
+- Last Updated: 2026-03-08
+- Definition: French filmmaking term for the visual composition of a scene — staging, lighting, set design, etc. Used by Kim Jong-woo when describing how idol MVs layer visual meaning, Easter eggs, and hidden references for fans to discover.
+- Usage notes: Jong-woo uses it enthusiastically as part of his explanation of how K-pop MV craft differs from film. Render as "mise-en-scène" — the term is standard in English film criticism.
+- Notes: —
+
+## Hexagonal Balance (육각형 밸런스) — English [New]
+- Korean term: 육각형 밸런스 / 밸런스형
+- Category: Idol industry concept / performer classification
+- First appearance: 26
+- Last Updated: 2026-03-08
+- Definition: A hexagonal (six-sided) skill radar chart — standard in Korean idol evaluation — where "hexagonal balance" means high scores across all skill categories (vocal, dance, visuals, personality, performance, etc.). Kang uses it to describe Jin-ah: she is not specialized in any single area but is exceptionally well-rounded across all of them.
+- Usage notes: Contrasted with Yoon-jung's dance specialization. The term implies the shape of a radar chart filled to capacity on all axes.
+- Notes: Render as "all-rounder," "hexagonal balance," or "perfect six-sided balance" — the geometric metaphor is the intended image.
+
+## Wave / Animation (웨이브 / 애니메이션) — English [New]
+- Korean term: 웨이브 / 애니메이션
+- Category: Dance technique
+- First appearance: 26
+- Last Updated: 2026-03-08
+- Definition: Specific dance techniques within the popping/animation family. Wave: fluid, rolling body movement. Animation: robotic, stop-motion-style movement. Both identified as areas where Jin-ah's flexibility and elasticity allow her to execute naturally without high cardio cost — contrasted with power-based moves (stomps, chest pops) that drain her breath.
+- Usage notes: Relevant for Ch. 26's choreography assessment: Yoon-jung and Kim A-young identify these as the technical foundation for a revised approach to Jin-ah's choreography.
+- Notes: Standard dance terminology; retain as "wave" and "animation" in English.
+
+---
+
+## TKK Entertainment — English [New]
+- Korean term: TKK엔터
+- Category: Organization (talent agency)
+- First appearance: 28
+- Last Updated: 2026-03-08
+- Definition: A major idol agency — distinct from HS Entertainment. Yun Hye-jeong is a 7-year idol signed there.
+- Usage notes: Named only in passing. Establishes that K Management's reputation extends beyond the HS orbit.
+- Notes: —
+
+## About Us — English [New]
+- Korean term: About Us
+- Category: Song title (Yoo-mi Cho)
+- First appearance: 29
+- Last Updated: 2026-03-08
+- Definition: Yoo-mi's second original track. Instrumental EDM/dubstep hybrid — described as "chill," commercially accessible, with restrained wobble bass. Released with cover art only (no MV). Title chosen by Yoo-mi to include all of K Management, inspired by imagining the group together at Christmas.
+- Usage notes: Render as "About Us" — English title used in-text.
+- Notes: Genre context: uses wobble bass sparingly as one instrument among several; Kang notes the track suits its format (static image + audio) rather than requiring a video, aligning with EDM/underground release conventions.
+
+## Our World (우리의 세상) — English [New]
+- Korean term: 우리의 세상
+- Category: Song title (Jin-ah Choi solo debut)
+- First appearance: 29
+- Last Updated: 2026-03-08
+- Definition: Jin-ah's solo debut single. Lyrics confirmed across Chs. 29, 31: "우린 계속 노래하고 춤을 춰. 남은 게 이것뿐인 것처럼. 우리의 전부인 것처럼." / "이곳은 우리의 세상이야." / "모두 날 따라 몸을 흔들 거야. 우린 다른 건 관심이 없어."
+- Usage notes: English working title "Our World." The lyric fragment appears in the MV teaser (Ch. 29) and during the live recording (Ch. 31).
+- Notes: Composed by Loan. MV directed by Kim Jong-woo. 100M KRW budget. The song contains minimal AR (backing track) — close to fully live performance, which is the strategic risk/statement.
+
+## MV Behind-the-Scenes (뮤비 비하인드) — English [New]
+- Korean term: 뮤비 비하인드
+- Category: Content concept (idol/YouTube)
+- First appearance: 27
+- Last Updated: 2026-03-08
+- Definition: Behind-the-scenes footage from an MV shoot, published as separate content. Yoo Jeong-han films this during Jin-ah's MV shoot (Ch. 27). Planned release: after music show promotions begin.
+- Usage notes: Standard K-pop content format. Render as "MV behind-the-scenes" or "making-of footage."
+- Notes: —
+
+## Dry Rehearsal / Camera Rehearsal / Live Recording — English [New]
+- Korean term: 드라이 리허설 / 카메라 리허설 / 본녹화
+- Category: Idol industry concept (music show production)
+- First appearance: 31
+- Last Updated: 2026-03-08
+- Definition: Standard three-stage music show taping process. Dry rehearsal (드라이 리허설): first run-through, sound/position check; camera rehearsal (카메라 리허설): run-through with cameras; live recording (본녹화): the actual filmed performance used for broadcast.
+- Usage notes: Kang explicitly instructs Jin-ah to conserve energy through rehearsals and peak only in the live recording. The gap between Jin-ah's rehearsal and live recording performance is a plot point — the PD's reaction registers it as a step-change.
+- Notes: —
+
+## 대형 신인 — English [New]
+- Korean term: 대형 신인
+- Category: Idol industry concept / reputation label
+- First appearance: 31
+- Last Updated: 2026-03-08
+- Definition: Literally "major new act" / "big rookie." Industry recognition that a debuting artist is operating at a scale or quality level that exceeds the typical new artist. Used by 장피디 and colleagues to describe Jin-ah after her rehearsal performance.
+- Usage notes: Carries real weight as industry evaluation — 장피디 contrasts it with agencies that call acts "대형 신인" purely based on promotional spend.
+- Notes: —
+
+## AR (Backing Track) — English [New]
+- Korean term: AR (에이알)
+- Category: Idol industry concept / production term
+- First appearance: 31
+- Last Updated: 2026-03-08
+- Definition: Pre-recorded backing track that supports or replaces live vocals during idol performances. Jin-ah's debut song is noted to have almost no AR — treated by producers as a bold or reckless choice that turns out to validate her vocal ability.
+- Usage notes: Standard industry term. Render as "AR" or "backing track" depending on context.
+- Notes: The near-absence of AR is the strategic statement Kang is making about Jin-ah's live ability.
+
+---
+
+---
+
+## 빛 (Light) — Song title [New]
+- Korean term: 빛
+- Category: Song title (Hee-yeon Lee solo debut)
+- First appearance: 36
+- Last Updated: 2026-03-08
+- Definition: Hee-yeon's solo debut single. Rock genre. Lyric concept developed with Hee-yeon's active participation. Themes: tunnel/darkness metaphor, a guiding presence ("you") providing courage rather than a way out. Full lyric fragments appear in Ch. 36.
+- Usage notes: English title "Light" or "Radiance" — both work. The Korean word is unambiguous.
+- Notes: Kang describes it as the best song he has ever heard. Session musicians to be added. Composed by Loan; produced at Yoo Hae-yeol's studio.
+
+## High-Class Music Broadcast (고품격 음악방송) — English [New]
+- Korean term: 고품격 음악방송
+- Category: Television program (variety/talk show)
+- First appearance: 34
+- Last Updated: 2026-03-08
+- Definition: A talk show format variety program styled as a music show. Known for: frequent viral clip/meme generation (짤방), broad public name recognition, producers who give disproportionate air time to guests who perform well. Not a standard music chart program (음방). Jin-ah's first variety appearance.
+- Usage notes: "고품격" = "high-class/premium." Render as "High-Class Music Broadcast" or adapt idiomatically. The show's reputation for producing clips (짤방) is plot-relevant.
+- Notes: Kim Jin-shil is a regular MC. Jin-ah's segment ran long enough for 2 episodes' worth of content.
+
+## Tomorrow's Idol (내일의 아이돌) — English [New]
+- Korean term: 내일의 아이돌
+- Category: Television program (idol audition)
+- First appearance: 36
+- Last Updated: 2026-03-08
+- Definition: A public broadcast (공중파) idol audition program in its first season. Female trainees audition; top 5 debut. No group formation — solo debuts, but the show holds 3-year rights to winners' royalties. Multiple contestants perform Jin-ah's "Our World" as their audition song; all are evaluated against Jin-ah as an implicit benchmark.
+- Usage notes: Render as "Tomorrow's Idol." The royalty-rights structure is noted as standard for audition programs.
+- Notes: Park PD produces it. HS Entertainment submitted trainees. Kim Jin-shil is a celebrity judge. 777 Dance Studio's Park Shin-i is a professional judge.
+
+## 존버 — English [New]
+- Korean term: 존버
+- Category: Concept / internet slang / strategic term
+- First appearance: 35
+- Last Updated: 2026-03-08
+- Definition: Internet slang for "존나게 버티기" — enduring stubbornly/grinding through adversity without responding. Kang's stated strategy against the Yoo-mi smear campaign: do nothing, let Director Park escalate the noise himself, then use that amplified noise as the platform for Yoo-mi's reveal.
+- Usage notes: The term is used by Kang clinically, not emotionally — it's a tactical choice. The "존버" approach is explicitly contrasted with direct counter-attack.
+- Notes: Render as "hold firm," "ride it out," "just endure," or retain as "jonber/존버" with gloss depending on target register. The YA register may support a light translation note.
+
+## Session Musicians (세션) — English [New]
+- Korean term: 세션
+- Category: Music production concept
+- First appearance: 36
+- Last Updated: 2026-03-08
+- Definition: Live session musicians brought in to record instrument parts for a track, replacing or supplementing computer-generated (virtual instrument/MIDI) parts. Yoo Hae-yeol and Loan request them for Hee-yeon's "빛" to elevate the track's quality. Kang approves the expense.
+- Usage notes: "최고로 구해봅시다" = "let's find the best available." The cost is implied to be significant. Render as "session musicians" or "live players."
+- Notes: The decision to use live session musicians is a quality escalation beat — translation should preserve that it's a production upgrade, not standard practice.
+
+## 짤방 / 짤 — English [New]
+- Korean term: 짤방 / 짤
+- Category: Internet/media concept
+- First appearance: 34
+- Last Updated: 2026-03-08
+- Definition: A viral image clip or screenshot extracted from video content and circulated on community boards/SNS. In the context of variety shows, producing 짤방 is a marker of success — it means the show generated shareable moments. Jin-ah's "뚝배기 깨야죠" moment was already described as generating 짤방 (Ch. 28); '고품격 음악방송' is specifically noted as a show that regularly produces them.
+- Usage notes: Render as "viral clips," "meme moments," or "shareable clips" depending on context.
+- Notes: —
+
+## Adidas CF — English [New]
+- Korean term: 아디다스 CF
+- Category: Commercial/licensing concept
+- First appearance: 33
+- Last Updated: 2026-03-08
+- Definition: Adidas has licensed Yoo-mi's 'I don't love anything' for use in a European advertising campaign (CF = commercial film). The licensing deal itself functions as secondary promotion for the track — the ad becomes the song's marketing.
+- Usage notes: "CF" = Korean industry term for commercial/advertisement. Render as "commercial" or "ad" in English, or retain "CF" if consistent with established usage.
+- Notes: News delivered mid-pork-belly dinner; Kang orders extra food and soju to celebrate.
+
+## DJ Shadow / Entroducing….. — English [New]
+- Korean term: DJ 쉐도우 / Entroducing
+- Category: Reference artist / album
+- First appearance: 35
+- Last Updated: 2026-03-08
+- Definition: DJ Shadow — American instrumental hip-hop artist. Debut album 'Entroducing…..' described as "인스트루멘탈 힙합의 신성불가침 영역" (the sacred-inviolable territory of instrumental hip-hop). Yoo-mi begins her hip-hop exploration with DJ Shadow's 'Stem / Long Stem' from this album.
+- Usage notes: Real-world artist and album. Render name as "DJ Shadow." Album title as 'Entroducing…..' (with five dots — the album's actual title).
+- Notes: The community reaction to Yoo-mi touching this specific album (surprise but eventual respect) is plot-relevant.
+
+## Travis Scott / Snoop Dogg — English [New]
+- Korean term: 트래비스 스캇 / 스눕독
+- Category: Reference artists
+- First appearance: 35
+- Last Updated: 2026-03-08
+- Definition: Travis Scott — described as leading current hip-hop trends with many imitators. Snoop Dogg — described as a living legend who helped open the golden era of American hip-hop. Yoo-mi arranges 'Who Am I (What's My Name)?' from Snoop Dogg's debut album Doggystyle.
+- Usage notes: Real-world artists. Render names as standard English transliterations. The escalation from DJ Shadow (instrumental, adjacent to EDM) to Snoop Dogg (classic West Coast rap, entirely different territory) is the dramatic point — translate so readers feel the jump.
+- Notes: —
+
+---
+
+## 내일의 아이돌 (Tomorrow's Idol) — English [Edited]
+- Korean term: 내일의 아이돌
+- Last Updated: 2026-03-08
+- Notes: Format fully confirmed. 21 surviving trainees; 7 teams of 4 (1 idol + 3 trainees). Elimination: one trainee per team per round initially. Scoring: entirely by on-site judges — no audience vote. Trainees vote to choose their idol partner (not binding if oversubscribed — idol chooses among excess votes). Trainee vote results Ch. 40: Di-di 14 votes, Jin-ah 1 vote (Lee Hyeon-hee), Ki-d 0, Min-seok 0, remaining 3 idols 2 votes each. Production note: Park PD explicitly warns all judges to be honest — "악마의 편집 안 하기로 유명한" (known for no malicious editing). Format changed mid-production after poor 1st-round auditions.
+
+## Photographer (포토그래퍼) — English [New]
+- Korean term: 포토그래퍼
+- Category: Film title
+- First appearance: 38
+- Last Updated: 2026-03-08
+- Definition: Kim Sung-ah's most recent film. Underperforming; projected at 2.5M audience with predominantly negative reviews ("neither fun nor emotion"). Third consecutive failure for HS Entertainment managed projects.
+- Usage notes: Not directly relevant to Blue Sherbet storyline but signals HS Entertainment's declining performance and CEO Choi's pressure on Director Park.
+- Notes: —
+
+## Calendar Wiz (캘린더 위즈) — English [New]
+- Korean term: 캘린더 위즈
+- Category: Group name
+- First appearance: 39
+- Last Updated: 2026-03-08
+- Definition: Idol group; Di-di is a member. Described as notably weaker than the other idol acts on 내일의 아이돌. Included in the show by casting error.
+- Usage notes: Render as "Calendar Wiz."
+- Notes: —
+
+## 삼팔광땡 — English [New]
+- Korean term: 삼팔광땡
+- Category: Concept / gambling idiom
+- First appearance: 38
+- Last Updated: 2026-03-08
+- Definition: The highest-value hand in 섰다 (Korean traditional card game) — an unbeatable hand. Na Team Leader uses it as the culturally resonant equivalent of Kang's "royal straight flush" metaphor. Both refer to holding an unbeatable position and therefore not fearing to raise the stakes.
+- Usage notes: Used to explain Kang's strategy of deliberately inviting controversy (noise marketing) around Hee-yeon's rock comeback because the song is strong enough to win regardless. Jeong-han immediately understands 삼팔광땡 but not "royal straight flush."
+- Notes: Translation decision: Kang uses the poker term (로열 스트레이트 플러시); Na Team Leader translates it into Korean card game terms. The beat highlights Jeong-han's generational/cultural frame — he knows traditional Korean games better than poker. Both should render as "unbeatable hand" equivalents; the switch between the two idioms is the gag.
+
+## 스타 제조기 — English [New]
+- Korean term: 스타 제조기
+- Category: Title / industry reputation
+- First appearance: 40
+- Last Updated: 2026-03-08
+- Definition: "Star-making machine" — label applied to Kang by Kim Jin-shil on live broadcast, describing his track record of developing HS Entertainment's major artists.
+- Usage notes: Used in addition to / extending the existing "Super Manager" label. Render as "star-making machine."
+- Notes: This is the first time Kang's reputation is stated on a major broadcast program — marks a new level of public visibility for him.
+
+---
+
+## YB (Young Band) — English [New]
+- Korean term: YB (영밴드)
+- Category: Group name (rock band)
+- First appearance: 45
+- Last Updated: 2026-03-08
+- Definition: Korea's leading rock band. Vocalist/guitarist Yoon Do-won is the public face. Described as having lasting national relevance beyond the rock scene — broad public recognition and pull.
+- Usage notes: Referred to as "국민밴드 YB" (national band YB). Render as "YB" in English.
+- Notes: Their endorsement of Hee-yeon is the chapter's major industry-recognition beat.
+
+## Music Magazine JQ — English [New]
+- Korean term: 음악잡지 JQ
+- Category: Organization (media outlet)
+- First appearance: 45
+- Last Updated: 2026-03-08
+- Definition: Korean music magazine. Publishes Yoon Do-won's interview endorsing Hee-yeon. The interview is described as having major viral potential.
+- Usage notes: Render as "music magazine JQ" or simply "JQ."
+- Notes: —
+
+## Noo-hee Pictures — English [New]
+- Korean term: 너희픽쳐스
+- Category: Organization (film production company)
+- First appearance: 42
+- Last Updated: 2026-03-08
+- Definition: Film production company producing Sung Min-woo's upcoming film. Financially constrained; seeking to maximize promotional ROI from choreography investment.
+- Usage notes: Render as "Noo-hee Pictures." [uncertain — included; confirm transliteration/romanisation preference]
+- Notes: —
+
+## CF (Commercial Film) [Edited]
+- Korean term: CF
+- Last Updated: 2026-03-08
+- Notes: Ch. 45 — Hee-yeon's first post-music-release activity is a telecommunications company CF. The CF is explicitly chosen over music broadcast appearances as a fan-content and promotional vehicle (also generates behind-the-scenes footage for YouTube).
+
+## Pre-production / 프리 프로덕션 — English [New]
+- Korean term: 프리 프로덕션 / 프리
+- Category: Film industry concept
+- First appearance: 42
+- Last Updated: 2026-03-08
+- Definition: The pre-production phase of a film — before principal photography (크랭크인). Kang estimates roughly three months from pre-production start to shoot. The Sung Min-woo film is in early pre-production (no casting completed, no soundtrack finished).
+- Usage notes: Render as "pre-production." Kang uses it to calculate whether Hee-yeon can complete an audition before the shoot begins — she can.
+- Notes: —
+
+## Crank-in / 크랭크인 — English [New]
+- Korean term: 크랭크인
+- Category: Film industry concept
+- First appearance: 42
+- Last Updated: 2026-03-08
+- Definition: The start of principal photography on a film. Kang uses the standard ~3-month gap between early pre-production and crank-in to determine Hee-yeon's audition timeline is viable.
+- Usage notes: "크랭크인" renders as "crank-in" or "start of principal photography." In YA context, "start of filming" is also acceptable.
+- Notes: —
+
+## Fan Meet / 팬미팅 — English [New]
+- Korean term: 팬미팅
+- Category: Idol industry concept
+- First appearance: 46
+- Last Updated: 2026-03-08
+- Definition: A fan meeting event where the artist directly interacts with fans — signing autographs, performing, and doing Q&A. In this case, the event is department-store-hosted (행사 개념) but attended by genuine fans. Format: live performance + Q&A + signing.
+- Usage notes: Render as "fan meet" or "fan meeting." Standard K-pop industry term.
+- Notes: Kang distinguishes this from a fan sign event (팬사인회) — both are noted but fan meeting is the format used here.
+
+## Kendrick Lamar / Humble remix — English [New]
+- Korean term: Kendrick Lamar ? Humble (Yumi remix)
+- Category: Reference track / content
+- First appearance: 43
+- Last Updated: 2026-03-08
+- Definition: Yoo-mi's remix of Kendrick Lamar's "Humble." Most recent upload on her channel at the time of Ch. 43; generating international fan community commentary describing her as a "great artist."
+- Usage notes: Real-world track. Render artist and track names as standard English.
+- Notes: The international comment thread (in Ch. 43) debates Yoo-mi's nationality — "She is a Korean. You know?" / "Yumi라는 이름은 미국에도 많아" — establishing that the international audience does not know Yoo-mi is Korean. Reinforces the identity-concealment strategy from prior chapters.
+
+## EPL Players (Kevin De Bruyne, Mohamed Salah, Son Heung-min) — English [New]
+- Korean term: 케빈 더 브라위너 / 모하메드 살라 / 쏜
+- Category: Reference figures (advertising context)
+- First appearance: 44
+- Last Updated: 2026-03-08
+- Definition: Three Premier League footballers featured in the Adidas commercial that uses Yoo-mi's track "I don't love anything." De Bruyne (Man City), Salah (Liverpool), Son (Tottenham). The commercial scene opens Ch. 44.
+- Usage notes: "쏜" = Son Heung-min (rendered phonetically in Korean). Use real names in English. The scene is comedic: De Bruyne and Salah don't know who Daft Punk is; Son does.
+- Notes: This is the commercial that uses Yoo-mi's track. The scene confirms the Adidas CF from Ch. 33 has now been shot.
+
+---
+
+## Carnival (카니발) — English [New]
+- Korean term: 카니발
+- Category: Item (vehicle)
+- First appearance: 49
+- Last Updated: 2026-03-08
+- Definition: Kia Carnival — a large passenger van/MPV. Kang's new vehicle, replacing the old Starex. K Management now has two Carnivals and one van (밴), totaling three vehicles.
+- Usage notes: The acquisition of the Carnival is a small status marker — signals the agency's growth. The old Starex being "처분" (disposed of) is described with relief.
+- Notes: —
+
+## Six-Seven Label — English [New]
+- Korean term: 'Six-Seven' 레이블
+- Category: Organization (music label)
+- First appearance: 51
+- Last Updated: 2026-03-08
+- Definition: Korea's premier hip-hop label. Home to Crescendo and its CEO Trejis. Previously sent Yoo-mi a recruitment DM via SoundCloud (matches prior bible entry).
+- Usage notes: English name used in-text. Render as "Six-Seven" consistently.
+- Notes: —
+
+## Crescendo (크레센도) — English [New]
+- Korean term: 크레센도
+- Category: Title / artist stage name
+- First appearance: 50 (mentioned); 51 (on-page)
+- Last Updated: 2026-03-08
+- Definition: Stage name of a top-tier Korean rapper signed to Six-Seven label. Known for 싱잉랩 (singing-rap), strong articulation (딕션), distinctive appealing rap style. Popular with both general audiences and dedicated hip-hop listeners (리스너).
+- Usage notes: Render as "Crescendo" throughout. The name is an Italian/music term — likely intentional. No Korean alternative name used.
+- Notes: —
+
+## Hyeon-a (현아) — English [New]
+- Korean term: 현아
+- Category: Character name (film role)
+- First appearance: 47
+- Last Updated: 2026-03-08
+- Definition: A supporting character role in Sung Min-woo's upcoming film. Kim Sung-ah has arranged to coach Hee-yeon for this specific role.
+- Usage notes: Render as "Hyeon-a" (the character name, not a person in the story world at this stage).
+- Notes: The audition for this role has been deferred slightly to give Hee-yeon preparation time with Sung-ah. The role is not guaranteed — Hee-yeon must audition.
+
+## Walk This Way (콜라보 레퍼런스) — English [New]
+- Korean term: 워크 디스 웨이 (implied by context)
+- Category: Reference track / collaboration concept
+- First appearance: 51
+- Last Updated: 2026-03-08
+- Definition: Crescendo's aspirational reference for a rock-hip-hop collaboration — specifically citing Aerosmith × Run-D.M.C.'s 1986 remake of "Walk This Way." Context: credited as the track that brought hip-hop into the mainstream. Crescendo imagines something in this spirit with Hee-yeon.
+- Usage notes: Render as "Walk This Way." The historical context (1986, rock/hip-hop crossover significance) is plot-relevant for conveying why this is Crescendo's dream collab concept.
+- Notes: Trejis suggests K Management's producers would rush to participate if Hee-yeon and Crescendo collaborate. Multiple tracks possible.
+
+## 싱잉랩 — English [New]
+- Korean term: 싱잉랩
+- Category: Music genre/technique
+- First appearance: 51
+- Last Updated: 2026-03-08
+- Definition: Singing-rap — a rap style blending melodic singing with rap delivery. Noted as one of Crescendo's strengths alongside pure rap technique.
+- Usage notes: Render as "singing-rap" or "melodic rap." Standard Korean music industry term.
+- Notes: —
+
+---
+
+## Monday Party — English [New]
+- Korean term: 'Monday Party'
+- Category: Song title (Yoo-mi Cho / Crescendo collaboration)
+- First appearance: 52
+- Last Updated: 2026-03-08
+- Definition: Yoo-mi's new track. Beat described as carrying strong EDM influence — referenced against Matoma's remix of Notorious B.I.G.'s "Want That Old Thing Back" as a tonal analogue (old-school hip-hop meets tropical house; satisfies both hip-hop purists and general audiences). Lyric concept: started partying Friday night, came to at Monday. Rap (all verses) by Crescendo; hook vocals by Jin-ah (using a quieter, more detached style — close to the "I Don't Love Anything" register). Recorded in a single session.
+- Usage notes: English title used in-text. The track is Yoo-mi's identity-reveal vehicle — will be released on her YouTube channel with an MV.
+- Notes: Translation-critical: Crescendo initially objects to Jin-ah as hook vocalist (too emotionally coloured for this track), recommends the "I Don't Love Anything" vocalist instead — then discovers they are the same person. This reveal is a comedy beat; the logic chain must be clear in translation.
+
+## Misdirection (미스디렉션) — English [New]
+- Korean term: 미스디렉션
+- Category: Performance/staging concept
+- First appearance: 55
+- Last Updated: 2026-03-08
+- Definition: Deliberately directing an audience's attention to control what they see and what they miss — borrowed from stage magic. Kang uses it as his framing for the team choreography strategy in 내일의 아이돌: route the audience's gaze to each member's strengths; cover weaknesses by having a stronger member draw focus at those moments.
+- Usage notes: Term stated explicitly by Kang when explaining the strategy to the judges. Render as "misdirection."
+- Notes: Park Sin-i's on-screen explanation unpacks this clearly — translation should preserve the technical register of that explanation without over-simplifying.
+
+## ICE — English [New]
+- Korean term: ICE
+- Category: Song title (Blue Sherbet)
+- First appearance: 55
+- Last Updated: 2026-03-08
+- Definition: A Blue Sherbet group track that failed commercially during its original release but has since become well-known through fancam footage. Selected as the competition song for Jin-ah's 내일의 아이돌 team. Has never had a music broadcast performance — only event/fancam footage exists.
+- Usage notes: English title used in-text. The song's paradoxical status (commercially failed but widely known) is plot-relevant — audience recognises it immediately.
+- Notes: —
+
+## Co-stream / 합방 — English [New]
+- Korean term: 합방 (合放)
+- Category: Streaming concept
+- First appearance: 53
+- Last Updated: 2026-03-08
+- Definition: Two streamers/content creators broadcasting together simultaneously in the same stream. Yoon-jung's stream title "미남과 합방!" (Collab with a handsome guy!) refers to Kang joining her broadcast.
+- Usage notes: Standard Korean streaming/YouTube term. Render as "co-stream," "collab stream," or "joint broadcast" depending on context.
+- Notes: —
+
+## Live Final / 생방송 — English [New]
+- Korean term: 생방송
+- Category: Television production concept
+- First appearance: 56
+- Last Updated: 2026-03-08
+- Definition: Live broadcast — as opposed to pre-recorded. 내일의 아이돌's final episode is broadcast live. Noted as generating heightened anticipation ("엄청 난리" / huge buzz). Includes solo stages from Jin-ah, Ki-d, and Min-seok, plus the team competition final and winner announcement.
+- Usage notes: Render as "live broadcast" or "live final." The distinction from pre-recorded episodes matters — it raises the stakes for any performance errors.
+- Notes: Viewership rating reaches 13% during the broadcast (announced at chapter end). This is a significant milestone.
+
+---
+
+## 유미의 F.M.P. — English [New]
+- Korean term: 유미의 F.M.P. (유미의 퍼스트 마스터피스)
+- Category: Television program (observation/music reality hybrid)
+- First appearance: 59
+- Last Updated: 2026-03-08
+- Definition: A public broadcast (SBC) program following Yoo-mi's process of creating her first solo album. Full title expands to "Yumi's First Masterpiece." Genre: observation reality + healing program. Kang and Yoo-mi co-star. Format: not scripted toward a definite outcome — Yoo-mi is encouraged to explore freely (collab, learn, produce, or not produce). Session recording, collaboration, and learning are all valid content. Park PD directing.
+- Usage notes: Abbreviation "F.M.P." used on-screen and in community discussion. The SBC YouTube channel category is labelled with this title. The program is a stand-in (땜빵) for a cancelled prime-time slot, not a regular commissioned series.
+- Notes: Kang explicitly blocked the concept being used for a Blue Sherbet group album — the timing was wrong (Hee-yeon needs to focus on acting preparation; Yoo-mi needs more musical development). The pivot to Yoo-mi solo album was Kang's counter-proposal.
+
+## Masterpiece / 마스터피스 — English [New]
+- Korean term: 마스터피스 / 퍼스트 마스터피스
+- Category: Program concept / album concept
+- First appearance: 59
+- Last Updated: 2026-03-08
+- Definition: "Masterpiece" — Park PD's framing for Yoo-mi's first full album. English term used in-text. Abbreviated as F.M.P. (First Masterpiece). Not currently a formal album title — it is the program's framework concept.
+- Usage notes: Render as "First Masterpiece" / "F.M.P." — English title used throughout.
+- Notes: —
+
+## 국뽕 — English [New]
+- Korean term: 국뽕
+- Category: Internet/cultural concept
+- First appearance: 60
+- Last Updated: 2026-03-08
+- Definition: Compound of 국 (국가, nation) + 뽕 (euphoric high). Refers to the particular emotional high of national pride when a Korean achieves something internationally recognized. Kang explains the F.M.P. program's first episode as a "국뽕 채우기" (filling the national pride high) — showing domestic audiences how respected Yoo-mi already is in international EDM/hip-hop circles.
+- Usage notes: Colloquial, internet-native. The "-뽕" construction implies an almost drug-like high of pride. Render contextually: "national pride fuel," "Korean pride moment," or "filling the patriot buzz" depending on register.
+- Notes: Yoo-mi immediately understands the concept and laughs — confirms this is a shared cultural register.
+
+## 땜빵 — English [New]
+- Korean term: 땜빵
+- Category: Television industry concept
+- First appearance: 59
+- Last Updated: 2026-03-08
+- Definition: A stand-in or fill-in program — a replacement broadcast slotted to cover a cancelled or vacated prime-time slot. 유미의 F.M.P. is explicitly a 땜빵, not a regular-commissioned series.
+- Usage notes: Render as "fill-in slot," "replacement program," or "stand-in broadcast." The term is slightly self-deprecating — used matter-of-factly by both Park PD and Kang.
+- Notes: The production conditions (rushed timeline, non-standard format, large bonus offered to PD) all flow from the 땜빵 context.
+
+## 떼창 — English [New]
+- Korean term: 떼창
+- Category: Performance concept
+- First appearance: 61
+- Last Updated: 2026-03-08
+- Definition: Mass sing-along — an audience singing along to a performer's song loudly and in unison, typically at a concert or festival. At Yoo-mi's live debut, the audience's 떼창 is so loud it momentarily stops her mid-song.
+- Usage notes: Render as "mass sing-along," "crowd singing along," or "떼창" with gloss. The emotional significance — an artist being overwhelmed by the audience knowing and loving her song — is the scene's climax.
+- Notes: This moment becomes the teaser clip for 유미의 F.M.P.
+
+## 관찰예능 — English [New]
+- Korean term: 관찰예능
+- Category: Television genre
+- First appearance: 60
+- Last Updated: 2026-03-08
+- Definition: Observation variety — a reality-format entertainment program where cameras follow subjects in their natural environment rather than structured tasks or competitions. 유미의 F.M.P. is classified as 관찰예능 + 힐링물 (observation variety + healing program).
+- Usage notes: Render as "observation variety" or "observational reality." Standard Korean TV genre term.
+- Notes: —
+
+## 왕따설 — English [New]
+- Korean term: 왕따설
+- Category: Industry concept / controversy type
+- First appearance: 58
+- Last Updated: 2026-03-08
+- Definition: Bullying/ostracism rumour — specifically the rumour that one member of a group is being excluded or bullied by the others. Director Park plants a 왕따설 article targeting Yoo-mi (framing her "nuisance" status as group-internal bullying). The article drops simultaneously with Yoo-mi's music reveal.
+- Usage notes: Render as "bullying rumour," "ostracism scandal," or "왕따 allegation." The term is standard Korean entertainment industry terminology for this specific type of manufactured controversy.
+- Notes: Translation-relevant: the simultaneous drop of the 왕따설 article and Yoo-mi's music release is the chapter's structural irony — Park's attack becomes the platform for Yoo-mi's reveal.
+
+---
+
+---
+
+## UCK (Ultimate hero Champions Korea) — English [New]
+- Korean term: UCK / Ultimate hero Champions Korea
+- Category: Organization / esports competition
+- First appearance: 64
+- Last Updated: 2026-03-08
+- Definition: The Korean regional championship series for the game "Ultimate Hero" — described as the world's most popular game for several years. The UCK Summer season is treated as effectively equivalent to a world tournament given the calibre of Korean teams. Finals are broadcast live; international viewership significant.
+- Usage notes: Render as "UCK." "Ultimate Hero" is the game title. The competition functions as a world-stage event for Yoon-jung's purposes.
+- Notes: US headquarters watches the finals; triggered content planning meeting post-Yoon-jung appearance.
+
+## Ultimate Hero — English [New]
+- Korean term: Ultimate Hero / 얼티밋 히어로 (implied)
+- Category: Item / fictional game title
+- First appearance: 64
+- Last Updated: 2026-03-08
+- Definition: The fictional competitive game at the centre of the UCK arc. Team-based; features named characters with distinct skills/ability sets (referenced by fans requesting specific character skill motions). The game's US-based parent company produces animated music video content for fans.
+- Usage notes: Render as "Ultimate Hero." The game mechanics (characters, skill motions, "dummy" practice mode) are relevant for Ch. 64–65 content.
+- Notes: Clearly modelled on real competitive games (character skills, practice mode, global fanbase, animated content tradition). No need to footnote the real-world parallel.
+
+## Dummy / 더미 — English [New]
+- Korean term: 더미
+- Category: Gaming concept
+- First appearance: 64
+- Last Updated: 2026-03-08
+- Definition: In-game practice mode target — a stationary target used to test skills and attacks. Yoon-jung recruits Kojun to serve as a human "dummy" during her UCK stage performance: he reacts to her "skill" motions as if being hit.
+- Usage notes: Render as "dummy" — the gaming context makes this immediately legible.
+- Notes: The concept of a human playing the dummy is the comedic and creative core of the stage design.
+
+## Legends Never Die — English [New]
+- Korean term: Legends Never Die
+- Category: Song title (in-universe game theme)
+- First appearance: 65
+- Last Updated: 2026-03-08
+- Definition: A world championship theme song for Ultimate Hero used in a prior season. Has an associated animated music video featuring characters modelled on famous players. Selected as the background music for Yoon-jung's UCK finals opening stage.
+- Usage notes: Render as "Legends Never Die." English title used in-text.
+- Notes: Real-world parallel: League of Legends championship theme of the same name. No need to footnote.
+
+## 황윤정 효과 — English [New]
+- Korean term: 황윤정 효과
+- Category: Concept / community label
+- First appearance: 65
+- Last Updated: 2026-03-08
+- Definition: "The Yoon-jung Hwang effect" — community label for the apparent boost in Carrier's performance attributed to Yoon-jung's presence and performance at the UCK finals. Used humorously by broadcasters and viewers.
+- Usage notes: Render as "the Yoon-jung effect" or "the Yoon-jung Hwang effect." The humour is that broadcasters treat it as a real causal factor.
+- Notes: —
+
+## Cosplay (코스프레) — English [New]
+- Korean term: 코스프레
+- Category: Content concept
+- First appearance: 66
+- Last Updated: 2026-03-08
+- Definition: Costume play — dressing as a game/anime character for broadcast content. Yoon-jung's post-UCK broadcast: she cosplays as "Nulru" (눌루), a game character selected by Kang. Audience reaction: shocked/dismayed (had expected a more conventionally attractive female warrior character).
+- Usage notes: Render as "cosplay." Standard international term.
+- Notes: The costume selection negotiation between Kang and Yoon-jung is a character-establishing beat — Kang vetoes multiple options before they agree on a "귀여운" (cute) but non-revealing character. Viewer backlash is directed at Kang rather than Yoon-jung.
+
+## OST / 실수 — English [New]
+- Korean term: OST / '실수'
+- Category: Song title (film OST)
+- First appearance: 66
+- Last Updated: 2026-03-08
+- Definition: First released OST track for the film 「네 운수를 조금만 빌려도 될까?」. Title: '실수' (Mistake / Slip). Performed by the four female cast members including Kim Sung-ah and Hee-yeon Lee. Composed by Yoo-mi. Recording completed in Ch. 66.
+- Usage notes: Render film title as working English title (see below). OST track title '실수' = "Mistake" or "Slip" — straightforward translation.
+- Notes: Hee-yeon's vocals described as dominant relative to the other cast. The other three cast members are not named in this batch.
+
+## 네 운수를 조금만 빌려도 될까? — English [New]
+- Korean term: 네 운수를 조금만 빌려도 될까?
+- Category: Film title (working)
+- First appearance: 62
+- Last Updated: 2026-03-08
+- Definition: Working title (가제) of Sung Min-woo's film. Literally: "Could I borrow a little of your luck?" Genre: comic drama with music and fantasy elements. Plot: idol trainee protagonist gains the ability to see and take luck from others; story involves her childhood friend Hyeon-a.
+- Usage notes: Working English title options: "Could I Borrow a Little of Your Luck?" / "Just a Little of Your Luck." Retain as-is until a formal title is established.
+- Notes: The film's premise is relevant context for understanding Hee-yeon's character "Hyeon-a" and the audition scenes.
+
+## 프로듀싱한 기념 — English [New]
+- Korean term: 프로듀싱한 기념
+- Category: Concept / character-specific phrase
+- First appearance: 66
+- Last Updated: 2026-03-08
+- Definition: Yoo-mi's self-coined phrase meaning "in celebration of having produced something" — used to justify a treat (떡볶이/tteokbokki) after completing the film OST commission. Kang notes it is the first time he has heard this expression.
+- Usage notes: Playful, Yoo-mi-specific. Render as "to celebrate the producing" or "a producing occasion" — keep the slightly off-kilter logic intact.
+- Notes: Small but character-revealing beat — Yoo-mi is developing her own internal rituals around creative work.
+
+---
+
+## Yoo-mi's First Solo Single — English [New]
+- Korean term: (untitled at chapter end)
+- Category: Song title (Yoo-mi Cho solo)
+- First appearance: 67
+- Last Updated: 2026-03-08
+- Definition: Yoo-mi's first solo single as a singer (distinct from F.M.P. album). Co-composed with Yoo Hae-yeol during the F.M.P. filming session. Genre: lyrical, gentle ballad; vocal melody added over acoustic guitar arrangement of Hae-yeol's unfinished piano sketch. To be released as a standalone single, not included in the F.M.P. album.
+- Usage notes: Title not yet assigned in this batch. The session begins on-camera during F.M.P. filming.
+- Notes: Kang's rationale: Yoo-mi is a singer as well as a composer; this track suits her as a vocalist. Distinct from the F.M.P. album tracks which she will compose herself.
+
+## Table Read / Script Read-through (대본 리딩) — English [New]
+- Korean term: 대본 리딩
+- Category: Film/TV production concept
+- First appearance: 68
+- Last Updated: 2026-03-08
+- Definition: A table read — all cast members read through the full script aloud together before filming begins. Standard pre-production step. In the K-drama/film industry context here, it also functions as an informal arena for cast hierarchy dynamics to establish themselves.
+- Usage notes: Render as "table read" or "script read-through." The power dynamics that play out during the table read are plot-relevant.
+- Notes: —
+
+## 고사 (Blessing Ceremony) — English [New]
+- Korean term: 고사
+- Category: Film/TV production concept
+- First appearance: 69
+- Last Updated: 2026-03-08
+- Definition: A traditional blessing ceremony held before the start of filming on a Korean production — typically involves offering food and prayers for a safe and successful shoot. The director mentions the cast will reconvene for this after the table read.
+- Usage notes: Render as "blessing ceremony" or "고사 ceremony." Standard Korean film production term.
+- Notes: —
+
+## 감으로 작업하는 스타일 — English [New]
+- Korean term: 감으로 작업하는 스타일
+- Category: Music production concept / character description
+- First appearance: 67
+- Last Updated: 2026-03-08
+- Definition: "Works by feel/instinct" — Yoo Hae-yeol's diagnosis of Yoo-mi's compositional method. She does not work from formal theory; she absorbs genres by arranging existing tracks, building intuitive depth through repetition, and then adds flashes of inspiration. Hae-yeol describes the vessel (그릇) for this approach growing with talent.
+- Usage notes: Characterisation-critical for understanding why Yoo Hae-yeol and Loan have little formal technique to teach her.
+- Notes: —
