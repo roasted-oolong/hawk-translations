@@ -94,6 +94,13 @@ def make_client() -> anthropic.Anthropic:
 # API call
 # ---------------------------------------------------------------------------
 
+# The SDK refuses non-streaming calls that could exceed 10 minutes.
+# Streaming is used whenever max_tokens is high enough to trigger that check.
+# 32k is a conservative threshold — well below the SDK's internal limit but
+# high enough that normal preread/translation calls are unaffected.
+_STREAMING_THRESHOLD = 32000
+
+
 def call(
     system_prompt: str,
     user_message: str,
@@ -103,6 +110,10 @@ def call(
 ) -> str:
     """
     Send a request to the Anthropic API and return the model's text response.
+
+    Streaming is used automatically when max_tokens exceeds _STREAMING_THRESHOLD,
+    because the SDK rejects non-streaming calls that may take longer than 10
+    minutes. The return value is identical either way — a single complete string.
 
     Parameters
     ----------
@@ -134,15 +145,18 @@ def call(
     if client is None:
         client = make_client()
 
-    response = client.messages.create(
+    params = dict(
         model=model,
         max_tokens=max_tokens,
         system=system_prompt,
-        messages=[
-            {"role": "user", "content": user_message}
-        ],
+        messages=[{"role": "user", "content": user_message}],
     )
 
+    if max_tokens >= _STREAMING_THRESHOLD:
+        with client.messages.stream(**params) as stream:
+            return stream.get_final_text()
+
+    response = client.messages.create(**params)
     return "".join(
         block.text
         for block in response.content

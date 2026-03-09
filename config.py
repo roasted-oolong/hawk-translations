@@ -22,4 +22,5 @@ NOVEL_FILES = {
 }
 
 # ── API settings ──────────────────────────────────────────────────────────────
-MAX_TOKENS = 16000
+MAX_TOKENS          = 16000
+FORMAT_MAX_TOKENS   = 64000   # Formatting output is ~1:1 with input; needs headroom for large batches

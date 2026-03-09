@@ -30,13 +30,13 @@ load_dotenv()
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config import PROJECT_ROOT, HAIKU_MODEL, MAX_TOKENS
+from config import PROJECT_ROOT, HAIKU_MODEL, FORMAT_MAX_TOKENS
 from src.agent import call, make_client
 from src.novel_resolver import resolve_novel, find_all_korean_chapters
 from src.preread.chapter_resolver import parse_chapter_selection
 from src.formatter.runner import run_formatter
 
-DEFAULT_BATCH_SIZE = 3
+DEFAULT_BATCH_SIZE = 5
 
 
 # ---------------------------------------------------------------------------
@@ -183,7 +183,7 @@ def main() -> None:
             system_prompt=system_prompt,
             user_message=user_message,
             model=HAIKU_MODEL,
-            max_tokens=MAX_TOKENS,
+            max_tokens=FORMAT_MAX_TOKENS,
             client=client,
         )
 
