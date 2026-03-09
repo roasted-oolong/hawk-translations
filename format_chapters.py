@@ -4,10 +4,9 @@ format_chapters.py
 ------------------
 Entry point for the chapter formatting pipeline.
 
-Reads Korean source files for the specified chapters, sends each batch to
-Haiku with instructions to fix broken sentences and unnatural line breaks
-without altering content, and overwrites the original source files with the
-cleaned text.
+Reads Korean source files for the specified chapters, sends each as an
+independent request in a single Anthropic Batch API job, and overwrites
+the original source files with the cleaned text once the batch completes.
 
 Usage examples
 --------------
@@ -20,7 +19,6 @@ An optional novel name can be appended if multiple novels are present:
   python format_chapters.py 5-10 idols-rewind
 """
 
-import math
 import sys
 from pathlib import Path
 
@@ -30,13 +28,11 @@ load_dotenv()
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config import PROJECT_ROOT, HAIKU_MODEL, FORMAT_MAX_TOKENS
-from src.agent import call, make_client
+from config import PROJECT_ROOT
+from src.agent import make_client
 from src.novel_resolver import resolve_novel, find_all_korean_chapters
 from src.preread.chapter_resolver import parse_chapter_selection
 from src.formatter.runner import run_formatter
-
-DEFAULT_BATCH_SIZE = 5
 
 
 # ---------------------------------------------------------------------------
@@ -94,39 +90,19 @@ def _prompt_chapters(available: list[int]) -> list[int]:
 
 
 # ---------------------------------------------------------------------------
-# Batch size
-# ---------------------------------------------------------------------------
-
-def _prompt_batch_size() -> int:
-    """Ask the user for a batch size, defaulting to DEFAULT_BATCH_SIZE."""
-    raw = input(
-        f"\n  Chapters per batch? (default: {DEFAULT_BATCH_SIZE}, "
-        "press Enter to accept)  "
-    ).strip()
-    if not raw:
-        return DEFAULT_BATCH_SIZE
-    if raw.isdigit() and int(raw) > 0:
-        return int(raw)
-    print(f"  Invalid input — using default ({DEFAULT_BATCH_SIZE}).")
-    return DEFAULT_BATCH_SIZE
-
-
-# ---------------------------------------------------------------------------
 # Confirmation
 # ---------------------------------------------------------------------------
 
-def _prompt_confirm(novel_name: str, selected: list[int], batch_size: int) -> bool:
-    total_batches = math.ceil(len(selected) / batch_size)
+def _prompt_confirm(novel_name: str, selected: list[int]) -> bool:
     ch_range = (
         f"{selected[0]}–{selected[-1]}" if len(selected) > 1 else str(selected[0])
     )
     print(f"""
   ── Plan ─────────────────────────────────────────────
-  Novel        : {novel_name}
-  Chapters     : {ch_range} ({len(selected)} chapter(s))
-  Batch size   : {batch_size}
-  Total batches: {total_batches}
-  Output       : overwrites ch##_korean source files
+  Novel      : {novel_name}
+  Chapters   : {ch_range} ({len(selected)} chapter(s))
+  Method     : Anthropic Batch API (results within 24h)
+  Output     : overwrites ch##_korean source files
   ─────────────────────────────────────────────────────""")
 
     while True:
@@ -170,28 +146,16 @@ def main() -> None:
     else:
         selected = _prompt_chapters(all_chapters)
 
-    batch_size = _prompt_batch_size()
-
-    if not _prompt_confirm(novel_dir.name, selected, batch_size):
+    if not _prompt_confirm(novel_dir.name, selected):
         print("\n  Cancelled.\n")
         return
 
     client = make_client()
 
-    def api_call(system_prompt: str, user_message: str) -> str:
-        return call(
-            system_prompt=system_prompt,
-            user_message=user_message,
-            model=HAIKU_MODEL,
-            max_tokens=FORMAT_MAX_TOKENS,
-            client=client,
-        )
-
     run_formatter(
         novel_dir=novel_dir,
         chapter_nums=selected,
-        batch_size=batch_size,
-        api_call_fn=api_call,
+        client=client,
     )
 
 
