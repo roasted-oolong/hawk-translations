@@ -28,8 +28,7 @@ from src.novel_resolver import resolve_novel, find_untranslated_chapters
 from src.preread.chapter_resolver import parse_chapter_selection
 from src.preread.runner import run_preread
 
-DEFAULT_BATCH_SIZE = 7
-
+DEFAULT_BATCH_SIZE = 5
 
 # ---------------------------------------------------------------------------
 # Chapter selection
