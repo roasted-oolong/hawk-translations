@@ -698,24 +698,6 @@ Last Updated: [date]
 - Usage notes: English name used in-text. Render as "Six-Seven" consistently.
 - Notes: —
 
-## Crescendo (크레센도)
-- Korean term: 크레센도
-- Category: Title / artist stage name
-- First appearance: 50 (mentioned); 51 (on-page)
-- Last Updated: 2026-03-08
-- Definition: Stage name of a top-tier Korean rapper signed to Six-Seven label. Known for 싱잉랩 (singing-rap), strong articulation (딕션), distinctive appealing rap style. Popular with both general audiences and dedicated hip-hop listeners (리스너).
-- Usage notes: Render as "Crescendo" throughout. The name is an Italian/music term — likely intentional. No Korean alternative name used.
-- Notes: —
-
-## Hyun-ah (현아)
-- Korean term: 현아
-- Category: Character name (film role)
-- First appearance: 47
-- Last Updated: 2026-03-08
-- Definition: A supporting character role in Sung Min-woo's upcoming film. Kim Sung-ah has arranged to coach Hee-yeon for this specific role.
-- Usage notes: Render as "Hyun-ah" (the character name, not a person in the story world at this stage).
-- Notes: The audition for this role has been deferred slightly to give Hee-yeon preparation time with Sung-ah. The role is not guaranteed — Hee-yeon must audition.
-
 ## Walk This Way (콜라보 레퍼런스)
 - Korean term: 워크 디스 웨이 (implied by context)
 - Category: Reference track / collaboration concept
@@ -968,3 +950,59 @@ Last Updated: [date]
 - Definition: "Works by feel/instinct" — Hae-yeol Yoo's diagnosis of Yumi's compositional method. She does not work from formal theory; she absorbs genres by arranging existing tracks, building intuitive depth through repetition, and then adds flashes of inspiration. Hae-yeol describes the vessel (그릇) for this approach growing with talent.
 - Usage notes: Characterisation-critical for understanding why Hae-yeol Yoo and LOAN have little formal technique to teach her.
 - Notes: —
+
+---
+
+## 별처럼 (Like a Star)
+- Korean term: 별처럼
+- Category: Song title (Yumi Cho solo debut single)
+- First appearance: 72
+- Last Updated: 2026-03-09
+- Definition: Yumi's first solo single as a vocalist, co-composed with Hae-yeol Yoo. Acoustic guitar-based, gentle ballad. Wins first place on music show chart in its debut week and the following week (2 consecutive wins). Begins declining from top 10 after two weeks but gains strong grassroots traction: busking covers, karaoke popularity, commuter/daily-life listening.
+- Usage notes: English rendering: "Like a Star," or retain Korean title with gloss. The song's cultural footprint (street-level popularity despite chart decline) is a recurring beat.
+- Notes: Distinct from the F.M.P. album tracks (which Yumi composed independently across multiple genres). This track is described as Yumi's vehicle as a singer, not as a composer.
+
+## Eight in You (에잇인유)
+- Korean term: 에잇인유
+- Category: Group name / organization
+- First appearance: 72
+- Last Updated: 2026-03-09
+- Definition: HS Entertainment's new 8-member girl group. Contains Korean, Japanese, and Chinese members. Heavily promoted by Director Park. Debut song lost to Yumi's "별처럼" on music show chart. Japan promotion immediately planned post-debut.
+- Usage notes: Render as "Eight in You." The group name is an English phrase; Korean transcription is phonetic.
+- Notes: In the original timeline this was a 7-member group "Seven in You" without Hyun-hee Lee. Kang notes their current debut quality exceeds the original timeline version. Their rise is likely to become a competitive pressure point as the story continues.
+
+## Singer Relay / Cover Relay (릴레이 커버)
+- Korean term: 릴레이 / 챌린지
+- Category: Content concept / promotional phenomenon
+- First appearance: 70
+- Last Updated: 2026-03-09
+- Definition: A spontaneous chain of artists posting SNS videos of themselves performing a specific track — here, Yumi's three unreleased album tracks previewed on F.M.P. (1-minute clips each). Artists self-select which track to cover based on perceived vocal fit. K Management blocked all direct contact requests, so artists use SNS self-posting as their only avenue to audition for album participation. The phenomenon is framed as simultaneously a competition (who gets selected) and a promotional cascade (each post amplifies the album's anticipation).
+- Usage notes: Referred to by characters as "릴레이," "챌린지," or "전쟁" (war). Render context-dependently: "cover relay," "the relay," "the challenge," or "the war" depending on scene.
+- Notes: Park PD and Kang deliberately structured the F.M.P. episode to trigger this: 6-minute sequence of three 1-minute track previews with no other content, released during peak broadcast. The "배짱" (audacity) of this editorial choice is the episode's dramatic subject.
+
+## M&K / Min-seok and Kid Collaboration
+- Korean term: M&K / 민석 앤 키드
+- Category: Artist collaboration / promotional entity
+- First appearance: 72
+- Last Updated: 2026-03-09
+- Definition: The collaborative project between Min-seok (Golden Tree) and Kid (solo). Treated by HS Entertainment and their combined fandoms as a major event. Promotional rollout: concept trailer, photo teasers, video teasers, MV teaser, jacket making, MV making, commentary, special clips — described as "떡밥이 흘러넘쳐" (bait overflowing) from pre-release.
+- Usage notes: Referred to as "M&K" (English initials used in-text). Both fanbases in temporary alliance for streaming support.
+- Notes: Release timing overlaps with Yumi's album promotion period. Kang explicitly states he will not adjust the Yumi timeline despite the overlap — "우리는 우리대로 갈 수밖에 없죠." Director Park may have timed this deliberately (장실장's suspicion). Double title release strategy: Yumi's album will have two MV tracks (더블 타이틀) out of 16 tracks.
+
+## Guerrilla Busking / Surprise Performance
+- Korean term: (깜짝 공연 / 버스킹 난입)
+- Category: Performance concept / promotional event
+- First appearance: 73
+- Last Updated: 2026-03-09
+- Definition: An unannounced, spontaneous performance in a public setting — here, Yumi joining two buskers performing her song on the street in Hongdae. Kang frames this as a legitimate and valuable experience both for Yumi's creative development and as an organic promotional event.
+- Usage notes: Kang references the international precedent (Billboard superstars doing surprise street performances). Render as "guerrilla performance," "surprise performance," or "busking cameo" depending on context.
+- Notes: The decision is framed as slightly impulsive but deliberately chosen by Kang; safety is assessed before agreeing. The scene functions both as a character moment (Yumi's joy) and as implied viral content (crowd phones out, filming).
+
+## 별처럼 Chart Performance Arc
+- Korean term: (방송빨 / 차트 하강 / 생활 밀착형)
+- Category: Idol industry concept / chart dynamics
+- First appearance: 73
+- Last Updated: 2026-03-09
+- Definition: Kang's framework for understanding "별처럼"'s chart trajectory: rapid rise due to "방송빨" (broadcast momentum from F.M.P.), two weeks of chart dominance, then natural decline as momentum fades — but offset by grassroots cultural embedding (busking, karaoke, commuter playlists). Kang explicitly describes this as the correct shape for this type of song: "차트에서는 멀어져도 생활에서는 가까워지는" (moving away from the charts but closer to daily life).
+- Usage notes: "방송빨" = boost from broadcast exposure. The arc (chart peak → decline → cultural longevity) is distinct from idol chart performance and is a recurring analytical frame for Kang.
+- Notes: Translation-relevant: Kang is not disappointed by the chart drop — he correctly predicted it. The framing should convey professional satisfaction, not concern.

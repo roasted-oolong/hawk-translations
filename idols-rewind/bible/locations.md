@@ -23,9 +23,9 @@ Last Updated: 2026-03-08
 
 ---
 
-## Ilsan / K Management Office (일산)
-- Korean name: 일산; 사무실
-- Romanisation: Ilsan; K Management Office / the office
+## K Management Office
+- Korean name: =사무실
+- Romanisation: K Management Office / the office
 - First appearance: 2
 - Last Updated: 2026-03-08
 - Type: Neighbourhood; office building
@@ -290,3 +290,19 @@ Last Updated: 2026-03-08
 - Last Updated: 2026-03-08
 - Type: Meeting room
 - Significance: Location of the 「네 운수를 조금만 빌려도 될까?」 table read; site of Hee-yeon's first sustained contact with the cast and the Choo Mi-yeon confrontations.
+
+---
+
+## SBC Music Show Studio (SBC 공개홀)
+- Korean name: SBC 공개홀
+- Romanisation: SBC Music Show Studio / SBC public hall
+- First appearance: 74
+- Last Updated: 2026-03-09
+- Significance: Public music broadcast recording hall at SBC. Site of Yumi's first music show appearance (Ch. 72) and Hee-yeon's first film shoot location (Ch. 74). Distinct from KBC (Hae-yeol Yoo's program); SBC is the broadcaster for 유미의 F.M.P. Shared dressing rooms on the 3rd floor; notable that Yumi shares with Magic Stage rather than having a solo room.
+
+## Hongdae Street (홍대 거리)
+- Korean name: 홍대
+- Romanisation: Hongdae
+- First appearance: 73
+- Last Updated: 2026-03-09
+- Significance: Street busking area in Seoul; Kang observes "별처럼" being covered by buskers while waiting for a scheduled event, confirming the song's grassroots cultural traction.

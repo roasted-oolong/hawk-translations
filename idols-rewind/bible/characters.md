@@ -33,7 +33,7 @@ Last Updated: 2026-03-08
 - Honorifics they use toward others: 사장님 (to Kang in regression timeline)
 - Relationships: Hyuk Kang (former manager/protector; unresolved bond). Separated from other Blue Sherbet members after the group's collapse.
 - Story bible reference: —
-- Notes: In the pre-regression scene, she sought Kang out to repay a debt and offer to work together again; he refused. In the regression timeline she is a trainee who speaks to him with straightforward deference. The contrast between the two versions is narratively significant — translator should be alert to how her speech shifts between timelines. Chs. 38–39 — rock comeback teaser materials released (concept trailer, photo teaser, MV teaser); song/MV not yet public. Online community divided: supporters vs. detractors. Session recording and MV filming both complete. Full promotional rollout now being staged deliberately as noise marketing. Ch. 69 — table read for 「네 운수를 조금만 빌려도 될까?」: her performance as Hyun-ah is described as monster-level for a newcomer; she fully embodies the character work developed with Sung-ah, notably adding unscripted reckless laughter at a key moment. Her scene-partner performance (against Mi-yeon Chu) is described as like watching a Mayweather fight — she deflects every provocation without taking damage. Receives detailed personal notes from both Son Chul-hwan and Park Sung-hyun after the read-through; both treat her as worth investing in.
+- Notes: In the pre-regression scene, she sought Kang out to repay a debt and offer to work together again; he refused. In the regression timeline she is a trainee who speaks to him with straightforward deference. The contrast between the two versions is narratively significant — translator should be alert to how her speech shifts between timelines. Chs. 38–39 — rock comeback teaser materials released (concept trailer, photo teaser, MV teaser); song/MV not yet public. Online community divided: supporters vs. detractors. Session recording and MV filming both complete. Full promotional rollout now being staged deliberately as noise marketing. Ch. 69 — table read for 「네 운수를 조금만 빌려도 될까?」: her performance as Hyun-ah is described as monster-level for a newcomer; she fully embodies the character work developed with Sung-ah, notably adding unscripted reckless laughter at a key moment. Her scene-partner performance (against Mi-yeon Chu) is described as like watching a Mayweather fight — she deflects every provocation without taking damage. Receives detailed personal notes from both Son Chul-hwan and Park Sung-hyun after the read-through; both treat her as worth investing in. Ch. 74 — first day of actual filming for 「네 운수를 조금만 빌려도 될까?」. Location: SBC music show studio. Scenes filmed: Hyun-ah discovering and confronting Iram (Chu Mi-yeon's character) for the first time; first meeting with Park Sung-hyun's character. Noted by Kang as performing exceptionally well — hitting the character's threatening register powerfully even in her first real shoot. Chu Mi-yeon NG'd multiple times during their confrontation scenes; Hee-yeon's intensity increased with each NG as motivation to get her fans inside. Her fan-care behavior (repeatedly stepping outside between takes to acknowledge waiting fans, apologising multiple times) is observed by Sung-ah Kim as characteristically hers. Ch. 74 — Sung-ah's closing observation: "애가 앙큼한 구석도 있었네" (the kid has a sly streak too) — she notices that Hee-yeon's warmest smile of the day appeared only after Kang left, directed at Kang's vacated spot.
 
 ---
 
@@ -50,7 +50,7 @@ Last Updated: 2026-03-08
 - Honorifics they use toward others: 언니 (to older members), plain speech to Yumi (as senior)
 - Relationships: Hyuk Kang (manager/president), Blue Sherbet members
 - Story bible reference: —
-- Notes: First to appear in the regression timeline (Ch. 2). Came to fetch Kang at dawn — Kang suspects she was actually bored/lonely rather than purely diligent. Her vocal potential is not yet fully unlocked at this story point; Kang is working on it using Beyoncé's "If I Were a Boy" as a benchmark. Ch. 21 — Yoo-mi selects her as vocalist for the EDM track, citing her husky voice and versatility. Her contribution: a single spoken/narrated line ("I don't love anything"), delivered in one take with no warm-up. Her initial dismissal of the task ("보컬이 아니잖아!") turns to stunned silence once she hears how her voice is processed in the finished mix. Promises Yoo-mi a jelly purchase she then refuses to acknowledge.
+- Notes: First to appear in the regression timeline (Ch. 2). Came to fetch Kang at dawn — Kang suspects she was actually bored/lonely rather than purely diligent. Her vocal potential is not yet fully unlocked at this story point; Kang is working on it using Beyoncé's "If I Were a Boy" as a benchmark. Ch. 21 — Yoo-mi selects her as vocalist for the EDM track, citing her husky voice and versatility. Her contribution: a single spoken/narrated line ("I don't love anything"), delivered in one take with no warm-up. Her initial dismissal of the task ("보컬이 아니잖아!") turns to stunned silence once she hears how her voice is processed in the finished mix. Promises Yoo-mi a jelly purchase she then refuses to acknowledge. Ch. 71 — covers for Yumi re: sleep deprivation; keeps the secret until accidentally outed by her own message visible on Kang's mounted phone. Ch. 73 — referenced in Japanese internet communities via comparison to Eight in You; her live performance footage (including 내일의 아이돌 footage) is spreading in Japan. Japanese community debate: some dismiss her, others declare her a "monster" after seeing the footage. Her name is now circulating internationally as a comparison benchmark against Eight in You.
 
 ---
 
@@ -84,7 +84,7 @@ Last Updated: 2026-03-08
 - Honorifics they use toward others: 언니 (to older members); 사장님 (to Kang); calls Hee-yeon 언니
 - Relationships: Room-share with Yoon-jung. Primary target of Jin-ah's teasing and jelly theft.
 - Story bible reference: —
-- Notes: Ch. 3 — Kang directs her to focus on composition/arrangement, all genres. Cut finger from changing guitar strings — minor, not in promotions. Her writing spans ballad, dance, rock, hip-hop, EDM. Ch. 6 — overnight EDM arrangement of Daft Punk's "Technologic" astonishes Kang; first EDM attempt, done in one night after equipment arrived. Bought equipment herself without telling Kang — he feels guilty for not providing it. Kang concludes she may already have professional-level instincts, not just potential. Ch. 8 MV shoot — sulking at Jin-ah over stolen jelly; their bickering chemistry noted by Kang as worth watching. Ch. 20 — has uploaded 25 tracks to YouTube: 14 Daft Punk 2nd-album remixes, 3 Daft Punk 3rd-album remixes expanded to 2 tracks each (= 6), plus 1 original. Latest video has 40,000 views. Completely unaware of the traction. Chose Daft Punk systematically — told to try many genres, picked EDM first, chose Daft Punk as a classic — not obsessive. Was about to move to hip-hop next. DJ Sharkin (international EDM artist) shouted her out on a 1,200-viewer SNS live stream, driving a foreign fanbase. Kang decides to keep her on EDM and commission an animated MV to conceal her identity/age from the primarily Western EDM audience. Ch. 21 — recording session at Hae-yeol Yoo's studio. Completes Jin-ah's vocal sample in one take ("I don't love anything"). Kang is genuinely shaken by the finished track — describes it as triggering the same physical reaction as hearing Daft Punk's "Human After All" for the first time. Ch. 51 — Crescendo is a long-time online fan of her music; had been anonymously fighting commenters claiming she was Japanese. [Watch: her development timeline may accelerate faster than Kang originally planned.]
+- Notes: Ch. 3 — Kang directs her to focus on composition/arrangement, all genres. Cut finger from changing guitar strings — minor, not in promotions. Her writing spans ballad, dance, rock, hip-hop, EDM. Ch. 6 — overnight EDM arrangement of Daft Punk's "Technologic" astonishes Kang; first EDM attempt, done in one night after equipment arrived. Bought equipment herself without telling Kang — he feels guilty for not providing it. Kang concludes she may already have professional-level instincts, not just potential. Ch. 8 MV shoot — sulking at Jin-ah over stolen jelly; their bickering chemistry noted by Kang as worth watching. Ch. 20 — has uploaded 25 tracks to YouTube: 14 Daft Punk 2nd-album remixes, 3 Daft Punk 3rd-album remixes expanded to 2 tracks each (= 6), plus 1 original. Latest video has 40,000 views. Completely unaware of the traction. Chose Daft Punk systematically — told to try many genres, picked EDM first, chose Daft Punk as a classic — not obsessive. Was about to move to hip-hop next. DJ Sharkin (international EDM artist) shouted her out on a 1,200-viewer SNS live stream, driving a foreign fanbase. Kang decides to keep her on EDM and commission an animated MV to conceal her identity/age from the primarily Western EDM audience. Ch. 21 — recording session at Hae-yeol Yoo's studio. Completes Jin-ah's vocal sample in one take ("I don't love anything"). Kang is genuinely shaken by the finished track — describes it as triggering the same physical reaction as hearing Daft Punk's "Human After All" for the first time. Ch. 51 — Crescendo is a long-time online fan of her music; had been anonymously fighting commenters claiming she was Japanese. [Watch: her development timeline may accelerate faster than Kang originally planned.] Ch. 70 — 8 tracks composed in a burst of inspiration during the F.M.P. production period; Kang describes them as potentially masterpiece-level. Has been sleep-deprived for days out of pressure to exceed expectations; Jin-ah knew and kept it secret. Kang deduces this without Jin-ah admitting it. Ch. 71 — second wave of inspiration arrives during the drive to a filming location; Kang immediately redirects to the studio instead. Ch. 72 — first music show appearance (pre-recorded segment + brief live stage). First music show chart: 1st place with "별처럼" (Star-like). Emotional on stage — tears while giving acceptance speech; can barely speak. Ch. 73 — "별처럼" dropping from top 5 (now ~10th) but gaining street-level cultural traction (busking covers, karaoke popularity, commuter listening). Kang notes this is the correct shape for this type of song.
 
 ---
 
@@ -347,7 +347,7 @@ Last Updated: 2026-03-08
 - Korean name: 김성아
 - Aliases/Titles: HS Entertainment flagship actress
 - First appearance: 30
-- Last Updated: 2026-03-08
+- Last Updated: 2026-03-09
 - Role: Top actress at HS Entertainment; former artist managed by Kang Hyuk.
 - Physical description: Long straight hair (청순한 느낌); described as radiating warmth and ease.
 - Speech pattern: Deceptively soft and casual; says pointed things in a pleasant register; uses affectionate/familiar tone with Kang ("오빠").
@@ -356,7 +356,7 @@ Last Updated: 2026-03-08
 - Honorifics they use toward others: —
 - Relationships: Kang Hyuk (former manager; close enough for 오빠; clear mutual regard); Jin-ah (instant affection, protective); CEO Choi (top talent/employer — familiar); Executive Director Kim (friction, contained).
 - Story bible reference: HS Entertainment
-- Notes: Kang recalls after leaving HS she made two failed projects; likely on a third at the time of Ch. 30. Her reappearance is unexpected — Kang had chosen not to think about her. Her combination of softness and bluntness is key: she ends the salon confrontation simply by being present. The moment where Jin-ah calls her "성아 언니" immediately is character-revealing for both. Translation-relevant: softness and bluntness coexist — do not flatten either. Ch. 38 — her film "포토그래퍼" (Photographer) is underperforming; projected audience 2.5M; described as a film with neither fun nor emotion. Third consecutive failure (two films + one drama). Ch. 41 — unexpectedly calls Kang post-broadcast; call deferred. Reason unknown. Ch. 42 — Kang engineers her as lead for Min-woo Sung's film. Ch. 45 — in open friction with Executive Director Kim at HS meeting, with CEO Choi watching. Ch. 69 — coaches Hee-yeon's "Hyun-ah" character acting; claims credit for Hee-yeon's performance in front of seniors; shuts down Mi-yeon Chu's post-read-through outburst with a single devastating sequence ("Did you crease your script on purpose?... Getting outperformed by someone who just started learning to act? That's when you should be embarrassed."); dismisses Team Lead Kwak in one line; preempts Kang before he can engage with either antagonist. Kang's internal reaction: mild possessive irritation that she is claiming developmental credit for Hee-yeon.
+- Notes: Kang recalls after leaving HS she made two failed projects; likely on a third at the time of Ch. 30. Her reappearance is unexpected — Kang had chosen not to think about her. Her combination of softness and bluntness is key: she ends the salon confrontation simply by being present. The moment where Jin-ah calls her "성아 언니" immediately is character-revealing for both. Translation-relevant: softness and bluntness coexist — do not flatten either. Ch. 38 — her film "포토그래퍼" (Photographer) is underperforming; projected audience 2.5M; described as a film with neither fun nor emotion. Third consecutive failure (two films + one drama). Ch. 41 — unexpectedly calls Kang post-broadcast; call deferred. Reason unknown. Ch. 42 — Kang engineers her as lead for Min-woo Sung's film. Ch. 45 — in open friction with Executive Director Kim at HS meeting, with CEO Choi watching. Ch. 69 — coaches Hee-yeon's "Hyun-ah" character acting; claims credit for Hee-yeon's performance in front of seniors; shuts down Mi-yeon Chu's post-read-through outburst with a single devastating sequence ("Did you crease your script on purpose?... Getting outperformed by someone who just started learning to act? That's when you should be embarrassed."); dismisses Team Lead Kwak in one line; preempts Kang before he can engage with either antagonist. Kang's internal reaction: mild possessive irritation that she is claiming developmental credit for Hee-yeon. Ch. 74 — on set for filming. Watches Hee-yeon's performance with visible amusement at Chu Mi-yeon's repeated NGs. Pulls Kang aside to ask whether she is "too yielding" in her scenes (genuinely concerned she is being overshadowed by Hee-yeon); asks if she should "take some back" in the next scene. Kang is briefly speechless — the question reveals she is thinking in terms of who she is playing (the established star Iminam vs. Hee-yeon's Hyun-ah). Translation-relevant: her question is professional craft anxiety, not rivalry. Final beat: she observes Hee-yeon's genuine smile directed at Kang's vacated spot and labels it "앙큼한 구석" (a sly/calculating streak) — affectionate, slightly teasing characterisation.
 
 ---
 
@@ -449,7 +449,7 @@ Last Updated: 2026-03-08
 - Korean name: 이현희
 - Aliases/Titles: —
 - First appearance: 36
-- Last Updated: 2026-03-08
+- Last Updated: 2026-03-09
 - Role: HS Entertainment trainee; contestant on 내일의 아이돌. First performer at the audition — performs "Our World" (Jin-ah's song).
 - Physical description: —
 - Speech pattern: —
@@ -458,7 +458,7 @@ Last Updated: 2026-03-08
 - Honorifics they use toward others: —
 - Relationships: Former co-trainee at HS Entertainment alongside Blue Sherbet members.
 - Story bible reference: —
-- Notes: Ch. 36 — passes unanimously but receives qualified praise; compared unfavorably to Jin-ah. Her emotional reaction (tears that are clearly not happy tears) is a narrative beat. Functions as a structural device to illustrate Jin-ah's transcendence. Ch. 39 — believed she was more skilled than Jin-ah and Yoo-mi at the time (found Hee-yeon and Yoon-jung's superiority understandable, but resented the other two). Casts the only vote for Jin-ah — explains publicly that watching Jin-ah's performance forced her to confront how much she'd stagnated while Jin-ah grew. Emotional on camera; her moment lands well with judges. Kang has essentially no memory of her from the original timeline — she never surfaced as a notable figure post-debut. Her gaze at Kang at the end of Ch. 39 is flagged as potentially significant.
+- Notes: Ch. 36 — passes unanimously but receives qualified praise; compared unfavorably to Jin-ah. Her emotional reaction (tears that are clearly not happy tears) is a narrative beat. Functions as a structural device to illustrate Jin-ah's transcendence. Ch. 39 — believed she was more skilled than Jin-ah and Yoo-mi at the time (found Hee-yeon and Yoon-jung's superiority understandable, but resented the other two). Casts the only vote for Jin-ah — explains publicly that watching Jin-ah's performance forced her to confront how much she'd stagnated while Jin-ah grew. Emotional on camera; her moment lands well with judges. Kang has essentially no memory of her from the original timeline — she never surfaced as a notable figure post-debut. Her gaze at Kang at the end of Ch. 39 is flagged as potentially significant. Ch. 72 — confirmed as a member of Eight in You. Now functions as the team leader figure during group practice sessions, having transferred the skills and mindset she learned from Jin-ah directly into the new group's training. Described by members as the one who brought diligence and detail-focus. Her trajectory: she is growing faster than she would have in the original timeline due to Kang's indirect influence through Jin-ah.
 
 ---
 
@@ -806,7 +806,7 @@ Last Updated: 2026-03-08
 - Korean name: 추미연
 - Aliases/Titles: —
 - First appearance: 68
-- Last Updated: 2026-03-08
+- Last Updated: 2026-03-09
 - Role: Actress; supporting cast in 「네 운수를 조금만 빌려도 될까?」; antagonist in the read-through arc.
 - Physical description: Conventionally pretty; flushed red when angry.
 - Speech pattern: Loud, entitled, quick to escalate; uses saccharine politeness toward seniors and sharp hostility toward perceived rivals.
@@ -815,7 +815,7 @@ Last Updated: 2026-03-08
 - Honorifics they use toward others: —
 - Relationships: —
 - Story bible reference: —
-- Notes: Has a known industry reputation for bad temper — all other cast members are aware of it before she arrives. Her intimidation attempts against Hee-yeon completely fail; Hee-yeon's calm single-sentence responses leave her with nowhere to go. During the read-through her performance is visibly poor compared to the top four — director's pen described as pressing hard/heavily. She bites her tongue and her voice wavers on a key line; lifts her script to hide her face. After the read-through, publicly blames Hee-yeon for "ruining" the character — immediately shut down by Sung-ah with a pointed observation about her deliberately creased script. Exits the room with bloodshot eyes. Kang's internal read: like a cartoon villain; no survival instinct except basic capitulation to Sung-ah.
+- Notes: Has a known industry reputation for bad temper — all other cast members are aware of it before she arrives. Her intimidation attempts against Hee-yeon completely fail; Hee-yeon's calm single-sentence responses leave her with nowhere to go. During the read-through her performance is visibly poor compared to the top four — director's pen described as pressing hard/heavily. She bites her tongue and her voice wavers on a key line; lifts her script to hide her face. After the read-through, publicly blames Hee-yeon for "ruining" the character — immediately shut down by Sung-ah with a pointed observation about her deliberately creased script. Exits the room with bloodshot eyes. Kang's internal read: like a cartoon villain; no survival instinct except basic capitulation to Sung-ah. Ch. 74 — NGs repeatedly during confrontation scenes with Hee-yeon on first filming day. Described as having her soul beaten out of her by the end of the day. However, is given a brief redemption beat: after the coffee break, she manages to complete the scene. Hee-yeon's fans are unexpectedly sympathetic to her because each NG benefits Hee-yeon's performance intensity.
 
 ---
 
@@ -851,3 +851,73 @@ Last Updated: 2026-03-08
 - Story bible reference: —
 - Notes: Kyle discovers "I don't love anything" and converts his EDM-skeptic roommate John. John later publicly calls it one of the best decisions of his life. No further story significance flagged at this time. [uncertain — included because they are named and the scene is a deliberate international-reach beat, but they have no ongoing role]
 
+---
+
+## Jung-ho Yoon (윤정호)
+- Korean name: 윤정호
+- Aliases/Titles: —
+- First appearance: 71
+- Last Updated: 2026-03-09
+- Role: Top domestic R&B artist. Participates in Yumi's album relay by performing three of her tracks live at his concert.
+- Physical description: —
+- Speech pattern: Self-aware, candid about distraction; warm with his audience.
+- Dialogue cues: Apologises mid-concert for being distracted; asks audience to film and upload his performance; admits he's been listening on repeat and can't get the songs out of his head.
+- Honorifics used toward them: —
+- Honorifics they use toward others: —
+- Relationships: His manager (loyal, health-conscious); part of the Yumi album collaboration alongside Crescendo, Hyun-woo, and others.
+- Story bible reference: —
+- Notes: His confirmed participation is treated as a decisive blow in the relay competition — other gamer/singer contestants are immediately alarmed. Known for being picky about genre: dislikes EDM and idol music, making his voluntary participation all the more significant. Ch. 71 — hears Yumi's three tracks on the F.M.P. broadcast, loops them on headphones until his manager intervenes, then performs all three at his live concert and asks the audience to upload footage. Described as a "거물" (major player) whose entry ends the competitive relay for others.
+
+## Hyun-woo (현우)
+- Korean name: 현우
+- Aliases/Titles: —
+- First appearance: 71
+- Last Updated: 2026-03-09
+- Role: Lead vocalist (not main vocalist) of Golden Tree. Participates in Yumi's album as a vocalist.
+- Physical description: —
+- Speech pattern: Quiet, reflective; more anxious than Min-seok about the outcome.
+- Dialogue cues: "1분만 들어도 귓가에 계속 맴돌아. 이 노래… 분명 엄청 좋을 거야." Waits nervously to see if Yumi selects him.
+- Honorifics used toward them: —
+- Honorifics they use toward others: —
+- Relationships: Group member of Golden Tree with Min-seok; confirmed participant in Yumi's album.
+- Story bible reference: —
+- Notes: Was passed over for main vocalist because another member has higher range; but is acknowledged within Golden Tree as having the best vocal timbre (음색 깡패). His participation in the album is confirmed as "최상" (top quality) in recording results.
+
+## Eight in You / 에잇인유
+- Korean name: 에잇인유
+- Aliases/Titles: 괴물신인 (monster rookie)
+- First appearance: 72
+- Last Updated: 2026-03-09
+- Role: HS Entertainment's new 8-member girl group. Contains Korean, Japanese, and Chinese members; Hyun-hee Lee is a member.
+- Physical description: Cute, fresh-faced; clean/innocent concept with easy-to-follow choreography.
+- Speech pattern: —
+- Dialogue cues: —
+- Honorifics used toward them: —
+- Honorifics they use toward others: —
+- Relationships: Shared trainee background with Blue Sherbet members. Hyun-hee Lee is a member. Director Park is pushing them aggressively.
+- Story bible reference: HS Entertainment
+- Notes: In the original (pre-regression) timeline, this was a 7-member group called "Seven in You" (세븐인유) — Hyun-hee was not a member. Kang explicitly notes they are performing better at debut than in the original timeline: better song, better concept, more active push from Director Park. Were originally slow-burn risers who eventually became a national girl group — now on a faster trajectory. Debut song lost to Yumi's "별처럼" on the music show chart. Director Park's response: pivot to Japanese activities immediately. Japan promotion confirmed planned. Japanese community discourse in Ch. 73 reveals their debut has drawn attention to Jin-ah Choi as a comparison figure.
+
+## Magic Stage (매직스테이지)
+- Korean name: 매직스테이지
+- Aliases/Titles: —
+- First appearance: 72
+- Last Updated: 2026-03-09
+- Role: TKK Entertainment 4-year girl group. Share a dressing room with Yumi at her first music show.
+- Physical description: —
+- Speech pattern: Warm, curious, socially adept; immediately draw Yumi in with a jelly offer.
+- Dialogue cues: "정말!?" (genuinely delighted by Yumi's claim she knows their music).
+- Honorifics used toward them: —
+- Honorifics they use toward others: —
+- Relationships: TKK Entertainment (same agency as Hye-jung Yoon).
+- Story bible reference: TKK Entertainment
+- Notes: Minor scene function: establish Yumi's ease with sunbaes and her first music show dressing room experience. Their warmth is flagged by Kang as potentially self-interested (Yumi is a useful composer contact) but still better than nothing.
+
+## Hyun-ah (현아)
+- Korean term: 현아
+- Category: Character name (film role)
+- First appearance: 47
+- Last Updated: 2026-03-08
+- Definition: A supporting character role in Sung Min-woo's upcoming film. Kim Sung-ah has arranged to coach Hee-yeon for this specific role.
+- Usage notes: Render as "Hyun-ah" (the character name, not a person in the story world at this stage).
+- Notes: The audition for this role has been deferred slightly to give Hee-yeon preparation time with Sung-ah. The role is not guaranteed — Hee-yeon must audition.

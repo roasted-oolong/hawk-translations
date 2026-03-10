@@ -852,3 +852,36 @@ Last Updated: [date]
 - First appearance: 69
 - Last Updated: 2026-03-08
 - Notes: Translation-relevant: this is Kang's method of reading the director without access to his face. The contrast (ballet vs. pressing hard) is the dramatic beat. Should be rendered to preserve both visual images.
+
+---
+
+## 구더기 무서워 장 못 담글까 [New]
+- Korean phrase: 구더기 무서워 장 못 담글까
+- Literal translation: Would you not make soy paste just because of maggots?
+- Intended meaning: Don't let minor risks prevent you from doing something worthwhile; don't be paralysed by small potential negatives
+- Context: Ch. 73 — Kang uses it internally when deciding to let Yumi do the guerrilla busking despite minor safety concerns.
+- Established translation:
+- T/N written: no
+- T/N text:
+- First appearance: 73
+- Last Updated: 2026-03-09
+- Notes: Common Korean proverb. "Don't let a little risk stop you from doing something worthwhile" or the English equivalent "don't let the perfect be the enemy of the good" approximate it, though neither captures the vividness. A light contextual translation works here.
+
+## 앙큼한 구석도 있었네 [New]
+- Korean phrase: 앙큼한 구석도 있었네
+- Literal translation: So she has a sly/crafty side too
+- Intended meaning: Discovering that someone has a subtly calculating or strategically aware dimension that wasn't previously visible — said with affectionate surprise, not criticism
+- Context: Ch. 74 — Sung-ah Kim says this after observing Hee-yeon's genuine smile appear only after Kang leaves, directed at his vacated spot. Sung-ah reads this as Hee-yeon being aware of her feelings toward Kang but concealing them even from herself or from Kang.
+- Established translation:
+- T/N written: no
+- T/N text:
+- First appearance: 74
+- Last Updated: 2026-03-09
+- Notes: Translation-critical: 앙큼하다 sits between "sly," "crafty," and "cunningly cute" — it implies strategic self-awareness delivered with a soft exterior. In context, Sung-ah is not accusing Hee-yeon of manipulation; she finds it charming and recognisable. "So she has a calculating side" is slightly too cold; "so she's got a sneaky side after all" is slightly too playful. The tone is warm, amused, and knowing. This line closes the chapter and is the emotional reveal — Hee-yeon's feelings toward Kang are implied to be more present than she shows.
+
+## 오빠가 보이니까 [Edited]
+- Korean phrase: 오빠가 보이니까. 보이니까 예전처럼 하는 거야.
+- Context: Previously recorded (Ch. 49). Ch. 74 — the dynamic it describes is now literalised on screen: Hee-yeon's smile appears only when Kang is gone but is directed at his space. Sung-ah's observation ("앙큼한 구석도 있었네") is the counterpoint — Hee-yeon is aware enough to manage what Kang sees, not aware enough to manage what Sung-ah sees.
+- First appearance: 49
+- Last Updated: 2026-03-09
+- Notes: The Ch. 74 beat retroactively adds weight to Sung-ah's original Ch. 49 explanation: she was describing something she had already observed in Hee-yeon, not just herself.
