@@ -4,7 +4,8 @@ SONNET_MODEL = "claude-sonnet-4-6"            # Core: extraction, Phase 1, revie
 OPUS_MODEL   = "claude-opus-4-6"              # Quality-critical: Phase 2, voice review
 
 # ── Project root ──────────────────────────────────────────────────────────────
-PROJECT_ROOT = "/home/jenna/hawk-translations"
+import os
+PROJECT_ROOT = os.environ["HAWK_PROJECT_ROOT"]
 
 # ── Reference file map ───────────────────────────────────────────────────────
 # Keys map to TranslationContext field names.

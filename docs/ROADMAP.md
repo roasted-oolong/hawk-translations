@@ -5,7 +5,7 @@ Status key: ✅ Done · 🔄 In Progress · 🔲 Not Started
 ---
 
 ## Milestone 1 — Rails App Generation
-**Status: ✅ Not Started**
+**Status: ✅ Done**
 
 Generate the Rails 8 app at repo root with correct flags.
 No feature code. Just a clean, booting app connected to PostgreSQL with RSpec configured.
@@ -19,7 +19,7 @@ Deliverables:
 ---
 
 ## Milestone 2 — Rails MCP Server Verification
-**Status: 🔲 Not Started**
+**Status: ✅ Done**
 
 Confirm the Rails MCP server (maquina-app/rails-mcp-server) is working
 so schema and route inspection is available throughout development.
@@ -31,7 +31,7 @@ Deliverables:
 ---
 
 ## Milestone 3 — Fix config.py PROJECT_ROOT
-**Status: 🔲 Not Started**
+**Status: ✅ In Progress**
 
 `config.py` currently hardcodes `PROJECT_ROOT` as an absolute local path.
 Must read from environment variable before any pipeline jobs can be invoked
