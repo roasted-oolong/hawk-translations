@@ -36,3 +36,11 @@
 # RSpec status persistence
 /spec/examples.txt
 
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
