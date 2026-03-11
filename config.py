@@ -1,10 +1,11 @@
+import os
+
 # ── Models ────────────────────────────────────────────────────────────────────
 HAIKU_MODEL  = "claude-haiku-4-5-20251001"   # Mechanical: format, file naming
 SONNET_MODEL = "claude-sonnet-4-6"            # Core: extraction, Phase 1, review
 OPUS_MODEL   = "claude-opus-4-6"              # Quality-critical: Phase 2, voice review
 
 # ── Project root ──────────────────────────────────────────────────────────────
-import os
 PROJECT_ROOT = os.environ["HAWK_PROJECT_ROOT"]
 
 # ── Reference file map ───────────────────────────────────────────────────────
