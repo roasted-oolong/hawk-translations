@@ -1,0 +1,229 @@
+# Hawk Translations — Schema
+
+Canonical data model. Updated as migrations are written and run.
+Column types reflect PostgreSQL / ActiveRecord conventions.
+
+Status: **Pre-generation** — no migrations exist yet.
+
+---
+
+## Milestone 5 — Core Multi-Tenant Schema
+
+> Written at schema design time, before migrations are run.
+
+### users
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| email | string | unique, not null |
+| name | string | not null |
+| provider | string | e.g. "google_oauth2" |
+| uid | string | provider-scoped unique identifier |
+| platform_admin | boolean | default false — Platform Admin flag |
+| created_at | datetime | |
+| updated_at | datetime | |
+
+Index: `(provider, uid)` unique
+
+### organizations
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| name | string | not null |
+| created_at | datetime | |
+| updated_at | datetime | |
+
+### teams
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| organization_id | bigint FK | not null |
+| name | string | not null |
+| created_at | datetime | |
+| updated_at | datetime | |
+
+### memberships
+Join table: users ↔ teams. Carries role within that team.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| user_id | bigint FK | not null |
+| team_id | bigint FK | not null |
+| role | string | "team_admin" \| "team_member" |
+| created_at | datetime | |
+| updated_at | datetime | |
+
+Index: `(user_id, team_id)` unique
+
+### series
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| organization_id | bigint FK | not null |
+| name | string | not null |
+| created_at | datetime | |
+| updated_at | datetime | |
+
+### novels
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| organization_id | bigint FK | not null |
+| series_id | bigint FK | nullable |
+| poc_user_id | bigint FK | nullable — points to users |
+| title | string | not null |
+| korean_title | string | |
+| genre | string | |
+| summary | text | org-visible |
+| tone | text | |
+| notes | text | |
+| visibility | string | "discoverable" \| "hidden", default "discoverable" |
+| created_at | datetime | |
+| updated_at | datetime | |
+
+---
+
+## Milestone 6 — Novel Team Assignments
+
+### novel_team_assignments
+Join table: novels ↔ teams. Carries permission level.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| novel_id | bigint FK | not null |
+| team_id | bigint FK | not null |
+| permission_level | string | "viewer" \| "editor" \| "translator" \| "admin" |
+| created_at | datetime | |
+| updated_at | datetime | |
+
+Index: `(novel_id, team_id)` unique
+
+---
+
+## Milestone 7 — Chapters
+
+### chapters
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| novel_id | bigint FK | not null |
+| number | integer | not null — chapter number |
+| title | string | optional subtitle |
+| status | string | "untranslated" \| "translated" \| "reviewed" |
+| created_at | datetime | |
+| updated_at | datetime | |
+
+Index: `(novel_id, number)` unique
+
+Korean source file and translated output file stored via Active Storage attachments
+on the Chapter model — not as columns.
+
+---
+
+## Milestone 8 — Bible Entry Tables
+
+All five tables share common columns: `novel_id`, `first_appearance_chapter`, `notes`, `created_at`, `updated_at`.
+
+### bible_characters
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| novel_id | bigint FK | not null |
+| name | string | not null |
+| korean_name | string | |
+| aliases | text | |
+| role | string | |
+| significance | string | |
+| physical_description | text | |
+| speech_pattern | text | |
+| honorifics_used_toward | text | |
+| honorifics_they_use | text | |
+| relationships | text | |
+| first_appearance_chapter | integer | |
+| notes | text | |
+| last_updated_at | datetime | |
+| created_at | datetime | |
+| updated_at | datetime | |
+
+### bible_locations
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| novel_id | bigint FK | not null |
+| name | string | not null |
+| korean_name | string | |
+| location_type | string | |
+| description | text | |
+| significance | text | |
+| first_appearance_chapter | integer | |
+| notes | text | |
+| last_updated_at | datetime | |
+| created_at | datetime | |
+| updated_at | datetime | |
+
+### bible_terminology
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| novel_id | bigint FK | not null |
+| term | string | not null |
+| korean_term | string | |
+| definition | text | |
+| usage_notes | text | |
+| first_appearance_chapter | integer | |
+| notes | text | |
+| last_updated_at | datetime | |
+| created_at | datetime | |
+| updated_at | datetime | |
+
+### bible_cultural_phrases
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| novel_id | bigint FK | not null |
+| phrase | string | not null |
+| korean_phrase | string | |
+| literal_translation | text | |
+| intended_meaning | text | |
+| context | text | |
+| established_translation | string | |
+| first_appearance_chapter | integer | |
+| notes | text | |
+| last_updated_at | datetime | |
+| created_at | datetime | |
+| updated_at | datetime | |
+
+### bible_story_entries
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| novel_id | bigint FK | not null |
+| category | string | "main_plot" \| "subplot" \| "watch_list" \| "theme" |
+| title | string | not null |
+| content | text | |
+| first_appearance_chapter | integer | |
+| notes | text | |
+| last_updated_at | datetime | |
+| created_at | datetime | |
+| updated_at | datetime | |
+
+---
+
+## Milestone 10 — Jobs
+
+### translation_jobs
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| novel_id | bigint FK | not null |
+| user_id | bigint FK | not null |
+| job_type | string | "preread" \| "bible_build" \| "post_translation_review" |
+| status | string | "queued" \| "running" \| "completed" \| "failed" |
+| chapter_start | integer | nullable |
+| chapter_end | integer | nullable |
+| result_payload | text | output or error message |
+| solid_queue_job_id | string | nullable — for cancellation |
+| created_at | datetime | |
+| updated_at | datetime | |
