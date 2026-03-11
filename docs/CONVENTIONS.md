@@ -8,7 +8,7 @@ Project-specific Rails conventions. When in doubt, check here before writing cod
 
 - Generated at repo root (not a `rails/` subdirectory)
 - App name: `hawk`
-- Ruby 3.3+, Rails 8
+- Ruby 3.4.2 (`.ruby-version`), Rails 8.1
 
 ### Generation flags used
 ```

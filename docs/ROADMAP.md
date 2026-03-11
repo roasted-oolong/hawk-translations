@@ -5,7 +5,7 @@ Status key: ✅ Done · 🔄 In Progress · 🔲 Not Started
 ---
 
 ## Milestone 1 — Rails App Generation
-**Status: 🔲 Not Started**
+**Status: ✅ Not Started**
 
 Generate the Rails 8 app at repo root with correct flags.
 No feature code. Just a clean, booting app connected to PostgreSQL with RSpec configured.
