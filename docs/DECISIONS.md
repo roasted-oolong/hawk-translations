@@ -76,6 +76,38 @@ is not a hard real-time requirement.
 
 ---
 
+## 2026-03 · User model created in full at Milestone 4, not split across M4 and M5
+
+SCHEMA.md lists User under Milestone 5 (core multi-tenant schema). In practice,
+all User columns are auth columns — email, name, provider, uid, platform_admin.
+Creating the model in full at M4 avoids a second users migration at M5 with no
+downside. ROADMAP and SCHEMA.md updated to reflect this. M5 adds no users migration.
+
+---
+
+## 2026-03 · ANTHROPIC_API_KEY stays in .env, not Rails credentials
+
+The Python pipeline reads ANTHROPIC_API_KEY directly from the environment via
+`os.environ`. Moving it to Rails encrypted credentials would require the Rails
+job runner to explicitly inject it back into the subprocess environment at
+Milestone 10 — extra indirection with no current benefit. Left in .env for now.
+Revisit at Milestone 10 when job invocation is designed and we control exactly
+how the subprocess environment is constructed.
+
+---
+
+## 2026-03 · Request spec sign_in helper drives real OAuth callback, not forged cookies
+
+Initial implementation used ActionDispatch::Cookies internals to forge a signed
+session cookie in request specs. This failed — rack-test does not process a
+forged cookie header through session middleware the way a real browser would,
+so session[:user_id] was never populated. Replaced with a sign_in helper that
+hits GET /auth/google_oauth2/callback with a mocked OmniAuth hash, exercising
+the real SessionsController#create code path. rack-test maintains session state
+correctly across subsequent requests within the same example.
+
+---
+
 ## 2026-03 · Chapter file naming: three patterns exist, migration script deferred to Milestone 9
 
 Observed patterns in idols-rewind/chapters:
