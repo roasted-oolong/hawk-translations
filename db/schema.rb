@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_12_000007) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_12_000008) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -24,6 +24,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_12_000007) do
     t.index ["team_id"], name: "index_memberships_on_team_id"
     t.index ["user_id", "team_id"], name: "index_memberships_on_user_id_and_team_id", unique: true
     t.index ["user_id"], name: "index_memberships_on_user_id"
+  end
+
+  create_table "novel_team_assignments", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "novel_id", null: false
+    t.string "permission_level", null: false
+    t.bigint "team_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["novel_id", "team_id"], name: "index_novel_team_assignments_on_novel_id_and_team_id", unique: true
+    t.index ["novel_id"], name: "index_novel_team_assignments_on_novel_id"
+    t.index ["team_id"], name: "index_novel_team_assignments_on_team_id"
   end
 
   create_table "novels", force: :cascade do |t|
@@ -80,6 +91,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_12_000007) do
 
   add_foreign_key "memberships", "teams"
   add_foreign_key "memberships", "users"
+  add_foreign_key "novel_team_assignments", "novels"
+  add_foreign_key "novel_team_assignments", "teams"
   add_foreign_key "novels", "organizations"
   add_foreign_key "novels", "series"
   add_foreign_key "novels", "users", column: "poc_user_id"
