@@ -85,6 +85,16 @@ downside. ROADMAP and SCHEMA.md updated to reflect this. M5 adds no users migrat
 
 ---
 
+## 2026-03 · Organization has_many :members through :teams
+
+Added `has_many :memberships, through: :teams` and `has_many :members, through: :memberships, source: :user`
+to Organization. No migration required — traverses existing tables. Keeps data operations in the database
+rather than Ruby (avoids `flat_map(&:users).uniq` in application code). Callers use `.distinct` explicitly
+when a user may belong to multiple teams in the same org. Dependent destroy not set on through-associations
+— destruction already cascades via `teams: dependent: :destroy`.
+
+---
+
 ## 2026-03 · ANTHROPIC_API_KEY stays in .env, not Rails credentials
 
 The Python pipeline reads ANTHROPIC_API_KEY directly from the environment via

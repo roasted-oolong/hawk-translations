@@ -33,6 +33,10 @@ Index: `(provider, uid)` unique
 | created_at | datetime | |
 | updated_at | datetime | |
 
+Through-associations (no migration required):
+- `has_many :memberships, through: :teams`
+- `has_many :members, through: :memberships, source: :user` — use `.distinct` when a user may belong to multiple teams in the same org
+
 ### teams
 | Column | Type | Notes |
 |--------|------|-------|
