@@ -50,5 +50,25 @@ RSpec.describe Organization, type: :model do
       create(:novel, organization: org)
       expect { org.destroy }.to change(Novel, :count).by(-1)
     end
+
+    it "has many members through teams" do
+      org    = create(:organization)
+      team   = create(:team, organization: org)
+      user   = create(:user)
+      create(:membership, user: user, team: team)
+
+      expect(org.members).to include(user)
+    end
+
+    it "does not return duplicate members who belong to multiple teams" do
+      org   = create(:organization)
+      team1 = create(:team, organization: org)
+      team2 = create(:team, organization: org)
+      user  = create(:user)
+      create(:membership, user: user, team: team1)
+      create(:membership, user: user, team: team2)
+
+      expect(org.members.distinct).to eq([user])
+    end
   end
 end
