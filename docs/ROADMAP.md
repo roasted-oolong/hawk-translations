@@ -31,7 +31,7 @@ Deliverables:
 ---
 
 ## Milestone 3 — Fix config.py PROJECT_ROOT
-**Status: ✅ In Progress**
+**Status: ✅ Complete**
 
 `config.py` currently hardcodes `PROJECT_ROOT` as an absolute local path.
 Must read from environment variable before any pipeline jobs can be invoked
