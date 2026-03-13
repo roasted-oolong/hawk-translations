@@ -31,7 +31,7 @@ Deliverables:
 ---
 
 ## Milestone 3 — Fix config.py PROJECT_ROOT
-**Status: ✅ Complete**
+**Status: ✅ Done**
 
 `config.py` currently hardcodes `PROJECT_ROOT` as an absolute local path.
 Must read from environment variable before any pipeline jobs can be invoked
@@ -63,7 +63,7 @@ Deliverables:
 ---
 
 ## Milestone 5 — Core Multi-Tenant Schema & Models
-**Status: 🔲 Not Started**
+**Status: ✅ Done**
 
 The foundational data model. Everything else builds on this.
 pgvector extension enabled now so infrastructure is ready for Milestone 12.
@@ -72,10 +72,10 @@ Entities: Organization, Team, Membership, Novel, Series
 (User model already created in full at Milestone 4 — no `users` migration needed here.)
 
 Deliverables:
-- Migrations written and run
-- Models with associations and validations
-- RSpec model specs passing
-- Schema documented in SCHEMA.md
+- ✅ Migrations written and run
+- ✅ Models with associations and validations
+- ✅ RSpec model specs passing
+- ✅ Schema documented in SCHEMA.md
 
 ---
 

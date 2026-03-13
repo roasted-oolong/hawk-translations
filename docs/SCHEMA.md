@@ -3,13 +3,13 @@
 Canonical data model. Updated as migrations are written and run.
 Column types reflect PostgreSQL / ActiveRecord conventions.
 
-Status: **Pre-generation** — no migrations exist yet.
+Status: **M1–M5 complete** — migrations run, schema reflects current database state.
 
 ---
 
-## Milestone 5 — Core Multi-Tenant Schema
+## Milestone 5 — Core Multi-Tenant Schema ✅
 
-> Written at schema design time, before migrations are run.
+> Migrations run. Models, validations, and associations complete. All specs passing.
 
 ### users
 | Column | Type | Notes |
@@ -81,6 +81,8 @@ Index: `(user_id, team_id)` unique
 | visibility | string | "discoverable" \| "hidden", default "discoverable" |
 | created_at | datetime | |
 | updated_at | datetime | |
+
+> `poc_user_id` is nullable with `optional: true`. Discovery view shows "POC not assigned" as placeholder when nil.
 
 ---
 
