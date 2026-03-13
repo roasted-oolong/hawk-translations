@@ -3,7 +3,7 @@
 Canonical data model. Updated as migrations are written and run.
 Column types reflect PostgreSQL / ActiveRecord conventions.
 
-Status: **M1–M5 complete** — migrations run, schema reflects current database state.
+Status: **M1–M6 complete** — migrations run, schema reflects current database state.
 
 ---
 
@@ -90,7 +90,7 @@ Index: `(user_id, team_id)` unique
 
 ---
 
-## Milestone 6 — Novel Team Assignments
+## Milestone 6 — Novel Team Assignments ✅
 
 ### novel_team_assignments
 Join table: novels ↔ teams. Carries permission level.

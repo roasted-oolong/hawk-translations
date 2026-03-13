@@ -80,7 +80,7 @@ Deliverables:
 ---
 
 ## Milestone 6 — Novel Team Assignments & Permission Scaffolding
-**Status: 🔲 Not Started**
+**Status: ✅ Done**
 
 NovelTeamAssignment join table with permission levels (viewer/editor/translator/admin).
 Schema and models built now. Enforcement activated when first collaborator joins (post-MVP).
