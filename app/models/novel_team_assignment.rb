@@ -1,22 +1,23 @@
-class Novel < ApplicationRecord
+class NovelTeamAssignment < ApplicationRecord
   # ---------------------------------------------------------------------------
   # Associations
   # ---------------------------------------------------------------------------
-  belongs_to :organization
-  belongs_to :series,   optional: true
-  belongs_to :poc_user, class_name: "User", optional: true
-
-  has_many :novel_team_assignments, dependent: :destroy
-  has_many :teams, through: :novel_team_assignments
+  belongs_to :novel
+  belongs_to :team
 
   # ---------------------------------------------------------------------------
   # Enums
   # ---------------------------------------------------------------------------
-  enum :visibility, { discoverable: "discoverable", hidden: "hidden" }
+  enum :permission_level, {
+    viewer:     "viewer",
+    editor:     "editor",
+    translator: "translator",
+    admin:      "admin"
+  }
 
   # ---------------------------------------------------------------------------
   # Validations
   # ---------------------------------------------------------------------------
-  validates :title,      presence: true
-  validates :visibility, presence: true
+  validates :permission_level, presence: true
+  validates :novel_id, uniqueness: { scope: :team_id }
 end
