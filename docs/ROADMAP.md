@@ -45,7 +45,7 @@ Deliverables:
 ---
 
 ## Milestone 4 — Authentication
-**Status: 🔲 Not Started**
+**Status: ✅ Done**
 
 Google OAuth via OmniAuth. Single admin user for MVP — no self-registration,
 no invite flow. All routes require authentication.
@@ -57,6 +57,9 @@ Deliverables:
 - Sign-out works from any page
 - Credentials stored in Rails encrypted credentials
 
+> **Note:** User model created in full here (all columns from SCHEMA.md Milestone 5).
+> Milestone 5 adds no `users` migration — only the multi-tenant models around it.
+
 ---
 
 ## Milestone 5 — Core Multi-Tenant Schema & Models
@@ -65,7 +68,8 @@ Deliverables:
 The foundational data model. Everything else builds on this.
 pgvector extension enabled now so infrastructure is ready for Milestone 12.
 
-Entities: User, Organization, Team, Membership, Novel, Series
+Entities: Organization, Team, Membership, Novel, Series
+(User model already created in full at Milestone 4 — no `users` migration needed here.)
 
 Deliverables:
 - Migrations written and run
