@@ -1,0 +1,9 @@
+<div class="login-container">
+  <h1>鷹 Hawk Translations</h1>
+
+  <% if alert %>
+    <p class="alert"><%= alert %></p>
+  <% end %>
+
+  <%= button_to "Sign in with Google", "/auth/google_oauth2", method: :post, data: { turbo: false } %>
+</div>
