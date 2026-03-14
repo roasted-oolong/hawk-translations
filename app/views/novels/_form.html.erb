@@ -1,0 +1,58 @@
+<%= form_with model: novel do |f| %>
+  <% if novel.errors.any? %>
+    <div>
+      <p><%= novel.errors.count %> error(s) prevented this novel from being saved:</p>
+      <ul>
+        <% novel.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :title %>
+    <%= f.text_field :title %>
+  </div>
+
+  <div>
+    <%= f.label :korean_title %>
+    <%= f.text_field :korean_title %>
+  </div>
+
+  <div>
+    <%= f.label :genre %>
+    <%= f.text_field :genre %>
+  </div>
+
+  <div>
+    <%= f.label :summary %>
+    <%= f.text_area :summary, rows: 4 %>
+  </div>
+
+  <div>
+    <%= f.label :tone %>
+    <%= f.text_area :tone, rows: 3 %>
+  </div>
+
+  <div>
+    <%= f.label :notes %>
+    <%= f.text_area :notes, rows: 3 %>
+  </div>
+
+  <div>
+    <%= f.label :visibility %>
+    <%= f.select :visibility, Novel.visibilities.keys.map { |v| [v.humanize, v] } %>
+  </div>
+
+  <%# organization_id is required — MVP has one org, so we either hide this
+      or expose it as a select. For now: hidden field defaulting to the first org.
+      When multi-org UI is built, replace with a proper select. %>
+  <% if novel.new_record? %>
+    <%= f.hidden_field :organization_id, value: novel.organization_id || Organization.first&.id %>
+  <% end %>
+
+  <div>
+    <%= f.submit %>
+  </div>
+<% end %>

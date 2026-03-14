@@ -8,6 +8,16 @@ Rails.application.routes.draw do
   get  "/auth/failure",                 to: "sessions#failure"
   delete "/logout",                     to: "sessions#destroy", as: :logout
 
-  # Root — placeholder dashboard until Milestone 5
+  # Novels + nested chapters
+  resources :novels, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
+    resources :chapters, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
+      member do
+        get  :download_korean_source
+        get  :download_translated_output
+      end
+    end
+  end
+
+  # Root
   root "dashboard#index"
 end
