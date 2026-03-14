@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_14_162304) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_14_200005) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -41,6 +41,84 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_14_162304) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "bible_characters", force: :cascade do |t|
+    t.text "aliases"
+    t.datetime "created_at", null: false
+    t.integer "first_appearance_chapter"
+    t.text "honorifics_they_use"
+    t.text "honorifics_used_toward"
+    t.string "korean_name"
+    t.datetime "last_updated_at"
+    t.string "name", null: false
+    t.text "notes"
+    t.bigint "novel_id", null: false
+    t.text "physical_description"
+    t.text "relationships"
+    t.string "role"
+    t.string "significance"
+    t.text "speech_pattern"
+    t.datetime "updated_at", null: false
+    t.index ["novel_id"], name: "index_bible_characters_on_novel_id"
+  end
+
+  create_table "bible_cultural_phrases", force: :cascade do |t|
+    t.text "context"
+    t.datetime "created_at", null: false
+    t.string "established_translation"
+    t.integer "first_appearance_chapter"
+    t.text "intended_meaning"
+    t.string "korean_phrase"
+    t.datetime "last_updated_at"
+    t.text "literal_translation"
+    t.text "notes"
+    t.bigint "novel_id", null: false
+    t.string "phrase", null: false
+    t.datetime "updated_at", null: false
+    t.index ["novel_id"], name: "index_bible_cultural_phrases_on_novel_id"
+  end
+
+  create_table "bible_locations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.integer "first_appearance_chapter"
+    t.string "korean_name"
+    t.datetime "last_updated_at"
+    t.string "location_type"
+    t.string "name", null: false
+    t.text "notes"
+    t.bigint "novel_id", null: false
+    t.text "significance"
+    t.datetime "updated_at", null: false
+    t.index ["novel_id"], name: "index_bible_locations_on_novel_id"
+  end
+
+  create_table "bible_story_entries", force: :cascade do |t|
+    t.string "category", null: false
+    t.text "content"
+    t.datetime "created_at", null: false
+    t.integer "first_appearance_chapter"
+    t.datetime "last_updated_at"
+    t.text "notes"
+    t.bigint "novel_id", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["novel_id"], name: "index_bible_story_entries_on_novel_id"
+  end
+
+  create_table "bible_terminologies", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "definition"
+    t.integer "first_appearance_chapter"
+    t.string "korean_term"
+    t.datetime "last_updated_at"
+    t.text "notes"
+    t.bigint "novel_id", null: false
+    t.string "term", null: false
+    t.datetime "updated_at", null: false
+    t.text "usage_notes"
+    t.index ["novel_id"], name: "index_bible_terminologies_on_novel_id"
   end
 
   create_table "chapters", force: :cascade do |t|
@@ -130,6 +208,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_14_162304) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "bible_characters", "novels"
+  add_foreign_key "bible_cultural_phrases", "novels"
+  add_foreign_key "bible_locations", "novels"
+  add_foreign_key "bible_story_entries", "novels"
+  add_foreign_key "bible_terminologies", "novels"
   add_foreign_key "chapters", "novels"
   add_foreign_key "memberships", "teams"
   add_foreign_key "memberships", "users"
