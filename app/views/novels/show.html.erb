@@ -1,0 +1,70 @@
+<h1><%= @novel.title %></h1>
+<% if @novel.korean_title.present? %>
+  <p><em><%= @novel.korean_title %></em></p>
+<% end %>
+
+<p>
+  <strong>Genre:</strong> <%= @novel.genre.presence || "—" %> |
+  <strong>Series:</strong> <%= @novel.series&.name || "—" %> |
+  <strong>Visibility:</strong> <%= @novel.visibility %>
+</p>
+
+<% if @novel.summary.present? %>
+  <p><%= @novel.summary %></p>
+<% end %>
+
+<p>
+  <%= link_to "Edit Novel", edit_novel_path(@novel) %> |
+  <%= link_to "All Novels", novels_path %>
+</p>
+
+<hr>
+
+<h2>Chapters (<%= @chapters.size %>)</h2>
+
+<%= link_to "Upload Chapter(s)", new_novel_chapter_path(@novel) %>
+
+<% if @chapters.none? %>
+  <p>No chapters yet.</p>
+<% else %>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Title</th>
+        <th>Status</th>
+        <th>Korean Source</th>
+        <th>Translated Output</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @chapters.each do |chapter| %>
+        <tr>
+          <td><%= link_to chapter.number, novel_chapter_path(@novel, chapter) %></td>
+          <td><%= chapter.title.presence || "—" %></td>
+          <td><%= chapter.status %></td>
+          <td>
+            <% if chapter.korean_source.attached? %>
+              <%= link_to "Download", download_korean_source_novel_chapter_path(@novel, chapter) %>
+            <% else %>
+              —
+            <% end %>
+          </td>
+          <td>
+            <% if chapter.translated_output.attached? %>
+              <%= link_to "Download", download_translated_output_novel_chapter_path(@novel, chapter) %>
+            <% else %>
+              —
+            <% end %>
+          </td>
+          <td>
+            <%= link_to "Edit", edit_novel_chapter_path(@novel, chapter) %> |
+            <%= button_to "Remove", novel_chapter_path(@novel, chapter), method: :delete,
+                data: { turbo_confirm: "Remove chapter #{chapter.number}?" } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
