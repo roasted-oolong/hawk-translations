@@ -68,3 +68,44 @@
     </tbody>
   </table>
 <% end %>
+
+<hr>
+
+<h2>Translation Bible</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th>Entries</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Characters</td>
+      <td><%= @novel.bible_characters.count %></td>
+      <td><%= link_to "View →", novel_bible_characters_path(@novel) %></td>
+    </tr>
+    <tr>
+      <td>Locations</td>
+      <td><%= @novel.bible_locations.count %></td>
+      <td><%= link_to "View →", novel_bible_locations_path(@novel) %></td>
+    </tr>
+    <tr>
+      <td>Terminology</td>
+      <td><%= @novel.bible_terminologies.count %></td>
+      <td><%= link_to "View →", novel_bible_terminologies_path(@novel) %></td>
+    </tr>
+    <tr>
+      <td>Cultural Phrases</td>
+      <td><%= @novel.bible_cultural_phrases.count %></td>
+      <td><%= link_to "View →", novel_bible_cultural_phrases_path(@novel) %></td>
+    </tr>
+    <tr>
+      <td>Story Entries</td>
+      <td><%= @novel.bible_story_entries.count %></td>
+      <td><%= link_to "View →", novel_bible_story_entries_path(@novel) %></td>
+    </tr>
+  </tbody>
+</table>

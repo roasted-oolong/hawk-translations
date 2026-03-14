@@ -1,0 +1,37 @@
+<h1>Cultural Phrases — <%= @novel.title %></h1>
+
+<p>
+  <%= link_to "← Novel", @novel %> |
+  <%= link_to "Add Phrase", new_novel_bible_cultural_phrase_path(@novel) %>
+</p>
+
+<% if @entries.none? %>
+  <p>No cultural phrase entries yet.</p>
+<% else %>
+  <table>
+    <thead>
+      <tr>
+        <th>Phrase</th>
+        <th>Korean Phrase</th>
+        <th>Established Translation</th>
+        <th>First Appears</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @entries.each do |entry| %>
+        <tr>
+          <td><%= link_to entry.phrase, novel_bible_cultural_phrase_path(@novel, entry) %></td>
+          <td><%= entry.korean_phrase.presence || "—" %></td>
+          <td><%= entry.established_translation.presence || "—" %></td>
+          <td><%= entry.first_appearance_chapter ? "Ch. #{entry.first_appearance_chapter}" : "—" %></td>
+          <td>
+            <%= link_to "Edit", edit_novel_bible_cultural_phrase_path(@novel, entry) %> |
+            <%= button_to "Remove", novel_bible_cultural_phrase_path(@novel, entry), method: :delete,
+                data: { turbo_confirm: "Remove \"#{entry.phrase}\"?" } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

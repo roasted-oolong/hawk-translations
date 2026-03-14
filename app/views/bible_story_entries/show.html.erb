@@ -1,0 +1,36 @@
+<%
+  category_labels = {
+    "main_plot"  => "Main Plot",
+    "subplot"    => "Subplot",
+    "watch_list" => "Watch List",
+    "theme"      => "Theme"
+  }
+%>
+
+<h1><%= @entry.title %></h1>
+<p><em><%= category_labels[@entry.category] %></em></p>
+
+<p>
+  <%= link_to "← All Story Entries", novel_bible_story_entries_path(@novel) %> |
+  <%= link_to "Edit", edit_novel_bible_story_entry_path(@novel, @entry) %> |
+  <%= button_to "Remove", novel_bible_story_entry_path(@novel, @entry), method: :delete,
+      data: { turbo_confirm: "Remove \"#{@entry.title}\"?" } %>
+</p>
+
+<hr>
+
+<% if @entry.first_appearance_chapter.present? %>
+  <p><strong>First Appearance:</strong> Chapter <%= @entry.first_appearance_chapter %></p>
+<% end %>
+
+<% if @entry.content.present? %>
+  <h2>Content</h2>
+  <p><%= simple_format @entry.content %></p>
+<% end %>
+
+<% if @entry.notes.present? %>
+  <h2>Notes</h2>
+  <p><%= simple_format @entry.notes %></p>
+<% end %>
+
+<p class="muted">Last updated: <%= @entry.last_updated_at&.strftime("%B %-d, %Y") || "—" %></p>

@@ -10,6 +10,13 @@ class Novel < ApplicationRecord
   has_many :teams, through: :novel_team_assignments
   has_many :chapters, dependent: :destroy
 
+  # Bible entry tables — each category is its own table
+  has_many :bible_characters,     dependent: :destroy
+  has_many :bible_locations,      dependent: :destroy
+  has_many :bible_terminologies,  dependent: :destroy
+  has_many :bible_cultural_phrases, dependent: :destroy
+  has_many :bible_story_entries,  dependent: :destroy
+
   # ---------------------------------------------------------------------------
   # Enums
   # ---------------------------------------------------------------------------

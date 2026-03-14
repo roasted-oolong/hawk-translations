@@ -1,0 +1,76 @@
+<%= form_with model: [ @novel, @entry ] do |f| %>
+  <% if @entry.errors.any? %>
+    <div>
+      <p><strong><%= pluralize(@entry.errors.count, "error") %> prevented this from saving:</strong></p>
+      <ul>
+        <% @entry.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :name %>
+    <%= f.text_field :name %>
+  </div>
+
+  <div>
+    <%= f.label :korean_name, "Korean Name" %>
+    <%= f.text_field :korean_name %>
+  </div>
+
+  <div>
+    <%= f.label :aliases %>
+    <%= f.text_area :aliases, rows: 2 %>
+  </div>
+
+  <div>
+    <%= f.label :role %>
+    <%= f.text_field :role %>
+  </div>
+
+  <div>
+    <%= f.label :significance %>
+    <%= f.text_field :significance %>
+  </div>
+
+  <div>
+    <%= f.label :first_appearance_chapter, "First Appearance (Chapter #)" %>
+    <%= f.number_field :first_appearance_chapter, min: 1 %>
+  </div>
+
+  <div>
+    <%= f.label :physical_description, "Physical Description" %>
+    <%= f.text_area :physical_description, rows: 4 %>
+  </div>
+
+  <div>
+    <%= f.label :speech_pattern, "Speech Pattern" %>
+    <%= f.text_area :speech_pattern, rows: 4 %>
+  </div>
+
+  <div>
+    <%= f.label :honorifics_used_toward, "Honorifics Used Toward Them" %>
+    <%= f.text_area :honorifics_used_toward, rows: 2 %>
+  </div>
+
+  <div>
+    <%= f.label :honorifics_they_use, "Honorifics They Use" %>
+    <%= f.text_area :honorifics_they_use, rows: 2 %>
+  </div>
+
+  <div>
+    <%= f.label :relationships %>
+    <%= f.text_area :relationships, rows: 4 %>
+  </div>
+
+  <div>
+    <%= f.label :notes %>
+    <%= f.text_area :notes, rows: 4 %>
+  </div>
+
+  <div>
+    <%= f.submit %>
+  </div>
+<% end %>

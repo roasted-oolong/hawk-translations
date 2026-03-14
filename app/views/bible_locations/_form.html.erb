@@ -1,0 +1,51 @@
+<%= form_with model: [ @novel, @entry ] do |f| %>
+  <% if @entry.errors.any? %>
+    <div>
+      <p><strong><%= pluralize(@entry.errors.count, "error") %> prevented this from saving:</strong></p>
+      <ul>
+        <% @entry.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :name %>
+    <%= f.text_field :name %>
+  </div>
+
+  <div>
+    <%= f.label :korean_name, "Korean Name" %>
+    <%= f.text_field :korean_name %>
+  </div>
+
+  <div>
+    <%= f.label :location_type, "Type" %>
+    <%= f.text_field :location_type %>
+  </div>
+
+  <div>
+    <%= f.label :first_appearance_chapter, "First Appearance (Chapter #)" %>
+    <%= f.number_field :first_appearance_chapter, min: 1 %>
+  </div>
+
+  <div>
+    <%= f.label :description %>
+    <%= f.text_area :description, rows: 4 %>
+  </div>
+
+  <div>
+    <%= f.label :significance %>
+    <%= f.text_area :significance, rows: 4 %>
+  </div>
+
+  <div>
+    <%= f.label :notes %>
+    <%= f.text_area :notes, rows: 4 %>
+  </div>
+
+  <div>
+    <%= f.submit %>
+  </div>
+<% end %>

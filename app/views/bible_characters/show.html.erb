@@ -1,0 +1,61 @@
+<h1><%= @entry.name %></h1>
+<% if @entry.korean_name.present? %>
+  <p><em><%= @entry.korean_name %></em></p>
+<% end %>
+
+<p>
+  <%= link_to "← All Characters", novel_bible_characters_path(@novel) %> |
+  <%= link_to "Edit", edit_novel_bible_character_path(@novel, @entry) %> |
+  <%= button_to "Remove", novel_bible_character_path(@novel, @entry), method: :delete,
+      data: { turbo_confirm: "Remove #{@entry.name}?" } %>
+</p>
+
+<hr>
+
+<% if @entry.role.present? %>
+  <p><strong>Role:</strong> <%= @entry.role %></p>
+<% end %>
+
+<% if @entry.significance.present? %>
+  <p><strong>Significance:</strong> <%= @entry.significance %></p>
+<% end %>
+
+<% if @entry.first_appearance_chapter.present? %>
+  <p><strong>First Appearance:</strong> Chapter <%= @entry.first_appearance_chapter %></p>
+<% end %>
+
+<% if @entry.aliases.present? %>
+  <p><strong>Aliases:</strong> <%= @entry.aliases %></p>
+<% end %>
+
+<% if @entry.physical_description.present? %>
+  <h2>Physical Description</h2>
+  <p><%= simple_format @entry.physical_description %></p>
+<% end %>
+
+<% if @entry.speech_pattern.present? %>
+  <h2>Speech Pattern</h2>
+  <p><%= simple_format @entry.speech_pattern %></p>
+<% end %>
+
+<% if @entry.honorifics_used_toward.present? || @entry.honorifics_they_use.present? %>
+  <h2>Honorifics</h2>
+  <% if @entry.honorifics_used_toward.present? %>
+    <p><strong>Used toward them:</strong> <%= @entry.honorifics_used_toward %></p>
+  <% end %>
+  <% if @entry.honorifics_they_use.present? %>
+    <p><strong>They use:</strong> <%= @entry.honorifics_they_use %></p>
+  <% end %>
+<% end %>
+
+<% if @entry.relationships.present? %>
+  <h2>Relationships</h2>
+  <p><%= simple_format @entry.relationships %></p>
+<% end %>
+
+<% if @entry.notes.present? %>
+  <h2>Notes</h2>
+  <p><%= simple_format @entry.notes %></p>
+<% end %>
+
+<p class="muted">Last updated: <%= @entry.last_updated_at&.strftime("%B %-d, %Y") || "—" %></p>

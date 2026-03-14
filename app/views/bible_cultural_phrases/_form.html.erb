@@ -1,0 +1,56 @@
+<%= form_with model: [ @novel, @entry ] do |f| %>
+  <% if @entry.errors.any? %>
+    <div>
+      <p><strong><%= pluralize(@entry.errors.count, "error") %> prevented this from saving:</strong></p>
+      <ul>
+        <% @entry.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :phrase %>
+    <%= f.text_field :phrase %>
+  </div>
+
+  <div>
+    <%= f.label :korean_phrase, "Korean Phrase" %>
+    <%= f.text_field :korean_phrase %>
+  </div>
+
+  <div>
+    <%= f.label :established_translation, "Established Translation" %>
+    <%= f.text_field :established_translation %>
+  </div>
+
+  <div>
+    <%= f.label :first_appearance_chapter, "First Appearance (Chapter #)" %>
+    <%= f.number_field :first_appearance_chapter, min: 1 %>
+  </div>
+
+  <div>
+    <%= f.label :literal_translation, "Literal Translation" %>
+    <%= f.text_area :literal_translation, rows: 3 %>
+  </div>
+
+  <div>
+    <%= f.label :intended_meaning, "Intended Meaning" %>
+    <%= f.text_area :intended_meaning, rows: 3 %>
+  </div>
+
+  <div>
+    <%= f.label :context %>
+    <%= f.text_area :context, rows: 3 %>
+  </div>
+
+  <div>
+    <%= f.label :notes %>
+    <%= f.text_area :notes, rows: 4 %>
+  </div>
+
+  <div>
+    <%= f.submit %>
+  </div>
+<% end %>

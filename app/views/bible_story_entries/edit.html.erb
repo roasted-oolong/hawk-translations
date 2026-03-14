@@ -1,0 +1,3 @@
+<h1>Edit Story Entry — <%= @entry.title %></h1>
+<p><%= link_to "← Back", novel_bible_story_entry_path(@novel, @entry) %></p>
+<%= render "form", novel: @novel, entry: @entry %>
