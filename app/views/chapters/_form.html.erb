@@ -1,0 +1,42 @@
+<%= form_with model: [ novel, chapter ], multipart: true do |f| %>
+  <% if chapter.errors.any? %>
+    <div>
+      <p><%= chapter.errors.count %> error(s):</p>
+      <ul>
+        <% chapter.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :title, "Title (optional subtitle)" %>
+    <%= f.text_field :title %>
+  </div>
+
+  <div>
+    <%= f.label :status %>
+    <%= f.select :status, Chapter.statuses.keys.map { |s| [s.humanize, s] } %>
+  </div>
+
+  <div>
+    <%= f.label :korean_source, "Replace Korean source file" %>
+    <%= f.file_field :korean_source, accept: "text/plain,.txt" %>
+    <% if chapter.korean_source.attached? %>
+      <small>Current: <%= chapter.korean_source.filename %></small>
+    <% end %>
+  </div>
+
+  <div>
+    <%= f.label :translated_output, "Attach translated output file" %>
+    <%= f.file_field :translated_output, accept: "text/plain,.txt" %>
+    <% if chapter.translated_output.attached? %>
+      <small>Current: <%= chapter.translated_output.filename %></small>
+    <% end %>
+  </div>
+
+  <div>
+    <%= f.submit "Save" %>
+  </div>
+<% end %>

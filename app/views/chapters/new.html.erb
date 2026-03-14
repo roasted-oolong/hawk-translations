@@ -1,0 +1,51 @@
+<h1>Upload Chapter(s)</h1>
+<p>Upload a single chapter with a number, or upload multiple Korean source files at once and chapter numbers will be parsed from the filenames.</p>
+
+<%= form_with url: novel_chapters_path(@novel), multipart: true do |f| %>
+  <fieldset>
+    <legend>Bulk upload — multiple Korean source files</legend>
+    <p>Select multiple <code>ch{N}_korean</code> or <code>Chapter_{N}...</code> files. Chapter numbers are parsed from filenames automatically.</p>
+    <div>
+      <%= f.label :korean_source, "Korean source files" %>
+      <%= f.file_field :korean_source,
+            name: "chapter[korean_source][]",
+            multiple: true,
+            accept: "text/plain,.txt" %>
+    </div>
+  </fieldset>
+
+  <hr>
+
+  <fieldset>
+    <legend>Single chapter</legend>
+    <p>Or upload one chapter with an explicit chapter number.</p>
+    <div>
+      <%= f.label :number, "Chapter number" %>
+      <%= f.number_field :number, name: "chapter[number]", min: 1 %>
+    </div>
+    <div>
+      <%= f.label :title, "Title (optional subtitle)" %>
+      <%= f.text_field :title, name: "chapter[title]" %>
+    </div>
+    <div>
+      <%= f.label :korean_source, "Korean source file" %>
+      <%= f.file_field :korean_source,
+            name: "chapter[korean_source][]",
+            multiple: false,
+            accept: "text/plain,.txt" %>
+    </div>
+    <div>
+      <%= f.label :status, "Status" %>
+      <%= f.select :status,
+            name: "chapter[status]",
+            options: Chapter.statuses.keys.map { |s| [s.humanize, s] },
+            selected: "untranslated" %>
+    </div>
+  </fieldset>
+
+  <div>
+    <%= f.submit "Upload" %>
+  </div>
+<% end %>
+
+<%= link_to "Back to novel", @novel %>

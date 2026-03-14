@@ -1,0 +1,3 @@
+<h1>Edit Chapter <%= @chapter.number %></h1>
+<%= render "form", novel: @novel, chapter: @chapter %>
+<%= link_to "Cancel", novel_chapter_path(@novel, @chapter) %>
