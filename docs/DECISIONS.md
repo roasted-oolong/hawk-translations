@@ -118,6 +118,16 @@ correctly across subsequent requests within the same example.
 
 ---
 
+## 2026-03 · Bulk upload parses chapter numbers from filenames in ChaptersController
+
+Bulk upload (multiple files at once) has no number field — numbers are parsed from filenames
+using two patterns: `ch{N}_korean` and `Chapter_{N}...`. Files that don't match either pattern
+are skipped with an error message surfaced in the redirect flash. This logic lives in
+`ChaptersController#extract_chapter_number`, a private method, keeping the parsing out of
+the model and easy to test or extend without touching Active Record.
+
+---
+
 ## 2026-03 · Chapter file naming: three patterns exist, migration script deferred to Milestone 9
 
 Observed patterns in idols-rewind/chapters:

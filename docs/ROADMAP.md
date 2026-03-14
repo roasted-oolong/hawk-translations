@@ -94,7 +94,7 @@ Deliverables:
 ---
 
 ## Milestone 7 — Chapter Management & File Upload/Download
-**Status: 🔲 Not Started**
+**Status: ✅ Done**
 
 Chapter records tied to novels. Korean source upload and translated output download
 via Active Storage (local disk). Status tracking (untranslated/translated/reviewed).
