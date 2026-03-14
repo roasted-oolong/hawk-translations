@@ -8,14 +8,21 @@ Rails.application.routes.draw do
   get  "/auth/failure",                 to: "sessions#failure"
   delete "/logout",                     to: "sessions#destroy", as: :logout
 
-  # Novels + nested chapters
+  # Novels + nested resources
   resources :novels, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
     resources :chapters, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
       member do
-        get  :download_korean_source
-        get  :download_translated_output
+        get :download_korean_source
+        get :download_translated_output
       end
     end
+
+    # Bible entry tables — one nested resource block per category
+    resources :bible_characters,     only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
+    resources :bible_locations,      only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
+    resources :bible_terminologies,  only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
+    resources :bible_cultural_phrases, only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
+    resources :bible_story_entries,  only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
   end
 
   # Root
