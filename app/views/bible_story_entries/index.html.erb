@@ -1,0 +1,48 @@
+<h1>Story Entries — <%= @novel.title %></h1>
+
+<p>
+  <%= link_to "← Novel", @novel %> |
+  <%= link_to "Add Story Entry", new_novel_bible_story_entry_path(@novel) %>
+</p>
+
+<%
+  category_labels = {
+    "main_plot"  => "Main Plot",
+    "subplot"    => "Subplots",
+    "watch_list" => "Watch List",
+    "theme"      => "Themes"
+  }
+%>
+
+<% category_labels.each do |cat_key, cat_label| %>
+  <% entries = @entries_by_category[cat_key] %>
+  <% next if entries.none? %>
+
+  <h2><%= cat_label %></h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>First Appears</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% entries.each do |entry| %>
+        <tr>
+          <td><%= link_to entry.title, novel_bible_story_entry_path(@novel, entry) %></td>
+          <td><%= entry.first_appearance_chapter ? "Ch. #{entry.first_appearance_chapter}" : "—" %></td>
+          <td>
+            <%= link_to "Edit", edit_novel_bible_story_entry_path(@novel, entry) %> |
+            <%= button_to "Remove", novel_bible_story_entry_path(@novel, entry), method: :delete,
+                data: { turbo_confirm: "Remove \"#{entry.title}\"?" } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<% if @entries_by_category.values.all?(&:none?) %>
+  <p>No story entries yet.</p>
+<% end %>

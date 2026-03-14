@@ -1,0 +1,37 @@
+<h1>Locations — <%= @novel.title %></h1>
+
+<p>
+  <%= link_to "← Novel", @novel %> |
+  <%= link_to "Add Location", new_novel_bible_location_path(@novel) %>
+</p>
+
+<% if @entries.none? %>
+  <p>No locations yet.</p>
+<% else %>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Korean Name</th>
+        <th>Type</th>
+        <th>First Appears</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @entries.each do |entry| %>
+        <tr>
+          <td><%= link_to entry.name, novel_bible_location_path(@novel, entry) %></td>
+          <td><%= entry.korean_name.presence || "—" %></td>
+          <td><%= entry.location_type.presence || "—" %></td>
+          <td><%= entry.first_appearance_chapter ? "Ch. #{entry.first_appearance_chapter}" : "—" %></td>
+          <td>
+            <%= link_to "Edit", edit_novel_bible_location_path(@novel, entry) %> |
+            <%= button_to "Remove", novel_bible_location_path(@novel, entry), method: :delete,
+                data: { turbo_confirm: "Remove #{entry.name}?" } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

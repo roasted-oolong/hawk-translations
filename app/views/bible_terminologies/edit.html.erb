@@ -1,0 +1,3 @@
+<h1>Edit Term — <%= @entry.term %></h1>
+<p><%= link_to "← Back", novel_bible_terminology_path(@novel, @entry) %></p>
+<%= render "form", novel: @novel, entry: @entry %>

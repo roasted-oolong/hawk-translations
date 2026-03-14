@@ -1,0 +1,38 @@
+<h1><%= @entry.name %></h1>
+<% if @entry.korean_name.present? %>
+  <p><em><%= @entry.korean_name %></em></p>
+<% end %>
+
+<p>
+  <%= link_to "← All Locations", novel_bible_locations_path(@novel) %> |
+  <%= link_to "Edit", edit_novel_bible_location_path(@novel, @entry) %> |
+  <%= button_to "Remove", novel_bible_location_path(@novel, @entry), method: :delete,
+      data: { turbo_confirm: "Remove #{@entry.name}?" } %>
+</p>
+
+<hr>
+
+<% if @entry.location_type.present? %>
+  <p><strong>Type:</strong> <%= @entry.location_type %></p>
+<% end %>
+
+<% if @entry.first_appearance_chapter.present? %>
+  <p><strong>First Appearance:</strong> Chapter <%= @entry.first_appearance_chapter %></p>
+<% end %>
+
+<% if @entry.description.present? %>
+  <h2>Description</h2>
+  <p><%= simple_format @entry.description %></p>
+<% end %>
+
+<% if @entry.significance.present? %>
+  <h2>Significance</h2>
+  <p><%= simple_format @entry.significance %></p>
+<% end %>
+
+<% if @entry.notes.present? %>
+  <h2>Notes</h2>
+  <p><%= simple_format @entry.notes %></p>
+<% end %>
+
+<p class="muted">Last updated: <%= @entry.last_updated_at&.strftime("%B %-d, %Y") || "—" %></p>

@@ -1,0 +1,3 @@
+<h1>Edit Cultural Phrase — <%= @entry.phrase %></h1>
+<p><%= link_to "← Back", novel_bible_cultural_phrase_path(@novel, @entry) %></p>
+<%= render "form", novel: @novel, entry: @entry %>

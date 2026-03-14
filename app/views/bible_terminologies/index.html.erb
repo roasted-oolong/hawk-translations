@@ -1,0 +1,35 @@
+<h1>Terminology — <%= @novel.title %></h1>
+
+<p>
+  <%= link_to "← Novel", @novel %> |
+  <%= link_to "Add Term", new_novel_bible_terminology_path(@novel) %>
+</p>
+
+<% if @entries.none? %>
+  <p>No terminology entries yet.</p>
+<% else %>
+  <table>
+    <thead>
+      <tr>
+        <th>Term</th>
+        <th>Korean Term</th>
+        <th>First Appears</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @entries.each do |entry| %>
+        <tr>
+          <td><%= link_to entry.term, novel_bible_terminology_path(@novel, entry) %></td>
+          <td><%= entry.korean_term.presence || "—" %></td>
+          <td><%= entry.first_appearance_chapter ? "Ch. #{entry.first_appearance_chapter}" : "—" %></td>
+          <td>
+            <%= link_to "Edit", edit_novel_bible_terminology_path(@novel, entry) %> |
+            <%= button_to "Remove", novel_bible_terminology_path(@novel, entry), method: :delete,
+                data: { turbo_confirm: "Remove \"#{entry.term}\"?" } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

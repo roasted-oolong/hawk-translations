@@ -1,0 +1,46 @@
+<%= form_with model: [ @novel, @entry ] do |f| %>
+  <% if @entry.errors.any? %>
+    <div>
+      <p><strong><%= pluralize(@entry.errors.count, "error") %> prevented this from saving:</strong></p>
+      <ul>
+        <% @entry.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :category %>
+    <%= f.select :category, [
+      ["Main Plot",  "main_plot"],
+      ["Subplot",    "subplot"],
+      ["Watch List", "watch_list"],
+      ["Theme",      "theme"]
+    ], { include_blank: "— Select category —" } %>
+  </div>
+
+  <div>
+    <%= f.label :title %>
+    <%= f.text_field :title %>
+  </div>
+
+  <div>
+    <%= f.label :first_appearance_chapter, "First Appearance (Chapter #)" %>
+    <%= f.number_field :first_appearance_chapter, min: 1 %>
+  </div>
+
+  <div>
+    <%= f.label :content %>
+    <%= f.text_area :content, rows: 8 %>
+  </div>
+
+  <div>
+    <%= f.label :notes %>
+    <%= f.text_area :notes, rows: 4 %>
+  </div>
+
+  <div>
+    <%= f.submit %>
+  </div>
+<% end %>
