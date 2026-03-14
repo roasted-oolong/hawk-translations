@@ -3,7 +3,7 @@
 Canonical data model. Updated as migrations are written and run.
 Column types reflect PostgreSQL / ActiveRecord conventions.
 
-Status: **M1–M7 complete** — migrations run, schema reflects current database state.
+Status: **M1–M8 complete** — migrations run, schema reflects current database state.
 
 ---
 
@@ -128,9 +128,13 @@ on the Chapter model — not as columns.
 
 ---
 
-## Milestone 8 — Bible Entry Tables
+## Milestone 8 — Bible Entry Tables ✅
 
-All five tables share common columns: `novel_id`, `first_appearance_chapter`, `notes`, `created_at`, `updated_at`.
+> Migrations run. Models, validations, associations, and scopes complete. All specs passing.
+
+All five tables share common columns: `novel_id` (FK, not null), `first_appearance_chapter` (integer, nullable), `notes` (text, nullable), `last_updated_at` (datetime, set via `before_save` callback), `created_at`, `updated_at`.
+
+`last_updated_at` is set automatically via a `before_save` callback on each model — not managed by Rails. Distinct from `updated_at` to allow future suppression for minor edits if needed.
 
 ### bible_characters
 | Column | Type | Notes |
@@ -149,9 +153,11 @@ All five tables share common columns: `novel_id`, `first_appearance_chapter`, `n
 | relationships | text | |
 | first_appearance_chapter | integer | |
 | notes | text | |
-| last_updated_at | datetime | |
+| last_updated_at | datetime | set via before_save |
 | created_at | datetime | |
 | updated_at | datetime | |
+
+Scope: `by_name` — orders alphabetically by name.
 
 ### bible_locations
 | Column | Type | Notes |
@@ -165,9 +171,11 @@ All five tables share common columns: `novel_id`, `first_appearance_chapter`, `n
 | significance | text | |
 | first_appearance_chapter | integer | |
 | notes | text | |
-| last_updated_at | datetime | |
+| last_updated_at | datetime | set via before_save |
 | created_at | datetime | |
 | updated_at | datetime | |
+
+Scope: `by_name` — orders alphabetically by name.
 
 ### bible_terminology
 | Column | Type | Notes |
@@ -180,9 +188,11 @@ All five tables share common columns: `novel_id`, `first_appearance_chapter`, `n
 | usage_notes | text | |
 | first_appearance_chapter | integer | |
 | notes | text | |
-| last_updated_at | datetime | |
+| last_updated_at | datetime | set via before_save |
 | created_at | datetime | |
 | updated_at | datetime | |
+
+Scope: `by_term` — orders alphabetically by term.
 
 ### bible_cultural_phrases
 | Column | Type | Notes |
@@ -197,23 +207,27 @@ All five tables share common columns: `novel_id`, `first_appearance_chapter`, `n
 | established_translation | string | |
 | first_appearance_chapter | integer | |
 | notes | text | |
-| last_updated_at | datetime | |
+| last_updated_at | datetime | set via before_save |
 | created_at | datetime | |
 | updated_at | datetime | |
+
+Scope: `by_phrase` — orders alphabetically by phrase.
 
 ### bible_story_entries
 | Column | Type | Notes |
 |--------|------|-------|
 | id | bigint PK | |
 | novel_id | bigint FK | not null |
-| category | string | "main_plot" \| "subplot" \| "watch_list" \| "theme" |
+| category | string | "main_plot" \| "subplot" \| "watch_list" \| "theme" — not null |
 | title | string | not null |
 | content | text | |
 | first_appearance_chapter | integer | |
 | notes | text | |
-| last_updated_at | datetime | |
+| last_updated_at | datetime | set via before_save |
 | created_at | datetime | |
 | updated_at | datetime | |
+
+Scopes: `by_title` — orders alphabetically by title. `by_category(cat)` — filters to a single category. Index view groups entries by category using `BibleStoryEntry.categories.keys`.
 
 ---
 
