@@ -110,7 +110,7 @@ Deliverables:
 ---
 
 ## Milestone 8 — Bible Entry Tables & Views
-**Status: 🔄 In Progress — awaiting `rails db:migrate` and `rspec`**
+**Status: ✅ Done**
 
 Five separate bible tables: characters, locations, terminology, cultural_phrases, story_entries.
 CRUD for all categories. Markdown-style rendered views.
@@ -126,8 +126,8 @@ Deliverables:
 - ✅ RSpec model specs written (5 files)
 - ✅ RSpec request specs written (5 files)
 - ✅ FactoryBot factories written (5 files)
-- ⏳ `rails db:migrate` — run locally to apply the five new migrations
-- ⏳ `rspec` — confirm all specs pass against the migrated schema
+- ✅ `rails db:migrate` — run locally to apply the five new migrations
+- ✅ `rspec` — confirm all specs pass against the migrated schema
 
 ---
 
