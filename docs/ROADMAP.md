@@ -110,17 +110,24 @@ Deliverables:
 ---
 
 ## Milestone 8 — Bible Entry Tables & Views
-**Status: 🔲 Not Started**
+**Status: 🔄 In Progress — awaiting `rails db:migrate` and `rspec`**
 
 Five separate bible tables: characters, locations, terminology, cultural_phrases, story_entries.
 CRUD for all categories. Markdown-style rendered views.
 
 Deliverables:
-- All five bible table migrations and models
-- Create/edit/delete for each category
-- Markdown-style read view per entry
-- first_appearance_chapter tracked
-- RSpec model and feature specs passing
+- ✅ All five bible table migrations written
+- ✅ All five models (validations, scopes, before_save callback for last_updated_at)
+- ✅ Novel model updated with five has_many associations (dependent: :destroy)
+- ✅ Routes — five nested resource blocks under :novels
+- ✅ Five controllers (standard 7 actions, set_novel / set_entry pattern)
+- ✅ All views — index, show, new, edit, _form for all five categories (25 files)
+- ✅ novels/show updated with Bible section (entry counts + links per category)
+- ✅ RSpec model specs written (5 files)
+- ✅ RSpec request specs written (5 files)
+- ✅ FactoryBot factories written (5 files)
+- ⏳ `rails db:migrate` — run locally to apply the five new migrations
+- ⏳ `rspec` — confirm all specs pass against the migrated schema
 
 ---
 
