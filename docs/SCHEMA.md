@@ -3,7 +3,7 @@
 Canonical data model. Updated as migrations are written and run.
 Column types reflect PostgreSQL / ActiveRecord conventions.
 
-Status: **M1–M6 complete** — migrations run, schema reflects current database state.
+Status: **M1–M7 complete** — migrations run, schema reflects current database state.
 
 ---
 
@@ -108,7 +108,7 @@ Index: `(novel_id, team_id)` unique
 
 ---
 
-## Milestone 7 — Chapters
+## Milestone 7 — Chapters ✅
 
 ### chapters
 | Column | Type | Notes |
