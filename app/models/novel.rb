@@ -8,6 +8,7 @@ class Novel < ApplicationRecord
 
   has_many :novel_team_assignments, dependent: :destroy
   has_many :teams, through: :novel_team_assignments
+  has_many :chapters, dependent: :destroy
 
   # ---------------------------------------------------------------------------
   # Enums
