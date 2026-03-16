@@ -3,7 +3,7 @@
 Canonical data model. Updated as migrations are written and run.
 Column types reflect PostgreSQL / ActiveRecord conventions.
 
-Status: **M1–M8 complete** — migrations run, schema reflects current database state.
+Status: **M1–M9 complete** — migrations run, schema reflects current database state.
 
 ---
 
@@ -218,7 +218,7 @@ Scope: `by_phrase` — orders alphabetically by phrase.
 |--------|------|-------|
 | id | bigint PK | |
 | novel_id | bigint FK | not null |
-| category | string | "main_plot" \| "subplot" \| "watch_list" \| "theme" — not null |
+| category | string | "main_plot" \| "subplot" \| "watch_list" \| "theme" \| "world_building" — not null |
 | title | string | not null |
 | content | text | |
 | first_appearance_chapter | integer | |

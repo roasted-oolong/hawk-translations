@@ -128,14 +128,33 @@ the model and easy to test or extend without touching Active Record.
 
 ---
 
-## 2026-03 · Chapter file naming: three patterns exist, migration script deferred to Milestone 9
+## 2026-03 · Chapter file naming: already clean, no rename script needed (Milestone 9)
 
-Observed patterns in idols-rewind/chapters:
-1. `Chapter_1 - The Super Manager's Regression.txt` — translated, has subtitle
-2. `Chapter_68 - Script Reading(1).txt` — translated, has subtitle with number
-3. `Chapter_10.txt` — translated, no subtitle
-4. `ch1_korean` — Korean source, no extension
+On inspection at Milestone 9, all 74 chapter files already follow the clean naming
+convention: `Chapter N.txt` (translated output) and `Chapter N (Korean).txt` (Korean
+source). The three legacy patterns documented above were resolved before this milestone.
+No rename script required.
 
-Rename script will normalize all translated output to `Chapter X.txt` and
-Korean source to `Chapter X (Korean).txt`. Script written at Milestone 9,
-not before — no need to touch existing files until the chapter model exists.
+---
+
+## 2026-03 · `world_building` added to `BibleStoryEntry` category enum at Milestone 9
+
+The `story.md` bible template includes a World Building section as a first-class
+category alongside Main Plot, Subplots, Themes, and Watch List. Although idols-rewind
+has no world building content (grounded real-world novel), future novels on the platform
+may have magic systems, political structures, or other world-building elements that do
+not fit the existing categories. Adding `world_building` now costs one no-op migration
+and keeps the schema honest to the feature. A polymorphic workaround or future data
+migration would cost more. The category is string-backed with no DB check constraint,
+so the change requires no column alteration.
+
+---
+
+## 2026-03 · Bible import script in `db/import/`, not `db/seeds.rb`
+
+`db/seeds.rb` is for data required in every environment on every setup (e.g., lookup
+tables, default roles). The idols-rewind bible data is one-time content for a specific
+novel — not infrastructure. Placing it in `db/import/idols_rewind_bible.rb` and running
+it with `rails runner` makes the intent explicit: this is a one-time migration of
+existing content, not a seed that should run on every `db:setup`. The script is
+idempotent (skips existing records) so re-running it is safe.
