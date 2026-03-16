@@ -39,7 +39,7 @@ RSpec.describe BibleStoryEntry, type: :model do
   end
 
   describe "enums" do
-    %w[main_plot subplot watch_list theme].each do |cat|
+    %w[main_plot subplot watch_list theme world_building].each do |cat|
       it "accepts category: #{cat}" do
         entry = build(:bible_story_entry, category: cat)
         expect(entry).to be_valid
@@ -84,6 +84,13 @@ RSpec.describe BibleStoryEntry, type: :model do
       plot     = create(:bible_story_entry, novel: novel, category: "main_plot")
       _subplot = create(:bible_story_entry, novel: novel, category: "subplot")
       expect(novel.bible_story_entries.by_category("main_plot")).to eq([ plot ])
+    end
+
+    it "filters to world_building entries with .by_category" do
+      novel = create(:novel)
+      wb    = create(:bible_story_entry, novel: novel, category: "world_building")
+      _plot = create(:bible_story_entry, novel: novel, category: "main_plot")
+      expect(novel.bible_story_entries.by_category("world_building")).to eq([ wb ])
     end
   end
 
