@@ -8,10 +8,11 @@ class BibleStoryEntry < ApplicationRecord
   # Enums
   # ---------------------------------------------------------------------------
   enum :category, {
-    main_plot:  "main_plot",
-    subplot:    "subplot",
-    watch_list: "watch_list",
-    theme:      "theme"
+    main_plot:      "main_plot",
+    subplot:        "subplot",
+    watch_list:     "watch_list",
+    theme:          "theme",
+    world_building: "world_building"
   }
 
   # ---------------------------------------------------------------------------
