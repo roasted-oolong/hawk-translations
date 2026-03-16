@@ -132,16 +132,17 @@ Deliverables:
 ---
 
 ## Milestone 9 — Bible Data Migration (idols-rewind)
-**Status: 🔲 Not Started**
+**Status: ✅ Done**
 
 One-time import of existing idols-rewind markdown bible files into the database.
-Chapter file naming cleanup script also lives here.
+Chapter file naming cleanup: not needed — files already in correct format.
 
 Deliverables:
-- Migration script for all five bible categories from idols-rewind markdown files
-- Chapter file rename script (handles all three existing naming patterns)
-- Idols-rewind novel record seeded in the database
-- All bible entries verified in the app
+- ✅ `world_building` added to `BibleStoryEntry` category enum (migration + model + spec + view + form)
+- ✅ Import script: `db/import/idols_rewind_bible.rb` — all five bible categories, idempotent
+- ✅ Organization + Novel record created idempotently by the import script
+- ✅ Chapter rename script: not needed — all 74 chapter files already use `Chapter N.txt` / `Chapter N (Korean).txt` format
+- Run to execute: `rails db:migrate && rails runner db/import/idols_rewind_bible.rb`
 
 ---
 
