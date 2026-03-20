@@ -1,0 +1,45 @@
+<h1>Translation Jobs</h1>
+
+<p><%= link_to "← Back to novel", @novel %></p>
+
+<%= render "form", novel: @novel, translation_job: TranslationJob.new %>
+
+<hr>
+
+<% if @translation_jobs.empty? %>
+  <p>No jobs yet. Trigger one above.</p>
+<% else %>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Chapters</th>
+        <th>Status</th>
+        <th>Triggered by</th>
+        <th>Started</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @translation_jobs.each do |job| %>
+        <tr>
+          <td><%= job.job_type.humanize %></td>
+          <td><%= job.chapter_range_label || "—" %></td>
+          <td><%= job.status.capitalize %></td>
+          <td><%= job.user.name %></td>
+          <td><%= job.created_at.strftime("%b %-d, %Y %H:%M") %></td>
+          <td>
+            <%= link_to "View", novel_translation_job_path(@novel, job) %>
+            <% if job.cancellable? %>
+              &nbsp;|&nbsp;
+              <%= button_to "Cancel",
+                    novel_translation_job_path(@novel, job),
+                    method: :delete,
+                    data: { turbo_confirm: "Cancel this queued job?" } %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

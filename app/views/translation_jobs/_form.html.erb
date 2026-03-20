@@ -1,0 +1,37 @@
+<%= form_with model: [ novel, translation_job ], local: false do |f| %>
+  <% if translation_job.errors.any? %>
+    <div>
+      <p><%= pluralize(translation_job.errors.count, "error") %> prevented this job from being triggered:</p>
+      <ul>
+        <% translation_job.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :job_type, "Job type" %>
+    <%= f.select :job_type,
+          [
+            [ "Preread",                   "preread" ],
+            [ "Bible build",               "bible_build" ],
+            [ "Post-translation review",   "post_translation_review" ]
+          ],
+          { include_blank: "— Select job type —" } %>
+  </div>
+
+  <div>
+    <%= f.label :chapter_start, "Chapter start" %>
+    <%= f.number_field :chapter_start, min: 1, placeholder: "e.g. 1" %>
+    <small>Leave blank for bible build jobs (whole novel).</small>
+  </div>
+
+  <div>
+    <%= f.label :chapter_end, "Chapter end" %>
+    <%= f.number_field :chapter_end, min: 1, placeholder: "e.g. 10" %>
+    <small>Set equal to chapter start for single-chapter jobs.</small>
+  </div>
+
+  <%= f.submit "Trigger job" %>
+<% end %>

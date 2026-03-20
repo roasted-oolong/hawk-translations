@@ -18,11 +18,14 @@ Rails.application.routes.draw do
     end
 
     # Bible entry tables — one nested resource block per category
-    resources :bible_characters,     only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
-    resources :bible_locations,      only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
-    resources :bible_terminologies,  only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
+    resources :bible_characters,       only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
+    resources :bible_locations,        only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
+    resources :bible_terminologies,    only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
     resources :bible_cultural_phrases, only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
-    resources :bible_story_entries,  only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
+    resources :bible_story_entries,    only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
+
+    # Translation jobs — trigger, list, show output, cancel
+    resources :translation_jobs, only: [ :index, :show, :create, :destroy ]
   end
 
   # Root
