@@ -34,10 +34,11 @@
 /config/*.key
 /config/credentials/*.key
 
-# Ignore Kamal secrets — contains API keys and passwords resolved at deploy time.
-# Safe to commit: config/deploy.yml (no secrets), .kamal/hooks/
-# Never commit: .kamal/secrets
+# Ignore Kamal deploy-time files — resolved from local machine, never committed.
+# Safe to commit: config/deploy.yml, .kamal/hooks/
+# Never commit: .kamal/secrets (credentials), .kamal/servers (VM IP)
 /.kamal/secrets
+/.kamal/servers
 
 # RSpec status persistence
 /spec/examples.txt
