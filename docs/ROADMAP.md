@@ -182,18 +182,39 @@ Deliverables:
 ---
 
 ## Milestone 11 — Deployment
-**Status: 🔲 Not Started**
+**Status: ✅ Done**
 
-Kamal deployment to Oracle Cloud Ampere ARM VM. Nginx reverse proxy. Cloudflare SSL.
+> **Architecture note:** Deployed to Oracle Cloud AMD E2 micro (x86_64, 1 OCPU, ~1GB RAM)
+> rather than Ampere A1 (ARM64, 24GB) — A1 capacity unavailable at time of deployment.
+> ARM64 migration path: change `builder.arch` in deploy.yml to `arm64` and re-deploy.
+> No other changes required.
+>
+> **Stack:** Cloudflare (Full strict) → kamal-proxy:443 (Cloudflare Origin Cert) → Rails container.
+> Nginx is not used in production — kamal-proxy handles SSL directly using the Cloudflare
+> Origin Certificate passed via `.kamal/secrets`.
 
 Deliverables:
-- Dockerfile suitable for ARM64 (Oracle Ampere)
-- Kamal config (`config/deploy.yml`)
-- Nginx config with Cloudflare Origin Certificate
-- Environment variables in Rails encrypted credentials
-- `kamal deploy` succeeds from local machine
-- App accessible via custom domain over HTTPS
-- Coexistence with forex bot verified (no resource contention)
+- ✅ `Dockerfile` — Python 3 + venv layer; pipeline deps from `requirements.txt`; amd64 target
+- ✅ `config/deploy.yml` — server IP, ghcr.io registry, amd64, WEB_CONCURRENCY=1, RAILS_MAX_THREADS=5, Cloudflare Origin Cert via ssl block, all secrets
+- ✅ `.kamal/secrets` — RAILS_MASTER_KEY, HAWK_DATABASE_PASSWORD, DATABASE_URL (×3), ANTHROPIC_API_KEY, GITHUB_TOKEN, KAMAL_PROXY_TLS_CERTIFICATE_PEM, KAMAL_PROXY_TLS_PRIVATE_KEY_PEM
+- ✅ `config/environments/production.rb` — `assume_ssl = true`; `force_ssl` off; `config.hosts` set
+- ✅ `config/nginx/hawk.conf` — kept in repo for reference; not active in production
+- ✅ `config/database.yml` — production uses `172.18.0.1` (kamal network gateway); pool: 10
+- ✅ `.dockerignore` — venv, pycache, novel content dirs excluded
+- ✅ 2GB swapfile on VM — persisted in `/etc/fstab`
+- ✅ PostgreSQL 14 on VM — `hawk` user, 3 databases, pgvector v0.6.0 compiled from source, extensions pre-created as superuser
+- ✅ Docker on VM — installed, `ubuntu` user in docker group
+- ✅ Nginx installed on VM — not active in production; kept available for future use
+- ✅ Cloudflare Origin Certificate — in `/etc/nginx/ssl/` on VM and passed to kamal-proxy via secrets
+- ✅ Oracle Cloud security list — ports 80 and 443 open from `0.0.0.0/0`
+- ✅ iptables — `172.16.0.0/12` ACCEPT rule; saved via `netfilter-persistent`
+- ✅ Domain — `hawk-translations.com` via Cloudflare; A record → `161.153.85.216`; SSL/TLS Full (strict)
+- ✅ Google OAuth — production callback URL added to Google Cloud Console
+- ✅ Production credentials — `secret_key_base` + Google OAuth in `config/credentials/production.yml.enc`
+- ✅ `kamal deploy` — succeeds; app live at https://hawk-translations.com
+- ✅ Google sign-in smoke test — passes
+- ✅ DECISIONS.md updated (9 new M11 entries)
+- ✅ CONVENTIONS.md updated
 
 ---
 

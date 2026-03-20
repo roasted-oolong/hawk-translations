@@ -95,7 +95,9 @@ rails new . -n hawk --database=postgresql --skip-test --skip-action-mailbox --sk
 ## Deployment
 
 - Kamal (Rails 8 built-in) run from local machine
-- Target: Oracle Cloud Ampere ARM64 VM
-- Dockerfile must target `linux/arm64`
-- Nginx as reverse proxy in front of Puma
-- Cloudflare Origin Certificate for SSL
+- Target: Oracle Cloud AMD E2 micro (x86_64, Ubuntu 22.04) — ARM64 migration path documented in DECISIONS.md
+- Dockerfile targets `linux/amd64`
+- kamal-proxy handles SSL directly on ports 80 and 443 — Nginx is not used in production
+- Cloudflare proxies all traffic; SSL/TLS mode: Full (strict)
+- kamal network gateway (`172.18.0.1`) used for container→PostgreSQL connections
+- iptables rule `172.16.0.0/12 ACCEPT` covers all Docker bridge networks permanently

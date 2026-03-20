@@ -32,6 +32,12 @@
 
 # Ignore key files for decrypting credentials and more.
 /config/*.key
+/config/credentials/*.key
+
+# Ignore Kamal secrets — contains API keys and passwords resolved at deploy time.
+# Safe to commit: config/deploy.yml (no secrets), .kamal/hooks/
+# Never commit: .kamal/secrets
+/.kamal/secrets
 
 # RSpec status persistence
 /spec/examples.txt
@@ -43,4 +49,3 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
-
