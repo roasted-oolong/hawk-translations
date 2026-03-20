@@ -147,7 +147,7 @@ Deliverables:
 ---
 
 ## Milestone 10 — Translation Job Invocation & Status Tracking
-**Status: 🔄 In Progress**
+**Status: ✅ Complete**
 
 Rails invokes Python pipeline scripts as Solid Queue background jobs.
 PREREAD, BIBLE BUILD, POST-TRANSLATION REVIEW jobs triggerable from the UI.
@@ -169,9 +169,9 @@ Deliverables:
 - ✅ `db/import/idols_rewind_bible.rb` — updated to set `directory_name: "idols-rewind"`
 - ✅ DECISIONS.md updated (3 new entries)
 - ✅ SCHEMA.md updated
-- 🔲 `rails db:migrate` — run to apply M10 migrations
-- 🔲 `rails runner db/import/idols_rewind_bible.rb` — backfill `directory_name` on existing novel
-- 🔲 `rspec` — confirm all specs pass
+- ✅ `rails db:migrate` — run to apply M10 migrations
+- ✅ `rails runner db/import/idols_rewind_bible.rb` — backfill `directory_name` on existing novel
+- ✅ `rspec` — confirm all specs pass
 
 > **bible_build note:** No standalone non-interactive Python entry point exists yet.
 > The Rails job infrastructure is fully built — triggering a bible_build job creates
