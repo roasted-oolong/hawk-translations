@@ -37,6 +37,7 @@ RSpec.describe "Novels", type: :request do
           post novels_path, params: {
             novel: {
               title:           "My New Novel",
+              directory_name:  "my-new-novel",
               organization_id: organization.id,
               visibility:      "discoverable"
             }
