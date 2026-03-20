@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_15_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_20_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -156,6 +156,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_000001) do
 
   create_table "novels", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.string "directory_name"
     t.string "genre"
     t.string "korean_title"
     t.text "notes"
@@ -167,6 +168,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_000001) do
     t.text "tone"
     t.datetime "updated_at", null: false
     t.string "visibility", default: "discoverable", null: false
+    t.index ["organization_id", "directory_name"], name: "index_novels_on_organization_id_and_directory_name", unique: true
     t.index ["organization_id"], name: "index_novels_on_organization_id"
     t.index ["poc_user_id"], name: "index_novels_on_poc_user_id"
     t.index ["series_id"], name: "index_novels_on_series_id"
@@ -192,6 +194,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_000001) do
     t.bigint "organization_id", null: false
     t.datetime "updated_at", null: false
     t.index ["organization_id"], name: "index_teams_on_organization_id"
+  end
+
+  create_table "translation_jobs", force: :cascade do |t|
+    t.integer "chapter_end"
+    t.integer "chapter_start"
+    t.datetime "created_at", null: false
+    t.string "job_type", null: false
+    t.bigint "novel_id", null: false
+    t.text "result_payload"
+    t.string "solid_queue_job_id"
+    t.string "status", default: "queued", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["job_type"], name: "index_translation_jobs_on_job_type"
+    t.index ["novel_id", "created_at"], name: "index_translation_jobs_on_novel_id_and_created_at"
+    t.index ["novel_id"], name: "index_translation_jobs_on_novel_id"
+    t.index ["status"], name: "index_translation_jobs_on_status"
+    t.index ["user_id"], name: "index_translation_jobs_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -223,4 +243,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_000001) do
   add_foreign_key "novels", "users", column: "poc_user_id"
   add_foreign_key "series", "organizations"
   add_foreign_key "teams", "organizations"
+  add_foreign_key "translation_jobs", "novels"
+  add_foreign_key "translation_jobs", "users"
 end
