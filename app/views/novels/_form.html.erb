@@ -16,6 +16,15 @@
   </div>
 
   <div>
+    <%= f.label :directory_name, "Directory name" %>
+    <%= f.text_field :directory_name, placeholder: "e.g. idols-rewind" %>
+    <small>
+      The folder name on disk (e.g. <code>idols-rewind</code>).
+      Must match the novel's directory under the project root exactly.
+    </small>
+  </div>
+
+  <div>
     <%= f.label :korean_title %>
     <%= f.text_field :korean_title %>
   </div>
