@@ -73,21 +73,29 @@ novel = Novel.find_or_create_by!(
   organization: org,
   title: "Idols Rewind"
 ) do |n|
-  n.korean_title = "다시 키우는 걸그룹"
-  n.genre        = "Idol industry / regression / music & performance"
-  n.summary      = "A former top-tier talent manager who lost everything gets a second chance " \
-                   "when he wakes up back in the past. Hyuk Kang had the sharpest eye in the " \
-                   "industry — he could read talent, character, and potential better than anyone — " \
-                   "but integrity alone couldn't protect him from the people with real power. His " \
-                   "independent agency failed, his artists scattered, and years later he's living " \
-                   "in a rooftop room with nothing to show for it. Then the full moon shimmers " \
-                   "strangely overhead, and he wakes up with everything to do over. This time, he " \
-                   "knows exactly what mistakes not to make."
-  n.tone         = "Dry, introspective, and bittersweet. The internal monologue is sharp and " \
-                   "self-deprecating with quiet humor. Confident pacing — emotional without being " \
-                   "melodramatic."
-  n.visibility   = "discoverable"
+  n.directory_name = "idols-rewind"
+  n.korean_title   = "다시 키우는 걸그룹"
+  n.genre          = "Idol industry / regression / music & performance"
+  n.summary        = "A former top-tier talent manager who lost everything gets a second chance " \
+                     "when he wakes up back in the past. Hyuk Kang had the sharpest eye in the " \
+                     "industry — he could read talent, character, and potential better than anyone — " \
+                     "but integrity alone couldn't protect him from the people with real power. His " \
+                     "independent agency failed, his artists scattered, and years later he's living " \
+                     "in a rooftop room with nothing to show for it. Then the full moon shimmers " \
+                     "strangely overhead, and he wakes up with everything to do over. This time, he " \
+                     "knows exactly what mistakes not to make."
+  n.tone           = "Dry, introspective, and bittersweet. The internal monologue is sharp and " \
+                     "self-deprecating with quiet humor. Confident pacing — emotional without being " \
+                     "melodramatic."
+  n.visibility     = "discoverable"
   log "  Created novel: #{n.title}"
+end
+
+# Backfill directory_name for records created before this column existed.
+# Safe to re-run — no-op if already set.
+if novel.directory_name.blank?
+  novel.update!(directory_name: "idols-rewind")
+  log "  Backfilled directory_name: idols-rewind"
 end
 
 log "Novel: #{novel.title} (id: #{novel.id})"
@@ -348,11 +356,11 @@ imported = 0
 skipped  = 0
 
 STORY_CATEGORY_MAP = {
-  /^main\s+plot$/i       => "main_plot",
-  /^subplot$/i           => "subplot",
-  /^watch\s+list$/i      => "watch_list",
+  /^main\s+plot$/i            => "main_plot",
+  /^subplot$/i                => "subplot",
+  /^watch\s+list$/i           => "watch_list",
   /^themes?\s*&?\s*motifs?$/i => "theme",
-  /^world\s+building$/i  => "world_building"
+  /^world\s+building$/i       => "world_building"
 }.freeze
 
 def map_story_category(label)
