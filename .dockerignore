@@ -49,3 +49,16 @@
 # Ignore Docker-related files
 /.dockerignore
 /Dockerfile*
+
+# Ignore Python runtime artifacts — these are rebuilt inside the container from requirements.txt.
+# Excluding them prevents a large local venv from bloating the build context.
+/venv/
+/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore novel content directories — source files live on the VM volume, not in the image.
+# Active Storage attachments are persisted via the hawk_storage Docker volume.
+/idols-rewind/
+/_template_series-or-novel-name/

@@ -196,3 +196,118 @@ interactive scripts call. The existing interactive scripts are untouched and con
 to work from the terminal. The wrappers are not modifications to the pipeline — they
 are a second entry point to the same logic, following the pattern the pipeline already
 uses (runner functions are designed for programmatic injection via `api_call_fn`).
+
+---
+
+## 2026-03 · Deploy to AMD E2 micro (x86_64) instead of Ampere A1 (ARM64) — Milestone 11
+
+Oracle Cloud A1 capacity was unavailable at deployment time. The existing AMD E2 micro
+(1 OCPU, ~1GB RAM, x86_64) is used for initial production deployment. Mitigations for
+the memory constraint: 2GB swapfile, WEB_CONCURRENCY=1, RAILS_MAX_THREADS=5 (to match
+Solid Queue's thread count across worker + dispatcher + scheduler), Solid Queue
+in-process via SOLID_QUEUE_IN_PUMA=true.
+
+ARM64 migration path when A1 capacity opens: change `builder.arch` in `config/deploy.yml`
+from `amd64` to `arm64` and run `kamal deploy`. No other changes required.
+
+---
+
+## 2026-03 · Python pipeline runs inside the Rails Docker container — Milestone 11
+
+The Python pipeline ships inside the same Docker image as the Rails app. The Dockerfile
+installs Python 3, creates a venv at `/opt/hawk-venv`, and installs `requirements.txt`
+into it. `PATH` is set so subprocesses spawned by `Open3.capture3` find the venv python
+by default. Alternative (run Python on the VM host) was rejected — adds infrastructure
+complexity and breaks the single-deploy model. The pipeline runs as short-lived
+subprocesses, not a long-running service.
+
+---
+
+## 2026-03 · PostgreSQL runs on the VM host, not in a Docker container — Milestone 11
+
+Data persistence across `kamal deploy` without managing a Docker volume for a DB
+container. The hawk PostgreSQL user and three databases (primary, cache, queue) are
+created once on the host and remain through all future deploys. The Rails container
+connects via DATABASE_URL pointing to `172.18.0.1` (the kamal Docker network gateway).
+
+---
+
+## 2026-03 · kamal-proxy handles SSL directly; Nginx not used in production — Milestone 11
+
+Initial plan was Nginx:443 (Origin Cert) → kamal-proxy:80 → Rails. This failed because
+Kamal 2.10 always binds both port 80 AND port 443 on the host — not configurable.
+Nginx could not start with kamal-proxy owning both ports. Final architecture removes
+Nginx from the stack entirely: Cloudflare → kamal-proxy:443 → Rails container.
+kamal-proxy handles SSL with its own certificate. Cloudflare SSL/TLS mode set to
+"Full (strict)". The Cloudflare Origin Certificate files are preserved on the VM at
+`/etc/nginx/ssl/` for future use if the architecture changes.
+
+---
+
+## 2026-03 · Cloudflare Origin Certificate, not Let's Encrypt — Milestone 11
+
+Kamal's built-in SSL (Let's Encrypt) requires ACME challenges on port 80. With Cloudflare
+proxying all traffic, the challenge never reaches the VM. Cloudflare Origin Certificates
+secure the Cloudflare→origin leg without ACME. `force_ssl` is left off in `production.rb`
+to avoid a redirect loop; `assume_ssl` is enabled so Rails treats all requests as HTTPS.
+
+---
+
+## 2026-03 · Secrets stored in ~/.config/hawk/ on local machine — Milestone 11
+
+`.kamal/secrets` reads secrets from `~/.config/hawk/` single-line files at deploy time.
+Keeps secrets off any git-tracked location and avoids shell environment variable pollution.
+The directory is created once manually and never committed. Files: `github_token`,
+`db_password`, `anthropic_api_key`.
+
+---
+
+## 2026-03 · HAWK_PROJECT_ROOT set to /rails in the container — Milestone 11
+
+In development, `HAWK_PROJECT_ROOT=/home/jenna/hawk-translations` (`.env`). In the Docker
+container, `WORKDIR` is `/rails`, so `HAWK_PROJECT_ROOT=/rails`. Set as a clear env var in
+`config/deploy.yml`. `config.py` reads it via `os.environ["HAWK_PROJECT_ROOT"]` (fixed at
+Milestone 3) — no code changes required.
+
+---
+
+## 2026-03 · iptables source-based rule for Docker→PostgreSQL — Milestone 11
+
+Oracle Cloud VMs ship with a default iptables REJECT rule that blocks all non-whitelisted
+inbound traffic, including container→host connections. ufw is inactive; the block is at the
+raw iptables level. Interface-specific rules (per bridge name) break when Docker recreates
+the kamal network (e.g. after `docker network rm kamal`) because the bridge interface ID
+changes. A source-based rule `iptables -I INPUT -s 172.16.0.0/12 -j ACCEPT` covers the
+entire Docker bridge address range and survives network recreation. Saved via
+`netfilter-persistent` so it persists across reboots.
+
+---
+
+## 2026-03 · pgvector compiled from source on VM — Milestone 11
+
+Ubuntu 22.04's apt repositories do not include `postgresql-14-pgvector`. pgvector v0.6.0
+was compiled from source (`git clone`, `make`, `make install`) and the extension
+pre-created in all three production databases as the `postgres` superuser. Pre-creating
+the extension means the `hawk` app user (non-superuser) never needs `CREATE EXTENSION`
+privileges — Rails' `db:prepare` finds the extension already present and skips it.
+
+---
+
+## 2026-03 · RAILS_MAX_THREADS=5 to match Solid Queue total thread count — Milestone 11
+
+Solid Queue reports "5 threads" but `queue.yml` correctly sets `threads: 3` for the
+worker. The discrepancy is Solid Queue counting all internal threads: 3 worker threads
++ 1 dispatcher thread + 1 scheduler thread = 5. The database connection pool must be
+≥ 5 to satisfy all threads. `RAILS_MAX_THREADS=5` and `pool=10` in DATABASE_URL
+(headroom above the minimum) resolves the mismatch. `queue.yml` config is correct and
+does not need changes.
+
+---
+
+## 2026-03 · Oracle Cloud security list must explicitly open ports 80 and 443 — Milestone 11
+
+Oracle Cloud's network security list (external hypervisor firewall) blocks all ports
+by default except SSH (22). This is separate from and in addition to the VM's iptables
+rules. Ports 80 and 443 must be added as explicit TCP ingress rules from `0.0.0.0/0`
+in the subnet's security list. Without these rules, Cloudflare's connections to the VM
+are dropped before reaching the OS or any application.
