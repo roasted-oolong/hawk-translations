@@ -147,22 +147,37 @@ Deliverables:
 ---
 
 ## Milestone 10 — Translation Job Invocation & Status Tracking
-**Status: 🔲 Not Started**
+**Status: 🔄 In Progress**
 
 Rails invokes Python pipeline scripts as Solid Queue background jobs.
 PREREAD, BIBLE BUILD, POST-TRANSLATION REVIEW jobs triggerable from the UI.
 Job status visible in real time.
 
 Deliverables:
-- Job record model (novel, user, chapter range, function type, status, result payload)
-- Solid Queue workers configured
-- PREREAD job invocation working end-to-end
-- BIBLE BUILD job invocation working end-to-end
-- POST-TRANSLATION REVIEW job invocation working end-to-end
-- Job list view with status (queued/running/completed/failed)
-- Output/error surfaced from completed/failed jobs
-- Cancel queued job
-- RSpec job specs passing
+- ✅ `novels.directory_name` column — migration, model validation, factory, form, controller
+- ✅ `TranslationJob` model — enums, validations, scopes, `chapter_range_label`, `cancellable?`
+- ✅ `spec/models/translation_job_spec.rb`
+- ✅ `spec/factories/translation_jobs.rb`
+- ✅ `spec/requests/translation_jobs_spec.rb`
+- ✅ `PipelineJob` ActiveJob class — single class, dispatches by job_type
+- ✅ `PipelineDispatcher` service — Open3.capture3 shell invocation, uses `novel.directory_name`
+- ✅ `TranslationJobsController` — index, show, create, destroy (cancel)
+- ✅ Routes — `resources :translation_jobs` nested under `:novels`
+- ✅ Views — index (with trigger form), show (output/error), _form partial
+- ✅ `run_preread.py` — non-interactive wrapper, calls `src.preread.runner.run_preread`
+- ✅ `run_review.py` — non-interactive wrapper, auto-applies edits without prompting
+- ✅ `db/import/idols_rewind_bible.rb` — updated to set `directory_name: "idols-rewind"`
+- ✅ DECISIONS.md updated (3 new entries)
+- ✅ SCHEMA.md updated
+- 🔲 `rails db:migrate` — run to apply M10 migrations
+- 🔲 `rails runner db/import/idols_rewind_bible.rb` — backfill `directory_name` on existing novel
+- 🔲 `rspec` — confirm all specs pass
+
+> **bible_build note:** No standalone non-interactive Python entry point exists yet.
+> The Rails job infrastructure is fully built — triggering a bible_build job creates
+> a TranslationJob record, enqueues PipelineJob, and PipelineDispatcher returns a
+> stub message explaining the limitation. Implement by adding `run_bible_build.py`
+> and updating `PipelineDispatcher#run_bible_build_stub`.
 
 ---
 

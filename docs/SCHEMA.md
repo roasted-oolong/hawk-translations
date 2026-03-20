@@ -3,7 +3,7 @@
 Canonical data model. Updated as migrations are written and run.
 Column types reflect PostgreSQL / ActiveRecord conventions.
 
-Status: **M1–M9 complete** — migrations run, schema reflects current database state.
+Status: **M1–M9 complete, M10 in progress** — migrations run through M9; M10 migrations written, pending `db:migrate`.
 
 ---
 
@@ -76,7 +76,8 @@ Index: `(user_id, team_id)` unique
 | organization_id | bigint FK | not null |
 | series_id | bigint FK | nullable |
 | poc_user_id | bigint FK | nullable — points to users |
-| title | string | not null |
+| title | string | not null — UI display text |
+| directory_name | string | not null — exact filesystem directory name (e.g. "idols-rewind"), used by PipelineDispatcher |
 | korean_title | string | |
 | genre | string | |
 | summary | text | org-visible |
@@ -86,7 +87,10 @@ Index: `(user_id, team_id)` unique
 | created_at | datetime | |
 | updated_at | datetime | |
 
+Index: `(organization_id, directory_name)` unique
+
 > `poc_user_id` is nullable with `optional: true`. Discovery view shows "POC not assigned" as placeholder when nil.
+> `directory_name` is distinct from `title` — see DECISIONS.md for rationale.
 
 ---
 
@@ -231,7 +235,13 @@ Scopes: `by_title` — orders alphabetically by title. `by_category(cat)` — fi
 
 ---
 
-## Milestone 10 — Jobs
+## Milestone 10 — Jobs 🔲
+
+> Migrations written, pending `rails db:migrate`.
+
+### novels (addition)
+`directory_name` column added via `20260319000001_add_directory_name_to_novels`.
+See novels table above for full column list.
 
 ### translation_jobs
 | Column | Type | Notes |
@@ -241,9 +251,11 @@ Scopes: `by_title` — orders alphabetically by title. `by_category(cat)` — fi
 | user_id | bigint FK | not null |
 | job_type | string | "preread" \| "bible_build" \| "post_translation_review" |
 | status | string | "queued" \| "running" \| "completed" \| "failed" |
-| chapter_start | integer | nullable |
-| chapter_end | integer | nullable |
-| result_payload | text | output or error message |
-| solid_queue_job_id | string | nullable — for cancellation |
+| chapter_start | integer | nullable — nil for bible_build (no chapter range) |
+| chapter_end | integer | nullable — nil for bible_build; equals chapter_start for single-chapter jobs |
+| result_payload | text | stdout/stderr from pipeline, or stub message |
+| solid_queue_job_id | string | nullable — reserved for future cancellation via Solid Queue internals |
 | created_at | datetime | |
 | updated_at | datetime | |
+
+Indexes: `status`, `job_type`, `(novel_id, created_at)`
