@@ -6,14 +6,18 @@
 #   Cloudflare (Full strict) → kamal-proxy:443 (Cloudflare Origin Cert) → Rails container
 #   kamal-proxy handles SSL with Cloudflare Origin Certificate passed via secrets.
 #
+# Server IP:
+#   Stored in .kamal/servers (gitignored). One IP per line.
+#   Create before deploying: echo "161.153.85.216" > .kamal/servers
+#   Kamal reads this file at deploy time via ERB interpolation below.
+#
 # ARM64 migration path: change builder.arch to arm64, run kamal deploy.
 
 service: hawk
 image: ghcr.io/roasted-oolong/hawk
 
 servers:
-  web:
-    - 161.153.85.216
+  web: <%= File.readlines(".kamal/servers").map(&:strip).reject(&:empty?) %>
 
 proxy:
   host: hawk-translations.com
@@ -49,11 +53,11 @@ env:
     SOLID_QUEUE_IN_PUMA: true
     HAWK_PROJECT_ROOT: /rails
     WEB_CONCURRENCY: 1
-    RAILS_MAX_THREADS: 5
+    RAILS_MAX_THREADS: 3
 
 aliases:
   console: app exec --interactive --reuse "bin/rails console"
-  shell: app exec --interactive --reuse "bash"
+  shell: app exec --interactive --reuse "bin/bash"
   logs: app logs -f
   dbc: app exec --interactive --reuse "bin/rails dbconsole --include-password"
 
