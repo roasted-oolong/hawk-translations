@@ -1,0 +1,42 @@
+<h1><%= @translation_job.job_type.humanize %></h1>
+
+<p><%= link_to "← Back to jobs", novel_translation_jobs_path(@novel) %></p>
+
+<dl>
+  <dt>Novel</dt>
+  <dd><%= link_to @novel.title, @novel %></dd>
+
+  <dt>Job type</dt>
+  <dd><%= @translation_job.job_type.humanize %></dd>
+
+  <dt>Chapters</dt>
+  <dd><%= @translation_job.chapter_range_label || "—" %></dd>
+
+  <dt>Status</dt>
+  <dd><%= @translation_job.status.capitalize %></dd>
+
+  <dt>Triggered by</dt>
+  <dd><%= @translation_job.user.name %></dd>
+
+  <dt>Triggered at</dt>
+  <dd><%= @translation_job.created_at.strftime("%b %-d, %Y %H:%M") %></dd>
+
+  <% if @translation_job.updated_at != @translation_job.created_at %>
+    <dt>Last updated</dt>
+    <dd><%= @translation_job.updated_at.strftime("%b %-d, %Y %H:%M") %></dd>
+  <% end %>
+</dl>
+
+<% if @translation_job.result_payload.present? %>
+  <h2>Output</h2>
+  <pre><%= @translation_job.result_payload %></pre>
+<% elsif @translation_job.queued? || @translation_job.running? %>
+  <p><em>Job is <%= @translation_job.status %> — output will appear here when complete.</em></p>
+<% end %>
+
+<% if @translation_job.cancellable? %>
+  <%= button_to "Cancel job",
+        novel_translation_job_path(@novel, @translation_job),
+        method: :delete,
+        data: { turbo_confirm: "Cancel this queued job?" } %>
+<% end %>
