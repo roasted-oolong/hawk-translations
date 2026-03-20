@@ -158,3 +158,41 @@ novel — not infrastructure. Placing it in `db/import/idols_rewind_bible.rb` an
 it with `rails runner` makes the intent explicit: this is a one-time migration of
 existing content, not a seed that should run on every `db:setup`. The script is
 idempotent (skips existing records) so re-running it is safe.
+
+---
+
+## 2026-03 · `novels.directory_name` is a separate column, not derived from `title` (Milestone 10)
+
+`Novel#title` is UI display text. The filesystem directory name (e.g. `idols-rewind`)
+is a separate concern — it cannot be reliably derived from the title because the two
+can diverge legitimately (a title of "Idols: Rewind" does not parameterize to
+`idols-rewind`). A separate `directory_name` column is explicit, validatable at the
+model layer, and visible in the database. `PipelineDispatcher` uses `novel.directory_name`
+directly rather than performing any transformation. Uniqueness is scoped to
+`organization_id` — two orgs may have a novel in a directory with the same name.
+
+---
+
+## 2026-03 · Single `PipelineJob` ActiveJob class, not one class per job type (Milestone 10)
+
+Three job types (preread, bible_build, post_translation_review) are data on the
+`TranslationJob` record, not separate ActiveJob subclasses. A single `PipelineJob`
+receives a `translation_job_id`, looks up the record, and delegates dispatch to
+`PipelineDispatcher`. This keeps the queue simple (one queue entry type), the status
+lifecycle in one place, and the dispatch logic easy to extend — adding a new job type
+means updating `PipelineDispatcher#call`, not adding a new ActiveJob class and queue
+configuration.
+
+---
+
+## 2026-03 · Non-interactive Python wrappers `run_preread.py` and `run_review.py` (Milestone 10)
+
+`preread.py` and `review.py` are interactive CLI tools that call `input()` to gather
+parameters before running. A Solid Queue background job has no terminal — shelling out
+to them directly would hang indefinitely. Two thin wrapper scripts (`run_preread.py`,
+`run_review.py`) accept CLI arguments and call the same underlying runner functions
+(`src.preread.runner.run_preread`, `src.bible_review.runner.run_review`) that the
+interactive scripts call. The existing interactive scripts are untouched and continue
+to work from the terminal. The wrappers are not modifications to the pipeline — they
+are a second entry point to the same logic, following the pattern the pipeline already
+uses (runner functions are designed for programmatic injection via `api_call_fn`).
