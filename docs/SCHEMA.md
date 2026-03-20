@@ -235,7 +235,7 @@ Scopes: `by_title` — orders alphabetically by title. `by_category(cat)` — fi
 
 ---
 
-## Milestone 10 — Jobs 🔲
+## Milestone 10 — Jobs ✅
 
 > Migrations written, pending `rails db:migrate`.
 
