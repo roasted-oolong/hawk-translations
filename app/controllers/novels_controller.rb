@@ -45,7 +45,7 @@ class NovelsController < ApplicationController
 
   def novel_params
     params.require(:novel).permit(
-      :title, :korean_title, :genre, :summary, :tone, :notes,
+      :title, :directory_name, :korean_title, :genre, :summary, :tone, :notes,
       :visibility, :series_id, :poc_user_id, :organization_id
     )
   end
