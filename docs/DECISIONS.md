@@ -490,6 +490,29 @@ the app and is built as a dedicated step within M16.
 
 ---
 
+## 2026-03 · RAILS_MAX_THREADS must be 5 to match Solid Queue's actual thread count — M13
+
+Solid Queue reports 5 total threads: 3 worker threads + 1 dispatcher + 1 scheduler.
+`max_connections` in `database.yml` is derived from `RAILS_MAX_THREADS`, so it must
+be >= 5 or Solid Queue refuses to start with "configured to use 5 threads but the
+database connection pool is 3". `RAILS_MAX_THREADS` was temporarily set to 3 to
+match Puma's request thread count, but Solid Queue's internal threads share the same
+pool. Restored to 5 in `config/deploy.yml`.
+
+---
+
+## 2026-03 · config.hosts extended to allow kamal-proxy health check — M13
+
+Rails `HostAuthorization` blocked kamal-proxy's `/up` health check because it
+arrives with the container's own hostname (`c42776ab7493:80`) rather than the
+public domain. Fixed by adding a regex matching raw hex container IDs
+(`/\A[a-f0-9]+(\.local)?\z/`), the Docker bridge subnet
+(`172.18.0.0/16`), and localhost to `config.hosts` in `production.rb`.
+The public domain entries are preserved so DNS rebinding protection remains active
+for all real traffic.
+
+---
+
 ## 2026-03 · Removed pool= from DATABASE_URL and pool: from database.yml — M13
 
 Rails 8.1.2 introduced a strict validation that raises an error if both `pool`
