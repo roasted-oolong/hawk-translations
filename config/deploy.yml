@@ -53,7 +53,9 @@ env:
     SOLID_QUEUE_IN_PUMA: true
     HAWK_PROJECT_ROOT: /rails
     WEB_CONCURRENCY: 1
-    RAILS_MAX_THREADS: 3
+    # 5 = 3 worker threads + 1 dispatcher + 1 scheduler (Solid Queue's actual total).
+    # max_connections in database.yml is derived from this value and must be >= 5.
+    RAILS_MAX_THREADS: 5
 
 aliases:
   console: app exec --interactive --reuse "bin/rails console"

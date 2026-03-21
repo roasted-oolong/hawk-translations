@@ -60,5 +60,15 @@ Rails.application.configure do
   config.active_record.attributes_for_inspect = [ :id ]
 
   # Prevent DNS rebinding attacks — only accept requests for our domain.
-  config.hosts = [ "hawk-translations.com", "www.hawk-translations.com" ]
+  # The IP/container-hostname entries allow kamal-proxy's internal health
+  # check (/up) to reach the app without being blocked by HostAuthorization.
+  # Container hostnames are random hex strings — .local covers them cleanly.
+  config.hosts = [
+    "hawk-translations.com",
+    "www.hawk-translations.com",
+    /\A[a-f0-9]+(\.local)?\z/,        # container hostnames from kamal-proxy (with or without .local)
+    IPAddr.new("172.18.0.0/16"),      # Docker bridge network
+    "localhost",
+    "127.0.0.1",
+  ]
 end
