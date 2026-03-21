@@ -3,7 +3,7 @@
 Canonical data model. Updated as migrations are written and run.
 Column types reflect PostgreSQL / ActiveRecord conventions.
 
-Status: **M1–M12 complete** — all migrations written. Pending local run: `rails db:migrate` (applies M10 + M12 migrations).
+Status: **M1–M12 complete** — all migrations written.
 
 ---
 

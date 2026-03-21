@@ -434,3 +434,67 @@ When `get "bible/search", as: :novel_bible_search` is defined inside
 `as:` value is `:bible_search`, which Rails expands to `novel_bible_search_path`
 (prepending `novel_` from the resources block). Specs used the intended helper
 name; the route definition had the wrong `as:` value.
+
+---
+
+<!-- Phase 2 decisions index (M13–M18)
+  1. TypeScript via jsbundling-rails + esbuild, replacing importmaps
+  2. Hand-rolled CSS, no framework
+  3. Native HTML <dialog> for modals, no external library
+  4. Combobox built as a Stimulus controller against the existing search endpoint
+  5. Component inventory defined before M13
+  (Further entries appended as milestones complete)
+-->
+
+## 2026-03 · TypeScript via jsbundling-rails + esbuild, replacing importmaps — Phase 2
+
+Importmaps (the Rails 8 default) has no build step, which is its main advantage.
+TypeScript requires compilation and therefore a build step regardless of which
+bundler is used. The tradeoff: esbuild is fast enough that the build step is not
+felt in daily development, and the safety net TypeScript provides over a multi-year
+horizon on a long-term product justifies the setup cost. Strict mode enabled.
+Future collaborators benefit from typed contracts on Stimulus controllers.
+Importmaps removed; `jsbundling-rails` + esbuild replaces it. Foreman/Procfile.dev
+runs `yarn build --watch` alongside `rails server` in development.
+
+---
+
+## 2026-03 · Hand-rolled CSS, no framework — Phase 2
+
+Propshaft serves static assets. The view count is small and well-defined (login,
+dashboard, novel index/show, chapters, jobs, bible ×5, forms). A CSS framework
+imposes opinions on every element; hand-rolled CSS with custom properties is more
+intentional and produces faster output for a focused internal tool. modern-normalize
+from cdnjs provides a cross-browser baseline with no install required. If the app
+grows significantly in scope, revisit at that milestone.
+
+---
+
+## 2026-03 · Native HTML <dialog> for modals, no external library — Phase 2
+
+The HTML `<dialog>` element is fully supported across all modern browsers as of 2023.
+A single Stimulus controller (~50 lines) handles open/close, backdrop click, Escape
+key, and focus trapping. Ark UI (React/Vue/Solid only) and other headless libraries
+are not compatible with a Hotwire rendering model without significant complexity.
+Native `<dialog>` is the correct primitive for this stack.
+
+---
+
+## 2026-03 · Combobox built as a Stimulus controller against the existing search endpoint — Phase 2
+
+The bible search JSON endpoint was built at M12. The combobox controller fetches
+from that endpoint, debounces input, and handles keyboard navigation. No external
+combobox library — the endpoint contract is already defined, and a bespoke controller
+keeps the dependency count at zero. This is the most complex Stimulus controller in
+the app and is built as a dedicated step within M16.
+
+---
+
+## 2026-03 · Component inventory defined before M13 — Phase 2
+
+All reusable UI patterns identified upfront: status badge, flash message, nav bar,
+breadcrumb, novel card, data table, modal, toast, combobox, file upload. Each has
+a defined contract (inputs, states, behavior, Stimulus controller y/n) documented
+in UI.md before any view code is written. Building components against a known
+inventory prevents ad-hoc duplication across views and gives each milestone a
+clear implementation checklist.
