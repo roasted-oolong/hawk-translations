@@ -1,0 +1,40 @@
+<%# app/views/layouts/_flash.html.erb
+  Flash message bar. Rendered in the layout above page content.
+  Auto-dismiss is handled by flash_controller.ts (Stimulus).
+
+  data-testid attributes are used by system specs:
+    data-testid="flash-notice"
+    data-testid="flash-alert"
+%>
+<div class="flash-container" aria-live="polite" aria-atomic="false">
+  <% if notice %>
+    <div class="flash-message flash-message--notice"
+         data-testid="flash-notice"
+         data-controller="flash"
+         data-flash-duration-value="4000"
+         role="status">
+      <span class="flash-message__text"><%= notice %></span>
+      <button class="flash-message__dismiss"
+              data-action="click->flash#dismiss"
+              aria-label="Dismiss notification"
+              type="button">
+        <%= render "components/icon", name: "x-mark", size: 14 %>
+      </button>
+    </div>
+  <% end %>
+
+  <% if alert %>
+    <div class="flash-message flash-message--alert"
+         data-testid="flash-alert"
+         data-controller="flash"
+         role="alert">
+      <span class="flash-message__text"><%= alert %></span>
+      <button class="flash-message__dismiss"
+              data-action="click->flash#dismiss"
+              aria-label="Dismiss alert"
+              type="button">
+        <%= render "components/icon", name: "x-mark", size: 14 %>
+      </button>
+    </div>
+  <% end %>
+</div>

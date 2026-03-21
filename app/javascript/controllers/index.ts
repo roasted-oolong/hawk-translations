@@ -1,12 +1,9 @@
-// Register Stimulus controllers here.
-// With esbuild (no importmap), controllers are imported explicitly rather
-// than using eagerLoadControllersFrom. Add each controller as:
+// controllers/index.ts
+// Register all Stimulus controllers here.
 //
-//   import HelloController from "./hello_controller"
-//   application.register("hello", HelloController)
-//
-// No controllers exist yet — they will be added starting at M14.
+// Naming convention: filename `foo_bar_controller.ts` → identifier "foo-bar"
 
 import { application } from "./application"
 
-export { application }
+import FlashController from "./flash_controller"
+application.register("flash", FlashController)

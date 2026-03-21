@@ -1,0 +1,75 @@
+/* ==========================================================================
+   _nav.css
+   Fixed top navigation bar.
+   ========================================================================== */
+
+.app-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--nav-height);
+  z-index: var(--z-nav);
+
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-xs);
+}
+
+.app-nav__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  max-width: var(--content-max-width);
+  margin-inline: auto;
+  padding-inline: var(--content-padding-x);
+}
+
+/* --- Brand --- */
+.app-nav__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  color: var(--color-text);
+}
+
+.app-nav__brand:hover {
+  text-decoration: none;
+  color: var(--color-text);
+}
+
+.app-nav__brand-mark {
+  font-size: var(--text-xl);
+  line-height: 1;
+  /* The 鷹 character — rendered in Korean/CJK system font */
+  font-family: var(--font-family-korean);
+}
+
+.app-nav__brand-name {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+/* --- Nav actions (right side) --- */
+.app-nav__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* --- User name display --- */
+.app-nav__user {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Hide on small screens — name is surfaced elsewhere if needed */
+@media (max-width: 480px) {
+  .app-nav__user {
+    display: none;
+  }
+}

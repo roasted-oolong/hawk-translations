@@ -1,0 +1,30 @@
+<%# app/views/layouts/_nav.html.erb
+  Top navigation bar. Rendered on every authenticated page.
+  data-testid="app-nav" is used by system specs.
+%>
+<nav class="app-nav" data-testid="app-nav" aria-label="Main navigation">
+  <div class="app-nav__inner">
+
+    <%# Brand / home link %>
+    <%= link_to root_path, class: "app-nav__brand", aria: { label: "Hawk Translations home" } do %>
+      <span class="app-nav__brand-mark" aria-hidden="true">鷹</span>
+      <span class="app-nav__brand-name">Hawk</span>
+    <% end %>
+
+    <%# Right-side actions %>
+    <div class="app-nav__actions">
+      <span class="app-nav__user"><%= current_user.name %></span>
+
+      <%= button_to logout_path,
+            method: :delete,
+            class: "btn btn--ghost btn--sm",
+            form: { data: { turbo: false } },
+            aria: { label: "Sign out" },
+            title: "Sign out" do %>
+        <%= render "components/icon", name: "arrow-right-start-on-rectangle", size: 16 %>
+        <span>Sign out</span>
+      <% end %>
+    </div>
+
+  </div>
+</nav>

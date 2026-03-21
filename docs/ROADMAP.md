@@ -283,7 +283,7 @@ See docs/UI.md for CSS approach, component inventory, and design token conventio
 ---
 
 ## Milestone 13 — Frontend Infrastructure & Pipeline Completion
-**Status: 🔄 In Progress**
+**Status: ✅ Complete**
 
 All tooling and infrastructure that must exist before any UI code is written.
 This milestone has no visible UI output — it is purely setup. Nothing in M14+ is
@@ -330,21 +330,33 @@ started until this is complete and verified.
 ---
 
 ## Milestone 14 — Application Layout, Navigation & Login Page
-**Status: 🔲 Not Started**
+**Status: ✅ Complete**
 
-Foundation for every other view. Establishes the design tokens, CSS structure,
-and nav shell that all subsequent milestones build on. Run UI UX Pro Max design
-system generator before starting to seed color palette and typography decisions.
+Foundation for every other view. Design tokens, CSS structure, and nav shell
+established. uipro design system generator run against "internal SaaS tool
+translation management dashboard" — Soft UI Evolution + blue-slate palette selected.
 
 Deliverables:
-- `app/assets/stylesheets/application.css` — CSS custom properties (design tokens), reset import, base typography
-- `app/assets/stylesheets/` component files — layout, nav, buttons, tables, forms, flash, badges
-- `app/views/layouts/application.html.erb` — updated with nav partial, flash, modern-normalize CDN link
-- `app/views/layouts/_nav.html.erb` — top navigation bar with app name and sign-out link
-- `app/views/sessions/new.html.erb` — styled login page (logo, sign-in button, clean centered layout)
-- System specs: login flow, nav renders, sign-out (M13 driver setup required first)
-- UI.md updated — design tokens finalized, layout decisions recorded
-- DECISIONS.md updated — color palette and typography choices recorded
+- ✅ Design system generated via uipro — Soft UI Evolution, blue-slate palette, Inter variable font
+- ✅ `app/assets/fonts/inter/` — `inter-variable.woff2` + `inter-variable-italic.woff2` (self-hosted)
+- ✅ `app/assets/stylesheets/application.css` — CSS custom properties (all design tokens), `@font-face`, `@import` chain
+- ✅ `app/assets/stylesheets/_reset.css` — thin reset on top of modern-normalize CDN
+- ✅ `app/assets/stylesheets/_typography.css` — heading scale, body defaults, text utilities
+- ✅ `app/assets/stylesheets/_layout.css` — app shell, content container, card, page-header
+- ✅ `app/assets/stylesheets/_nav.css` — fixed top nav bar
+- ✅ `app/assets/stylesheets/_flash.css` — flash message bar (notice + alert variants)
+- ✅ `app/assets/stylesheets/_buttons.css` — btn base + variants (primary, secondary, ghost, danger)
+- ✅ `app/assets/stylesheets/_login.css` — login page standalone layout
+- ✅ `app/views/components/_icon.html.erb` — SVG icon component (x-mark, arrow-right-start-on-rectangle, google)
+- ✅ `app/views/layouts/_nav.html.erb` — top nav bar with app name and sign-out button
+- ✅ `app/views/layouts/_flash.html.erb` — flash partial wired to flash_controller
+- ✅ `app/views/layouts/application.html.erb` — updated with nav, flash, modern-normalize CDN link
+- ✅ `app/views/sessions/new.html.erb` — styled login page (logo glyph, app name, Google sign-in button)
+- ✅ `app/javascript/controllers/flash_controller.ts` — auto-dismiss Stimulus controller
+- ✅ `app/javascript/controllers/index.ts` — flash controller registered
+- ✅ `spec/system/m14_layout_spec.rb` — login renders, nav renders, sign-out works
+- ✅ UI.md — design token tables finalized, stylesheet structure documented, login page notes recorded
+- ✅ DECISIONS.md — M14 entries (palette, font, icon component, flash behaviour, login flash)
 
 ---
 

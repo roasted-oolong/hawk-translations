@@ -1,0 +1,67 @@
+/* ==========================================================================
+   _flash.css
+   Flash message bar. Sits below the nav, above page content.
+   Two variants: notice (success) and alert (error).
+   Auto-dismiss behaviour handled by flash_controller.ts.
+   ========================================================================== */
+
+.flash-container {
+  width: 100%;
+}
+
+.flash-message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.5;
+  border-bottom: 1px solid transparent;
+  transition: opacity var(--transition-base), height var(--transition-base);
+}
+
+/* Notice (success/info) */
+.flash-message--notice {
+  color: var(--color-flash-notice-text);
+  background-color: var(--color-flash-notice-bg);
+  border-bottom-color: var(--color-flash-notice-border);
+}
+
+/* Alert (error/warning) */
+.flash-message--alert {
+  color: var(--color-flash-alert-text);
+  background-color: var(--color-flash-alert-bg);
+  border-bottom-color: var(--color-flash-alert-border);
+}
+
+/* Flash message text */
+.flash-message__text {
+  flex: 1;
+}
+
+/* Dismiss button */
+.flash-message__dismiss {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-sm);
+  color: inherit;
+  opacity: 0.6;
+  transition: opacity var(--transition-fast);
+  cursor: pointer;
+}
+
+.flash-message__dismiss:hover {
+  opacity: 1;
+}
+
+/* Dismissing state (JS adds this class before removal) */
+.flash-message--dismissing {
+  opacity: 0;
+  pointer-events: none;
+}

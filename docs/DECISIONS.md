@@ -562,3 +562,62 @@ a defined contract (inputs, states, behavior, Stimulus controller y/n) documente
 in UI.md before any view code is written. Building components against a known
 inventory prevents ad-hoc duplication across views and gives each milestone a
 clear implementation checklist.
+
+---
+
+## 2026-03 · Soft UI Evolution + blue-slate palette for Hawk Translations — M14
+
+Design system generated via uipro (UI UX Pro Max skill) against the query
+"internal SaaS tool translation management dashboard". Matched category:
+Productivity Tool. Recommended style: Soft UI Evolution + Flat Design accents.
+Primary palette: blue-600 (#2563EB) for actions, slate-900 (#0F172A) for text,
+slate-50 (#F8FAFC) for page background. Violet-600 (#7C3AED) accent gives the
+translation/literary product a distinctive identity without decorative excess.
+All token values recorded in UI.md. The palette is swap-friendly by design —
+a theme change is a single-file edit to `:root` in application.css.
+
+---
+
+## 2026-03 · Inter variable font self-hosted, no Google Fonts CDN — M14
+
+Inter loaded via two self-hosted variable font files (`inter-variable.woff2`,
+`inter-variable-italic.woff2`) in `app/assets/fonts/inter/`. A single variable
+file covers all weights (100–900) via the `font-weight` axis, replacing the five
+separate static files originally planned. Self-hosting avoids the external CDN
+request on every page load and removes the dependency on Google's availability.
+Korean display text uses the system font stack (Apple SD Gothic Neo, Malgun Gothic,
+Nanum Gothic) — no web font loaded for Korean, as it only appears in title display
+fields and the nav brand mark.
+
+---
+
+## 2026-03 · All SVG icons rendered via _icon component, never inlined — M14
+
+All icons go through `app/views/components/_icon.html.erb`. No inline SVG in views
+or partials. This keeps SVG paths in one place (easy to audit, easy to swap),
+ensures consistent `aria-hidden="true"` and `focusable="false"` on every icon,
+and gives a single surface for adding new icons per milestone. Icons sourced from
+Heroicons 2.x (outline style, MIT licence) and the Google brand SVG.
+
+---
+
+## 2026-03 · Flash alerts never auto-dismiss; notices auto-dismiss after 4s — M14
+
+Alerts (errors) require the user's attention and must be dismissed explicitly —
+auto-dismissing an error message before the user reads it would be hostile UX.
+Notices (success/info) are ephemeral confirmations that auto-dismiss after 4s
+via `flash_controller.ts`. Both variants have a manual dismiss button. The
+`duration` Stimulus value defaults to 0 (no auto-dismiss), so omitting it on
+alert variants is safe — no special-casing required in the controller.
+
+---
+
+## 2026-03 · Login page renders its own inline flash for OAuth failures — M14
+
+The application layout renders the flash container above `app-main`, which is
+offset by `--nav-height` (56px) on authenticated pages. On the login page there
+is no nav and no offset — the layout flash renders at the very top of the
+viewport, above the centered card, which is visually disconnected from the form.
+The login view renders its own inline alert directly inside the card so failure
+messages appear in context. The layout flash is still rendered (harmless) but the
+inline version is the one the user sees.

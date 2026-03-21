@@ -1,0 +1,91 @@
+/* ==========================================================================
+   _reset.css
+   Thin reset layer on top of modern-normalize (loaded via CDN in layout).
+   Only overrides that are specific to this app's needs.
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-normal);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* Remove default margin on common elements */
+h1, h2, h3, h4, h5, h6,
+p, ul, ol, figure, blockquote {
+  margin: 0;
+  padding: 0;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+/* Inherit font on form elements — browsers don't do this by default */
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Remove default button styles */
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Images behave as blocks by default */
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* Sensible anchor defaults */
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Focus ring — applied globally, components may refine */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Reduced motion — disable transitions and animations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
