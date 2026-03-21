@@ -1,9 +1,9 @@
 class ApplicationController < ActionController::Base
-  # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
-  allow_browser versions: :modern
-
-  # Changes to the importmap will invalidate the etag for HTML responses
-  stale_when_importmap_changes
+  # Register app/views/components/ as an additional view path so component
+  # partials can be rendered as `render "component_name"` from controllers.
+  # Note: when rendering from within another partial, use the explicit path:
+  # `render "components/component_name"` to avoid lookup ambiguity.
+  prepend_view_path Rails.root.join("app/views/components")
 
   before_action :require_authentication
 

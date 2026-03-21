@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": true,
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+    "outDir": "app/assets/builds",
+    "rootDir": "app/javascript",
+    "baseUrl": ".",
+    "paths": {
+      "controllers/*": ["app/javascript/controllers/*"]
+    }
+  },
+  "include": ["app/javascript/**/*.ts"],
+  "exclude": ["node_modules", "vendor"]
+}

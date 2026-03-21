@@ -12,8 +12,8 @@ FactoryBot.define do
 
     trait :bible_build do
       job_type      { "bible_build" }
-      chapter_start { nil }
-      chapter_end   { nil }
+      chapter_start { 1 }
+      chapter_end   { 74 }
     end
 
     trait :post_translation_review do

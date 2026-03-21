@@ -1,0 +1,2 @@
+# esbuild writes compiled JS here. This file keeps the directory in git.
+# app/assets/builds/application.js is gitignored (generated artifact).

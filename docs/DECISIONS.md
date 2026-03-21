@@ -490,6 +490,32 @@ the app and is built as a dedicated step within M16.
 
 ---
 
+## 2026-03 · Cuprite chosen as system spec driver over Playwright — M13
+
+Playwright requires a managed browser binary (downloaded separately via
+`playwright install`) and ships as a Node.js library with a Ruby wrapper
+(`playwright-ruby-client`). In a WSL2 + Docker environment this adds a
+browser binary layer that must be present in the Docker image for CI and
+production-equivalent testing. Cuprite drives Chrome/Chromium via the CDP
+protocol using the Ferrum gem — no Node.js required for the test driver
+itself, and it can use the system Chrome already present on the developer's
+machine. Lighter dependency footprint, zero managed binary downloads, and
+sufficient capability for this project's system spec needs. If cross-browser
+testing becomes a requirement, Playwright is the upgrade path.
+
+---
+
+## 2026-03 · Node.js 22 LTS in Dockerfile — M13
+
+Node 22.x is the current LTS (Active until 2027-04). Node 20.x enters
+maintenance-only in 2024-10. The build pipeline (esbuild + yarn) has no
+known incompatibilities with Node 22. Installed via the NodeSource apt
+repository in the Dockerfile build stage. Yarn installed via
+`npm install -g yarn` after Node. Only needed at build time — not present
+in the final image runtime layer.
+
+---
+
 ## 2026-03 · Component inventory defined before M13 — Phase 2
 
 All reusable UI patterns identified upfront: status badge, flash message, nav bar,

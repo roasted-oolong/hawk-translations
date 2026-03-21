@@ -50,9 +50,15 @@ RSpec.describe TranslationJob, type: :model do
     end
 
     describe "chapter range consistency" do
-      it "is valid when both chapter_start and chapter_end are nil" do
+      it "is valid for bible_build when chapter_start and chapter_end are present" do
         job = build(:translation_job, :bible_build)
         expect(job).to be_valid
+      end
+
+      it "is invalid when both chapter_start and chapter_end are nil" do
+        job = build(:translation_job, chapter_start: nil, chapter_end: nil)
+        expect(job).not_to be_valid
+        expect(job.errors[:chapter_start]).to be_present
       end
 
       it "is valid when chapter_start equals chapter_end (single chapter)" do
@@ -189,8 +195,13 @@ RSpec.describe TranslationJob, type: :model do
   # Instance methods
   # ---------------------------------------------------------------------------
   describe "#chapter_range_label" do
-    it "returns nil when both chapter_start and chapter_end are nil" do
+    it "returns a range for a bible_build job" do
       job = build(:translation_job, :bible_build)
+      expect(job.chapter_range_label).to eq("Chapters 1\u201374")
+    end
+
+    it "returns nil when both chapter_start and chapter_end are nil (defensive)" do
+      job = build(:translation_job, chapter_start: nil, chapter_end: nil)
       expect(job.chapter_range_label).to be_nil
     end
 
