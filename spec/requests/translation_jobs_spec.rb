@@ -81,14 +81,14 @@ RSpec.describe "TranslationJobs", type: :request do
       end
     end
 
-    context "bible_build job (no chapter range)" do
-      it "creates a TranslationJob record with nil chapter range" do
+    context "bible_build job with chapter range" do
+      it "creates a TranslationJob record with chapter_start and chapter_end" do
         expect {
           post novel_translation_jobs_path(novel), params: {
             translation_job: {
               job_type:      "bible_build",
-              chapter_start: "",
-              chapter_end:   ""
+              chapter_start: "1",
+              chapter_end:   "74"
             }
           }
         }.to change(TranslationJob, :count).by(1)
@@ -96,8 +96,9 @@ RSpec.describe "TranslationJobs", type: :request do
 
         job = TranslationJob.last
         expect(job.bible_build?).to be true
-        expect(job.chapter_start).to be_nil
-        expect(job.chapter_end).to be_nil
+        expect(job.chapter_start).to eq(1)
+        expect(job.chapter_end).to eq(74)
+        expect(job.queued?).to be true
       end
     end
 

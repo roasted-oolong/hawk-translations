@@ -1,0 +1,14 @@
+{
+  "name": "hawk",
+  "private": true,
+  "scripts": {
+    "build": "esbuild app/javascript/*.ts --bundle --sourcemap --outdir=app/assets/builds --public-path=/assets"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  },
+  "dependencies": {
+    "@hotwired/stimulus": "^3.2.2",
+    "@hotwired/turbo-rails": "^8.0.12"
+  }
+}

@@ -283,7 +283,7 @@ See docs/UI.md for CSS approach, component inventory, and design token conventio
 ---
 
 ## Milestone 13 — Frontend Infrastructure & Pipeline Completion
-**Status: 🔲 Not Started**
+**Status: 🔄 In Progress**
 
 All tooling and infrastructure that must exist before any UI code is written.
 This milestone has no visible UI output — it is purely setup. Nothing in M14+ is

@@ -64,9 +64,11 @@ class TranslationJob < ApplicationRecord
   # Validation: chapter range consistency
   #
   # Rules:
-  #   - Both nil is valid (no chapter range — used by bible_build).
+  #   - Both present is always required — all job types (including bible_build)
+  #     must specify a chapter range.
   #   - Both present is valid when start <= end and start >= 1.
   #   - One present and the other nil is always invalid.
+  #   - Both nil is always invalid.
   #   - start > end is invalid.
   #   - start < 1 is invalid.
   # ---------------------------------------------------------------------------
@@ -74,8 +76,12 @@ class TranslationJob < ApplicationRecord
     start_nil = chapter_start.nil?
     end_nil   = chapter_end.nil?
 
-    # Both nil — valid, nothing to check.
-    return if start_nil && end_nil
+    # Both nil — invalid for all job types.
+    if start_nil && end_nil
+      errors.add(:chapter_start, "must be present")
+      errors.add(:chapter_end, "must be present")
+      return
+    end
 
     # One nil, one present — always invalid.
     if start_nil

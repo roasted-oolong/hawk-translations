@@ -18,9 +18,8 @@ require "open3"
 #   "idols-rewind"), distinct from novel.title which is UI display text.
 # - HAWK_PROJECT_ROOT is read from ENV at dispatch time, not at boot, so the
 #   value is always current.
-# - bible_build is stubbed — the Python pipeline does not yet have a
-#   standalone non-interactive entry point for this function. The stub
-#   completes the job immediately with an explanatory message.
+# - bible_build runs preread on already-translated chapters to rebuild bible
+#   entries. It accepts the same chapter range format as preread.
 # ---------------------------------------------------------------------------
 class PipelineDispatcher
   PYTHON = "python3"
@@ -36,7 +35,7 @@ class PipelineDispatcher
   def call
     case @job.job_type
     when "preread"                 then run_preread
-    when "bible_build"             then run_bible_build_stub
+    when "bible_build"             then run_bible_build
     when "post_translation_review" then run_post_translation_review
     else
       [ "", "Unknown job_type: #{@job.job_type}", false ]
@@ -56,16 +55,13 @@ class PipelineDispatcher
   end
 
   # ---------------------------------------------------------------------------
-  # Bible build (stub)
-  # No standalone non-interactive Python entry point exists yet. The job
-  # completes immediately with an explanatory message. Implement by adding
-  # run_bible_build.py and updating this method.
+  # Bible build — invokes run_bible_build.py with novel dir and chapter range.
+  # Runs preread on already-translated chapters to rebuild bible entries.
   # ---------------------------------------------------------------------------
-  def run_bible_build_stub
-    message = "bible_build is not yet implemented as a non-interactive pipeline " \
-              "script. Run preread.py and review.py manually from the terminal " \
-              "to update bible files."
-    [ message, "", true ]
+  def run_bible_build
+    execute([ PYTHON, script("run_bible_build.py"),
+              "--novel-dir", novel_directory,
+              "--chapters",  "#{@job.chapter_start}-#{@job.chapter_end}" ])
   end
 
   # ---------------------------------------------------------------------------

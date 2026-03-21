@@ -49,15 +49,29 @@ RUN apt-get update -qq && \
       pkg-config && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
+# --- Node.js 22 LTS (required for esbuild / yarn JS build pipeline) ---
+# Only needed at build time — not copied to the final stage.
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install --no-install-recommends -y nodejs && \
+    npm install -g yarn && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
 COPY Gemfile Gemfile.lock vendor ./
 
 RUN bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
     bundle exec bootsnap precompile -j 1 --gemfile
 
+COPY package.json yarn.lock* ./
+
+RUN yarn install --frozen-lockfile
+
 COPY . .
 
 RUN bundle exec bootsnap precompile -j 1 app/ lib/
+
+# Compile JS bundle before assets:precompile so Propshaft finds the built file.
+RUN yarn build
 
 RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 

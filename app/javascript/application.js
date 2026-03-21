@@ -1,3 +1,2 @@
-// Configure your import map in config/importmap.rb. Read more: https://github.com/rails/importmap-rails
-import "@hotwired/turbo-rails"
-import "controllers"
+// This file is superseded by application.ts — do not edit.
+// Remove this file once confirmed that esbuild is building from application.ts.
