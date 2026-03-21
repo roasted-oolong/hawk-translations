@@ -52,5 +52,20 @@ RSpec.configure do |config|
     # Use Cuprite for all system specs (they all need a real browser for
     # Turbo and Stimulus to function correctly).
     driven_by :cuprite
+
+    # Cuprite communicates with its Capybara test server and the Chrome
+    # browser process over loopback TCP. WebMock blocks all real connections
+    # by default, which intercepts these internal probes (/__identify__ etc.)
+    # and raises NetConnectNotAllowedError before any test logic runs.
+    #
+    # Disable WebMock for system specs entirely — they test the full stack
+    # through a real browser and do not make external HTTP calls.
+    WebMock.disable!
+  end
+
+  config.after(:each, type: :system) do
+    # Re-enable WebMock after each system spec so request/service specs
+    # that run afterwards still have HTTP stubbing active.
+    WebMock.enable!
   end
 end
