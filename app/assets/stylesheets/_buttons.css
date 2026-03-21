@@ -1,0 +1,117 @@
+/* ==========================================================================
+   _buttons.css
+   Button variants. All buttons reference design tokens.
+   ========================================================================== */
+
+/* --- Base button --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.5;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* --- Primary (blue fill) --- */
+.btn--primary {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.btn--primary:hover {
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  text-decoration: none;
+  color: var(--color-text-inverse);
+}
+
+/* --- Secondary (outline) --- */
+.btn--secondary {
+  background-color: var(--color-surface);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.btn--secondary:hover {
+  background-color: var(--color-bg);
+  border-color: var(--color-secondary);
+  text-decoration: none;
+  color: var(--color-text);
+}
+
+/* --- Ghost (no border, subtle hover) --- */
+.btn--ghost {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--color-text-secondary);
+}
+
+.btn--ghost:hover {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+/* --- Danger (destructive actions) --- */
+.btn--danger {
+  background-color: var(--color-danger);
+  border-color: var(--color-danger);
+  color: var(--color-text-inverse);
+}
+
+.btn--danger:hover {
+  background-color: #B91C1C; /* red-700 */
+  border-color: #B91C1C;
+  text-decoration: none;
+  color: var(--color-text-inverse);
+}
+
+/* --- Size modifiers --- */
+.btn--sm {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
+}
+
+.btn--lg {
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--text-base);
+}
+
+/* --- Icon-only button (square) --- */
+.btn--icon {
+  padding: var(--space-2);
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+/* --- Button group (for nav sign-out etc.) --- */
+.btn-group {
+  display: inline-flex;
+  gap: var(--space-2);
+}
