@@ -490,6 +490,21 @@ the app and is built as a dedicated step within M16.
 
 ---
 
+## 2026-03 · Removed pool= from DATABASE_URL and pool: from database.yml — M13
+
+Rails 8.1.2 introduced a strict validation that raises an error if both `pool`
+and `max_connections` are present in the same database configuration. Previously
+`database.yml` had `pool: 5` in each production block and `DATABASE_URL` had
+`pool=10` as a query parameter, while the `default` block already derived
+`max_connections` from `RAILS_MAX_THREADS`. This caused `db:prepare` to abort
+with "Ambiguous configuration: 'pool' (5) and 'max_connections' (3)" before
+the server could start. Fix: remove `pool:` from all three production blocks
+in `database.yml` and remove `pool=N` from all three DATABASE_URL secrets in
+`.kamal/secrets`. Pool size is now controlled exclusively by `max_connections`
+via `RAILS_MAX_THREADS=3`.
+
+---
+
 ## 2026-03 · Cuprite chosen as system spec driver over Playwright — M13
 
 Playwright requires a managed browser binary (downloaded separately via

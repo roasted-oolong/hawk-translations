@@ -3,7 +3,7 @@
 default: &default
   adapter: postgresql
   encoding: unicode
-  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 3 } %>
 
 development:
   <<: *default
@@ -19,8 +19,10 @@ test:
 # gateway that routes container traffic to PostgreSQL on the VM host.
 # The values below are fallbacks only — DATABASE_URL takes precedence.
 #
-# pool: 5 ensures Solid Queue (3 threads) + Puma (3 threads) have enough connections.
-# Solid Queue runs inside Puma (SOLID_QUEUE_IN_PUMA=true), sharing the same process.
+# Connection pool size is controlled solely by max_connections (inherited from the
+# default block via RAILS_MAX_THREADS). Do not set pool: here — Rails 8.1.2 raises
+# an error if both pool and max_connections are present simultaneously.
+# If DATABASE_URL contains pool=N, remove it — same conflict applies.
 production:
   primary: &primary_production
     <<: *default
@@ -29,14 +31,11 @@ production:
     password: <%= ENV["HAWK_DATABASE_PASSWORD"] %>
     host: 172.18.0.1
     port: 5432
-    pool: 5
   cache:
     <<: *primary_production
     database: hawk_production_cache
     migrations_paths: db/cache_migrate
-    pool: 5
   queue:
     <<: *primary_production
     database: hawk_production_queue
     migrations_paths: db/queue_migrate
-    pool: 5
