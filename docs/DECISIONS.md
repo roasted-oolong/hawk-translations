@@ -311,3 +311,126 @@ by default except SSH (22). This is separate from and in addition to the VM's ip
 rules. Ports 80 and 443 must be added as explicit TCP ingress rules from `0.0.0.0/0`
 in the subnet's security list. Without these rules, Cloudflare's connections to the VM
 are dropped before reaching the OS or any application.
+
+---
+
+## 2026-03 · Voyage AI voyage-3-lite as embedding model — Milestone 12
+
+Anthropics recommended embedding partner. voyage-3-lite outputs 1024-dimension vectors,
+handles multilingual text (English + Korean) well, and is cheap enough that embedding
+an entire novel bible costs under a dollar. API key stored in Rails encrypted credentials
+as `voyage_api_key`, consistent with how Google OAuth credentials are stored.
+
+---
+
+## 2026-03 · Polymorphic `bible_embeddings` table, not per-table embedding columns — Milestone 12
+
+Five separate embedding columns across five tables would require five ivfflat indexes,
+five GIN indexes, and a UNION query for any cross-category search. One `bible_embeddings`
+table with a polymorphic association gives a single ivfflat index, a single GIN index,
+and a single query for all search operations. `novel_id` and `organization_id` are
+denormalized onto the table to avoid joins back through the polymorphic target during
+high-frequency search queries. Extending to novels and chapters (Use Cases 2 and 3)
+means adding new `embeddable_type` values — no schema changes to existing tables.
+
+---
+
+## 2026-03 · tsvector on `bible_embeddings`, not on the five bible tables — Milestone 12
+
+Korean text is not confined to `korean_name` columns — it appears throughout free-text
+fields (speech_pattern examples, notes, aliases). The tsvector must cover the same
+concatenated `embeddable_text` used for the vector embedding, not individual columns.
+Since `BibleEmbedding` already holds that concatenated text as the source for its
+vector, storing `search_text` there keeps both search mechanisms derived from the
+same source. Five separate tsvector columns on five tables would require a UNION
+query for keyword search and five GIN indexes.
+
+---
+
+## 2026-03 · `Embeddable` concern with explicit `NotImplementedError` contract — Milestone 12
+
+The `after_save` hook and the `embeddable_text` interface are defined once in the concern.
+Raising `NotImplementedError` at call time rather than silently returning nil means a
+new bible model that includes `Embeddable` but forgets to implement `embeddable_text`
+fails loudly on first save rather than silently producing a blank embedding. Composition
+over inheritance: each model includes the concern and implements its own field list.
+
+---
+
+## 2026-03 · `VoyageClient` as a thin service wrapper, not a gem — Milestone 12
+
+The `voyageai` gem on RubyGems is lightly maintained. A 60-line wrapper around
+`Net::HTTP` gives full control over the interface, makes it trivially stubbable
+in specs via WebMock (no gem monkey-patching), and decouples the app from a
+third-party gem's API choices. Mirrors the `PipelineDispatcher` wraps `Open3`
+pattern already established in this codebase.
+
+---
+
+## 2026-03 · `content_hash` staleness guard on `BibleEmbedding` — Milestone 12
+
+Bible entries save frequently during active translation sessions. Without a staleness
+guard, every save would trigger a Voyage AI API call even when the text did not change
+(e.g. updating `last_updated_at` only). SHA256 of `embeddable_text` stored as
+`content_hash` lets `GenerateEmbeddingJob` skip the API call when content is unchanged.
+Cost: one `SELECT` per job execution. Benefit: eliminates redundant API calls for
+unchanged records.
+
+---
+
+## 2026-03 · Search UI deferred — API layer only in Milestone 12 — Milestone 12
+
+The priority was Use Case 2 (Claude pipeline querying bible via API) over Use Case 1
+(human search bar in the UI). The JSON endpoint at
+`GET /novels/:novel_id/bible/search` serves both human UI and programmatic callers.
+Building the UI as a Turbo/Stimulus layer on top of this endpoint is the next
+milestone — the endpoint is the stable foundation either way.
+
+---
+
+## 2026-03 · Rails 8.1.2 + Ruby 3.4 `presence` visibility bug — Milestone 12
+
+Rails 8.1.2 and Ruby 3.4.2 have an incompatibility where ActiveSupport's `presence`
+method ends up treated as private on any class that `blank.rb` reopens (NilClass,
+String, Array, Hash, Symbol, Numeric, etc.), and on `ActiveRecord::Transaction`.
+Root cause not fully understood — suspected Ruby 3.4 method visibility resolution
+change for inherited methods in reopened classes.
+
+Workaround: explicitly redefine `presence` on all affected classes in
+`config/application.rb` immediately after `Bundler.require`, and prepend a fix on
+`ActiveRecord::Transaction` via an initializer. Remove both when upgrading to a
+Rails version that fixes this.
+
+---
+
+## 2026-03 · Switched schema format to :sql for pgvector compatibility — Milestone 12
+
+Rails' default `schema.rb` format cannot serialize `vector(1024)` columns — it
+comments out the `bible_embeddings` table with "Unknown type 'vector(1024)'",
+while still emitting the `add_foreign_key` lines that reference it. This causes
+`db:test:prepare` to fail. Switched to `config.active_record.schema_format = :sql`
+which dumps `db/structure.sql` (raw PostgreSQL SQL). This correctly captures all
+pgvector column types, tsvector columns, ivfflat indexes, and GIN indexes.
+Required for any project using PostgreSQL-specific column types.
+
+---
+
+## 2026-03 · Voyage AI vector must be serialized as string for upsert — Milestone 12
+
+`VoyageClient.embed` returns a Ruby Array of floats. Passing this Array directly
+to `BibleEmbedding.upsert` raises `TypeError: can't quote Array` because
+ActiveRecord doesn't have a registered type handler for `vector(1024)` columns
+(the `pgvector` gem doesn't integrate with ActiveRecord — it's pg/Sequel only;
+the Rails equivalent is the `neighbor` gem which we don't use). Fix: format the
+vector as a pgvector-compatible string `"[f1,f2,...,f1024]"` before upserting.
+
+---
+
+## 2026-03 · Named routes inside resources blocks get the resource name prepended — Milestone 12
+
+When `get "bible/search", as: :novel_bible_search` is defined inside
+`resources :novels`, Rails prepends the resource name and generates
+`novel_novel_bible_search_path` — not `novel_bible_search_path`. The correct
+`as:` value is `:bible_search`, which Rails expands to `novel_bible_search_path`
+(prepending `novel_` from the resources block). Specs used the intended helper
+name; the route definition had the wrong `as:` value.

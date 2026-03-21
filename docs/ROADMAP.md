@@ -219,21 +219,52 @@ Deliverables:
 ---
 
 ## Milestone 12 — Search
-**Status: 🔲 Not Started**
+**Status: ✅ Done (API layer)**
 **Scope: Post-MVP. Built once as a complete feature — not incrementally.**
 
 Hybrid PostgreSQL search: pgvector (semantic/embedding) + tsvector (keyword/Korean text).
-No separate search service.
-
-Design decisions deferred to this milestone:
-- Which fields to embed
-- Which embedding model to use
-- How to handle Korean text
-- How to weight semantic vs. keyword results
+Embedding model: Voyage AI voyage-3-lite (1024 dimensions). API-first — JSON endpoint
+serves both human UI and Claude pipeline (Use Case 2). Search UI deferred to next milestone.
 
 Deliverables:
-- pgvector extension queries implemented (enabled from Milestone 5)
-- tsvector keyword search implemented
-- Cross-novel and series-scoped search across all bible categories
-- Search UI integrated into bible views
-- RSpec specs passing
+- ✅ `db/migrate/20260320000002_create_bible_embeddings.rb` — `bible_embeddings` table
+  with `vector(1024)`, `tsvector`, polymorphic association, denormalized `novel_id` /
+  `organization_id`, `content_hash`. Indexes: ivfflat (cosine), GIN, unique embeddable.
+- ✅ `app/models/concerns/embeddable.rb` — concern with `#embeddable_text` contract +
+  `after_save` hook enqueuing `GenerateEmbeddingJob`
+- ✅ All five bible models updated — `include Embeddable` + `#embeddable_text` implemented
+- ✅ `app/models/bible_embedding.rb` — polymorphic model, scopes, `stale_for?` class method
+- ✅ `app/services/voyage_client.rb` — thin HTTP wrapper, typed errors, reads `voyage_api_key`
+  from Rails credentials
+- ✅ `app/jobs/generate_embedding_job.rb` — content_hash staleness guard, upsert with
+  `to_tsvector` SQL expression, re-raises `ApiError` for Solid Queue retry
+- ✅ `app/services/bible_search_service.rb` — hybrid semantic + keyword search, novel or
+  org scope, category filter, result merge and dedup
+- ✅ `app/controllers/bible_search_controller.rb` — JSON only, 503 on API failure
+- ✅ Route: `GET /novels/:novel_id/bible/search` → `bible_search#show`
+- ✅ `lib/tasks/embeddings.rake` — `embeddings:backfill[novel_id]` and `embeddings:backfill_all`
+- ✅ RSpec specs: concerns, 5 model specs updated, bible_embedding model + factory,
+  voyage_client service, generate_embedding_job, bible_search_service, bible_search request
+- ✅ `webmock` gem added to Gemfile (test group) for VoyageClient HTTP stubbing
+- ✅ SCHEMA.md, DECISIONS.md, ROADMAP.md updated
+- ✅ `config/application.rb` — Rails 8.1.2 + Ruby 3.4 `presence` visibility fix
+- ✅ `config/initializers/active_record_transaction_fix.rb` — ActiveRecord::Transaction patch
+- ✅ `config/active_record.schema_format = :sql` — switched to structure.sql for pgvector compatibility
+- ✅ `db/structure.sql` — generated from development database
+- ✅ `db/import/idols_rewind_bible.rb` — renamed local `presence` helper to `presence_str`
+- ✅ `rake embeddings:backfill[1]` — 122 embedding jobs enqueued for idols-rewind
+- ✅ `rspec` — 363 examples, 0 failures
+
+Deferred to next milestone:
+- Search UI — Turbo/Stimulus search bar in bible views
+- Cross-novel org-scoped search endpoint
+- Novel-level embeddings (Use Case 3 — reading platform discovery)
+- Chapter content embeddings
+
+Setup steps required:
+1. `bundle install` — installs webmock
+2. `rails credentials:edit` — add `voyage_api_key: <your_key>`
+3. `rails db:migrate` — runs `20260320000002_create_bible_embeddings`
+4. `rails runner db/import/idols_rewind_bible.rb` — import bible data
+5. `rake embeddings:backfill[<novel_id>]` — enqueue embedding generation
+6. `rspec` — confirm all specs pass

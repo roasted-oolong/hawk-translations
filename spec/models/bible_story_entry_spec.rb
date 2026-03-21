@@ -101,4 +101,32 @@ RSpec.describe BibleStoryEntry, type: :model do
       expect { novel.destroy }.to change(BibleStoryEntry, :count).by(-1)
     end
   end
+
+  describe "#embeddable_text" do
+    it "returns a non-blank string" do
+      entry = build(:bible_story_entry, title: "Blue Sherbet Collapse", category: "main_plot")
+      expect(entry.embeddable_text).to be_a(String)
+      expect(entry.embeddable_text).not_to be_blank
+    end
+
+    it "includes the title" do
+      entry = build(:bible_story_entry, title: "Blue Sherbet Collapse")
+      expect(entry.embeddable_text).to include("Blue Sherbet Collapse")
+    end
+
+    it "includes category" do
+      entry = build(:bible_story_entry, category: "main_plot")
+      expect(entry.embeddable_text).to include("main_plot")
+    end
+
+    it "includes content when present" do
+      entry = build(:bible_story_entry, title: "Arc", content: "Kang rebuilds from scratch")
+      expect(entry.embeddable_text).to include("Kang rebuilds from scratch")
+    end
+
+    it "does not raise when all optional fields are nil" do
+      entry = build(:bible_story_entry, content: nil, notes: nil)
+      expect { entry.embeddable_text }.not_to raise_error
+    end
+  end
 end

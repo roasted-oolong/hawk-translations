@@ -1,4 +1,11 @@
+# frozen_string_literal: true
+
 class BibleLocation < ApplicationRecord
+  # ---------------------------------------------------------------------------
+  # Concerns
+  # ---------------------------------------------------------------------------
+  include Embeddable
+
   # ---------------------------------------------------------------------------
   # Associations
   # ---------------------------------------------------------------------------
@@ -18,6 +25,20 @@ class BibleLocation < ApplicationRecord
   # Scopes
   # ---------------------------------------------------------------------------
   scope :by_name, -> { order(:name) }
+
+  # ---------------------------------------------------------------------------
+  # Embeddable implementation
+  # ---------------------------------------------------------------------------
+  def embeddable_text
+    [
+      name,
+      korean_name,
+      location_type,
+      description,
+      significance,
+      notes
+    ].compact.reject(&:blank?).join(" ")
+  end
 
   private
 

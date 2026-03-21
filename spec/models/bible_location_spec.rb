@@ -67,4 +67,29 @@ RSpec.describe BibleLocation, type: :model do
       expect { novel.destroy }.to change(BibleLocation, :count).by(-1)
     end
   end
+
+  describe "#embeddable_text" do
+    it "returns a non-blank string" do
+      location = build(:bible_location, name: "HS Entertainment")
+      expect(location.embeddable_text).to be_a(String)
+      expect(location.embeddable_text).not_to be_blank
+    end
+
+    it "includes the location name" do
+      location = build(:bible_location, name: "HS Entertainment")
+      expect(location.embeddable_text).to include("HS Entertainment")
+    end
+
+    it "includes korean_name when present" do
+      location = build(:bible_location, name: "HS Entertainment", korean_name: "HS 엔터테인먼트")
+      expect(location.embeddable_text).to include("HS 엔터테인먼트")
+    end
+
+    it "does not raise when all optional fields are nil" do
+      location = build(:bible_location,
+        korean_name: nil, location_type: nil, description: nil,
+        significance: nil, notes: nil)
+      expect { location.embeddable_text }.not_to raise_error
+    end
+  end
 end

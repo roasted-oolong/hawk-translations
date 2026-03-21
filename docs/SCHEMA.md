@@ -3,7 +3,7 @@
 Canonical data model. Updated as migrations are written and run.
 Column types reflect PostgreSQL / ActiveRecord conventions.
 
-Status: **M1–M9 complete, M10 in progress** — migrations run through M9; M10 migrations written, pending `db:migrate`.
+Status: **M1–M12 complete** — all migrations written. Pending local run: `rails db:migrate` (applies M10 + M12 migrations).
 
 ---
 
@@ -259,3 +259,28 @@ See novels table above for full column list.
 | updated_at | datetime | |
 
 Indexes: `status`, `job_type`, `(novel_id, created_at)`
+
+---
+
+## Milestone 12 — Search ✅
+
+### bible_embeddings
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| embeddable_type | string | not null — "BibleCharacter" \| "BibleLocation" \| "BibleTerminology" \| "BibleCulturalPhrase" \| "BibleStoryEntry" |
+| embeddable_id | bigint | not null |
+| novel_id | bigint FK | not null — denormalized for novel-scoped search filtering |
+| organization_id | bigint FK | not null — denormalized for cross-novel org-scoped filtering |
+| content_hash | string | not null — SHA256 of embeddable_text; staleness guard |
+| embedding | vector(1024) | Voyage AI voyage-3-lite output |
+| search_text | tsvector | keyword/Korean search; populated by GenerateEmbeddingJob via to_tsvector('simple', ...) |
+| created_at | datetime | |
+| updated_at | datetime | |
+
+Indexes:
+- `(embeddable_type, embeddable_id)` unique — one row per bible record
+- `embedding` ivfflat (vector_cosine_ops) — approximate nearest neighbor search
+- `search_text` GIN — keyword/Korean tsvector search
+- `novel_id` — novel-scoped filtering
+- `organization_id` — org-scoped filtering

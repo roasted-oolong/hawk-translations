@@ -27,9 +27,10 @@ def log(msg)
 end
 
 # Strip surrounding whitespace; return nil if blank.
-def presence(str)
+# Named presence_str to avoid collision with ActiveSupport's Object#presence.
+def presence_str(str)
   val = str&.strip
-  val.empty? ? nil : val
+  val&.empty? ? nil : val
 end
 
 # Parse an integer from a string; return nil if not a valid positive integer.
@@ -126,7 +127,7 @@ character_blocks.each do |block|
   # Derive the English name from the heading — strip the Korean parenthetical.
   # e.g. "Hyuk Kang (강혁)" → "Hyuk Kang"
   english_name = heading.sub(/\s*\([^)]+\)\s*$/, "").strip
-  korean_name  = presence(fields["korean_name"])
+  korean_name  = presence_str(fields["korean_name"])
 
   next if english_name.empty?
 
@@ -138,33 +139,33 @@ character_blocks.each do |block|
 
   # Map markdown field names → column names
   # Markdown uses "honorifics used toward them" and "honorifics they use toward others"
-  honorifics_toward = presence(
+  honorifics_toward = presence_str(
     fields["honorifics_used_toward_them"] ||
     fields["honorifics_used_toward"]
   )
-  honorifics_use = presence(
+  honorifics_use = presence_str(
     fields["honorifics_they_use_toward_others"] ||
     fields["honorifics_they_use"]
   )
 
   # Merge "dialogue cues" into speech_pattern notes (no separate column)
-  speech = [ presence(fields["speech_pattern"]), presence(fields["dialogue_cues"]) ]
+  speech = [ presence_str(fields["speech_pattern"]), presence_str(fields["dialogue_cues"]) ]
             .compact.join("\n\nDialogue cues: ")
-  speech = presence(speech)
+  speech = presence_str(speech)
 
   novel.bible_characters.create!(
     name:                     english_name,
     korean_name:              korean_name,
-    aliases:                  presence(fields["aliases_titles"] || fields["aliases"]),
-    role:                     presence(fields["role"]),
-    significance:             presence(fields["significance"]),
-    physical_description:     presence(fields["physical_description"]),
+    aliases:                  presence_str(fields["aliases_titles"] || fields["aliases"]),
+    role:                     presence_str(fields["role"]),
+    significance:             presence_str(fields["significance"]),
+    physical_description:     presence_str(fields["physical_description"]),
     speech_pattern:           speech,
     honorifics_used_toward:   honorifics_toward,
     honorifics_they_use:      honorifics_use,
-    relationships:            presence(fields["relationships"]),
+    relationships:            presence_str(fields["relationships"]),
     first_appearance_chapter: parse_chapter(fields["first_appearance"]),
-    notes:                    presence(fields["notes"])
+    notes:                    presence_str(fields["notes"])
   )
 
   log "  + #{english_name}"
@@ -203,18 +204,14 @@ location_blocks.each do |block|
     next
   end
 
-  # "Type" in the markdown → location_type column
-  # "Significance" → significance column
-  # Body text under "Significance" is often multi-sentence; keep as-is.
-
   novel.bible_locations.create!(
     name:                     english_name,
-    korean_name:              presence(fields["korean_name"]),
-    location_type:            presence(fields["type"]),
-    description:              presence(fields["description"]),
-    significance:             presence(fields["significance"]),
+    korean_name:              presence_str(fields["korean_name"]),
+    location_type:            presence_str(fields["type"]),
+    description:              presence_str(fields["description"]),
+    significance:             presence_str(fields["significance"]),
     first_appearance_chapter: parse_chapter(fields["first_appearance"]),
-    notes:                    presence(fields["notes"])
+    notes:                    presence_str(fields["notes"])
   )
 
   log "  + #{english_name}"
@@ -261,11 +258,11 @@ term_blocks.each do |block|
 
   novel.bible_terminologies.create!(
     term:                     term_name,
-    korean_term:              presence(fields["korean_term"]),
-    definition:               presence(fields["definition"]),
-    usage_notes:              presence(fields["usage_notes"]),
+    korean_term:              presence_str(fields["korean_term"]),
+    definition:               presence_str(fields["definition"]),
+    usage_notes:              presence_str(fields["usage_notes"]),
     first_appearance_chapter: parse_chapter(fields["first_appearance"]),
-    notes:                    presence(fields["notes"])
+    notes:                    presence_str(fields["notes"])
   )
 
   log "  + #{term_name}"
@@ -310,13 +307,13 @@ phrase_blocks.each do |block|
 
   novel.bible_cultural_phrases.create!(
     phrase:                   phrase_name,
-    korean_phrase:            presence(fields["korean_phrase"]),
-    literal_translation:      presence(fields["literal_translation"]),
-    intended_meaning:         presence(fields["intended_meaning"]),
-    context:                  presence(fields["context"]),
-    established_translation:  presence(fields["established_translation"]),
+    korean_phrase:            presence_str(fields["korean_phrase"]),
+    literal_translation:      presence_str(fields["literal_translation"]),
+    intended_meaning:         presence_str(fields["intended_meaning"]),
+    context:                  presence_str(fields["context"]),
+    established_translation:  presence_str(fields["established_translation"]),
     first_appearance_chapter: parse_chapter(fields["first_appearance"]),
-    notes:                    presence(fields["notes"])
+    notes:                    presence_str(fields["notes"])
   )
 
   log "  + #{phrase_name}"

@@ -68,4 +68,34 @@ RSpec.describe BibleCulturalPhrase, type: :model do
       expect { novel.destroy }.to change(BibleCulturalPhrase, :count).by(-1)
     end
   end
+
+  describe "#embeddable_text" do
+    it "returns a non-blank string" do
+      phrase = build(:bible_cultural_phrase, phrase: "Fighting")
+      expect(phrase.embeddable_text).to be_a(String)
+      expect(phrase.embeddable_text).not_to be_blank
+    end
+
+    it "includes the phrase" do
+      phrase = build(:bible_cultural_phrase, phrase: "Fighting")
+      expect(phrase.embeddable_text).to include("Fighting")
+    end
+
+    it "includes korean_phrase when present" do
+      phrase = build(:bible_cultural_phrase, phrase: "Fighting", korean_phrase: "파이팅")
+      expect(phrase.embeddable_text).to include("파이팅")
+    end
+
+    it "includes intended_meaning when present" do
+      phrase = build(:bible_cultural_phrase, phrase: "Fighting", intended_meaning: "Good luck / You can do it")
+      expect(phrase.embeddable_text).to include("Good luck / You can do it")
+    end
+
+    it "does not raise when all optional fields are nil" do
+      phrase = build(:bible_cultural_phrase,
+        korean_phrase: nil, literal_translation: nil, intended_meaning: nil,
+        context: nil, established_translation: nil, notes: nil)
+      expect { phrase.embeddable_text }.not_to raise_error
+    end
+  end
 end

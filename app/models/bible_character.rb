@@ -1,4 +1,11 @@
+# frozen_string_literal: true
+
 class BibleCharacter < ApplicationRecord
+  # ---------------------------------------------------------------------------
+  # Concerns
+  # ---------------------------------------------------------------------------
+  include Embeddable
+
   # ---------------------------------------------------------------------------
   # Associations
   # ---------------------------------------------------------------------------
@@ -18,6 +25,31 @@ class BibleCharacter < ApplicationRecord
   # Scopes
   # ---------------------------------------------------------------------------
   scope :by_name, -> { order(:name) }
+
+  # ---------------------------------------------------------------------------
+  # Embeddable implementation
+  #
+  # Concatenates all semantically meaningful fields into a single string for
+  # Voyage AI embedding. Korean fields (korean_name, honorifics, speech pattern
+  # examples) are included — Voyage voyage-3-lite handles multilingual text
+  # well, and Korean content appears throughout multiple fields, not just
+  # korean_name.
+  # ---------------------------------------------------------------------------
+  def embeddable_text
+    [
+      name,
+      korean_name,
+      aliases,
+      role,
+      significance,
+      physical_description,
+      speech_pattern,
+      honorifics_used_toward,
+      honorifics_they_use,
+      relationships,
+      notes
+    ].compact.reject(&:blank?).join(" ")
+  end
 
   private
 
