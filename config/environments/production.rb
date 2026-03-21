@@ -59,14 +59,15 @@ Rails.application.configure do
   # Only use :id for inspections in production.
   config.active_record.attributes_for_inspect = [ :id ]
 
-  # Prevent DNS rebinding attacks — only accept requests for our domain.
-  # The IP/container-hostname entries allow kamal-proxy's internal health
-  # check (/up) to reach the app without being blocked by HostAuthorization.
-  # Container hostnames are random hex strings — .local covers them cleanly.
+  # Allow kamal-proxy's internal health check (/up) to reach the app.
+  # The health check arrives with the container's own hostname as the Host
+  # header (e.g. "85d447e84ad6:80") — a 12-char hex Docker short ID plus port.
+  # Rails HostAuthorization matches against the full Host header value, so
+  # the pattern must account for both the hex ID and the optional :port suffix.
   config.hosts = [
     "hawk-translations.com",
     "www.hawk-translations.com",
-    /\A[a-f0-9]+(\.local)?\z/,        # container hostnames from kamal-proxy (with or without .local)
+    /\A[a-f0-9]+(:[0-9]+)?\z/,        # Docker container short-ID hostnames (e.g. 85d447e84ad6:80)
     IPAddr.new("172.18.0.0/16"),      # Docker bridge network
     "localhost",
     "127.0.0.1",

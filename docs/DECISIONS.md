@@ -505,8 +505,8 @@ pool. Restored to 5 in `config/deploy.yml`.
 
 Rails `HostAuthorization` blocked kamal-proxy's `/up` health check because it
 arrives with the container's own hostname (`c42776ab7493:80`) rather than the
-public domain. Fixed by adding a regex matching raw hex container IDs
-(`/\A[a-f0-9]+(\.local)?\z/`), the Docker bridge subnet
+public domain. Fixed by adding a regex matching raw hex container IDs with optional port
+(`/\A[a-f0-9]+(:[0-9]+)?\z/`), the Docker bridge subnet
 (`172.18.0.0/16`), and localhost to `config.hosts` in `production.rb`.
 The public domain entries are preserved so DNS rebinding protection remains active
 for all real traffic.
