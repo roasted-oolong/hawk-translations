@@ -1,4 +1,11 @@
+# frozen_string_literal: true
+
 class BibleTerminology < ApplicationRecord
+  # ---------------------------------------------------------------------------
+  # Concerns
+  # ---------------------------------------------------------------------------
+  include Embeddable
+
   # ---------------------------------------------------------------------------
   # Associations
   # ---------------------------------------------------------------------------
@@ -18,6 +25,19 @@ class BibleTerminology < ApplicationRecord
   # Scopes
   # ---------------------------------------------------------------------------
   scope :by_term, -> { order(:term) }
+
+  # ---------------------------------------------------------------------------
+  # Embeddable implementation
+  # ---------------------------------------------------------------------------
+  def embeddable_text
+    [
+      term,
+      korean_term,
+      definition,
+      usage_notes,
+      notes
+    ].compact.reject(&:blank?).join(" ")
+  end
 
   private
 

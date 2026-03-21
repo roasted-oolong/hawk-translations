@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_20_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_20_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -78,6 +78,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_20_000001) do
     t.datetime "updated_at", null: false
     t.index ["novel_id"], name: "index_bible_cultural_phrases_on_novel_id"
   end
+
+# Could not dump table "bible_embeddings" because of following StandardError
+#   Unknown type 'vector(1024)' for column 'embedding'
+
 
   create_table "bible_locations", force: :cascade do |t|
     t.datetime "created_at", null: false
@@ -230,6 +234,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_20_000001) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "bible_characters", "novels"
   add_foreign_key "bible_cultural_phrases", "novels"
+  add_foreign_key "bible_embeddings", "novels"
+  add_foreign_key "bible_embeddings", "organizations"
   add_foreign_key "bible_locations", "novels"
   add_foreign_key "bible_story_entries", "novels"
   add_foreign_key "bible_terminologies", "novels"

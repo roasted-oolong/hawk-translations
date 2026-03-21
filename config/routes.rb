@@ -26,6 +26,11 @@ Rails.application.routes.draw do
 
     # Translation jobs — trigger, list, show output, cancel
     resources :translation_jobs, only: [ :index, :show, :create, :destroy ]
+
+    # Bible search — API-first JSON endpoint (Milestone 12)
+    # GET /novels/:novel_id/bible/search?q=...
+    # as: :bible_search generates novel_bible_search_path (Rails prepends :novel_ from the resources block)
+    get "bible/search", to: "bible_search#show", as: :bible_search
   end
 
   # Root

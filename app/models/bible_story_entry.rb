@@ -1,4 +1,11 @@
+# frozen_string_literal: true
+
 class BibleStoryEntry < ApplicationRecord
+  # ---------------------------------------------------------------------------
+  # Concerns
+  # ---------------------------------------------------------------------------
+  include Embeddable
+
   # ---------------------------------------------------------------------------
   # Associations
   # ---------------------------------------------------------------------------
@@ -31,6 +38,21 @@ class BibleStoryEntry < ApplicationRecord
   # ---------------------------------------------------------------------------
   scope :by_title,    -> { order(:title) }
   scope :by_category, ->(cat) { where(category: cat) }
+
+  # ---------------------------------------------------------------------------
+  # Embeddable implementation
+  #
+  # category is included as a string so semantic queries for e.g. "main plot
+  # arc" can match on the category value as well as title/content.
+  # ---------------------------------------------------------------------------
+  def embeddable_text
+    [
+      category,
+      title,
+      content,
+      notes
+    ].compact.reject(&:blank?).join(" ")
+  end
 
   private
 

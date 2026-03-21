@@ -1,4 +1,11 @@
+# frozen_string_literal: true
+
 class BibleCulturalPhrase < ApplicationRecord
+  # ---------------------------------------------------------------------------
+  # Concerns
+  # ---------------------------------------------------------------------------
+  include Embeddable
+
   # ---------------------------------------------------------------------------
   # Associations
   # ---------------------------------------------------------------------------
@@ -18,6 +25,21 @@ class BibleCulturalPhrase < ApplicationRecord
   # Scopes
   # ---------------------------------------------------------------------------
   scope :by_phrase, -> { order(:phrase) }
+
+  # ---------------------------------------------------------------------------
+  # Embeddable implementation
+  # ---------------------------------------------------------------------------
+  def embeddable_text
+    [
+      phrase,
+      korean_phrase,
+      literal_translation,
+      intended_meaning,
+      context,
+      established_translation,
+      notes
+    ].compact.reject(&:blank?).join(" ")
+  end
 
   private
 

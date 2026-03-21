@@ -69,4 +69,36 @@ RSpec.describe BibleCharacter, type: :model do
       expect { novel.destroy }.to change(BibleCharacter, :count).by(-1)
     end
   end
+
+  describe "#embeddable_text" do
+    it "returns a non-blank string" do
+      character = build(:bible_character, name: "Hyuk Kang")
+      expect(character.embeddable_text).to be_a(String)
+      expect(character.embeddable_text).not_to be_blank
+    end
+
+    it "includes the character name" do
+      character = build(:bible_character, name: "Hyuk Kang")
+      expect(character.embeddable_text).to include("Hyuk Kang")
+    end
+
+    it "includes korean_name when present" do
+      character = build(:bible_character, name: "Hyuk Kang", korean_name: "강혁")
+      expect(character.embeddable_text).to include("강혁")
+    end
+
+    it "includes role when present" do
+      character = build(:bible_character, role: "Protagonist")
+      expect(character.embeddable_text).to include("Protagonist")
+    end
+
+    it "does not raise when all optional fields are nil" do
+      character = build(:bible_character,
+        korean_name: nil, aliases: nil, role: nil, significance: nil,
+        physical_description: nil, speech_pattern: nil,
+        honorifics_used_toward: nil, honorifics_they_use: nil,
+        relationships: nil, notes: nil)
+      expect { character.embeddable_text }.not_to raise_error
+    end
+  end
 end

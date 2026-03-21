@@ -67,4 +67,33 @@ RSpec.describe BibleTerminology, type: :model do
       expect { novel.destroy }.to change(BibleTerminology, :count).by(-1)
     end
   end
+
+  describe "#embeddable_text" do
+    it "returns a non-blank string" do
+      terminology = build(:bible_terminology, term: "Sunbae")
+      expect(terminology.embeddable_text).to be_a(String)
+      expect(terminology.embeddable_text).not_to be_blank
+    end
+
+    it "includes the term" do
+      terminology = build(:bible_terminology, term: "Sunbae")
+      expect(terminology.embeddable_text).to include("Sunbae")
+    end
+
+    it "includes korean_term when present" do
+      terminology = build(:bible_terminology, term: "Sunbae", korean_term: "선배")
+      expect(terminology.embeddable_text).to include("선배")
+    end
+
+    it "includes definition when present" do
+      terminology = build(:bible_terminology, term: "Sunbae", definition: "Senior colleague")
+      expect(terminology.embeddable_text).to include("Senior colleague")
+    end
+
+    it "does not raise when all optional fields are nil" do
+      terminology = build(:bible_terminology,
+        korean_term: nil, definition: nil, usage_notes: nil, notes: nil)
+      expect { terminology.embeddable_text }.not_to raise_error
+    end
+  end
 end
