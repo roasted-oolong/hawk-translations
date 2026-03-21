@@ -26,7 +26,57 @@ rails new . -n hawk --database=postgresql --skip-test --skip-action-mailbox --sk
 - Factory tool: FactoryBot (`factory_bot_rails`)
 - Tests written before implementation — no exceptions
 - Spec structure mirrors `app/` structure: `spec/models/`, `spec/requests/`, `spec/system/`
-- System specs use Capybara
+- System specs use Capybara + a JavaScript-capable driver (decision at M13 — Playwright via `capybara-playwright-driver` or Selenium/Cuprite)
+
+---
+
+### Development Server
+
+After M13 (jsbundling migration), the development server requires two processes running
+simultaneously. Start with:
+
+```bash
+foreman start -f Procfile.dev
+# or, if overmind is installed:
+overmind start -f Procfile.dev
+```
+
+`Procfile.dev` defines:
+- `web: rails server -p 3000`
+- `js: yarn build --watch`
+
+Do not run `rails server` alone after M13 — the JS bundle will not rebuild on changes.
+
+### spec/support/ Auto-loading
+
+`spec/rails_helper.rb` already contains an active glob that auto-loads all files
+under `spec/support/**/*.rb`:
+
+```ruby
+Rails.root.glob('spec/support/**/*.rb').sort_by(&:to_s).each { |f| require f }
+```
+
+Any new support file (e.g. `spec/support/system_spec_helper.rb`) is automatically
+required — no manual require needed. `spec/support/omniauth_helpers.rb` already
+includes `type: :system` so the `sign_in` helper is available in system specs
+without any changes.
+
+### System Spec Strategy (Phase 2)
+
+System specs are written for every UI milestone to catch regressions during incremental
+build-out. The goal is a reliable suite that can be run before each deploy.
+
+Coverage target per milestone:
+- M13: smoke test — app boots, login page renders, OAuth flow completes
+- M14: login flow, nav renders, sign-out
+- M15: dashboard loads, novel index renders, novel show renders
+- M16: chapter list, file upload form, job trigger form, job status display
+- M17: bible index/show per category, search bar interaction
+- M18: novel create/edit form, empty state rendering
+
+JS driver setup is a dedicated step within M13 before any view specs are written.
+Playwright is preferred over Selenium for reliability and speed; Cuprite (CDP-based)
+is a lighter alternative. Decision recorded in DECISIONS.md at M13.
 
 ---
 
@@ -51,9 +101,15 @@ rails new . -n hawk --database=postgresql --skip-test --skip-action-mailbox --sk
 
 ## Frontend
 
+See docs/UI.md for the full frontend specification. Summary:
+
 - Hotwire (Turbo + Stimulus) — no React, no Vue, no separate JS framework
-- No custom CSS framework decision made yet
-- Stimulus controllers in `app/javascript/controllers/`
+- TypeScript via `jsbundling-rails` + esbuild — replaces importmaps
+- All Stimulus controllers in `app/javascript/controllers/`, named `*_controller.ts`
+- Hand-rolled CSS — no Tailwind, no Bootstrap
+- CSS custom properties for all design tokens — defined in `app/assets/stylesheets/application.css`
+- Reusable view components (partials) in `app/views/components/` — registered via `prepend_view_path` in `ApplicationController`
+- `yarn build --watch` + `rails server` run together via Foreman (`Procfile.dev`)
 
 ---
 
@@ -101,3 +157,15 @@ rails new . -n hawk --database=postgresql --skip-test --skip-action-mailbox --sk
 - Cloudflare proxies all traffic; SSL/TLS mode: Full (strict)
 - kamal network gateway (`172.18.0.1`) used for container→PostgreSQL connections
 - iptables rule `172.16.0.0/12 ACCEPT` covers all Docker bridge networks permanently
+
+### Dockerfile — Node.js layer (added at M13)
+
+The jsbundling + esbuild pipeline requires Node.js in the Docker image.
+Added at M13 as a layer before the Ruby/Rails layer:
+
+- Use the official `nodesource` apt repository or the Dockerfile `FROM` base image's
+  package manager — do not use nvm (not suitable for Docker)
+- Node version: LTS (20.x or 22.x — decision at M13, record in DECISIONS.md)
+- `yarn` installed via `npm install -g yarn` after Node install
+- `yarn build` run during image build to compile assets before container starts
+- `.dockerignore` already excludes `node_modules` — verify at M13

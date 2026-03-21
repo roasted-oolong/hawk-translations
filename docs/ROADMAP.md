@@ -4,6 +4,10 @@ Status key: ✅ Done · 🔄 In Progress · 🔲 Not Started
 
 ---
 
+# Phase 1 — Backend
+
+---
+
 ## Milestone 1 — Rails App Generation
 **Status: ✅ Done**
 
@@ -268,3 +272,141 @@ Setup steps required:
 4. `rails runner db/import/idols_rewind_bible.rb` — import bible data
 5. `rake embeddings:backfill[<novel_id>]` — enqueue embedding generation
 6. `rspec` — confirm all specs pass
+
+---
+
+# Phase 2 — Frontend & Usability
+
+Goal: make the application usable for a solo translator working daily.
+See docs/UI.md for CSS approach, component inventory, and design token conventions.
+
+---
+
+## Milestone 13 — Frontend Infrastructure & Pipeline Completion
+**Status: 🔲 Not Started**
+
+All tooling and infrastructure that must exist before any UI code is written.
+This milestone has no visible UI output — it is purely setup. Nothing in M14+ is
+started until this is complete and verified.
+
+### Part A — JavaScript Build Pipeline
+- Remove `importmap-rails` gem; add `jsbundling-rails` gem
+- Install esbuild: `yarn add esbuild`
+- `package.json` with `build` script: `esbuild app/javascript/*.js --bundle --outdir=app/assets/builds`
+- `tsconfig.json` at repo root — strict mode, target ESNext
+- `app/javascript/application.ts` — replaces `application.js`
+- `app/javascript/controllers/application.ts` + `index.ts` — typed Stimulus bootstrap
+- `Procfile.dev` — `web: rails server` + `js: yarn build --watch`
+- `foreman` gem added (development group) or `overmind` if preferred
+- Verify: `yarn build` produces `app/assets/builds/application.js` without errors
+- Verify: `rails server` + `yarn build --watch` run together without conflicts
+- CONVENTIONS.md and UI.md confirmed accurate (already updated)
+
+### Part B — System Spec Driver
+- Choose and install JS-capable Capybara driver: Playwright (`capybara-playwright-driver`) or Cuprite
+- `spec/support/system_spec_helper.rb` — driver config, screen size, headless mode
+- `spec/system/.keep` — directory created
+- Smoke test: one system spec that boots the app, visits login, and passes
+- Decision recorded in DECISIONS.md: which driver and why
+
+### Part C — `app/views/components/` Setup
+- Create `app/views/components/` directory
+- `prepend_view_path Rails.root.join("app/views/components")` added to `ApplicationController`
+- Verify render lookup works with a trivial `_smoke_test.html.erb` partial (delete after)
+
+### Part D — `run_bible_build.py` (Pipeline Completion)
+- Write `run_bible_build.py` — non-interactive wrapper matching the pattern of `run_preread.py`
+  and `run_review.py`; accepts CLI arguments, calls the underlying bible build runner
+- Update `PipelineDispatcher#run_bible_build_stub` to call the real script
+- Verify bible_build job triggers and completes without the stub message
+- DECISIONS.md updated
+
+### Part E — Dockerfile + Deploy Verification
+- Add Node.js install layer to Dockerfile (needed for esbuild / yarn)
+- Add `yarn build` step to Dockerfile asset compilation stage
+- Verify `kamal deploy` succeeds with the updated Dockerfile
+- Confirm production app boots and serves JS correctly after deploy
+
+---
+
+## Milestone 14 — Application Layout, Navigation & Login Page
+**Status: 🔲 Not Started**
+
+Foundation for every other view. Establishes the design tokens, CSS structure,
+and nav shell that all subsequent milestones build on. Run UI UX Pro Max design
+system generator before starting to seed color palette and typography decisions.
+
+Deliverables:
+- `app/assets/stylesheets/application.css` — CSS custom properties (design tokens), reset import, base typography
+- `app/assets/stylesheets/` component files — layout, nav, buttons, tables, forms, flash, badges
+- `app/views/layouts/application.html.erb` — updated with nav partial, flash, modern-normalize CDN link
+- `app/views/layouts/_nav.html.erb` — top navigation bar with app name and sign-out link
+- `app/views/sessions/new.html.erb` — styled login page (logo, sign-in button, clean centered layout)
+- System specs: login flow, nav renders, sign-out (M13 driver setup required first)
+- UI.md updated — design tokens finalized, layout decisions recorded
+- DECISIONS.md updated — color palette and typography choices recorded
+
+---
+
+## Milestone 15 — Dashboard, Novel Index & Novel Show
+**Status: 🔲 Not Started**
+
+The core daily entry points. After this milestone the app is navigable as a real product.
+
+Deliverables:
+- `app/views/dashboard/index.html.erb` — assigned novels with chapter progress summary, pending jobs count
+- `app/views/novels/index.html.erb` — novel cards (title, Korean title, series, chapter count, status)
+- `app/views/novels/show.html.erb` — novel header, chapter summary table, bible category counts, jobs link
+- Breadcrumb partial introduced (`app/views/layouts/_breadcrumb.html.erb`)
+- System specs: dashboard loads, novel index renders, novel show renders
+- UI.md updated — card and breadcrumb patterns documented
+
+---
+
+## Milestone 16 — Chapter List & Translation Jobs
+**Status: 🔲 Not Started**
+
+The most-used views during active translation work. After this milestone the daily
+workflow (upload → trigger job → monitor → download) is fully usable.
+
+Deliverables:
+- `app/views/chapters/index.html.erb` — chapter table with status badges, upload button, download links
+- `app/views/chapters/new.html.erb` — file upload form (single + bulk)
+- `app/views/translation_jobs/index.html.erb` — job list with status badges + trigger form
+- `app/views/translation_jobs/show.html.erb` — job output / error display
+- `app/views/components/_status_badge.html.erb` — status badge component
+- Job status polling via Turbo Streams or meta-refresh (decision at this milestone)
+- System specs: chapter list, file upload form, job trigger form, job status display
+- UI.md updated — badge component, polling pattern documented
+
+---
+
+## Milestone 17 — Bible Views
+**Status: 🔲 Not Started**
+
+The most structurally complex views. Five categories, each with index, show, new, edit.
+
+Deliverables:
+- All five bible index views — entry list with key fields visible at a glance
+- All five bible show views — markdown-style rendered entry layout
+- All five bible new/edit forms — clean, field-labelled forms per category
+- Search UI — Turbo/Stimulus combobox wired to the existing `/bible/search` JSON endpoint (deferred from M12)
+- System specs: bible index/show per category, search bar interaction
+- UI.md updated — bible entry card layout, search bar component documented
+
+---
+
+## Milestone 18 — Forms & Polish
+**Status: 🔲 Not Started**
+
+Remaining forms and overall UI consistency pass. The app should feel finished after this.
+
+Deliverables:
+- `app/views/novels/new.html.erb` + `edit.html.erb` — styled novel creation/edit form
+- `app/views/novels/_form.html.erb` — clean field layout, inline validation errors
+- Empty state components — consistent across all index views
+- Destructive action confirmation styling — modal controller replaces turbo_confirm where appropriate
+- Mobile layout pass — readable on a phone (not a native app, just not broken)
+- System specs: novel create/edit form, empty state rendering
+- Final UI.md pass — all components and patterns documented
+- Final DECISIONS.md pass — any deferred frontend decisions resolved

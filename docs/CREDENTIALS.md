@@ -13,6 +13,22 @@ bin/rails credentials:edit --environment production
 
 ## Required keys
 
+### voyage (Milestone 12 — Search)
+
+```yaml
+voyage_api_key: <from https://dash.voyageai.com — API Keys section>
+```
+
+**How to obtain:**
+1. Sign in at https://dash.voyageai.com
+2. Go to API Keys
+3. Create a new key and copy it into credentials
+
+Used by `VoyageClient` to generate embeddings for bible entries.
+Embedding model: `voyage-3-lite` (1024 dimensions).
+
+---
+
 ### google (Milestone 4 — Authentication)
 
 ```yaml
