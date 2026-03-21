@@ -1,111 +1,133 @@
-<h1><%= @novel.title %></h1>
-<% if @novel.korean_title.present? %>
-  <p><em><%= @novel.korean_title %></em></p>
-<% end %>
+<%# app/views/novels/show.html.erb %>
+<% content_for :title, "#{@novel.title} — Hawk" %>
 
-<p>
-  <strong>Genre:</strong> <%= @novel.genre.presence || "—" %> |
-  <strong>Series:</strong> <%= @novel.series&.name || "—" %> |
-  <strong>Visibility:</strong> <%= @novel.visibility %>
-</p>
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, nil]
+    ] %>
 
-<% if @novel.summary.present? %>
-  <p><%= @novel.summary %></p>
-<% end %>
-
-<p>
-  <%= link_to "Edit Novel", edit_novel_path(@novel) %> |
-  <%= link_to "All Novels", novels_path %>
-</p>
-
-<hr>
-
-<h2>Chapters (<%= @chapters.size %>)</h2>
-
-<%= link_to "Upload Chapter(s)", new_novel_chapter_path(@novel) %>
-
-<% if @chapters.none? %>
-  <p>No chapters yet.</p>
-<% else %>
-  <table>
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Title</th>
-        <th>Status</th>
-        <th>Korean Source</th>
-        <th>Translated Output</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @chapters.each do |chapter| %>
-        <tr>
-          <td><%= link_to chapter.number, novel_chapter_path(@novel, chapter) %></td>
-          <td><%= chapter.title.presence || "—" %></td>
-          <td><%= chapter.status %></td>
-          <td>
-            <% if chapter.korean_source.attached? %>
-              <%= link_to "Download", download_korean_source_novel_chapter_path(@novel, chapter) %>
-            <% else %>
-              —
-            <% end %>
-          </td>
-          <td>
-            <% if chapter.translated_output.attached? %>
-              <%= link_to "Download", download_translated_output_novel_chapter_path(@novel, chapter) %>
-            <% else %>
-              —
-            <% end %>
-          </td>
-          <td>
-            <%= link_to "Edit", edit_novel_chapter_path(@novel, chapter) %> |
-            <%= button_to "Remove", novel_chapter_path(@novel, chapter), method: :delete,
-                data: { turbo_confirm: "Remove chapter #{chapter.number}?" } %>
-          </td>
-        </tr>
+<div class="page-header">
+  <div class="page-header__row">
+    <div>
+      <h1 class="page-title" data-testid="novel-title"><%= @novel.title %></h1>
+      <% if @novel.korean_title.present? %>
+        <p class="page-subtitle novel-show__korean-title"><%= @novel.korean_title %></p>
       <% end %>
-    </tbody>
-  </table>
-<% end %>
+    </div>
+    <div class="btn-group">
+      <%= link_to "Edit", edit_novel_path(@novel), class: "btn btn--secondary btn--sm" %>
+      <%= button_to "Remove", @novel, method: :delete,
+            class: "btn btn--danger btn--sm",
+            data: { turbo_confirm: "Remove \"#{@novel.title}\"? This cannot be undone." } %>
+    </div>
+  </div>
 
-<hr>
+  <div class="novel-show__meta">
+    <% if @novel.series.present? %>
+      <span class="novel-show__meta-item">
+        <span class="novel-show__meta-label">Series</span>
+        <span class="novel-show__meta-value"><%= @novel.series.name %></span>
+      </span>
+    <% end %>
+    <% if @novel.genre.present? %>
+      <span class="novel-show__meta-item">
+        <span class="novel-show__meta-label">Genre</span>
+        <span class="novel-show__meta-value"><%= @novel.genre %></span>
+      </span>
+    <% end %>
+    <span class="novel-show__meta-item">
+      <span class="novel-show__meta-label">Visibility</span>
+      <span class="novel-show__meta-value"><%= @novel.visibility.capitalize %></span>
+    </span>
+  </div>
 
-<h2>Translation Bible</h2>
+  <% if @novel.summary.present? %>
+    <p class="novel-show__summary"><%= @novel.summary %></p>
+  <% end %>
+</div>
 
-<table>
-  <thead>
-    <tr>
-      <th>Category</th>
-      <th>Entries</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Characters</td>
-      <td><%= @novel.bible_characters.count %></td>
-      <td><%= link_to "View →", novel_bible_characters_path(@novel) %></td>
-    </tr>
-    <tr>
-      <td>Locations</td>
-      <td><%= @novel.bible_locations.count %></td>
-      <td><%= link_to "View →", novel_bible_locations_path(@novel) %></td>
-    </tr>
-    <tr>
-      <td>Terminology</td>
-      <td><%= @novel.bible_terminologies.count %></td>
-      <td><%= link_to "View →", novel_bible_terminologies_path(@novel) %></td>
-    </tr>
-    <tr>
-      <td>Cultural Phrases</td>
-      <td><%= @novel.bible_cultural_phrases.count %></td>
-      <td><%= link_to "View →", novel_bible_cultural_phrases_path(@novel) %></td>
-    </tr>
-    <tr>
-      <td>Story Entries</td>
-      <td><%= @novel.bible_story_entries.count %></td>
-      <td><%= link_to "View →", novel_bible_story_entries_path(@novel) %></td>
-    </tr>
-  </tbody>
-</table>
+<%# ------------------------------------------------------------------ %>
+<%# Chapter summary                                                     %>
+<%# ------------------------------------------------------------------ %>
+<section class="novel-show__section" aria-labelledby="chapters-heading" data-testid="novel-chapters-summary">
+  <div class="novel-show__section-header">
+    <h2 class="novel-show__section-title" id="chapters-heading">
+      Chapters (<%= @chapters.size %>)
+    </h2>
+    <%= link_to "Upload Chapter(s)", new_novel_chapter_path(@novel), class: "btn btn--primary btn--sm" %>
+  </div>
+
+  <% if @chapters.none? %>
+    <p class="empty-state__message">No chapters yet.</p>
+  <% else %>
+    <%# Status summary row %>
+    <% untranslated_count = @chapters.count(&:untranslated?) %>
+    <% translated_count   = @chapters.count(&:translated?) %>
+    <% reviewed_count     = @chapters.count(&:reviewed?) %>
+
+    <div class="chapter-status-summary">
+      <div class="chapter-status-summary__item">
+        <span class="chapter-status-summary__count"><%= untranslated_count %></span>
+        <span class="chapter-status-summary__label">untranslated</span>
+      </div>
+      <div class="chapter-status-summary__item">
+        <span class="chapter-status-summary__count"><%= translated_count %></span>
+        <span class="chapter-status-summary__label">translated</span>
+      </div>
+      <div class="chapter-status-summary__item">
+        <span class="chapter-status-summary__count"><%= reviewed_count %></span>
+        <span class="chapter-status-summary__label">reviewed</span>
+      </div>
+    </div>
+
+    <p class="novel-show__chapters-link">
+      <%= link_to "View all #{@chapters.size} chapters \u2192", novel_chapters_path(@novel) %>
+    </p>
+  <% end %>
+</section>
+
+<hr class="divider">
+
+<%# ------------------------------------------------------------------ %>
+<%# Bible summary                                                       %>
+<%# ------------------------------------------------------------------ %>
+<section class="novel-show__section" aria-labelledby="bible-heading" data-testid="novel-bible-summary">
+  <div class="novel-show__section-header">
+    <h2 class="novel-show__section-title" id="bible-heading">Translation Bible</h2>
+  </div>
+
+  <div class="bible-summary-grid">
+    <div class="bible-summary-grid__item">
+      <%= link_to "Characters", novel_bible_characters_path(@novel), class: "bible-summary-grid__label" %>
+      <span class="bible-summary-grid__count"><%= @bible_counts[:characters] %></span>
+    </div>
+    <div class="bible-summary-grid__item">
+      <%= link_to "Locations", novel_bible_locations_path(@novel), class: "bible-summary-grid__label" %>
+      <span class="bible-summary-grid__count"><%= @bible_counts[:locations] %></span>
+    </div>
+    <div class="bible-summary-grid__item">
+      <%= link_to "Terminology", novel_bible_terminologies_path(@novel), class: "bible-summary-grid__label" %>
+      <span class="bible-summary-grid__count"><%= @bible_counts[:terminology] %></span>
+    </div>
+    <div class="bible-summary-grid__item">
+      <%= link_to "Cultural Phrases", novel_bible_cultural_phrases_path(@novel), class: "bible-summary-grid__label" %>
+      <span class="bible-summary-grid__count"><%= @bible_counts[:cultural_phrases] %></span>
+    </div>
+    <div class="bible-summary-grid__item">
+      <%= link_to "Story Entries", novel_bible_story_entries_path(@novel), class: "bible-summary-grid__label" %>
+      <span class="bible-summary-grid__count"><%= @bible_counts[:story_entries] %></span>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<%# ------------------------------------------------------------------ %>
+<%# Jobs link                                                           %>
+<%# ------------------------------------------------------------------ %>
+<section class="novel-show__section" aria-labelledby="jobs-heading">
+  <div class="novel-show__section-header">
+    <h2 class="novel-show__section-title" id="jobs-heading">Translation Jobs</h2>
+    <%= link_to "Translation Jobs", novel_translation_jobs_path(@novel), class: "btn btn--secondary btn--sm" %>
+  </div>
+</section>

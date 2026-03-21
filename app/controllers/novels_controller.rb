@@ -2,11 +2,20 @@ class NovelsController < ApplicationController
   before_action :set_novel, only: [ :show, :edit, :update, :destroy ]
 
   def index
-    @novels = Novel.includes(:organization, :series).order(:title)
+    @novels = Novel
+      .includes(:series, chapters: [], translation_jobs: [])
+      .order(:title)
   end
 
   def show
     @chapters = @novel.chapters.by_number
+    @bible_counts = {
+      characters:      @novel.bible_characters.count,
+      locations:       @novel.bible_locations.count,
+      terminology:     @novel.bible_terminologies.count,
+      cultural_phrases: @novel.bible_cultural_phrases.count,
+      story_entries:   @novel.bible_story_entries.count
+    }
   end
 
   def new

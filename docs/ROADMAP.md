@@ -61,7 +61,7 @@ Deliverables:
 - Sign-out works from any page
 - Credentials stored in Rails encrypted credentials
 
-> **Note:** User model created in full here (all columns from SCHEMA.md Milestone 5).
+> **Note:** User model created in full at this milestone (all columns from SCHEMA.md Milestone 5).
 > Milestone 5 adds no `users` migration — only the multi-tenant models around it.
 
 ---
@@ -361,17 +361,28 @@ Deliverables:
 ---
 
 ## Milestone 15 — Dashboard, Novel Index & Novel Show
-**Status: 🔲 Not Started**
+**Status: ✅ Complete**
 
-The core daily entry points. After this milestone the app is navigable as a real product.
+The core daily entry points. The app is navigable as a real product after this milestone.
 
 Deliverables:
-- `app/views/dashboard/index.html.erb` — assigned novels with chapter progress summary, pending jobs count
-- `app/views/novels/index.html.erb` — novel cards (title, Korean title, series, chapter count, status)
-- `app/views/novels/show.html.erb` — novel header, chapter summary table, bible category counts, jobs link
-- Breadcrumb partial introduced (`app/views/layouts/_breadcrumb.html.erb`)
-- System specs: dashboard loads, novel index renders, novel show renders
-- UI.md updated — card and breadcrumb patterns documented
+- ✅ `app/controllers/dashboard_controller.rb` — queries novels via NovelTeamAssignment; no bypass for any user
+- ✅ `app/controllers/novels_controller.rb` — `index` eager-loads chapters + jobs for card; `show` adds `@bible_counts`
+- ✅ `app/models/user.rb` — `has_many :memberships`, `has_many :teams through: :memberships`, `has_many :translation_jobs` added (missing from M5)
+- ✅ `app/views/dashboard/index.html.erb` — assigned novels grid, empty state
+- ✅ `app/views/novels/index.html.erb` — novel cards grid, empty state
+- ✅ `app/views/novels/show.html.erb` — novel header, chapter status summary, bible category grid, jobs link
+- ✅ `app/views/novels/_card.html.erb` — novel card component (title, Korean title, series, chapter progress, pending jobs)
+- ✅ `app/views/layouts/_breadcrumb.html.erb` — breadcrumb partial, `[label, path]` array interface
+- ✅ `app/assets/stylesheets/_breadcrumb.css` — breadcrumb trail styles
+- ✅ `app/assets/stylesheets/_dashboard.css` — dashboard section, empty state
+- ✅ `app/assets/stylesheets/_novels.css` — novel grid, novel card, novel show layout
+- ✅ `app/assets/stylesheets/_layout.css` — `.page-header__row` added (title + action button layout)
+- ✅ `app/assets/stylesheets/application.css` — `_breadcrumb`, `_dashboard`, `_novels` added to import chain
+- ✅ `spec/system/m15_dashboard_novels_spec.rb` — 22 examples, all passing
+- ✅ `rspec` — full suite passing
+- ✅ UI.md updated — breadcrumb and novel card patterns documented
+- ✅ DECISIONS.md updated — M15 entries
 
 ---
 

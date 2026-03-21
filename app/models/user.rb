@@ -1,5 +1,12 @@
 class User < ApplicationRecord
   # ---------------------------------------------------------------------------
+  # Associations
+  # ---------------------------------------------------------------------------
+  has_many :memberships, dependent: :destroy
+  has_many :teams,       through: :memberships
+  has_many :translation_jobs
+
+  # ---------------------------------------------------------------------------
   # Validations
   # ---------------------------------------------------------------------------
   validates :email,    presence: true, uniqueness: { case_sensitive: false }

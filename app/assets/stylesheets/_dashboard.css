@@ -1,0 +1,53 @@
+/* ==========================================================================
+   _dashboard.css
+   Dashboard layout — section headers, empty state, spacing.
+   ========================================================================== */
+
+/* --- Dashboard section --- */
+.dashboard-section {
+  margin-bottom: var(--space-12);
+}
+
+.dashboard-section__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+
+.dashboard-section__title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.dashboard-section__link {
+  font-size: var(--text-sm);
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.dashboard-section__link:hover {
+  text-decoration: underline;
+}
+
+/* --- Empty state --- */
+.empty-state {
+  padding: var(--space-12) var(--space-8);
+  text-align: center;
+  background-color: var(--color-surface);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+}
+
+.empty-state__message {
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.empty-state__hint {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-4);
+}
