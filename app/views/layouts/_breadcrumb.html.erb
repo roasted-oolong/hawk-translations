@@ -1,0 +1,31 @@
+<%#
+  app/views/layouts/_breadcrumb.html.erb
+
+  Renders a breadcrumb trail from an array of [label, path] pairs.
+  The last item is the current page — rendered as plain text, not a link.
+
+  Usage:
+    <%= render "layouts/breadcrumb", crumbs: [
+          ["Novels", novels_path],
+          [@novel.title, nil]
+        ] %>
+
+  data-testid="breadcrumb" is used by system specs.
+%>
+<nav class="breadcrumb" aria-label="Breadcrumb" data-testid="breadcrumb">
+  <ol class="breadcrumb__list">
+    <% crumbs.each_with_index do |(label, path), index| %>
+      <% last = index == crumbs.size - 1 %>
+      <li class="breadcrumb__item">
+        <% if last || path.nil? %>
+          <span class="breadcrumb__current" aria-current="page"><%= label %></span>
+        <% else %>
+          <%= link_to label, path, class: "breadcrumb__link" %>
+        <% end %>
+        <% unless last %>
+          <span class="breadcrumb__separator" aria-hidden="true">/</span>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+</nav>

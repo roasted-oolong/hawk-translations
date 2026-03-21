@@ -621,3 +621,28 @@ viewport, above the centered card, which is visually disconnected from the form.
 The login view renders its own inline alert directly inside the card so failure
 messages appear in context. The layout flash is still rendered (harmless) but the
 inline version is the one the user sees.
+
+---
+
+## 2026-03 · Dashboard queries novels via NovelTeamAssignment, no bypass for any user — M15
+
+The dashboard shows only novels assigned to the current user's teams via
+`NovelTeamAssignment`. No shortcut is applied for the solo MVP user or the
+Platform Admin — if you have no team membership and no assignment, the dashboard
+shows the empty state. This keeps the permission model honest from day one and
+means the real setup path (create org → team → membership → assignment) is
+exercised by the first user rather than bypassed. The cost is one extra setup
+step before the dashboard shows anything useful; the benefit is that the
+permission scaffolding is validated in production from the first login.
+
+---
+
+## 2026-03 · User model associations added at M15, not M5 — M15
+
+`has_many :memberships`, `has_many :teams through: :memberships`, and
+`has_many :translation_jobs` were absent from the `User` model despite
+`Membership` having `belongs_to :user` since M5 and `TranslationJob` having
+`belongs_to :user` since M10. The omission was not caught until M15 because
+no code prior to `DashboardController` traversed the user→memberships direction.
+Added at M15 when `current_user.memberships.pluck(:team_id)` raised `NoMethodError`.
+No migration required — the foreign keys and join tables already exist.

@@ -198,11 +198,14 @@ app/assets/stylesheets/
   application.css      ← tokens + @font-face + @import chain (entry point)
   _reset.css           ← thin reset on top of modern-normalize
   _typography.css      ← heading scale, body defaults, text utilities
-  _layout.css          ← app shell, content container, card, page-header
+  _layout.css          ← app shell, content container, card, page-header, page-header__row
   _nav.css             ← fixed top nav bar
   _flash.css           ← flash message bar (notice + alert variants)
   _buttons.css         ← btn base + variants (primary, secondary, ghost, danger)
   _login.css           ← login page standalone layout
+  _breadcrumb.css      ← breadcrumb trail (added M15)
+  _dashboard.css       ← dashboard section layout, empty state (added M15)
+  _novels.css          ← novel grid, novel card, novel show layout (added M15)
 ```
 
 Import order is intentional: tokens must load before any component that references them.
@@ -282,16 +285,28 @@ both variants.
 **Type:** Layout — no behavior  
 **Stimulus controller:** None  
 **Partial:** `app/views/layouts/_breadcrumb.html.erb`  
-**Notes:** Rendered at top of every nested resource view. Built with a simple
-helper that accepts an array of `[label, path]` pairs.
+**Interface:** `crumbs:` — array of `[label, path]` pairs. Last item is the current
+page and renders as plain text (no link) regardless of whether a path is supplied.  
+**Usage:**
+```erb
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, nil]
+    ] %>
+```
+**Notes:** Rendered at the top of every nested resource view, above the page header.
+`data-testid="breadcrumb"` present for system specs.
 
 ### Novel Card
 **Type:** Display — no behavior  
 **Stimulus controller:** None  
-**Inputs:** novel record  
+**Inputs:** `novel:` record — must have chapters and translation_jobs preloaded  
 **Partial:** `app/views/novels/_card.html.erb`  
-**Notes:** Used in novel index and dashboard. Shows title, Korean title, series,
-chapter progress (N translated / N total), visibility badge.
+**Notes:** Used in novel index and dashboard. Shows title (linked), Korean title,
+series, genre, visibility badge, chapter progress (translated / total), and pending
+jobs count (queued + running). Chapter progress and pending jobs are computed in
+Ruby from the preloaded associations — no extra queries. `data-testid="novel-card"`
+present for system specs.
 
 ### Data Table
 **Type:** Layout — no behavior  
@@ -391,7 +406,7 @@ Applied consistently across all views. Verified during M18 polish pass.
 - **ARIA:** Use sparingly and only when semantic HTML is insufficient.
   The modal controller must manage `aria-modal`, `aria-labelledby`, and focus trap.
 - **Responsive:** Readable at 375px (mobile), 768px (tablet), 1024px+ (desktop).
-  Not a native app — just not broken on small screens.
+  Not a native app — just not broken on small screens. Full mobile polish pass at M18.
 
 ---
 
@@ -416,13 +431,51 @@ Sign-in button uses `btn--google` variant — full-width, outline style, Google 
 icon from the `_icon` component.
 
 ### Dashboard (`dashboard/index`)
-*(to be filled in at M15)*
+
+Entry point after sign-in. Single section: "My Novels" — a grid of novel cards for
+novels assigned to the current user's teams via `NovelTeamAssignment`. No bypass for
+any user. Empty state shown when no assignments exist, with a hint to contact an Org
+Admin. "Browse all novels →" link to `novels_path` always present.
+
+Novel cards are preloaded with chapters and translation_jobs in the controller — no
+N+1 queries. Pending jobs count covers queued + running statuses.
+
+`data-testid="dashboard-heading"` on the `<h1>`, `data-testid="dashboard-empty"` on
+the empty state, `data-testid="novel-card"` on each card.
 
 ### Novel Index (`novels/index`)
-*(to be filled in at M15)*
+
+Browsing/management view. Shows all novels in the system (not filtered by assignment —
+this is distinct from the dashboard). Novel grid using `_card` partial. Empty state
+with a "Create the first novel" CTA. "New Novel" button in the page header row.
+
+`data-testid="novels-index"` on the wrapper div, `data-testid="novels-empty"` on the
+empty state, `data-testid="novel-card"` on each card.
 
 ### Novel Show (`novels/show`)
-*(to be filled in at M15)*
+
+Three sections below the page header: chapter summary, bible category grid, jobs link.
+
+**Page header:** title (`data-testid="novel-title"`), Korean title (system font stack),
+meta row (series, genre, visibility), summary paragraph. Edit + Remove buttons in the
+header row. Breadcrumb: Novels → novel title.
+
+**Chapter summary** (`data-testid="novel-chapters-summary"`): three status count
+tiles (untranslated / translated / reviewed) computed from preloaded chapters in Ruby.
+"View all N chapters →" link to `novel_chapters_path`. Upload button in section header.
+Empty state message when no chapters exist.
+
+**Bible summary** (`data-testid="novel-bible-summary"`): five cards in an `auto-fill`
+grid, one per category. Each card shows the category name (linked to the category index)
+and the entry count. Accent color (`--color-accent-subtle` background, `--color-accent`
+link color) gives the bible section a distinct visual identity.
+
+**Jobs section:** heading + "Translation Jobs" button linking to
+`novel_translation_jobs_path`. No inline job list — that lives at M16.
+
+Mobile note: `.novel-show__section-header` (flex space-between), `.chapter-status-summary`
+(horizontal flex), and `.bible-summary-grid` need stacking rules at narrow widths.
+Deferred to M18 mobile polish pass.
 
 ### Chapter List (`chapters/index` + embedded in `novels/show`)
 *(to be filled in at M16)*

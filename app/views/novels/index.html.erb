@@ -1,37 +1,27 @@
-<h1>Novels</h1>
+<%# app/views/novels/index.html.erb %>
+<% content_for :title, "Novels — Hawk" %>
 
-<%= link_to "New Novel", new_novel_path %>
+<div class="page-header">
+  <div class="page-header__row">
+    <div>
+      <h1 class="page-title">Novels</h1>
+      <p class="page-subtitle">All novels in the system.</p>
+    </div>
+    <%= link_to "New Novel", new_novel_path, class: "btn btn--primary" %>
+  </div>
+</div>
 
-<% if @novels.none? %>
-  <p>No novels yet.</p>
-<% else %>
-  <table>
-    <thead>
-      <tr>
-        <th>Title</th>
-        <th>Korean Title</th>
-        <th>Series</th>
-        <th>Genre</th>
-        <th>Chapters</th>
-        <th>Visibility</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
+<div data-testid="novels-index">
+  <% if @novels.none? %>
+    <div class="empty-state" data-testid="novels-empty">
+      <p class="empty-state__message">No novels yet.</p>
+      <%= link_to "Create the first novel", new_novel_path, class: "btn btn--primary" %>
+    </div>
+  <% else %>
+    <div class="novel-grid">
       <% @novels.each do |novel| %>
-        <tr>
-          <td><%= link_to novel.title, novel %></td>
-          <td><%= novel.korean_title %></td>
-          <td><%= novel.series&.name %></td>
-          <td><%= novel.genre %></td>
-          <td><%= novel.chapters.size %></td>
-          <td><%= novel.visibility %></td>
-          <td>
-            <%= link_to "Edit", edit_novel_path(novel) %> |
-            <%= button_to "Remove", novel, method: :delete, data: { turbo_confirm: "Remove this novel?" } %>
-          </td>
-        </tr>
+        <%= render "novels/card", novel: novel %>
       <% end %>
-    </tbody>
-  </table>
-<% end %>
+    </div>
+  <% end %>
+</div>

@@ -1,3 +1,27 @@
-<h1>Dashboard</h1>
-<p>Signed in as <%= current_user.name %>.</p>
-<%= button_to "Sign out", logout_path, method: :delete, data: { turbo: false } %>
+<%# app/views/dashboard/index.html.erb %>
+<% content_for :title, "Dashboard — Hawk" %>
+
+<div class="page-header">
+  <h1 class="page-title" data-testid="dashboard-heading">Dashboard</h1>
+  <p class="page-subtitle">Welcome back, <%= current_user.name %>.</p>
+</div>
+
+<section class="dashboard-section" aria-labelledby="assigned-novels-heading">
+  <div class="dashboard-section__header">
+    <h2 class="dashboard-section__title" id="assigned-novels-heading">My Novels</h2>
+    <%= link_to "Browse all novels →", novels_path, class: "dashboard-section__link" %>
+  </div>
+
+  <% if @novels.none? %>
+    <div class="empty-state" data-testid="dashboard-empty">
+      <p class="empty-state__message">You have no novels assigned yet.</p>
+      <p class="empty-state__hint">Ask your Org Admin to assign a novel to your team.</p>
+    </div>
+  <% else %>
+    <div class="novel-grid">
+      <% @novels.each do |novel| %>
+        <%= render "novels/card", novel: novel %>
+      <% end %>
+    </div>
+  <% end %>
+</section>
