@@ -38,10 +38,11 @@ tool. See DECISIONS.md for full rationale.
 
 ## Layout
 
-- Persistent top navigation bar across all authenticated pages
-- Main content area below the nav — constrained max-width, centered
-- Login page: standalone, no nav
-- No sidebar — the novel → chapter → job hierarchy is shallow enough for breadcrumbs + top nav
+- Fixed left sidebar for primary navigation — `--sidebar-width: 15rem`
+- Fixed slim topbar for page-contextual items (breadcrumb, user, sign-out) — `--topbar-height: 3rem`
+- Sidebar and topbar absent on the login page
+- Main content area offset: `padding-left: var(--sidebar-width)`, `padding-top: var(--topbar-height)`
+- No sidebar — the novel → chapter → job hierarchy is shallow enough for breadcrumbs + topbar
 
 ---
 
@@ -176,7 +177,8 @@ system font stack — no web font loaded for Korean.
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--nav-height` | `3.5rem` (56px) | Fixed nav bar height |
+| `--sidebar-width` | `15rem` (240px) | Fixed left sidebar width |
+| `--topbar-height` | `3rem` (48px) | Slim contextual topbar height |
 | `--content-max-width` | `72rem` (1152px) | Content container |
 | `--content-padding-x` | `1.5rem` | Horizontal page padding |
 
@@ -277,11 +279,20 @@ job list, and novel show summary.
 after 4s (notice only — alerts require manual dismissal). Manual close button on
 both variants.
 
-### Nav Bar
-**Type:** Layout — no behavior  
-**Stimulus controller:** None  
-**Partial:** `app/views/layouts/_nav.html.erb`  
-**Notes:** App name/logo left, sign-out right. No dropdown menus in MVP.
+### Sidebar
+**Type:** Layout — no behavior at desktop; toggle behavior at mobile
+**Stimulus controller:** `sidebar_controller.ts` (mobile toggle only)
+**Partial:** `app/views/layouts/_sidebar.html.erb`
+**Notes:** Fixed left, full height. Tonal background separation — no right border.
+Active link state via `current_page?`. Collapses off-canvas at ≤768px.
+
+### Topbar
+**Type:** Layout — no behavior
+**Stimulus controller:** None
+**Partial:** `app/views/layouts/_topbar.html.erb`
+**Notes:** Slim fixed bar, `left: var(--sidebar-width)`. Left slot: breadcrumb
+(`yield :breadcrumb`). Right slot: user name, sign-out, and optional page action
+(`yield :topbar_actions`).
 
 ### Breadcrumb
 **Type:** Layout — no behavior  
@@ -300,15 +311,15 @@ page and renders as plain text (no link) regardless of whether a path is supplie
 `data-testid="breadcrumb"` present for system specs.
 
 ### Novel Card
-**Type:** Display — no behavior  
-**Stimulus controller:** None  
-**Inputs:** `novel:` record — must have chapters and translation_jobs preloaded  
-**Partial:** `app/views/novels/_card.html.erb`  
-**Notes:** Used in novel index and dashboard. Shows title (linked), Korean title,
-series, genre, visibility badge, chapter progress (translated / total), and pending
-jobs count (queued + running). Chapter progress and pending jobs are computed in
-Ruby from the preloaded associations — no extra queries. `data-testid="novel-card"`
-present for system specs.
+**Type:** Display — no behavior
+**Stimulus controller:** None
+**Inputs:** `novel:` record — must have chapters and translation_jobs preloaded;
+`with_attached_cover_art` must be called on the query to avoid N+1
+**Partial:** `app/views/novels/_card.html.erb`
+**Notes:** Gallery-style card. Cover image area (`aspect-ratio: 2/3`) at top —
+renders attached `cover_art` image if present, `--color-surface-low` placeholder
+if not. Progress bar below title reflects completed-chapter ratio. Used on both
+dashboard and novel index; grid context controls rendered width.
 
 ### Data Table
 **Type:** Layout — no behavior  
