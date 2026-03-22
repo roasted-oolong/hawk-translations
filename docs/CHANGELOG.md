@@ -1,4 +1,5 @@
-## YYYY-MM-DD
-- Fixed: X wasn't working because Y
-- Changed: Z behavior
-- Note: Deployed
+## 2026-03-22
+Fixed: 
+- drag-and-drop, filename preview, drag-over feature
+Changed: N/A
+Note: Committed
