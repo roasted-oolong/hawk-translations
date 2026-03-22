@@ -1,3 +1,18 @@
-<h1>Add Story Entry — <%= @novel.title %></h1>
-<p><%= link_to "← All Story Entries", novel_bible_story_entries_path(@novel) %></p>
-<%= render "form", novel: @novel, entry: @entry %>
+<%# app/views/bible_story_entries/new.html.erb %>
+<% content_for :title, "Add Story Entry — #{@novel.title} — Hawk" %>
+
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Bible", novel_bible_path(@novel)],
+      ["Story Entries", novel_bible_story_entries_path(@novel)],
+      ["Add Story Entry", nil]
+    ] %>
+
+<div class="page-header">
+  <h1 class="page-title">Add Story Entry</h1>
+</div>
+
+<div class="card">
+  <%= render "form" %>
+</div>

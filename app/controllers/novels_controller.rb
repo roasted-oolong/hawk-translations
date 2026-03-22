@@ -9,13 +9,6 @@ class NovelsController < ApplicationController
 
   def show
     @chapters = @novel.chapters.by_number
-    @bible_counts = {
-      characters:      @novel.bible_characters.count,
-      locations:       @novel.bible_locations.count,
-      terminology:     @novel.bible_terminologies.count,
-      cultural_phrases: @novel.bible_cultural_phrases.count,
-      story_entries:   @novel.bible_story_entries.count
-    }
   end
 
   def new

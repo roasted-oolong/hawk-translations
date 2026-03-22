@@ -1,8 +1,9 @@
-<%= form_with model: [ @novel, @entry ] do |f| %>
+<%# app/views/bible_terminologies/_form.html.erb %>
+<%= form_with model: [ @novel, @entry ], data: { testid: "bible-entry-form" } do |f| %>
   <% if @entry.errors.any? %>
-    <div>
-      <p><strong><%= pluralize(@entry.errors.count, "error") %> prevented this from saving:</strong></p>
-      <ul>
+    <div class="form-errors" data-testid="form-errors">
+      <p class="form-errors__summary"><%= pluralize(@entry.errors.count, "error") %> prevented this from saving:</p>
+      <ul class="form-errors__list">
         <% @entry.errors.full_messages.each do |msg| %>
           <li><%= msg %></li>
         <% end %>
@@ -10,37 +11,40 @@
     </div>
   <% end %>
 
-  <div>
-    <%= f.label :term %>
-    <%= f.text_field :term %>
+  <div class="bible-form__grid">
+    <div class="form-group">
+      <%= f.label :term, class: "form-label" %>
+      <%= f.text_field :term, class: "form-input" %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :korean_term, "Korean Term", class: "form-label" %>
+      <%= f.text_field :korean_term, class: "form-input" %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :first_appearance_chapter, "First Appearance (Chapter #)", class: "form-label" %>
+      <%= f.number_field :first_appearance_chapter, min: 1, class: "form-input" %>
+    </div>
   </div>
 
-  <div>
-    <%= f.label :korean_term, "Korean Term" %>
-    <%= f.text_field :korean_term %>
+  <div class="form-group">
+    <%= f.label :definition, class: "form-label" %>
+    <%= f.text_area :definition, rows: 4, class: "form-input" %>
   </div>
 
-  <div>
-    <%= f.label :first_appearance_chapter, "First Appearance (Chapter #)" %>
-    <%= f.number_field :first_appearance_chapter, min: 1 %>
+  <div class="form-group">
+    <%= f.label :usage_notes, "Usage Notes", class: "form-label" %>
+    <%= f.text_area :usage_notes, rows: 4, class: "form-input" %>
   </div>
 
-  <div>
-    <%= f.label :definition %>
-    <%= f.text_area :definition, rows: 4 %>
+  <div class="form-group">
+    <%= f.label :notes, class: "form-label" %>
+    <%= f.text_area :notes, rows: 4, class: "form-input" %>
   </div>
 
-  <div>
-    <%= f.label :usage_notes, "Usage Notes" %>
-    <%= f.text_area :usage_notes, rows: 4 %>
-  </div>
-
-  <div>
-    <%= f.label :notes %>
-    <%= f.text_area :notes, rows: 4 %>
-  </div>
-
-  <div>
-    <%= f.submit %>
+  <div class="form-actions">
+    <%= f.submit "Save", class: "btn btn--primary" %>
+    <%= link_to "Cancel", novel_bible_terminologies_path(@novel), class: "btn btn--ghost" %>
   </div>
 <% end %>

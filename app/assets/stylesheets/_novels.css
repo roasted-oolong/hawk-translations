@@ -166,6 +166,13 @@
   font-size: var(--text-sm);
 }
 
+/* Hint text below the Bible section heading on novel show */
+.novel-show__bible-hint {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
 /* --- Chapter status summary (novel show) --- */
 .chapter-status-summary {
   display: flex;
@@ -194,6 +201,8 @@
 }
 
 /* --- Bible summary grid (novel show) --- */
+/* NOTE: These classes are no longer used as of M17 (bible section moved to
+   BibleController). Retained here for safety; remove at M18 polish pass. */
 .bible-summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));

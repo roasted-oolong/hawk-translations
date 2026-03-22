@@ -1,3 +1,18 @@
-<h1>Add Location — <%= @novel.title %></h1>
-<p><%= link_to "← All Locations", novel_bible_locations_path(@novel) %></p>
-<%= render "form", novel: @novel, entry: @entry %>
+<%# app/views/bible_locations/new.html.erb %>
+<% content_for :title, "Add Location — #{@novel.title} — Hawk" %>
+
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Bible", novel_bible_path(@novel)],
+      ["Locations", novel_bible_locations_path(@novel)],
+      ["Add Location", nil]
+    ] %>
+
+<div class="page-header">
+  <h1 class="page-title">Add Location</h1>
+</div>
+
+<div class="card">
+  <%= render "form" %>
+</div>

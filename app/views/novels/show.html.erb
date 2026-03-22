@@ -89,35 +89,14 @@
 <hr class="divider">
 
 <%# ------------------------------------------------------------------ %>
-<%# Bible summary                                                       %>
+<%# Bible — link to landing page                                        %>
 <%# ------------------------------------------------------------------ %>
 <section class="novel-show__section" aria-labelledby="bible-heading" data-testid="novel-bible-summary">
   <div class="novel-show__section-header">
     <h2 class="novel-show__section-title" id="bible-heading">Translation Bible</h2>
+    <%= link_to "Translation Bible \u2192", novel_bible_path(@novel), class: "btn btn--secondary btn--sm" %>
   </div>
-
-  <div class="bible-summary-grid">
-    <div class="bible-summary-grid__item">
-      <%= link_to "Characters", novel_bible_characters_path(@novel), class: "bible-summary-grid__label" %>
-      <span class="bible-summary-grid__count"><%= @bible_counts[:characters] %></span>
-    </div>
-    <div class="bible-summary-grid__item">
-      <%= link_to "Locations", novel_bible_locations_path(@novel), class: "bible-summary-grid__label" %>
-      <span class="bible-summary-grid__count"><%= @bible_counts[:locations] %></span>
-    </div>
-    <div class="bible-summary-grid__item">
-      <%= link_to "Terminology", novel_bible_terminologies_path(@novel), class: "bible-summary-grid__label" %>
-      <span class="bible-summary-grid__count"><%= @bible_counts[:terminology] %></span>
-    </div>
-    <div class="bible-summary-grid__item">
-      <%= link_to "Cultural Phrases", novel_bible_cultural_phrases_path(@novel), class: "bible-summary-grid__label" %>
-      <span class="bible-summary-grid__count"><%= @bible_counts[:cultural_phrases] %></span>
-    </div>
-    <div class="bible-summary-grid__item">
-      <%= link_to "Story Entries", novel_bible_story_entries_path(@novel), class: "bible-summary-grid__label" %>
-      <span class="bible-summary-grid__count"><%= @bible_counts[:story_entries] %></span>
-    </div>
-  </div>
+  <p class="novel-show__bible-hint">Characters, locations, terminology, cultural phrases, and story entries.</p>
 </section>
 
 <hr class="divider">

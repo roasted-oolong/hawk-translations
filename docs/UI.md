@@ -526,7 +526,93 @@ Usage:
 Outputs `<span class="status-badge status-badge--{status}" data-testid="status-badge">`. CSS modifier class is derived directly from the status string. Token values per status defined in `application.css` (all `--color-status-*` variables). Styles in `_jobs.css`.
 
 ### Bible Views
-*(to be filled in at M17)*
+
+#### Bible Landing Page (`bible/show`)
+
+Entry point for the translation bible. Breadcrumb: Novels → Novel Title → Bible.
+
+Structure: page header (title "Translation Bible", novel subtitle) → search bar →
+five category cards in an `auto-fill` grid.
+
+**Search bar** (`.bible-search`): positioned above the category grid, max-width 36rem.
+The `combobox` Stimulus controller mounts on the wrapper div and receives the search
+endpoint URL via `data-combobox-url-value`. The input (`data-combobox-target="input"`,
+`data-action="input->combobox#search"`) triggers a debounced fetch. Results render
+in a positioned dropdown (`.bible-search__dropdown`) containing a `<ul role="listbox">`
+(`data-testid="bible-search-results"`). Each result shows the entry label and a
+category pill. An empty state (`data-testid="bible-search-empty"`) is shown when
+the query returns no results. Both dropdown and empty state use the `hidden` attribute
+— the controller toggles them via the `results` and `empty` targets.
+
+**Category cards** (`.bible-category-grid` / `.bible-category-card`): five cards,
+one per category. Each carries `data-testid="bible-category-card"` and
+`data-category="{slug}"` for system spec targeting. Card structure: title link →
+description text → footer with entry count and "entry/entries" label.
+Accent color identity: card title uses `--color-accent`, hover border uses
+`--color-accent`, count uses `--color-text`.
+
+`data-testid="bible-landing"` on the `.bible-landing` wrapper.
+
+#### Category Index Views
+
+All five follow the same pattern: breadcrumb → page header (title + "Add X" button) →
+data table or empty state.
+
+Table `data-testid` attributes: `characters-table`, `locations-table`,
+`terminology-table`, `cultural-phrases-table`, `story-entries-table`.
+Empty state `data-testid` attributes: `characters-empty`, `locations-empty`,
+`terminology-empty`, `cultural-phrases-empty`, `story-entries-empty`.
+
+Korean name/term/phrase columns use `.bible-td--korean` for the system font stack.
+
+Story entries index groups entries by category using `@entries_by_category`. Each
+populated category renders its own `.bible-story__category-section` with a heading
+and a `data-table-wrapper` / `data-table` beneath it. All section tables share
+`data-testid="story-entries-table"`.
+
+#### Entry Show Views
+
+All five follow the same pattern: breadcrumb → page header (entry title as
+`data-testid="entry-title"`, Korean subtitle if present, Edit + Remove buttons) →
+`.card.bible-entry` content card.
+
+The content card structure:
+- `.bible-entry__meta` — flex row of quick-reference label/value pairs (role,
+  type, established translation, first appearance chapter, etc.)
+- `.bible-entry__section` blocks — one per long-form field (description, speech
+  pattern, definition, etc.), each with a `.bible-entry__section-title` label
+- `.bible-entry__updated-at` — timestamp footer
+
+Established translation on cultural phrase show uses
+`.bible-entry__meta-value--highlight` (accent color, semibold).
+
+#### New / Edit Forms
+
+All five follow the same pattern: breadcrumb → page header → `.card` wrapping the
+form partial.
+
+Form partial structure: error block (`data-testid="form-errors"`) → two-column
+`.bible-form__grid` for short fields (name, Korean name, role, first appearance) →
+full-width `form-group` blocks for long-form text areas → `.form-actions` (Save +
+Cancel).
+
+`data-testid="bible-entry-form"` on the `<form>` element (via `data: { testid: }` on
+`form_with`).
+
+#### Combobox Controller (`combobox_controller.ts`)
+
+Targets: `input`, `results`, `empty`.
+Values: `url` (String) — the search endpoint URL.
+
+Result paths are derived at runtime by stripping `/bible/search` from the URL value
+and appending `/bible_characters/:id`, `/bible_locations/:id`, etc. No hardcoded
+paths. The `CATEGORY_LABELS` and `recordLabel` helpers map `embeddable_type` strings
+to display labels and primary name fields respectively.
+
+Keyboard behaviour: ArrowDown/ArrowUp move the `.bible-search__result--active` class
+through result items; Enter clicks the active item's `<a>`; Escape calls `close()`.
+Outside-click handled via a document-level listener registered in `connect()` and
+removed in `disconnect()`.
 
 ### Forms (new/edit)
 *(to be filled in at M18)*

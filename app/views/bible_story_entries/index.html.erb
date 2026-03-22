@@ -1,9 +1,19 @@
-<h1>Story Entries — <%= @novel.title %></h1>
+<%# app/views/bible_story_entries/index.html.erb %>
+<% content_for :title, "Story Entries — #{@novel.title} — Hawk" %>
 
-<p>
-  <%= link_to "← Novel", @novel %> |
-  <%= link_to "Add Story Entry", new_novel_bible_story_entry_path(@novel) %>
-</p>
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Bible", novel_bible_path(@novel)],
+      ["Story Entries", nil]
+    ] %>
+
+<div class="page-header">
+  <div class="page-header__row">
+    <h1 class="page-title">Story Entries</h1>
+    <%= link_to "Add Story Entry", new_novel_bible_story_entry_path(@novel), class: "btn btn--primary btn--sm" %>
+  </div>
+</div>
 
 <%
   category_labels = {
@@ -13,37 +23,49 @@
     "theme"          => "Themes",
     "world_building" => "World Building"
   }
+
+  any_entries = @entries_by_category.values.any?(&:any?)
 %>
 
-<% category_labels.each do |cat_key, cat_label| %>
-  <% entries = @entries_by_category[cat_key] %>
-  <% next if entries.none? %>
+<% if any_entries %>
+  <% category_labels.each do |cat_key, cat_label| %>
+    <% entries = @entries_by_category[cat_key] %>
+    <% next if entries.none? %>
 
-  <h2><%= cat_label %></h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Title</th>
-        <th>First Appears</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% entries.each do |entry| %>
-        <tr>
-          <td><%= link_to entry.title, novel_bible_story_entry_path(@novel, entry) %></td>
-          <td><%= entry.first_appearance_chapter ? "Ch. #{entry.first_appearance_chapter}" : "—" %></td>
-          <td>
-            <%= link_to "Edit", edit_novel_bible_story_entry_path(@novel, entry) %> |
-            <%= button_to "Remove", novel_bible_story_entry_path(@novel, entry), method: :delete,
-                data: { turbo_confirm: "Remove \"#{entry.title}\"?" } %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-<% end %>
-
-<% if @entries_by_category.values.all?(&:none?) %>
-  <p>No story entries yet.</p>
+    <div class="bible-story__category-section">
+      <h2 class="bible-story__category-heading"><%= cat_label %></h2>
+      <div class="data-table-wrapper">
+        <table class="data-table" data-testid="story-entries-table">
+          <thead>
+            <tr>
+              <th class="data-table__th">Title</th>
+              <th class="data-table__th">First Appears</th>
+              <th class="data-table__th data-table__th--actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% entries.each do |entry| %>
+              <tr class="data-table__row">
+                <td class="data-table__td data-table__td--title">
+                  <%= link_to entry.title, novel_bible_story_entry_path(@novel, entry), class: "data-table__link" %>
+                </td>
+                <td class="data-table__td"><%= entry.first_appearance_chapter ? "Ch. #{entry.first_appearance_chapter}" : "—" %></td>
+                <td class="data-table__td data-table__td--actions">
+                  <%= link_to "Edit", edit_novel_bible_story_entry_path(@novel, entry), class: "btn btn--ghost btn--sm" %>
+                  <%= button_to "Remove", novel_bible_story_entry_path(@novel, entry), method: :delete,
+                      class: "btn btn--danger btn--sm",
+                      data: { turbo_confirm: "Remove \"#{entry.title}\"?" } %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+<% else %>
+  <div class="empty-state" data-testid="story-entries-empty">
+    <p class="empty-state__message">No story entries yet.</p>
+    <%= link_to "Add the first story entry \u2192", new_novel_bible_story_entry_path(@novel) %>
+  </div>
 <% end %>

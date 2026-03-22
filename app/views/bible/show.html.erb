@@ -1,0 +1,152 @@
+<%# app/views/bible/show.html.erb %>
+<% content_for :title, "Bible — #{@novel.title} — Hawk" %>
+
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Bible", nil]
+    ] %>
+
+<div class="page-header">
+  <div class="page-header__row">
+    <div>
+      <h1 class="page-title">Translation Bible</h1>
+      <p class="page-subtitle"><%= @novel.title %></p>
+    </div>
+  </div>
+</div>
+
+<%# ------------------------------------------------------------------ %>
+<%# Search bar                                                          %>
+<%# ------------------------------------------------------------------ %>
+<div class="bible-search"
+     data-controller="combobox"
+     data-combobox-url-value="<%= novel_bible_search_path(@novel) %>">
+  <div class="bible-search__field">
+    <span class="bible-search__icon" aria-hidden="true">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16" aria-hidden="true" focusable="false">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z" />
+      </svg>
+    </span>
+    <input type="text"
+           class="bible-search__input form-input"
+           placeholder="Search all bible entries…"
+           autocomplete="off"
+           aria-label="Search bible entries"
+           data-combobox-target="input"
+           data-action="input->combobox#search"
+           data-testid="bible-search-input" />
+  </div>
+
+  <div class="bible-search__dropdown" hidden
+       data-combobox-target="results">
+    <ul class="bible-search__results-list"
+        role="listbox"
+        data-testid="bible-search-results"></ul>
+  </div>
+
+  <div class="bible-search__dropdown bible-search__dropdown--empty" hidden
+       data-combobox-target="empty"
+       data-testid="bible-search-empty">
+    <p class="bible-search__empty-text">No entries found.</p>
+  </div>
+</div>
+
+<%# ------------------------------------------------------------------ %>
+<%# Category cards                                                      %>
+<%# ------------------------------------------------------------------ %>
+<div class="bible-landing" data-testid="bible-landing">
+  <div class="bible-category-grid">
+
+    <div class="bible-category-card"
+         data-testid="bible-category-card"
+         data-category="characters">
+      <div class="bible-category-card__header">
+        <%= link_to "Characters", novel_bible_characters_path(@novel),
+              class: "bible-category-card__title" %>
+      </div>
+      <p class="bible-category-card__description">
+        Named characters — roles, descriptions, speech patterns, honorifics, and relationships.
+      </p>
+      <div class="bible-category-card__footer">
+        <span class="bible-category-card__count"><%= @bible_counts[:characters] %></span>
+        <span class="bible-category-card__count-label">
+          <%= "entry".pluralize(@bible_counts[:characters]) %>
+        </span>
+      </div>
+    </div>
+
+    <div class="bible-category-card"
+         data-testid="bible-category-card"
+         data-category="locations">
+      <div class="bible-category-card__header">
+        <%= link_to "Locations", novel_bible_locations_path(@novel),
+              class: "bible-category-card__title" %>
+      </div>
+      <p class="bible-category-card__description">
+        Named places — type, description, and narrative significance.
+      </p>
+      <div class="bible-category-card__footer">
+        <span class="bible-category-card__count"><%= @bible_counts[:locations] %></span>
+        <span class="bible-category-card__count-label">
+          <%= "entry".pluralize(@bible_counts[:locations]) %>
+        </span>
+      </div>
+    </div>
+
+    <div class="bible-category-card"
+         data-testid="bible-category-card"
+         data-category="terminology">
+      <div class="bible-category-card__header">
+        <%= link_to "Terminology", novel_bible_terminologies_path(@novel),
+              class: "bible-category-card__title" %>
+      </div>
+      <p class="bible-category-card__description">
+        Terms with established translations — definitions and usage notes.
+      </p>
+      <div class="bible-category-card__footer">
+        <span class="bible-category-card__count"><%= @bible_counts[:terminology] %></span>
+        <span class="bible-category-card__count-label">
+          <%= "entry".pluralize(@bible_counts[:terminology]) %>
+        </span>
+      </div>
+    </div>
+
+    <div class="bible-category-card"
+         data-testid="bible-category-card"
+         data-category="cultural-phrases">
+      <div class="bible-category-card__header">
+        <%= link_to "Cultural Phrases", novel_bible_cultural_phrases_path(@novel),
+              class: "bible-category-card__title" %>
+      </div>
+      <p class="bible-category-card__description">
+        Korean phrases with literal translations, intended meanings, and established renderings.
+      </p>
+      <div class="bible-category-card__footer">
+        <span class="bible-category-card__count"><%= @bible_counts[:cultural_phrases] %></span>
+        <span class="bible-category-card__count-label">
+          <%= "entry".pluralize(@bible_counts[:cultural_phrases]) %>
+        </span>
+      </div>
+    </div>
+
+    <div class="bible-category-card"
+         data-testid="bible-category-card"
+         data-category="story-entries">
+      <div class="bible-category-card__header">
+        <%= link_to "Story Entries", novel_bible_story_entries_path(@novel),
+              class: "bible-category-card__title" %>
+      </div>
+      <p class="bible-category-card__description">
+        Plot threads, subplots, themes, watch-list items, and world-building notes.
+      </p>
+      <div class="bible-category-card__footer">
+        <span class="bible-category-card__count"><%= @bible_counts[:story_entries] %></span>
+        <span class="bible-category-card__count-label">
+          <%= "entry".pluralize(@bible_counts[:story_entries]) %>
+        </span>
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -1,34 +1,61 @@
-<h1><%= @entry.term %></h1>
-<% if @entry.korean_term.present? %>
-  <p><em><%= @entry.korean_term %></em></p>
-<% end %>
+<%# app/views/bible_terminologies/show.html.erb %>
+<% content_for :title, "#{@entry.term} — Terminology — Hawk" %>
 
-<p>
-  <%= link_to "← All Terminology", novel_bible_terminologies_path(@novel) %> |
-  <%= link_to "Edit", edit_novel_bible_terminology_path(@novel, @entry) %> |
-  <%= button_to "Remove", novel_bible_terminology_path(@novel, @entry), method: :delete,
-      data: { turbo_confirm: "Remove \"#{@entry.term}\"?" } %>
-</p>
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Bible", novel_bible_path(@novel)],
+      ["Terminology", novel_bible_terminologies_path(@novel)],
+      [@entry.term, nil]
+    ] %>
 
-<hr>
+<div class="page-header">
+  <div class="page-header__row">
+    <div>
+      <h1 class="page-title" data-testid="entry-title"><%= @entry.term %></h1>
+      <% if @entry.korean_term.present? %>
+        <p class="page-subtitle bible-entry__korean"><%= @entry.korean_term %></p>
+      <% end %>
+    </div>
+    <div class="btn-group">
+      <%= link_to "Edit", edit_novel_bible_terminology_path(@novel, @entry), class: "btn btn--secondary btn--sm" %>
+      <%= button_to "Remove", novel_bible_terminology_path(@novel, @entry), method: :delete,
+          class: "btn btn--danger btn--sm",
+          data: { turbo_confirm: "Remove \"#{@entry.term}\"?" } %>
+    </div>
+  </div>
+</div>
 
-<% if @entry.first_appearance_chapter.present? %>
-  <p><strong>First Appearance:</strong> Chapter <%= @entry.first_appearance_chapter %></p>
-<% end %>
+<div class="card bible-entry">
+  <div class="bible-entry__meta">
+    <% if @entry.first_appearance_chapter.present? %>
+      <div class="bible-entry__meta-item">
+        <span class="bible-entry__meta-label">First appears</span>
+        <span class="bible-entry__meta-value">Ch. <%= @entry.first_appearance_chapter %></span>
+      </div>
+    <% end %>
+  </div>
 
-<% if @entry.definition.present? %>
-  <h2>Definition</h2>
-  <p><%= simple_format @entry.definition %></p>
-<% end %>
+  <% if @entry.definition.present? %>
+    <div class="bible-entry__section">
+      <h2 class="bible-entry__section-title">Definition</h2>
+      <div class="bible-entry__body"><%= simple_format @entry.definition %></div>
+    </div>
+  <% end %>
 
-<% if @entry.usage_notes.present? %>
-  <h2>Usage Notes</h2>
-  <p><%= simple_format @entry.usage_notes %></p>
-<% end %>
+  <% if @entry.usage_notes.present? %>
+    <div class="bible-entry__section">
+      <h2 class="bible-entry__section-title">Usage Notes</h2>
+      <div class="bible-entry__body"><%= simple_format @entry.usage_notes %></div>
+    </div>
+  <% end %>
 
-<% if @entry.notes.present? %>
-  <h2>Notes</h2>
-  <p><%= simple_format @entry.notes %></p>
-<% end %>
+  <% if @entry.notes.present? %>
+    <div class="bible-entry__section">
+      <h2 class="bible-entry__section-title">Notes</h2>
+      <div class="bible-entry__body"><%= simple_format @entry.notes %></div>
+    </div>
+  <% end %>
 
-<p class="muted">Last updated: <%= @entry.last_updated_at&.strftime("%B %-d, %Y") || "—" %></p>
+  <p class="bible-entry__updated-at">Last updated: <%= @entry.last_updated_at&.strftime("%B %-d, %Y") || "—" %></p>
+</div>

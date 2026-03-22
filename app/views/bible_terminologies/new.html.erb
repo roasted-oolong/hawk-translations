@@ -1,3 +1,18 @@
-<h1>Add Term — <%= @novel.title %></h1>
-<p><%= link_to "← All Terminology", novel_bible_terminologies_path(@novel) %></p>
-<%= render "form", novel: @novel, entry: @entry %>
+<%# app/views/bible_terminologies/new.html.erb %>
+<% content_for :title, "Add Term — #{@novel.title} — Hawk" %>
+
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Bible", novel_bible_path(@novel)],
+      ["Terminology", novel_bible_terminologies_path(@novel)],
+      ["Add Term", nil]
+    ] %>
+
+<div class="page-header">
+  <h1 class="page-title">Add Term</h1>
+</div>
+
+<div class="card">
+  <%= render "form" %>
+</div>

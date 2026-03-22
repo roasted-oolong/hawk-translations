@@ -1,3 +1,20 @@
-<h1>Edit Character — <%= @entry.name %></h1>
-<p><%= link_to "← Back", novel_bible_character_path(@novel, @entry) %></p>
-<%= render "form", novel: @novel, entry: @entry %>
+<%# app/views/bible_characters/edit.html.erb %>
+<% content_for :title, "Edit #{@entry.name} — Hawk" %>
+
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Bible", novel_bible_path(@novel)],
+      ["Characters", novel_bible_characters_path(@novel)],
+      [@entry.name, novel_bible_character_path(@novel, @entry)],
+      ["Edit", nil]
+    ] %>
+
+<div class="page-header">
+  <h1 class="page-title">Edit Character</h1>
+  <p class="page-subtitle"><%= @entry.name %></p>
+</div>
+
+<div class="card">
+  <%= render "form" %>
+</div>
