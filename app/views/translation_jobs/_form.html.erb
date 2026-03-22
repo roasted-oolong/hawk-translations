@@ -1,8 +1,18 @@
-<%= form_with model: [ novel, translation_job ], local: false do |f| %>
+<%# app/views/translation_jobs/_form.html.erb
+#
+# Trigger form for a new translation job.
+# Used on translation_jobs/index.
+#
+# Locals: novel, translation_job
+%>
+<%= form_with model: [ novel, translation_job ],
+      data: { "testid": "job-trigger-form-inner" } do |f| %>
   <% if translation_job.errors.any? %>
-    <div>
-      <p><%= pluralize(translation_job.errors.count, "error") %> prevented this job from being triggered:</p>
-      <ul>
+    <div class="form-errors">
+      <p class="form-errors__summary">
+        <%= pluralize(translation_job.errors.count, "error") %> prevented this job from being triggered:
+      </p>
+      <ul class="form-errors__list">
         <% translation_job.errors.full_messages.each do |msg| %>
           <li><%= msg %></li>
         <% end %>
@@ -10,28 +20,39 @@
     </div>
   <% end %>
 
-  <div>
-    <%= f.label :job_type, "Job type" %>
-    <%= f.select :job_type,
-          [
-            [ "Preread",                   "preread" ],
-            [ "Bible build",               "bible_build" ],
-            [ "Post-translation review",   "post_translation_review" ]
-          ],
-          { include_blank: "— Select job type —" } %>
+  <div class="jobs-trigger__fields">
+    <div class="form-group">
+      <%= f.label :job_type, "Job type", class: "form-label" %>
+      <%= f.select :job_type,
+            [
+              [ "Preread",                 "preread" ],
+              [ "Bible build",             "bible_build" ],
+              [ "Post-translation review", "post_translation_review" ]
+            ],
+            { include_blank: "— Select job type —" },
+            class: "form-select" %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :chapter_start, "Chapter start", class: "form-label" %>
+      <%= f.number_field :chapter_start,
+            min: 1,
+            placeholder: "e.g. 1",
+            class: "form-input" %>
+      <span class="form-hint">First chapter to include in this run.</span>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :chapter_end, "Chapter end", class: "form-label" %>
+      <%= f.number_field :chapter_end,
+            min: 1,
+            placeholder: "e.g. 10",
+            class: "form-input" %>
+      <span class="form-hint">Set equal to chapter start for single-chapter jobs.</span>
+    </div>
   </div>
 
-  <div>
-    <%= f.label :chapter_start, "Chapter start" %>
-    <%= f.number_field :chapter_start, min: 1, placeholder: "e.g. 1" %>
-    <small>For bible build, enter the first chapter to include (or 1 for the whole novel).</small>
+  <div class="form-actions">
+    <%= f.submit "Trigger job", class: "btn btn--primary" %>
   </div>
-
-  <div>
-    <%= f.label :chapter_end, "Chapter end" %>
-    <%= f.number_field :chapter_end, min: 1, placeholder: "e.g. 10" %>
-    <small>Set equal to chapter start for single-chapter jobs.</small>
-  </div>
-
-  <%= f.submit "Trigger job" %>
 <% end %>

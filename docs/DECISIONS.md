@@ -637,6 +637,21 @@ permission scaffolding is validated in production from the first login.
 
 ---
 
+## 2026-03 · Turbo Frame polling via poll_controller.ts — M16
+
+Job status polling on `translation_jobs/show` uses a minimal Stimulus controller
+(`poll_controller.ts`) that calls `frame.reload()` on a configurable interval.
+The controller is mounted on a wrapper div that is only rendered server-side when
+the job is active (queued or running). When the job reaches a terminal state, the
+wrapper is absent — the controller never connects and polling stops without any
+client-side state management or cleanup. `frame.reload()` re-fetches the current
+page URL and Turbo replaces only the matching `<turbo-frame id="job-status">`
+content — no full page reload. The Turbo native `refresh="interval"` attribute
+does not exist on Turbo Frames in turbo-rails 2.x; Stimulus is the correct
+approach for frame-scoped polling without Action Cable.
+
+---
+
 ## 2026-03 · User model associations added at M15, not M5 — M15
 
 `has_many :memberships`, `has_many :teams through: :memberships`, and

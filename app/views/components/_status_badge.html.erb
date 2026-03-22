@@ -1,0 +1,18 @@
+<%# app/views/components/_status_badge.html.erb
+#
+# Status badge component.
+#
+# Usage:
+#   render "components/status_badge", status: chapter.status
+#   render "components/status_badge", status: job.status
+#
+# Chapter statuses:  untranslated | translated | reviewed
+# Job statuses:      queued | running | completed | failed
+#
+# The CSS modifier class is derived directly from the status string.
+# Token values for each status are defined in application.css.
+%>
+<span class="status-badge status-badge--<%= status %>"
+      data-testid="status-badge">
+  <%= status.humanize %>
+</span>

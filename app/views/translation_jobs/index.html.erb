@@ -1,45 +1,78 @@
-<h1>Translation Jobs</h1>
+<%# app/views/translation_jobs/index.html.erb %>
+<% content_for :title, "Translation Jobs — #{@novel.title} — Hawk" %>
 
-<p><%= link_to "← Back to novel", @novel %></p>
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Translation Jobs", nil]
+    ] %>
 
-<%= render "form", novel: @novel, translation_job: TranslationJob.new %>
+<div class="page-header">
+  <div class="page-header__row">
+    <h1 class="page-title">Translation Jobs</h1>
+  </div>
+</div>
 
-<hr>
+<%# ------------------------------------------------------------------ %>
+<%# Trigger form                                                        %>
+<%# ------------------------------------------------------------------ %>
+<div class="card jobs-trigger" data-testid="job-trigger-form">
+  <h2 class="jobs-trigger__title">Trigger a new job</h2>
+  <%= render "form", novel: @novel, translation_job: @translation_job %>
+</div>
 
+<hr class="divider">
+
+<%# ------------------------------------------------------------------ %>
+<%# Job list                                                            %>
+<%# ------------------------------------------------------------------ %>
 <% if @translation_jobs.empty? %>
-  <p>No jobs yet. Trigger one above.</p>
+  <div class="empty-state" data-testid="jobs-empty">
+    <p class="empty-state__message">No jobs yet. Trigger one above.</p>
+  </div>
 <% else %>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Chapters</th>
-        <th>Status</th>
-        <th>Triggered by</th>
-        <th>Started</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @translation_jobs.each do |job| %>
+  <div class="data-table-wrapper">
+    <table class="data-table" data-testid="jobs-table">
+      <thead>
         <tr>
-          <td><%= job.job_type.humanize %></td>
-          <td><%= job.chapter_range_label || "—" %></td>
-          <td><%= job.status.capitalize %></td>
-          <td><%= job.user.name %></td>
-          <td><%= job.created_at.strftime("%b %-d, %Y %H:%M") %></td>
-          <td>
-            <%= link_to "View", novel_translation_job_path(@novel, job) %>
-            <% if job.cancellable? %>
-              &nbsp;|&nbsp;
-              <%= button_to "Cancel",
-                    novel_translation_job_path(@novel, job),
-                    method: :delete,
-                    data: { turbo_confirm: "Cancel this queued job?" } %>
-            <% end %>
-          </td>
+          <th class="data-table__th">Type</th>
+          <th class="data-table__th">Chapters</th>
+          <th class="data-table__th">Status</th>
+          <th class="data-table__th">Triggered by</th>
+          <th class="data-table__th">Started</th>
+          <th class="data-table__th data-table__th--actions"><span class="sr-only">Actions</span></th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% @translation_jobs.each do |job| %>
+          <tr class="data-table__row">
+            <td class="data-table__td data-table__td--type">
+              <%= job.job_type.humanize %>
+            </td>
+            <td class="data-table__td">
+              <%= job.chapter_range_label || %(<span class="text-muted">—</span>).html_safe %>
+            </td>
+            <td class="data-table__td">
+              <%= render "components/status_badge", status: job.status %>
+            </td>
+            <td class="data-table__td"><%= job.user.name %></td>
+            <td class="data-table__td data-table__td--date">
+              <%= job.created_at.strftime("%b %-d, %Y %H:%M") %>
+            </td>
+            <td class="data-table__td data-table__td--actions">
+              <%= link_to "View", novel_translation_job_path(@novel, job),
+                    class: "btn btn--ghost btn--xs" %>
+              <% if job.cancellable? %>
+                <%= button_to "Cancel",
+                      novel_translation_job_path(@novel, job),
+                      method: :delete,
+                      class: "btn btn--danger btn--xs",
+                      data: { turbo_confirm: "Cancel this queued job?" } %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
 <% end %>
