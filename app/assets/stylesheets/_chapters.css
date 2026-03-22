@@ -254,3 +254,55 @@
   color: var(--color-flash-alert-text);
   padding-left: var(--space-4);
 }
+
+/* --- File upload drop zone --- */
+.file-upload {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.file-upload__zone {
+  display: block;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+  background-color: var(--color-bg);
+  user-select: none;
+}
+
+.file-upload__zone:hover,
+.file-upload--dragging .file-upload__zone,
+.file-upload__zone.file-upload--dragging {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-subtle);
+}
+
+.file-upload__zone-hint {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
+
+.file-upload__preview {
+  min-height: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.file-upload__preview--empty {
+  display: none;
+}
+
+.file-upload__filename {
+  font-size: var(--text-xs);
+  font-family: var(--font-family-mono);
+  background-color: var(--color-accent-subtle);
+  color: var(--color-accent);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+}

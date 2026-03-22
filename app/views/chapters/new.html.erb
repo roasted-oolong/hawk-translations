@@ -34,15 +34,32 @@
           html: { class: "upload-panel__form" } do |f| %>
       <div class="form-group">
         <%= f.label :korean_source, "Korean source files", class: "form-label" %>
-        <%= f.file_field :korean_source,
-              name: "chapter[korean_source][]",
-              multiple: true,
-              accept: "text/plain,.txt",
-              class: "form-input form-input--file",
-              "data-testid": "bulk-file-input" %>
+        <div class="file-upload"
+             data-controller="file-upload"
+             data-action="dragover->file-upload#onDragOver dragleave->file-upload#onDragLeave drop->file-upload#onDrop">
+          <%= f.file_field :korean_source,
+                id: "bulk_korean_source",
+                name: "chapter[korean_source][]",
+                multiple: true,
+                accept: "text/plain,.txt",
+                class: "sr-only",
+                "data-file-upload-target": "input",
+                "data-action": "change->file-upload#onChange",
+                "data-testid": "bulk-file-input" %>
+          <label for="bulk_korean_source"
+                 class="file-upload__zone"
+                 data-file-upload-target="zone">
+            <strong>Click to browse</strong> or drag files here
+            <p class="file-upload__zone-hint">Accepts .txt &mdash; numbers parsed from filenames</p>
+          </label>
+          <div class="file-upload__preview file-upload__preview--empty"
+               data-file-upload-target="preview"></div>
+        </div>
       </div>
       <div class="form-actions">
-        <%= f.submit "Upload files", class: "btn btn--primary" %>
+        <%= f.submit "Upload files", class: "btn btn--primary",
+              data: { "file-upload-target": "submit" },
+              disabled: true %>
       </div>
     <% end %>
   </div>
@@ -79,11 +96,26 @@
 
       <div class="form-group">
         <%= f.label :korean_source, "Korean source file", class: "form-label" %>
-        <%= f.file_field :korean_source,
-              name: "chapter[korean_source][]",
-              multiple: false,
-              accept: "text/plain,.txt",
-              class: "form-input form-input--file" %>
+        <div class="file-upload"
+             data-controller="file-upload"
+             data-action="dragover->file-upload#onDragOver dragleave->file-upload#onDragLeave drop->file-upload#onDrop">
+          <%= f.file_field :korean_source,
+                id: "single_korean_source",
+                name: "chapter[korean_source][]",
+                multiple: false,
+                accept: "text/plain,.txt",
+                class: "sr-only",
+                "data-file-upload-target": "input",
+                "data-action": "change->file-upload#onChange" %>
+          <label for="single_korean_source"
+                 class="file-upload__zone"
+                 data-file-upload-target="zone">
+            <strong>Click to browse</strong> or drag a file here
+            <p class="file-upload__zone-hint">Accepts .txt files</p>
+          </label>
+          <div class="file-upload__preview file-upload__preview--empty"
+               data-file-upload-target="preview"></div>
+        </div>
       </div>
 
       <div class="form-group">

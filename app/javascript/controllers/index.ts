@@ -22,3 +22,10 @@ application.register("dialog", DialogController)
 
 import ToastController from "./toast_controller"
 application.register("toast", ToastController)
+
+// file-upload: drag-and-drop + click-to-browse file input with filename preview.
+//   Targets: input, zone, preview, submit
+//   Values: none
+//   CSS state: .file-upload--dragging on zone; .file-upload__preview--empty on preview
+import FileUploadController from "./file_upload_controller"
+application.register("file-upload", FileUploadController)
