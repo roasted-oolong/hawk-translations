@@ -759,3 +759,42 @@ the org is not yet set on `@novel`, so it falls back to `Organization.first` —
 correct for solo MVP (one org). When multi-org management is added, this
 fallback should be replaced with a proper org selection step before the form
 is reached.
+
+---
+
+## 2026-03 · Two-bar app shell: fixed sidebar + slim topbar — M19
+
+The top nav (single fixed bar, full width) is replaced by two elements: a fixed
+left sidebar for primary navigation and a fixed slim topbar for page-contextual
+items (breadcrumb, user, sign-out). Rationale: the sidebar pattern scales better
+as the nav link inventory grows, and separating primary navigation from
+page-contextual actions reduces the cognitive load of the top bar. The topbar
+exposes a `yield :topbar_actions` slot so individual pages can inject a primary
+action button (e.g. "New Novel") without coupling the layout to any specific page.
+CSS tokens `--nav-height` replaced by `--sidebar-width: 15rem` and
+`--topbar-height: 3rem`. Layout shift: `.app-body` flex direction stays default
+(column); `.app-main` gains `padding-left: var(--sidebar-width)` and
+`padding-top: var(--topbar-height)`.
+
+---
+
+## 2026-03 · Novel card rewritten in place, no variant parameter — M20
+
+`novels/_card.html.erb` is rewritten as a single gallery-style card used everywhere
+(dashboard, novel index). No variant parameter. Both contexts get the same card;
+grid column sizing in each context determines how wide the card renders. A variant
+parameter was considered and rejected — the two use sites are too similar to justify
+branching logic inside the partial.
+
+---
+
+## 2026-03 · Cover art optional; Active Storage attachment on Novel — M21
+
+`Novel has_one_attached :cover_art`. Not required — cards render a
+`--color-surface-low` placeholder block when no image is attached. Keeping it
+optional avoids forcing a cover art upload as a prerequisite for creating a novel.
+Content type restricted to jpeg/png/webp; size capped at 5MB. Purge strategy for
+the edit form: dedicated `DELETE /novels/:id/cover_art` route handled by a new
+`cover_art` action on `NovelsController` — keeps the destroy action clean and
+makes the intent explicit in the route. `.with_attached_cover_art` added to both
+`DashboardController` and `NovelsController#index` queries to prevent N+1.

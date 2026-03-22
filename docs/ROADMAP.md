@@ -38,3 +38,333 @@ Goal: make the application usable for a solo translator working daily.
 | M16 — Chapter List & Translation Jobs | Chapter table with status badges + download links; upload forms (single + bulk); jobs index with trigger form; job show with Turbo Frame polling |
 | M17 — Bible Views | Bible landing page with search bar + category cards; all five category index/show/new/edit views; `combobox_controller.ts` wired to search endpoint |
 | M18 — Forms & Polish | Novel new/edit forms; modal confirmation system replacing all `turbo_confirm` call sites; toast infrastructure; mobile stacking; accessibility pass |
+
+---
+
+# Phase 3 — Dashboard Redesign
+
+Goal: sidebar navigation, gallery-style novel cards with cover art, and a refined dashboard layout.
+
+---
+
+# M18.5 — Design System Reconciliation
+ 
+**Status: 🔲 Not Started**
+ 
+Adopt the editorial palette and typography from the Literary Workspace design spec
+before any Phase 3 work begins. Changes are confined to `application.css` and
+`_typography.css` plus two font files. No structural changes to views or component
+partials — existing views pick up the new palette automatically through the token system.
+ 
+---
+ 
+## What changes and why
+ 
+The app was built with a blue-slate SaaS palette (`primary: #2563EB`, `background:
+#F8FAFC`) chosen at M14 via a design generator. The intended design direction is an
+editorial slate-blue palette (`primary: #4e6078`, `background: #f9f9f8`) with
+Newsreader serif and tinted ambient shadows. The Phase 3 sidebar and novel card will
+be built against these tokens — doing the swap now means nothing written in M19–M21
+needs to be rewritten.
+ 
+---
+ 
+## `application.css` — token changes
+ 
+Replace the entire `:root` block. Changes from current state:
+ 
+### Colours — replace M14 blue-slate with editorial slate-blue
+ 
+```css
+/* --- Colour: base --- */
+--color-bg:                   #f9f9f8;
+--color-surface:              #f9f9f8;
+--color-surface-manuscript:   #ffffff;  /* NEW — active reading/translation area */
+--color-surface-low:          #f2f4f3;  /* NEW — side panels, secondary containers */
+--color-surface-container:    #ebeeed;  /* NEW — utility panels */
+--color-surface-dim:          #d4dcda;  /* NEW — tonal boundary element */
+--color-border:               rgba(173, 179, 178, 0.15); /* ghost border — felt, not seen */
+--color-border-strong:        #adb3b2;  /* full opacity — focus rings, explicit dividers */
+ 
+/* --- Colour: text --- */
+--color-text:                 #2d3433;  /* on_surface — never pure black */
+--color-text-secondary:       #5a6672;
+--color-text-muted:           #adb3b2;
+--color-text-inverse:         #f5f7ff;
+ 
+/* --- Colour: brand --- */
+--color-primary:              #4e6078;
+--color-primary-hover:        #42546c;  /* primary_dim */
+--color-primary-subtle:       #f2f4f3;
+--color-secondary:            #adb3b2;
+--color-accent:               #7C3AED;  /* unchanged — violet bible identity */
+--color-accent-subtle:        #F5F3FF;  /* unchanged */
+```
+ 
+### Shadows — retint with `on_surface` base instead of black
+ 
+```css
+--shadow-xs: 0 1px 2px rgba(45, 52, 51, 0.04);
+--shadow-sm: 0 1px 3px rgba(45, 52, 51, 0.06), 0 1px 2px rgba(45, 52, 51, 0.03);
+--shadow-md: 0 12px 32px -4px rgba(45, 52, 51, 0.06);
+--shadow-lg: 0 12px 32px -4px rgba(45, 52, 51, 0.08), 0 4px 8px rgba(45, 52, 51, 0.04);
+```
+ 
+### Glassmorphism — new tokens
+ 
+```css
+--glass-bg:   rgba(255, 255, 255, 0.80);
+--glass-blur: blur(20px);
+```
+ 
+### Typography — add serif
+ 
+```css
+--font-family-serif: "Newsreader", Georgia, "Times New Roman", serif;
+```
+ 
+### Layout — replace `--nav-height` with sidebar/topbar tokens
+ 
+```css
+--sidebar-width:  15rem;   /* 240px */
+--topbar-height:  3rem;    /* 48px */
+```
+ 
+Remove `--nav-height: 3.5rem`.
+ 
+### Status tokens — update to match new primary
+ 
+```css
+--color-status-translated-text:   #4e6078;
+--color-status-translated-bg:     #e8ecf0;
+--color-status-untranslated-text:  #5a6672;
+--color-status-queued-text:        #5a6672;
+```
+ 
+All other status tokens (reviewed, running, completed, failed) and all flash tokens
+are unchanged — they are semantic greens/ambers/reds that work with both palettes.
+ 
+### Add Newsreader `@font-face` declarations
+ 
+Add above the existing Inter `@font-face` blocks:
+ 
+```css
+@font-face {
+  font-family: "Newsreader";
+  src: url("/assets/fonts/newsreader/Newsreader-VariableFont_opsz,wght.woff2") format("woff2-variations");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+ 
+@font-face {
+  font-family: "Newsreader";
+  src: url("/assets/fonts/newsreader/Newsreader-Italic-VariableFont_opsz,wght.woff2") format("woff2-variations");
+  font-weight: 300 700;
+  font-style: italic;
+  font-display: swap;
+}
+```
+ 
+---
+ 
+## `_typography.css` — add serif utilities
+ 
+Add after the existing utility classes:
+ 
+```css
+/* --- Serif utilities (Newsreader) --- */
+.text-serif {
+  font-family: var(--font-family-serif);
+  line-height: 1.6;
+}
+ 
+.text-serif-display {
+  font-family: var(--font-family-serif);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+ 
+.text-serif-body {
+  font-family: var(--font-family-serif);
+  font-size: var(--text-base);
+  line-height: 1.6;
+}
+```
+ 
+---
+ 
+## Font files required
+ 
+Place before running the app. Not committed to the repo — same pattern as Inter.
+ 
+```
+app/assets/fonts/newsreader/Newsreader-VariableFont_opsz,wght.woff2
+app/assets/fonts/newsreader/Newsreader-Italic-VariableFont_opsz,wght.woff2
+```
+ 
+Download from [Google Fonts — Newsreader](https://fonts.google.com/specimen/Newsreader).
+Select the variable font download. Filenames must match exactly as shown above.
+ 
+---
+ 
+## Things to check after the swap
+ 
+Grep each component CSS file for any hardcoded raw values that should be tokens —
+there should be zero if the token system has been used correctly throughout, but
+worth confirming before calling the milestone done:
+ 
+- `#2563EB` — old primary
+- `#0F172A` — old text
+- `#F8FAFC` — old background
+ 
+`--color-surface` is still present (now `#f9f9f8` instead of `#ffffff`). Cards
+and panels that need paper-white should now use `--color-surface-manuscript`
+explicitly. Scan for `.novel-card`, `.card`, and `.bible-entry` usages in the
+component CSS and update where appropriate.
+ 
+---
+ 
+## Specs
+ 
+No new specs required. Run the full system spec suite after the token swap and
+confirm visually:
+ 
+- Login page
+- Dashboard
+- Novel index
+- Novel show
+- A bible entry show page (accent colour)
+- A job show page (status badge colours)
+ 
+No functional behaviour changes — all existing specs should pass without
+modification. If any spec asserts a specific hex colour value, update it to match
+the new token.
+
+---
+
+## Milestone 19 — Sidebar Navigation
+**Status: 🔲 Not Started**
+
+Replace the fixed top nav bar with a two-element app shell: a fixed left sidebar
+for primary navigation and a slim fixed topbar for page-contextual items
+(breadcrumb, user, sign-out). No data changes. No design detail. Pure structural
+layout — every page must look right and all existing specs must pass before M20 begins.
+
+### CSS & tokens
+- `application.css` `:root` — add `--sidebar-width: 15rem`, `--topbar-height: 3rem`; remove `--nav-height`
+- `_nav.css` → rename to `_sidebar.css`; `.app-nav` → `.app-sidebar`; fixed left, full height, `--sidebar-width` wide; tonal background separation (no right border — no-line rule); brand mark at top; vertical nav link list with active state via `current_page?`
+- New `_topbar.css` — `.app-topbar`: fixed top, `left: var(--sidebar-width)`, `right: 0`, `height: var(--topbar-height)`; left slot: breadcrumb; right slot: user name + sign-out + `yield :topbar_actions`
+- `_layout.css` — `.app-main`: replace `padding-top: var(--nav-height)` with `padding-left: var(--sidebar-width)` and `padding-top: var(--topbar-height)`; update any other `--nav-height` references
+- `application.css` import chain — replace `@import "_nav"` with `@import "_sidebar"`, add `@import "_topbar"`
+
+### Views & layout
+- `app/views/layouts/_nav.html.erb` → `_sidebar.html.erb` — brand mark + vertical nav links (Dashboard, Novels)
+- New `app/views/layouts/_topbar.html.erb` — slim bar; breadcrumb yield left, user/sign-out right, `yield :topbar_actions` right slot
+- `app/views/layouts/application.html.erb` — render `_sidebar` + `_topbar` instead of `_nav`; authenticated check applies to both
+
+### JavaScript
+- New `app/javascript/controllers/sidebar_controller.ts` — mobile toggle: open/close off-canvas sidebar, outside-click dismissal; no other responsibilities
+- `app/javascript/controllers/index.ts` — register `sidebar_controller`
+
+### Responsive
+- ≤768px: sidebar off-canvas by default; hamburger button in topbar triggers `sidebar_controller`
+- ≥769px: sidebar always visible; hamburger hidden
+
+### Specs (written first)
+System specs — `spec/system/m19_sidebar_spec.rb`:
+- Sidebar renders on every authenticated page
+- Topbar renders on every authenticated page
+- Sidebar and topbar absent on login page
+- Sign-out reachable from topbar
+- Dashboard link navigates correctly
+- Novels link navigates correctly
+- Mobile: hamburger present at narrow viewport; sidebar toggles open/closed
+
+Update existing specs:
+- `spec/system/m14_layout_spec.rb` — `data-testid="app-nav"` → `data-testid="app-sidebar"`
+
+### Docs
+- `docs/DECISIONS.md` — two-bar layout change, rationale
+- `docs/UI.md` — update Layout section; replace Nav Bar component entry with Sidebar + Topbar; update `--nav-height` token
+
+---
+
+## Milestone 20 — Novel Card Layout Shell
+**Status: 🔲 Not Started**
+
+Rewrite `novels/_card.html.erb` in place with the gallery card structure: cover image
+slot, serif title, metadata row, progress bar. All placeholder — no real data wired,
+no cover image upload, no active storage. Layout correct and responsive on dashboard
+and novel index. Tests pass before M21 begins.
+
+### Views
+- `app/views/novels/_card.html.erb` — full rewrite; cover image block (`aspect-ratio: 2/3`, full card width, `--color-surface-low` placeholder background); body section: serif title, Korean title, series/genre metadata row, progress bar (static `width: 0%`), chapter count stat, pending jobs badge when > 0; card remains an `<article>` linking to the novel
+
+### CSS
+- `_novels.css` — `.novel-card`: `padding: 0` (cover goes edge-to-edge); `.novel-card__cover`: aspect-ratio block, `overflow: hidden`, placeholder background; `.novel-card__body`: inner padding, flex column, gap; `.novel-card__progress-track` + `.novel-card__progress-fill` (static width for now); `.novel-card__title` switches to serif stack (`var(--font-family-serif)`); review `novel-grid` column floor — `minmax(14rem, 1fr)` likely needed given taller cards; all existing modifier classes carry forward unchanged
+
+### No changes needed
+- `app/views/dashboard/index.html.erb` — already renders `novels/card`
+- `app/views/novels/index.html.erb` — already renders `novels/card`
+- No controllers, models, or migrations
+
+### Specs (written first)
+System specs — `spec/system/m20_novel_card_spec.rb`:
+- Dashboard: novel card renders with cover placeholder
+- Dashboard: novel card title links to novel
+- Novel index: novel card renders with cover placeholder
+- Novel card: progress bar element is present in the DOM
+- Novel card: Korean title renders when present; absent when nil
+
+### Docs
+- `docs/DECISIONS.md` — novel card rewritten in place, no variant parameter
+
+---
+
+## Milestone 21 — Wire Data + Cover Art Upload
+**Status: 🔲 Not Started**
+
+Replace all card placeholders with real data. Add `cover_art` Active Storage attachment
+to `Novel`. Progress bar reflects real chapter completion ratio. Cover image renders when
+attached; placeholder remains when not. Cover art upload added to novel new/edit forms.
+
+### Model
+- `app/models/novel.rb` — `has_one_attached :cover_art`; validation: `content_type: %w[image/jpeg image/png image/webp]`, `size: { less_than: 5.megabytes }`
+- No migration needed — Active Storage tables already exist
+
+### Controllers
+- `app/controllers/novels_controller.rb` — add `:cover_art` to `novel_create_params` and `novel_update_params`; add `.with_attached_cover_art` to `index` query; new `destroy_cover_art` action for purge
+- `app/controllers/dashboard_controller.rb` — add `.with_attached_cover_art` to novels query to prevent N+1
+- `config/routes.rb` — add `delete "cover_art", on: :member, action: :destroy_cover_art` inside novels resources block
+
+### Views
+- `app/views/novels/_card.html.erb` — cover block: `if novel.cover_art.attached?` render `image_tag` else placeholder div; progress bar fill: `(translated_count.to_f / total_chapters * 100).round` wired to `style="width: X%"`
+- `app/views/novels/new.html.erb` / `edit.html.erb` — add `cover_art` file input using `file_upload_controller.ts` drop zone
+- `app/views/novels/_form.html.erb` — cover art input field; edit form: current cover thumbnail when attached + remove button wired to `destroy_cover_art`
+
+### CSS
+- `_novels.css` — `.novel-card__cover img`: `width: 100%; height: 100%; object-fit: cover`; no other changes needed
+
+### Specs (written first)
+Model specs — `spec/models/novel_spec.rb`:
+- Valid without cover art
+- Rejects cover art with invalid content type
+- Rejects cover art over 5MB
+
+Request specs — `spec/requests/novels_spec.rb`:
+- `PATCH /novels/:id` with valid image attaches cover art
+- `PATCH /novels/:id` with invalid content type rejected
+
+System specs — `spec/system/m21_cover_art_spec.rb`:
+- Dashboard: cover image renders when attached
+- Dashboard: placeholder renders when no cover art attached
+- Dashboard: progress bar width reflects chapter completion
+- Novel form: cover art file input present
+- Novel form (edit): current cover thumbnail shown when attached
+- Novel form (edit): remove cover art removes the image
+
+### Docs
+- `docs/DECISIONS.md` — cover art optional with placeholder; purge via dedicated route; `.with_attached_cover_art` on both queries
+- `docs/UI.md` — update novel card component entry: cover image slot, progress bar, N+1 note on query
