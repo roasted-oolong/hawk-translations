@@ -1,3 +1,20 @@
-<h1>Edit Location — <%= @entry.name %></h1>
-<p><%= link_to "← Back", novel_bible_location_path(@novel, @entry) %></p>
-<%= render "form", novel: @novel, entry: @entry %>
+<%# app/views/bible_locations/edit.html.erb %>
+<% content_for :title, "Edit #{@entry.name} — Hawk" %>
+
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Bible", novel_bible_path(@novel)],
+      ["Locations", novel_bible_locations_path(@novel)],
+      [@entry.name, novel_bible_location_path(@novel, @entry)],
+      ["Edit", nil]
+    ] %>
+
+<div class="page-header">
+  <h1 class="page-title">Edit Location</h1>
+  <p class="page-subtitle"><%= @entry.name %></p>
+</div>
+
+<div class="card">
+  <%= render "form" %>
+</div>

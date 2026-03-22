@@ -162,17 +162,32 @@ Deliverables:
 ---
 
 ## Milestone 17 — Bible Views
-**Status: 🔲 Not Started**
+**Status: ✅ Complete**
 
 The most structurally complex views. Five categories, each with index, show, new, edit.
+Bible search UI delivered via a dedicated landing page (`BibleController#show`) rather
+than a shared partial — see DECISIONS.md for rationale.
 
 Deliverables:
-- All five bible index views — entry list with key fields visible at a glance
-- All five bible show views — markdown-style rendered entry layout
-- All five bible new/edit forms — clean, field-labelled forms per category
-- Search UI — Turbo/Stimulus combobox wired to the existing `/bible/search` JSON endpoint (deferred from M12)
-- System specs: bible index/show per category, search bar interaction
-- UI.md updated — bible entry card layout, search bar component documented
+- ✅ `app/controllers/bible_controller.rb` — landing page controller; loads `@bible_counts`
+- ✅ `app/views/bible/show.html.erb` — search bar + five category cards
+- ✅ All five bible index views — data table, empty state, breadcrumb, Add button
+- ✅ All five bible show views — entry detail card with meta row + long-form sections
+- ✅ All five bible new/edit views — breadcrumb + card-wrapped form
+- ✅ All five bible form partials — CSS classes, two-column grid, `data-testid` attributes
+- ✅ `app/javascript/controllers/combobox_controller.ts` — debounced search, result rendering, keyboard nav
+- ✅ `app/javascript/controllers/index.ts` — combobox controller registered
+- ✅ `app/assets/stylesheets/_bible.css` — landing page, category cards, search bar, entry detail, form grid
+- ✅ `app/assets/stylesheets/application.css` — `_bible` added to import chain
+- ✅ `app/assets/stylesheets/_novels.css` — `novel-show__bible-hint` added
+- ✅ `app/views/novels/show.html.erb` — bible section replaced with single "Translation Bible →" link
+- ✅ `app/controllers/novels_controller.rb` — `@bible_counts` removed from `show`
+- ✅ `config/routes.rb` — `novel_bible_path` route added
+- ✅ `spec/system/bible_spec.rb` — bible landing page, all category index/show views, search bar interaction
+- ✅ `spec/system/dashboard_novels_spec.rb` — updated to reflect bible section change
+- ✅ `rspec` — full suite passing, no regressions
+- ✅ UI.md updated — bible landing page, category views, entry detail, forms, combobox controller documented
+- ✅ DECISIONS.md updated — bible landing page decision + combobox controller decision recorded
 
 ---
 

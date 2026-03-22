@@ -1,8 +1,9 @@
-<%= form_with model: [ @novel, @entry ] do |f| %>
+<%# app/views/bible_cultural_phrases/_form.html.erb %>
+<%= form_with model: [ @novel, @entry ], data: { testid: "bible-entry-form" } do |f| %>
   <% if @entry.errors.any? %>
-    <div>
-      <p><strong><%= pluralize(@entry.errors.count, "error") %> prevented this from saving:</strong></p>
-      <ul>
+    <div class="form-errors" data-testid="form-errors">
+      <p class="form-errors__summary"><%= pluralize(@entry.errors.count, "error") %> prevented this from saving:</p>
+      <ul class="form-errors__list">
         <% @entry.errors.full_messages.each do |msg| %>
           <li><%= msg %></li>
         <% end %>
@@ -10,47 +11,50 @@
     </div>
   <% end %>
 
-  <div>
-    <%= f.label :phrase %>
-    <%= f.text_field :phrase %>
+  <div class="bible-form__grid">
+    <div class="form-group">
+      <%= f.label :phrase, class: "form-label" %>
+      <%= f.text_field :phrase, class: "form-input" %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :korean_phrase, "Korean Phrase", class: "form-label" %>
+      <%= f.text_field :korean_phrase, class: "form-input" %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :established_translation, "Established Translation", class: "form-label" %>
+      <%= f.text_field :established_translation, class: "form-input" %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :first_appearance_chapter, "First Appearance (Chapter #)", class: "form-label" %>
+      <%= f.number_field :first_appearance_chapter, min: 1, class: "form-input" %>
+    </div>
   </div>
 
-  <div>
-    <%= f.label :korean_phrase, "Korean Phrase" %>
-    <%= f.text_field :korean_phrase %>
+  <div class="form-group">
+    <%= f.label :literal_translation, "Literal Translation", class: "form-label" %>
+    <%= f.text_area :literal_translation, rows: 3, class: "form-input" %>
   </div>
 
-  <div>
-    <%= f.label :established_translation, "Established Translation" %>
-    <%= f.text_field :established_translation %>
+  <div class="form-group">
+    <%= f.label :intended_meaning, "Intended Meaning", class: "form-label" %>
+    <%= f.text_area :intended_meaning, rows: 3, class: "form-input" %>
   </div>
 
-  <div>
-    <%= f.label :first_appearance_chapter, "First Appearance (Chapter #)" %>
-    <%= f.number_field :first_appearance_chapter, min: 1 %>
+  <div class="form-group">
+    <%= f.label :context, class: "form-label" %>
+    <%= f.text_area :context, rows: 3, class: "form-input" %>
   </div>
 
-  <div>
-    <%= f.label :literal_translation, "Literal Translation" %>
-    <%= f.text_area :literal_translation, rows: 3 %>
+  <div class="form-group">
+    <%= f.label :notes, class: "form-label" %>
+    <%= f.text_area :notes, rows: 4, class: "form-input" %>
   </div>
 
-  <div>
-    <%= f.label :intended_meaning, "Intended Meaning" %>
-    <%= f.text_area :intended_meaning, rows: 3 %>
-  </div>
-
-  <div>
-    <%= f.label :context %>
-    <%= f.text_area :context, rows: 3 %>
-  </div>
-
-  <div>
-    <%= f.label :notes %>
-    <%= f.text_area :notes, rows: 4 %>
-  </div>
-
-  <div>
-    <%= f.submit %>
+  <div class="form-actions">
+    <%= f.submit "Save", class: "btn btn--primary" %>
+    <%= link_to "Cancel", novel_bible_cultural_phrases_path(@novel), class: "btn btn--ghost" %>
   </div>
 <% end %>

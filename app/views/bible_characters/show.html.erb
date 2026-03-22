@@ -1,61 +1,106 @@
-<h1><%= @entry.name %></h1>
-<% if @entry.korean_name.present? %>
-  <p><em><%= @entry.korean_name %></em></p>
-<% end %>
+<%# app/views/bible_characters/show.html.erb %>
+<% content_for :title, "#{@entry.name} — Characters — Hawk" %>
 
-<p>
-  <%= link_to "← All Characters", novel_bible_characters_path(@novel) %> |
-  <%= link_to "Edit", edit_novel_bible_character_path(@novel, @entry) %> |
-  <%= button_to "Remove", novel_bible_character_path(@novel, @entry), method: :delete,
-      data: { turbo_confirm: "Remove #{@entry.name}?" } %>
-</p>
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Bible", novel_bible_path(@novel)],
+      ["Characters", novel_bible_characters_path(@novel)],
+      [@entry.name, nil]
+    ] %>
 
-<hr>
+<div class="page-header">
+  <div class="page-header__row">
+    <div>
+      <h1 class="page-title" data-testid="entry-title"><%= @entry.name %></h1>
+      <% if @entry.korean_name.present? %>
+        <p class="page-subtitle bible-entry__korean"><%= @entry.korean_name %></p>
+      <% end %>
+    </div>
+    <div class="btn-group">
+      <%= link_to "Edit", edit_novel_bible_character_path(@novel, @entry), class: "btn btn--secondary btn--sm" %>
+      <%= button_to "Remove", novel_bible_character_path(@novel, @entry), method: :delete,
+          class: "btn btn--danger btn--sm",
+          data: { turbo_confirm: "Remove #{@entry.name}?" } %>
+    </div>
+  </div>
+</div>
 
-<% if @entry.role.present? %>
-  <p><strong>Role:</strong> <%= @entry.role %></p>
-<% end %>
+<div class="card bible-entry">
+  <%# Quick-reference meta row %>
+  <div class="bible-entry__meta">
+    <% if @entry.role.present? %>
+      <div class="bible-entry__meta-item">
+        <span class="bible-entry__meta-label">Role</span>
+        <span class="bible-entry__meta-value"><%= @entry.role %></span>
+      </div>
+    <% end %>
+    <% if @entry.significance.present? %>
+      <div class="bible-entry__meta-item">
+        <span class="bible-entry__meta-label">Significance</span>
+        <span class="bible-entry__meta-value"><%= @entry.significance %></span>
+      </div>
+    <% end %>
+    <% if @entry.first_appearance_chapter.present? %>
+      <div class="bible-entry__meta-item">
+        <span class="bible-entry__meta-label">First appears</span>
+        <span class="bible-entry__meta-value">Ch. <%= @entry.first_appearance_chapter %></span>
+      </div>
+    <% end %>
+    <% if @entry.aliases.present? %>
+      <div class="bible-entry__meta-item">
+        <span class="bible-entry__meta-label">Aliases</span>
+        <span class="bible-entry__meta-value"><%= @entry.aliases %></span>
+      </div>
+    <% end %>
+  </div>
 
-<% if @entry.significance.present? %>
-  <p><strong>Significance:</strong> <%= @entry.significance %></p>
-<% end %>
-
-<% if @entry.first_appearance_chapter.present? %>
-  <p><strong>First Appearance:</strong> Chapter <%= @entry.first_appearance_chapter %></p>
-<% end %>
-
-<% if @entry.aliases.present? %>
-  <p><strong>Aliases:</strong> <%= @entry.aliases %></p>
-<% end %>
-
-<% if @entry.physical_description.present? %>
-  <h2>Physical Description</h2>
-  <p><%= simple_format @entry.physical_description %></p>
-<% end %>
-
-<% if @entry.speech_pattern.present? %>
-  <h2>Speech Pattern</h2>
-  <p><%= simple_format @entry.speech_pattern %></p>
-<% end %>
-
-<% if @entry.honorifics_used_toward.present? || @entry.honorifics_they_use.present? %>
-  <h2>Honorifics</h2>
-  <% if @entry.honorifics_used_toward.present? %>
-    <p><strong>Used toward them:</strong> <%= @entry.honorifics_used_toward %></p>
+  <%# Long-form fields %>
+  <% if @entry.physical_description.present? %>
+    <div class="bible-entry__section">
+      <h2 class="bible-entry__section-title">Physical Description</h2>
+      <div class="bible-entry__body"><%= simple_format @entry.physical_description %></div>
+    </div>
   <% end %>
-  <% if @entry.honorifics_they_use.present? %>
-    <p><strong>They use:</strong> <%= @entry.honorifics_they_use %></p>
+
+  <% if @entry.speech_pattern.present? %>
+    <div class="bible-entry__section">
+      <h2 class="bible-entry__section-title">Speech Pattern</h2>
+      <div class="bible-entry__body"><%= simple_format @entry.speech_pattern %></div>
+    </div>
   <% end %>
-<% end %>
 
-<% if @entry.relationships.present? %>
-  <h2>Relationships</h2>
-  <p><%= simple_format @entry.relationships %></p>
-<% end %>
+  <% if @entry.honorifics_used_toward.present? || @entry.honorifics_they_use.present? %>
+    <div class="bible-entry__section">
+      <h2 class="bible-entry__section-title">Honorifics</h2>
+      <% if @entry.honorifics_used_toward.present? %>
+        <div class="bible-entry__meta-item">
+          <span class="bible-entry__meta-label">Used toward them</span>
+          <span class="bible-entry__meta-value"><%= @entry.honorifics_used_toward %></span>
+        </div>
+      <% end %>
+      <% if @entry.honorifics_they_use.present? %>
+        <div class="bible-entry__meta-item">
+          <span class="bible-entry__meta-label">They use</span>
+          <span class="bible-entry__meta-value"><%= @entry.honorifics_they_use %></span>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
 
-<% if @entry.notes.present? %>
-  <h2>Notes</h2>
-  <p><%= simple_format @entry.notes %></p>
-<% end %>
+  <% if @entry.relationships.present? %>
+    <div class="bible-entry__section">
+      <h2 class="bible-entry__section-title">Relationships</h2>
+      <div class="bible-entry__body"><%= simple_format @entry.relationships %></div>
+    </div>
+  <% end %>
 
-<p class="muted">Last updated: <%= @entry.last_updated_at&.strftime("%B %-d, %Y") || "—" %></p>
+  <% if @entry.notes.present? %>
+    <div class="bible-entry__section">
+      <h2 class="bible-entry__section-title">Notes</h2>
+      <div class="bible-entry__body"><%= simple_format @entry.notes %></div>
+    </div>
+  <% end %>
+
+  <p class="bible-entry__updated-at">Last updated: <%= @entry.last_updated_at&.strftime("%B %-d, %Y") || "—" %></p>
+</div>

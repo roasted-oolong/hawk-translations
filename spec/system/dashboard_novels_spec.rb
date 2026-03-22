@@ -6,7 +6,7 @@
 #   1. Dashboard shows zero novels when no NovelTeamAssignment exists for the user
 #   2. Dashboard shows an assigned novel with chapter progress and pending jobs count
 #   3. Novel index renders novel cards
-#   4. Novel show renders novel header, chapter summary, bible category counts, jobs link
+#   4. Novel show renders novel header, chapter summary, bible section link, jobs link
 #
 # Setup convention:
 #   org, team, novel are explicitly wired to the same organization.
@@ -191,17 +191,13 @@ RSpec.describe "M15 Dashboard, Novel Index & Novel Show", type: :system do
       end
     end
 
-    it "renders the bible categories section" do
+    it "renders the bible section" do
       expect(page).to have_selector("[data-testid='novel-bible-summary']")
     end
 
-    it "shows a link to each bible category" do
+    it "shows a link to the translation bible" do
       within "[data-testid='novel-bible-summary']" do
-        expect(page).to have_link("Characters")
-        expect(page).to have_link("Locations")
-        expect(page).to have_link("Terminology")
-        expect(page).to have_link("Cultural Phrases")
-        expect(page).to have_link("Story Entries")
+        expect(page).to have_link("Translation Bible →")
       end
     end
 

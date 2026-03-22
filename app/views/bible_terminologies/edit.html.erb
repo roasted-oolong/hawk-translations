@@ -1,3 +1,20 @@
-<h1>Edit Term — <%= @entry.term %></h1>
-<p><%= link_to "← Back", novel_bible_terminology_path(@novel, @entry) %></p>
-<%= render "form", novel: @novel, entry: @entry %>
+<%# app/views/bible_terminologies/edit.html.erb %>
+<% content_for :title, "Edit #{@entry.term} — Hawk" %>
+
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Bible", novel_bible_path(@novel)],
+      ["Terminology", novel_bible_terminologies_path(@novel)],
+      [@entry.term, novel_bible_terminology_path(@novel, @entry)],
+      ["Edit", nil]
+    ] %>
+
+<div class="page-header">
+  <h1 class="page-title">Edit Term</h1>
+  <p class="page-subtitle"><%= @entry.term %></p>
+</div>
+
+<div class="card">
+  <%= render "form" %>
+</div>

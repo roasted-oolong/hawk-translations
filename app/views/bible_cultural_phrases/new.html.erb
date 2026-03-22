@@ -1,3 +1,18 @@
-<h1>Add Cultural Phrase — <%= @novel.title %></h1>
-<p><%= link_to "← All Cultural Phrases", novel_bible_cultural_phrases_path(@novel) %></p>
-<%= render "form", novel: @novel, entry: @entry %>
+<%# app/views/bible_cultural_phrases/new.html.erb %>
+<% content_for :title, "Add Phrase — #{@novel.title} — Hawk" %>
+
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Bible", novel_bible_path(@novel)],
+      ["Cultural Phrases", novel_bible_cultural_phrases_path(@novel)],
+      ["Add Phrase", nil]
+    ] %>
+
+<div class="page-header">
+  <h1 class="page-title">Add Cultural Phrase</h1>
+</div>
+
+<div class="card">
+  <%= render "form" %>
+</div>

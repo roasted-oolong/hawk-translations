@@ -1,35 +1,53 @@
-<h1>Terminology — <%= @novel.title %></h1>
+<%# app/views/bible_terminologies/index.html.erb %>
+<% content_for :title, "Terminology — #{@novel.title} — Hawk" %>
 
-<p>
-  <%= link_to "← Novel", @novel %> |
-  <%= link_to "Add Term", new_novel_bible_terminology_path(@novel) %>
-</p>
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Bible", novel_bible_path(@novel)],
+      ["Terminology", nil]
+    ] %>
+
+<div class="page-header">
+  <div class="page-header__row">
+    <h1 class="page-title">Terminology</h1>
+    <%= link_to "Add Term", new_novel_bible_terminology_path(@novel), class: "btn btn--primary btn--sm" %>
+  </div>
+</div>
 
 <% if @entries.none? %>
-  <p>No terminology entries yet.</p>
+  <div class="empty-state" data-testid="terminology-empty">
+    <p class="empty-state__message">No terminology entries yet.</p>
+    <%= link_to "Add the first term \u2192", new_novel_bible_terminology_path(@novel) %>
+  </div>
 <% else %>
-  <table>
-    <thead>
-      <tr>
-        <th>Term</th>
-        <th>Korean Term</th>
-        <th>First Appears</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @entries.each do |entry| %>
+  <div class="data-table-wrapper">
+    <table class="data-table" data-testid="terminology-table">
+      <thead>
         <tr>
-          <td><%= link_to entry.term, novel_bible_terminology_path(@novel, entry) %></td>
-          <td><%= entry.korean_term.presence || "—" %></td>
-          <td><%= entry.first_appearance_chapter ? "Ch. #{entry.first_appearance_chapter}" : "—" %></td>
-          <td>
-            <%= link_to "Edit", edit_novel_bible_terminology_path(@novel, entry) %> |
-            <%= button_to "Remove", novel_bible_terminology_path(@novel, entry), method: :delete,
-                data: { turbo_confirm: "Remove \"#{entry.term}\"?" } %>
-          </td>
+          <th class="data-table__th">Term</th>
+          <th class="data-table__th">Korean Term</th>
+          <th class="data-table__th">First Appears</th>
+          <th class="data-table__th data-table__th--actions"></th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% @entries.each do |entry| %>
+          <tr class="data-table__row">
+            <td class="data-table__td data-table__td--title">
+              <%= link_to entry.term, novel_bible_terminology_path(@novel, entry), class: "data-table__link" %>
+            </td>
+            <td class="data-table__td bible-td--korean"><%= entry.korean_term.presence || "—" %></td>
+            <td class="data-table__td"><%= entry.first_appearance_chapter ? "Ch. #{entry.first_appearance_chapter}" : "—" %></td>
+            <td class="data-table__td data-table__td--actions">
+              <%= link_to "Edit", edit_novel_bible_terminology_path(@novel, entry), class: "btn btn--ghost btn--sm" %>
+              <%= button_to "Remove", novel_bible_terminology_path(@novel, entry), method: :delete,
+                  class: "btn btn--danger btn--sm",
+                  data: { turbo_confirm: "Remove \"#{entry.term}\"?" } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
 <% end %>

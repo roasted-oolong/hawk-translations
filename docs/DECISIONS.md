@@ -661,3 +661,32 @@ approach for frame-scoped polling without Action Cable.
 no code prior to `DashboardController` traversed the user→memberships direction.
 Added at M15 when `current_user.memberships.pluck(:team_id)` raised `NoMethodError`.
 No migration required — the foreign keys and join tables already exist.
+
+---
+
+## 2026-03 · Bible landing page at `/novels/:id/bible` — M17
+
+The bible search UI (deferred from M12) needed a home. Three options were
+evaluated: (1) a shared partial on all five category indexes, (2) embedded
+in the novel show bible section, (3) a dedicated `BibleController#show` landing
+page. Option 3 was chosen because it gives the bible a clear section entry point,
+reduces the responsibility of `novels/show`, and provides a natural home for
+any future cross-category bible features. The five category summary cards were
+moved from `novels/show` to the new landing page. `novels/show` now carries a
+single "Translation Bible →" link. `@bible_counts` removed from `NovelsController#show`
+and moved to `BibleController#show`. Route: `get "bible", to: "bible#show", as: :bible`
+inside the novels resources block, generating `novel_bible_path`.
+
+---
+
+## 2026-03 · `combobox_controller.ts` — bespoke Stimulus controller, no library — M17
+
+The bible search combobox is implemented as a hand-rolled Stimulus controller
+against the existing `BibleSearchController` JSON endpoint. No external combobox
+library is used — the endpoint contract is already defined, and a bespoke
+controller keeps the dependency count at zero. The controller handles debounce
+(300ms), fetch with `Accept: application/json`, result rendering, keyboard
+navigation (ArrowUp/ArrowDown/Enter/Escape), and outside-click dismissal.
+Result show paths are derived from the search endpoint URL by stripping
+`/bible/search` and appending the Rails resource segment for each bible type —
+no hardcoded paths in the controller. Minimum query length is 2 characters.
