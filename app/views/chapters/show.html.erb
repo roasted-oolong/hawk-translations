@@ -1,34 +1,64 @@
-<h2>Chapter <%= @chapter.number %><% if @chapter.title.present? %> — <%= @chapter.title %><% end %></h2>
+<%# app/views/chapters/show.html.erb %>
+<% content_for :title, "Chapter #{@chapter.number} — #{@novel.title} — Hawk" %>
 
-<p>
-  <strong>Novel:</strong> <%= link_to @novel.title, @novel %> |
-  <strong>Status:</strong> <%= @chapter.status %>
-</p>
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Chapters", novel_chapters_path(@novel)],
+      ["Chapter #{@chapter.number}", nil]
+    ] %>
 
-<table>
-  <tr>
-    <th>Korean Source</th>
-    <td>
+<div class="page-header">
+  <div class="page-header__row">
+    <div>
+      <h1 class="page-title">
+        Chapter <%= @chapter.number %>
+        <% if @chapter.title.present? %>
+          <span class="page-title__sub">— <%= @chapter.title %></span>
+        <% end %>
+      </h1>
+    </div>
+    <div class="btn-group">
+      <%= link_to "Edit", edit_novel_chapter_path(@novel, @chapter),
+            class: "btn btn--secondary btn--sm" %>
+      <%= button_to "Remove", novel_chapter_path(@novel, @chapter),
+            method: :delete,
+            class: "btn btn--danger btn--sm",
+            data: { turbo_confirm: "Remove Chapter #{@chapter.number}? This cannot be undone." } %>
+    </div>
+  </div>
+  <div class="chapter-show__meta">
+    <span class="chapter-show__meta-item">
+      <span class="chapter-show__meta-label">Status</span>
+      <%= render "components/status_badge", status: @chapter.status %>
+    </span>
+  </div>
+</div>
+
+<div class="card chapter-show__files">
+  <h2 class="chapter-show__files-title">Files</h2>
+  <div class="chapter-show__file-row">
+    <span class="chapter-show__file-label">Korean Source</span>
+    <span class="chapter-show__file-value">
       <% if @chapter.korean_source.attached? %>
-        <%= link_to "Download", download_korean_source_novel_chapter_path(@novel, @chapter) %>
+        <%= link_to "Download",
+              download_korean_source_novel_chapter_path(@novel, @chapter),
+              class: "btn btn--secondary btn--sm" %>
       <% else %>
-        Not uploaded
+        <span class="text-muted">Not uploaded</span>
       <% end %>
-    </td>
-  </tr>
-  <tr>
-    <th>Translated Output</th>
-    <td>
+    </span>
+  </div>
+  <div class="chapter-show__file-row">
+    <span class="chapter-show__file-label">Translated Output</span>
+    <span class="chapter-show__file-value">
       <% if @chapter.translated_output.attached? %>
-        <%= link_to "Download", download_translated_output_novel_chapter_path(@novel, @chapter) %>
+        <%= link_to "Download",
+              download_translated_output_novel_chapter_path(@novel, @chapter),
+              class: "btn btn--secondary btn--sm" %>
       <% else %>
-        Not available
+        <span class="text-muted">Not available yet</span>
       <% end %>
-    </td>
-  </tr>
-</table>
-
-<p>
-  <%= link_to "Edit", edit_novel_chapter_path(@novel, @chapter) %> |
-  <%= link_to "Back to chapters", novel_path(@novel) %>
-</p>
+    </span>
+  </div>
+</div>

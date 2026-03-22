@@ -206,6 +206,8 @@ app/assets/stylesheets/
   _breadcrumb.css      ← breadcrumb trail (added M15)
   _dashboard.css       ← dashboard section layout, empty state (added M15)
   _novels.css          ← novel grid, novel card, novel show layout (added M15)
+  _chapters.css        ← data table base, chapter show, upload panels, form primitives (added M16)
+  _jobs.css            ← status badge, jobs trigger card, job detail page (added M16)
 ```
 
 Import order is intentional: tokens must load before any component that references them.
@@ -477,11 +479,51 @@ Mobile note: `.novel-show__section-header` (flex space-between), `.chapter-statu
 (horizontal flex), and `.bible-summary-grid` need stacking rules at narrow widths.
 Deferred to M18 mobile polish pass.
 
-### Chapter List (`chapters/index` + embedded in `novels/show`)
-*(to be filled in at M16)*
+### Chapter List (`chapters/index`)
+
+Table view of all chapters for a novel, ordered by chapter number.
+
+Structure: breadcrumb → page header (title + "Upload Chapter(s)" button) → data table or empty state.
+
+Table columns: `#` (linked to chapter show), `Title`, `Status` (badge), `Korean Source` (download link or —), `Translated Output` (download link or —), Actions (Edit + Remove).
+
+Empty state has a CTA link to `new_novel_chapter_path`.
+
+`data-testid="chapters-table"` on the table, `data-testid="chapters-empty"` on the empty state.
+
+**Chapter show** (`chapters/show`): breadcrumb → page header (chapter number + optional title, Edit + Remove buttons, status badge) → files card with Korean Source and Translated Output download buttons.
+
+**Chapter new** (`chapters/new`): breadcrumb → page header → two-panel upload grid. Left panel: bulk upload (multiple files, numbers parsed from filenames). Right panel: single upload (explicit number, optional title, file, status select). `data-testid="bulk-upload-fieldset"` and `data-testid="single-upload-fieldset"`.
+
+Form primitives (`.form-group`, `.form-label`, `.form-input`, `.form-select`, `.form-hint`, `.form-actions`, `.form-errors`) defined in `_chapters.css` — shared with the jobs trigger form.
 
 ### Translation Jobs (`translation_jobs/index` + `translation_jobs/show`)
-*(to be filled in at M16)*
+
+**Index** (`translation_jobs/index`): breadcrumb → page header → trigger form card → divider → job table or empty state.
+
+Trigger form in a `.card.jobs-trigger` wrapper. Fields: job type select, chapter start, chapter end. `data-testid="job-trigger-form"` on the card wrapper.
+
+Table columns: Type, Chapters, Status (badge), Triggered by, Started, Actions (View link + Cancel button for queued jobs only). `data-testid="jobs-table"` on the table, `data-testid="jobs-empty"` on the empty state.
+
+**Show** (`translation_jobs/show`): breadcrumb → page header (job type title + Cancel button if queued) → polled status frame → output block or pending message.
+
+Polling: the `<turbo-frame id="job-status">` is wrapped in `data-controller="poll" data-poll-interval-value="3000"` **only when the job is active** (queued or running). `poll_controller.ts` calls `frame.reload()` every 3s. When the job reaches a terminal state, the wrapper div is absent — the controller never connects and polling stops automatically. No cleanup logic needed.
+
+Output block (`data-testid="job-output"`): monospace `<pre>` with `result_payload`. Pending message (`data-testid="job-pending-message"`): shown when active with no output yet.
+
+`data-testid="job-detail"` on the page header div.
+
+### Status Badge (`components/_status_badge.html.erb`)
+
+Single component for all status values across chapters and jobs.
+
+Usage:
+```erb
+<%= render "components/status_badge", status: chapter.status %>
+<%= render "components/status_badge", status: job.status %>
+```
+
+Outputs `<span class="status-badge status-badge--{status}" data-testid="status-badge">`. CSS modifier class is derived directly from the status string. Token values per status defined in `application.css` (all `--color-status-*` variables). Styles in `_jobs.css`.
 
 ### Bible Views
 *(to be filled in at M17)*

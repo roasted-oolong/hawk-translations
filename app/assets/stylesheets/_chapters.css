@@ -1,0 +1,256 @@
+/* ==========================================================================
+   _chapters.css
+   Chapter index table, chapter show page, and upload form panels.
+   ========================================================================== */
+
+/* --- Data table — shared base used by chapters and jobs --- */
+.data-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.data-table__th {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  background-color: var(--color-bg);
+}
+
+.data-table__th--actions {
+  text-align: right;
+}
+
+.data-table__th--number {
+  width: 3rem;
+}
+
+.data-table__row:not(:last-child) {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.data-table__row:hover {
+  background-color: var(--color-primary-subtle);
+}
+
+.data-table__td {
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text-secondary);
+  vertical-align: middle;
+}
+
+.data-table__td--number {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.data-table__td--title {
+  color: var(--color-text);
+  max-width: 20rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.data-table__td--actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.data-table__td--date {
+  white-space: nowrap;
+}
+
+.data-table__link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+}
+
+.data-table__link:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+/* --- Chapter show page --- */
+.chapter-show__meta {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.chapter-show__meta-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.chapter-show__meta-label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.chapter-show__files {
+  margin-top: var(--space-6);
+}
+
+.chapter-show__files-title {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin-bottom: var(--space-4);
+}
+
+.chapter-show__file-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.chapter-show__file-row:last-child {
+  border-bottom: none;
+}
+
+.chapter-show__file-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.chapter-show__file-value {
+  font-size: var(--text-sm);
+}
+
+/* --- Upload form panels --- */
+.upload-panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
+  gap: var(--space-6);
+  margin-top: var(--space-2);
+}
+
+.upload-panel__header {
+  margin-bottom: var(--space-5);
+}
+
+.upload-panel__title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
+}
+
+.upload-panel__description {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.upload-panel__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* --- Shared form primitives (used across chapters + jobs) --- */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.form-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.form-input {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  width: 100%;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.form-input--file {
+  padding: var(--space-2);
+  cursor: pointer;
+}
+
+.form-select {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  width: 100%;
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.form-hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.form-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.form-errors {
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-danger-subtle);
+  border: 1px solid var(--color-flash-alert-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+}
+
+.form-errors__summary {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-flash-alert-text);
+  margin-bottom: var(--space-2);
+}
+
+.form-errors__list {
+  font-size: var(--text-sm);
+  color: var(--color-flash-alert-text);
+  padding-left: var(--space-4);
+}

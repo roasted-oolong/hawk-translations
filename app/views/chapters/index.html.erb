@@ -1,49 +1,83 @@
-<h1>Chapters — <%= @novel.title %></h1>
+<%# app/views/chapters/index.html.erb %>
+<% content_for :title, "Chapters — #{@novel.title} — Hawk" %>
 
-<p><%= link_to "Back to novel", @novel %></p>
-<%= link_to "Upload Chapter(s)", new_novel_chapter_path(@novel) %>
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Chapters", nil]
+    ] %>
+
+<div class="page-header">
+  <div class="page-header__row">
+    <h1 class="page-title">Chapters</h1>
+    <%= link_to "Upload Chapter(s)", new_novel_chapter_path(@novel),
+          class: "btn btn--primary btn--sm" %>
+  </div>
+</div>
 
 <% if @chapters.none? %>
-  <p>No chapters yet.</p>
+  <div class="empty-state" data-testid="chapters-empty">
+    <p class="empty-state__message">No chapters yet.</p>
+    <p class="empty-state__action">
+      <%= link_to "Upload the first chapter", new_novel_chapter_path(@novel),
+            class: "btn btn--primary" %>
+    </p>
+  </div>
 <% else %>
-  <table>
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Title</th>
-        <th>Status</th>
-        <th>Korean Source</th>
-        <th>Translated Output</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @chapters.each do |chapter| %>
+  <div class="data-table-wrapper">
+    <table class="data-table" data-testid="chapters-table">
+      <thead>
         <tr>
-          <td><%= link_to chapter.number, novel_chapter_path(@novel, chapter) %></td>
-          <td><%= chapter.title.presence || "—" %></td>
-          <td><%= chapter.status %></td>
-          <td>
-            <% if chapter.korean_source.attached? %>
-              <%= link_to "Download", download_korean_source_novel_chapter_path(@novel, chapter) %>
-            <% else %>
-              —
-            <% end %>
-          </td>
-          <td>
-            <% if chapter.translated_output.attached? %>
-              <%= link_to "Download", download_translated_output_novel_chapter_path(@novel, chapter) %>
-            <% else %>
-              —
-            <% end %>
-          </td>
-          <td>
-            <%= link_to "Edit", edit_novel_chapter_path(@novel, chapter) %> |
-            <%= button_to "Remove", novel_chapter_path(@novel, chapter), method: :delete,
-                data: { turbo_confirm: "Remove chapter #{chapter.number}?" } %>
-          </td>
+          <th class="data-table__th data-table__th--number">#</th>
+          <th class="data-table__th">Title</th>
+          <th class="data-table__th">Status</th>
+          <th class="data-table__th">Korean Source</th>
+          <th class="data-table__th">Translated Output</th>
+          <th class="data-table__th data-table__th--actions"><span class="sr-only">Actions</span></th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% @chapters.each do |chapter| %>
+          <tr class="data-table__row">
+            <td class="data-table__td data-table__td--number">
+              <%= link_to chapter.number, novel_chapter_path(@novel, chapter),
+                    class: "data-table__link" %>
+            </td>
+            <td class="data-table__td data-table__td--title">
+              <%= chapter.title.presence || %(<span class="text-muted">—</span>).html_safe %>
+            </td>
+            <td class="data-table__td">
+              <%= render "components/status_badge", status: chapter.status %>
+            </td>
+            <td class="data-table__td">
+              <% if chapter.korean_source.attached? %>
+                <%= link_to "Download",
+                      download_korean_source_novel_chapter_path(@novel, chapter),
+                      class: "data-table__link" %>
+              <% else %>
+                <span class="text-muted">—</span>
+              <% end %>
+            </td>
+            <td class="data-table__td">
+              <% if chapter.translated_output.attached? %>
+                <%= link_to "Download",
+                      download_translated_output_novel_chapter_path(@novel, chapter),
+                      class: "data-table__link" %>
+              <% else %>
+                <span class="text-muted">—</span>
+              <% end %>
+            </td>
+            <td class="data-table__td data-table__td--actions">
+              <%= link_to "Edit", edit_novel_chapter_path(@novel, chapter),
+                    class: "btn btn--ghost btn--xs" %>
+              <%= button_to "Remove", novel_chapter_path(@novel, chapter),
+                    method: :delete,
+                    class: "btn btn--danger btn--xs",
+                    data: { turbo_confirm: "Remove Chapter #{chapter.number}? This cannot be undone." } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
 <% end %>

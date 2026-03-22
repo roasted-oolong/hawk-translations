@@ -137,20 +137,27 @@ Deliverables:
 ---
 
 ## Milestone 16 — Chapter List & Translation Jobs
-**Status: 🔲 Not Started**
+**Status: ✅ Complete**
 
 The most-used views during active translation work. After this milestone the daily
 workflow (upload → trigger job → monitor → download) is fully usable.
 
 Deliverables:
-- `app/views/chapters/index.html.erb` — chapter table with status badges, upload button, download links
-- `app/views/chapters/new.html.erb` — file upload form (single + bulk)
-- `app/views/translation_jobs/index.html.erb` — job list with status badges + trigger form
-- `app/views/translation_jobs/show.html.erb` — job output / error display
-- `app/views/components/_status_badge.html.erb` — status badge component
-- Job status polling via Turbo Streams or meta-refresh (decision at this milestone)
-- System specs: chapter list, file upload form, job trigger form, job status display
-- UI.md updated — badge component, polling pattern documented
+- ✅ `app/views/chapters/index.html.erb` — chapter table with status badges, upload button, download links
+- ✅ `app/views/chapters/new.html.erb` — file upload form (single + bulk panels)
+- ✅ `app/views/chapters/show.html.erb` — status badge, file download card
+- ✅ `app/views/translation_jobs/index.html.erb` — job list with status badges + trigger form
+- ✅ `app/views/translation_jobs/show.html.erb` — job detail, result payload, Turbo Frame polling
+- ✅ `app/views/translation_jobs/_form.html.erb` — styled trigger form
+- ✅ `app/views/components/_status_badge.html.erb` — status badge component (chapter + job statuses)
+- ✅ `app/javascript/controllers/poll_controller.ts` — Stimulus controller; calls `frame.reload()` every 3s; only mounted when job is active
+- ✅ `app/assets/stylesheets/_chapters.css` — data table base, chapter show, upload panels, shared form primitives
+- ✅ `app/assets/stylesheets/_jobs.css` — status badge variants, jobs trigger card, job detail page
+- ✅ `app/assets/stylesheets/application.css` — `_chapters`, `_jobs` added to import chain
+- ✅ `spec/system/m16_chapters_jobs_spec.rb` — 40 examples, all passing
+- ✅ `rspec` — full suite passing, no regressions
+- ✅ UI.md updated — chapter/jobs page notes, badge component, polling pattern documented
+- ✅ DECISIONS.md updated — M16 polling decision recorded
 
 ---
 

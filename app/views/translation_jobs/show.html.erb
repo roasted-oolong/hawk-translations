@@ -1,42 +1,115 @@
-<h1><%= @translation_job.job_type.humanize %></h1>
+<%# app/views/translation_jobs/show.html.erb
+#
+# Translation job detail page.
+#
+# Status polling:
+#   When a job is active (queued or running), the job-status turbo-frame is
+#   wrapped in a div with data-controller="poll". The poll_controller calls
+#   frame.reload() every 3 seconds, re-fetching this page and swapping only
+#   the matching turbo-frame content.
+#
+#   When the job reaches a terminal state (completed or failed), the server
+#   renders the frame WITHOUT the poll wrapper, so the controller is never
+#   mounted and polling does not start. No cleanup needed.
+%>
+<% content_for :title, "#{@translation_job.job_type.humanize} Job — #{@novel.title} — Hawk" %>
 
-<p><%= link_to "← Back to jobs", novel_translation_jobs_path(@novel) %></p>
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Translation Jobs", novel_translation_jobs_path(@novel)],
+      [@translation_job.job_type.humanize, nil]
+    ] %>
 
-<dl>
-  <dt>Novel</dt>
-  <dd><%= link_to @novel.title, @novel %></dd>
+<div class="page-header" data-testid="job-detail">
+  <div class="page-header__row">
+    <h1 class="page-title"><%= @translation_job.job_type.humanize %></h1>
+    <% if @translation_job.cancellable? %>
+      <%= button_to "Cancel job",
+            novel_translation_job_path(@novel, @translation_job),
+            method: :delete,
+            class: "btn btn--danger btn--sm",
+            data: { turbo_confirm: "Cancel this queued job?" } %>
+    <% end %>
+  </div>
+</div>
 
-  <dt>Job type</dt>
-  <dd><%= @translation_job.job_type.humanize %></dd>
-
-  <dt>Chapters</dt>
-  <dd><%= @translation_job.chapter_range_label || "—" %></dd>
-
-  <dt>Status</dt>
-  <dd><%= @translation_job.status.capitalize %></dd>
-
-  <dt>Triggered by</dt>
-  <dd><%= @translation_job.user.name %></dd>
-
-  <dt>Triggered at</dt>
-  <dd><%= @translation_job.created_at.strftime("%b %-d, %Y %H:%M") %></dd>
-
-  <% if @translation_job.updated_at != @translation_job.created_at %>
-    <dt>Last updated</dt>
-    <dd><%= @translation_job.updated_at.strftime("%b %-d, %Y %H:%M") %></dd>
-  <% end %>
-</dl>
-
-<% if @translation_job.result_payload.present? %>
-  <h2>Output</h2>
-  <pre><%= @translation_job.result_payload %></pre>
-<% elsif @translation_job.queued? || @translation_job.running? %>
-  <p><em>Job is <%= @translation_job.status %> — output will appear here when complete.</em></p>
+<%# ------------------------------------------------------------------ %>
+<%# Poll wrapper — only rendered when job is active                    %>
+<%#                                                                     %>
+<%# poll_controller mounts on this div and calls frame.reload() every  %>
+<%# 3s. When the job is terminal the wrapper is absent, so the         %>
+<%# controller never connects and polling never starts.                 %>
+<%# ------------------------------------------------------------------ %>
+<% if @translation_job.queued? || @translation_job.running? %>
+  <div data-controller="poll" data-poll-interval-value="3000">
 <% end %>
 
-<% if @translation_job.cancellable? %>
-  <%= button_to "Cancel job",
-        novel_translation_job_path(@novel, @translation_job),
-        method: :delete,
-        data: { turbo_confirm: "Cancel this queued job?" } %>
+<%= turbo_frame_tag "job-status" do %>
+
+  <div class="card job-detail__card">
+    <dl class="job-detail__meta">
+      <div class="job-detail__meta-row">
+        <dt class="job-detail__meta-label">Novel</dt>
+        <dd class="job-detail__meta-value">
+          <%= link_to @novel.title, @novel, class: "data-table__link" %>
+        </dd>
+      </div>
+      <div class="job-detail__meta-row">
+        <dt class="job-detail__meta-label">Job type</dt>
+        <dd class="job-detail__meta-value"><%= @translation_job.job_type.humanize %></dd>
+      </div>
+      <div class="job-detail__meta-row">
+        <dt class="job-detail__meta-label">Chapters</dt>
+        <dd class="job-detail__meta-value">
+          <%= @translation_job.chapter_range_label || %(<span class="text-muted">—</span>).html_safe %>
+        </dd>
+      </div>
+      <div class="job-detail__meta-row">
+        <dt class="job-detail__meta-label">Status</dt>
+        <dd class="job-detail__meta-value">
+          <%= render "components/status_badge", status: @translation_job.status %>
+        </dd>
+      </div>
+      <div class="job-detail__meta-row">
+        <dt class="job-detail__meta-label">Triggered by</dt>
+        <dd class="job-detail__meta-value"><%= @translation_job.user.name %></dd>
+      </div>
+      <div class="job-detail__meta-row">
+        <dt class="job-detail__meta-label">Triggered at</dt>
+        <dd class="job-detail__meta-value">
+          <%= @translation_job.created_at.strftime("%b %-d, %Y %H:%M") %>
+        </dd>
+      </div>
+      <% if @translation_job.updated_at != @translation_job.created_at %>
+        <div class="job-detail__meta-row">
+          <dt class="job-detail__meta-label">Last updated</dt>
+          <dd class="job-detail__meta-value">
+            <%= @translation_job.updated_at.strftime("%b %-d, %Y %H:%M") %>
+          </dd>
+        </div>
+      <% end %>
+    </dl>
+  </div>
+
+  <%# ---------------------------------------------------------------- %>
+  <%# Output / result section                                           %>
+  <%# ---------------------------------------------------------------- %>
+  <% if @translation_job.result_payload.present? %>
+    <div class="card job-detail__output" data-testid="job-output">
+      <h2 class="job-detail__output-title">Output</h2>
+      <pre class="job-detail__output-pre"><%= @translation_job.result_payload %></pre>
+    </div>
+  <% elsif @translation_job.queued? || @translation_job.running? %>
+    <div class="job-detail__pending" data-testid="job-pending-message">
+      <p class="job-detail__pending-text">
+        Job is <strong><%= @translation_job.status %></strong> — output will appear here when complete.
+      </p>
+    </div>
+  <% end %>
+
+<% end %>
+
+<% if @translation_job.queued? || @translation_job.running? %>
+  </div>
 <% end %>
