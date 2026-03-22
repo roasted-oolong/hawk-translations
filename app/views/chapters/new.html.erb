@@ -33,7 +33,8 @@
     <%= form_with url: novel_chapters_path(@novel), multipart: true,
           html: { class: "upload-panel__form" } do |f| %>
       <div class="form-group">
-        <%= f.label :korean_source, "Korean source files", class: "form-label" %>
+        <%= f.label :korean_source, "Korean source files",
+              for: "bulk_korean_source", class: "form-label" %>
         <div class="file-upload"
              data-controller="file-upload"
              data-action="dragover->file-upload#onDragOver dragleave->file-upload#onDragLeave drop->file-upload#onDrop">
@@ -95,7 +96,8 @@
       </div>
 
       <div class="form-group">
-        <%= f.label :korean_source, "Korean source file", class: "form-label" %>
+        <%= f.label :korean_source, "Korean source file",
+              for: "single_korean_source", class: "form-label" %>
         <div class="file-upload"
              data-controller="file-upload"
              data-action="dragover->file-upload#onDragOver dragleave->file-upload#onDragLeave drop->file-upload#onDrop">
