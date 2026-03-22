@@ -1,3 +1,19 @@
-<h1>Edit Novel</h1>
-<%= render "form", novel: @novel %>
-<%= link_to "Back", @novel %>
+<%# app/views/novels/edit.html.erb %>
+<% content_for :title, "Edit #{@novel.title} — Hawk" %>
+
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Edit", nil]
+    ] %>
+
+<div class="page-header">
+  <h1 class="page-title">Edit Novel</h1>
+  <% if @novel.korean_title.present? %>
+    <p class="page-subtitle novel-show__korean-title"><%= @novel.korean_title %></p>
+  <% end %>
+</div>
+
+<div class="card">
+  <%= render "form", novel: @novel, editing: true %>
+</div>

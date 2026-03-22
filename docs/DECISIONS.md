@@ -690,3 +690,72 @@ navigation (ArrowUp/ArrowDown/Enter/Escape), and outside-click dismissal.
 Result show paths are derived from the search endpoint URL by stripping
 `/bible/search` and appending the Rails resource segment for each bible type —
 no hardcoded paths in the controller. Minimum query length is 2 characters.
+
+---
+
+## 2026-03 · `directory_name` is read-only after creation — M18
+
+Once a novel is saved, its `directory_name` cannot be changed via the UI. The
+edit form renders the value as static monospace text with a hint explaining why,
+and the field is absent from the form entirely. `novel_update_params` in
+`NovelsController` omits `:directory_name` as defence-in-depth — even a
+hand-crafted POST cannot change it. Rationale: the pipeline dispatches jobs
+using `novel.directory_name` to locate files on disk; a UI rename with no
+corresponding filesystem rename would silently break all future jobs. A rename
+requires a developer-level intervention so the filesystem and database are
+changed together. No model-level guard added — the controller is sufficient for
+now; add a model callback if a second write path ever opens up.
+
+---
+
+## 2026-03 · `modal_controller` + `dialog_controller` — two-controller split for shared dialog — M18
+
+A single shared `<dialog id="modal-dialog">` lives in the application layout
+and is reused by every destructive action in the app. Two controllers split
+responsibilities: `modal_controller` mounts on each trigger (the `button_to`
+wrapper div) and stores the form to submit on confirm; `dialog_controller`
+mounts on the `<dialog>` element itself and handles open/close mechanics,
+backdrop clicks, and routing confirm/cancel back to the active modal controller
+via a `_modalController` property on the dialog element. This avoids Stimulus
+outlets (which require stable CSS selectors) and keeps the dialog oblivious to
+what it's confirming — it just calls `handleConfirm()` or `handleCancel()` on
+whoever opened it. All 15 previous `data-turbo-confirm` call sites replaced.
+
+---
+
+## 2026-03 · `modal_button_to` ApplicationHelper — DRY wrapper for modal-confirmed destructive actions — M18
+
+`ApplicationHelper#modal_button_to` is a drop-in replacement for `button_to`
+with `data: { turbo_confirm: "..." }`. It wraps the button in the
+`data-controller="modal"` div with the message and confirm label values, then
+forwards all remaining options to `button_to`. This keeps the 15 call sites
+clean and ensures consistent modal wiring without repeating the controller
+attribute pattern in every view. The helper is the only place that knows how
+the modal controller is wired — views just call `modal_button_to`.
+
+---
+
+## 2026-03 · `toast_controller` for Turbo Stream job completion notifications — M18
+
+`toast_controller.ts` mounts on individual toast elements appended to
+`#toast-region` via Turbo Streams. Each stream append creates a new element;
+the controller animates it in, auto-dismisses after a configurable duration
+(default 4s), and removes itself. No shared controller state — each toast is
+independent. The `#toast-region` div uses `aria-live="polite"` so screen
+readers announce new toasts without interrupting current focus. Full Turbo
+Stream wiring (appending toasts on job completion) is deferred to the next
+milestone that adds real-time job feedback; the controller and region are
+infrastructure-ready.
+
+---
+
+## 2026-03 · Novel `series_id` and `poc_user_id` scoped to org — M18
+
+Both selects on the novel form are scoped to the novel's organization:
+`series` via `Series.where(organization: org)`, `poc_user` via users who
+are members of a team in that org. `set_form_collections` runs as a
+`before_action` on `new/create/edit/update`. For the new form (before save),
+the org is not yet set on `@novel`, so it falls back to `Organization.first` —
+correct for solo MVP (one org). When multi-org management is added, this
+fallback should be replaced with a proper org selection step before the form
+is reached.

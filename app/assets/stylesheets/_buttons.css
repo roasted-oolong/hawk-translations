@@ -98,6 +98,11 @@
   font-size: var(--text-xs);
 }
 
+.btn--xs {
+  padding: 2px var(--space-2);
+  font-size: var(--text-xs);
+}
+
 .btn--lg {
   padding: var(--space-3) var(--space-6);
   font-size: var(--text-base);
@@ -110,8 +115,14 @@
   height: 2.25rem;
 }
 
-/* --- Button group (for nav sign-out etc.) --- */
+/* --- Button group ---
+     Used for paired action buttons in nav, page headers, and entry show pages.
+     Uses inline-flex so it collapses to its content width by default, but
+     flex-shrink: 0 prevents compression when inside a space-between flex row.
+------------------------------------------------------------------- */
 .btn-group {
   display: inline-flex;
+  align-items: center;
   gap: var(--space-2);
+  flex-shrink: 0;
 }

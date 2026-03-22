@@ -19,9 +19,10 @@
     </div>
     <div class="btn-group">
       <%= link_to "Edit", edit_novel_bible_cultural_phrase_path(@novel, @entry), class: "btn btn--secondary btn--sm" %>
-      <%= button_to "Remove", novel_bible_cultural_phrase_path(@novel, @entry), method: :delete,
-          class: "btn btn--danger btn--sm",
-          data: { turbo_confirm: "Remove \"#{@entry.phrase}\"?" } %>
+      <%= modal_button_to "Remove", novel_bible_cultural_phrase_path(@novel, @entry),
+            method:        :delete,
+            message:       "Remove \"#{@entry.phrase}\"?",
+            confirm_label: "Remove" %>
     </div>
   </div>
 </div>

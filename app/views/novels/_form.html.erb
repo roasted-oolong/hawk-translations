@@ -1,8 +1,20 @@
-<%= form_with model: novel do |f| %>
+<%# app/views/novels/_form.html.erb %>
+<%#
+  Locals:
+    novel  — the Novel instance (new or persisted)
+    editing — boolean, true when called from edit.html.erb
+
+  Instance variables expected from NovelsController#set_form_collections:
+    @series_options    — ActiveRecord relation of Series scoped to the novel's org
+    @poc_user_options  — ActiveRecord relation of Users scoped to the novel's org members
+%>
+<%= form_with model: novel, data: { testid: "novel-form" } do |f| %>
   <% if novel.errors.any? %>
-    <div>
-      <p><%= novel.errors.count %> error(s) prevented this novel from being saved:</p>
-      <ul>
+    <div class="form-errors" data-testid="form-errors">
+      <p class="form-errors__summary">
+        <%= pluralize(novel.errors.count, "error") %> prevented this novel from being saved:
+      </p>
+      <ul class="form-errors__list">
         <% novel.errors.full_messages.each do |msg| %>
           <li><%= msg %></li>
         <% end %>
@@ -10,58 +22,99 @@
     </div>
   <% end %>
 
-  <div>
-    <%= f.label :title %>
-    <%= f.text_field :title %>
+  <%# --- Two-column grid: short fields --- %>
+  <div class="novel-form__grid">
+    <div class="form-group">
+      <%= f.label :title, class: "form-label" %>
+      <%= f.text_field :title, class: "form-input", autofocus: !editing %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :korean_title, "Korean title", class: "form-label" %>
+      <%= f.text_field :korean_title, class: "form-input" %>
+    </div>
+
+    <% if editing %>
+      <%# directory_name is read-only after creation. Show as static text so
+          the user understands the value but cannot accidentally change it. %>
+      <div class="form-group">
+        <span class="form-label">Directory name</span>
+        <p class="novel-form__readonly" data-testid="directory-name-readonly">
+          <%= novel.directory_name %>
+        </p>
+        <span class="form-hint">
+          The pipeline directory cannot be renamed after creation.
+          Contact a developer if a rename is required.
+        </span>
+      </div>
+    <% else %>
+      <div class="form-group">
+        <%= f.label :directory_name, "Directory name", class: "form-label" %>
+        <%= f.text_field :directory_name, class: "form-input",
+              placeholder: "e.g. idols-rewind" %>
+        <span class="form-hint">
+          The exact folder name on disk. Must match the novel's pipeline directory.
+        </span>
+      </div>
+    <% end %>
+
+    <div class="form-group">
+      <%= f.label :genre, class: "form-label" %>
+      <%= f.text_field :genre, class: "form-input", placeholder: "e.g. Romance, Fantasy" %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :visibility, class: "form-label" %>
+      <%= f.select :visibility,
+            Novel.visibilities.keys.map { |v| [v.humanize, v] },
+            {},
+            class: "form-select" %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :series_id, "Series", class: "form-label" %>
+      <%= f.select :series_id,
+            @series_options.map { |s| [s.name, s.id] },
+            { include_blank: "— None —" },
+            class: "form-select" %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :poc_user_id, "Point of contact", class: "form-label" %>
+      <%= f.select :poc_user_id,
+            @poc_user_options.map { |u| [u.name, u.id] },
+            { include_blank: "— Not assigned —" },
+            class: "form-select" %>
+    </div>
   </div>
 
-  <div>
-    <%= f.label :directory_name, "Directory name" %>
-    <%= f.text_field :directory_name, placeholder: "e.g. idols-rewind" %>
-    <small>
-      The folder name on disk (e.g. <code>idols-rewind</code>).
-      Must match the novel's directory under the project root exactly.
-    </small>
+  <%# --- Full-width: long-form fields --- %>
+  <div class="form-group">
+    <%= f.label :summary, class: "form-label" %>
+    <%= f.text_area :summary, rows: 4, class: "form-input" %>
   </div>
 
-  <div>
-    <%= f.label :korean_title %>
-    <%= f.text_field :korean_title %>
+  <div class="form-group">
+    <%= f.label :tone, class: "form-label" %>
+    <%= f.text_area :tone, rows: 3, class: "form-input" %>
+    <span class="form-hint">Describe the narrative voice and register.</span>
   </div>
 
-  <div>
-    <%= f.label :genre %>
-    <%= f.text_field :genre %>
+  <div class="form-group">
+    <%= f.label :notes, class: "form-label" %>
+    <%= f.text_area :notes, rows: 3, class: "form-input" %>
   </div>
 
-  <div>
-    <%= f.label :summary %>
-    <%= f.text_area :summary, rows: 4 %>
-  </div>
-
-  <div>
-    <%= f.label :tone %>
-    <%= f.text_area :tone, rows: 3 %>
-  </div>
-
-  <div>
-    <%= f.label :notes %>
-    <%= f.text_area :notes, rows: 3 %>
-  </div>
-
-  <div>
-    <%= f.label :visibility %>
-    <%= f.select :visibility, Novel.visibilities.keys.map { |v| [v.humanize, v] } %>
-  </div>
-
-  <%# organization_id is required — MVP has one org, so we either hide this
-      or expose it as a select. For now: hidden field defaulting to the first org.
-      When multi-org UI is built, replace with a proper select. %>
+  <%# organization_id is required. On new, it defaults to the first org.
+      When multi-org management is built, replace with a proper select. %>
   <% if novel.new_record? %>
-    <%= f.hidden_field :organization_id, value: novel.organization_id || Organization.first&.id %>
+    <%= f.hidden_field :organization_id,
+          value: novel.organization_id || Organization.first&.id %>
   <% end %>
 
-  <div>
-    <%= f.submit %>
+  <div class="form-actions">
+    <%= f.submit "Save", class: "btn btn--primary" %>
+    <%= link_to "Cancel", novel.persisted? ? novel_path(novel) : novels_path,
+          class: "btn btn--ghost" %>
   </div>
 <% end %>

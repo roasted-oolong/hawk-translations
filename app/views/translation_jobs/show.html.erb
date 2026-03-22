@@ -25,21 +25,16 @@
   <div class="page-header__row">
     <h1 class="page-title"><%= @translation_job.job_type.humanize %></h1>
     <% if @translation_job.cancellable? %>
-      <%= button_to "Cancel job",
-            novel_translation_job_path(@novel, @translation_job),
-            method: :delete,
-            class: "btn btn--danger btn--sm",
-            data: { turbo_confirm: "Cancel this queued job?" } %>
+      <%= modal_button_to "Cancel job", novel_translation_job_path(@novel, @translation_job),
+            method:        :delete,
+            message:       "Cancel this queued job? It cannot be restarted.",
+            confirm_label: "Cancel job" %>
     <% end %>
   </div>
 </div>
 
 <%# ------------------------------------------------------------------ %>
 <%# Poll wrapper — only rendered when job is active                    %>
-<%#                                                                     %>
-<%# poll_controller mounts on this div and calls frame.reload() every  %>
-<%# 3s. When the job is terminal the wrapper is absent, so the         %>
-<%# controller never connects and polling never starts.                 %>
 <%# ------------------------------------------------------------------ %>
 <% if @translation_job.queued? || @translation_job.running? %>
   <div data-controller="poll" data-poll-interval-value="3000">

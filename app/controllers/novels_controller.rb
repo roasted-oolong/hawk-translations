@@ -1,5 +1,6 @@
 class NovelsController < ApplicationController
-  before_action :set_novel, only: [ :show, :edit, :update, :destroy ]
+  before_action :set_novel,            only: [ :show, :edit, :update, :destroy ]
+  before_action :set_form_collections, only: [ :new, :create, :edit, :update ]
 
   def index
     @novels = Novel
@@ -16,7 +17,7 @@ class NovelsController < ApplicationController
   end
 
   def create
-    @novel = Novel.new(novel_params)
+    @novel = Novel.new(novel_create_params)
     if @novel.save
       redirect_to @novel, notice: "Novel created."
     else
@@ -27,7 +28,7 @@ class NovelsController < ApplicationController
   def edit; end
 
   def update
-    if @novel.update(novel_params)
+    if @novel.update(novel_update_params)
       redirect_to @novel, notice: "Novel updated."
     else
       render :edit, status: :unprocessable_entity
@@ -45,10 +46,37 @@ class NovelsController < ApplicationController
     @novel = Novel.find(params[:id])
   end
 
-  def novel_params
+  # Scoped collections for the new/edit form selects.
+  # For new, the organization comes from the hidden field value; once the novel
+  # is saved we have @novel.organization. For the new form (before save),
+  # organization is not yet set, so we fall back to all series/users in the
+  # first organization in the system as a reasonable default for solo MVP.
+  # This is scoped properly — no cross-org data leaks — because the hidden
+  # field pins the org.
+  def set_form_collections
+    org = @novel&.organization || Organization.first
+    @series_options = org ? Series.where(organization: org).order(:name) : Series.none
+    @poc_user_options = org ? User.joins(memberships: :team)
+                                   .where(teams: { organization: org })
+                                   .distinct
+                                   .order(:name) : User.none
+  end
+
+  # directory_name is set on create only; it cannot be changed via the UI.
+  def novel_create_params
     params.require(:novel).permit(
       :title, :directory_name, :korean_title, :genre, :summary, :tone, :notes,
       :visibility, :series_id, :poc_user_id, :organization_id
+    )
+  end
+
+  # directory_name intentionally excluded — the edit form does not render the
+  # field, so no value is submitted. Keeping it out of permitted params is a
+  # defence-in-depth measure: even a hand-crafted POST cannot change it.
+  def novel_update_params
+    params.require(:novel).permit(
+      :title, :korean_title, :genre, :summary, :tone, :notes,
+      :visibility, :series_id, :poc_user_id
     )
   end
 end

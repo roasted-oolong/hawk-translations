@@ -19,15 +19,15 @@
     </div>
     <div class="btn-group">
       <%= link_to "Edit", edit_novel_bible_character_path(@novel, @entry), class: "btn btn--secondary btn--sm" %>
-      <%= button_to "Remove", novel_bible_character_path(@novel, @entry), method: :delete,
-          class: "btn btn--danger btn--sm",
-          data: { turbo_confirm: "Remove #{@entry.name}?" } %>
+      <%= modal_button_to "Remove", novel_bible_character_path(@novel, @entry),
+            method:        :delete,
+            message:       "Remove #{@entry.name}?",
+            confirm_label: "Remove" %>
     </div>
   </div>
 </div>
 
 <div class="card bible-entry">
-  <%# Quick-reference meta row %>
   <div class="bible-entry__meta">
     <% if @entry.role.present? %>
       <div class="bible-entry__meta-item">
@@ -55,7 +55,6 @@
     <% end %>
   </div>
 
-  <%# Long-form fields %>
   <% if @entry.physical_description.present? %>
     <div class="bible-entry__section">
       <h2 class="bible-entry__section-title">Physical Description</h2>

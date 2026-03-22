@@ -63,11 +63,11 @@
               <%= link_to "View", novel_translation_job_path(@novel, job),
                     class: "btn btn--ghost btn--xs" %>
               <% if job.cancellable? %>
-                <%= button_to "Cancel",
-                      novel_translation_job_path(@novel, job),
-                      method: :delete,
-                      class: "btn btn--danger btn--xs",
-                      data: { turbo_confirm: "Cancel this queued job?" } %>
+                <%= modal_button_to "Cancel", novel_translation_job_path(@novel, job),
+                      method:        :delete,
+                      message:       "Cancel this queued job? It cannot be restarted.",
+                      confirm_label: "Cancel job",
+                      button_class:  "btn btn--danger btn--xs" %>
               <% end %>
             </td>
           </tr>

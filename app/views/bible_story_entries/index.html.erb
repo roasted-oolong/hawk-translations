@@ -52,9 +52,11 @@
                 <td class="data-table__td"><%= entry.first_appearance_chapter ? "Ch. #{entry.first_appearance_chapter}" : "—" %></td>
                 <td class="data-table__td data-table__td--actions">
                   <%= link_to "Edit", edit_novel_bible_story_entry_path(@novel, entry), class: "btn btn--ghost btn--sm" %>
-                  <%= button_to "Remove", novel_bible_story_entry_path(@novel, entry), method: :delete,
-                      class: "btn btn--danger btn--sm",
-                      data: { turbo_confirm: "Remove \"#{entry.title}\"?" } %>
+                  <%= modal_button_to "Remove", novel_bible_story_entry_path(@novel, entry),
+                        method:        :delete,
+                        message:       "Remove \"#{entry.title}\"?",
+                        confirm_label: "Remove",
+                        button_class:  "btn btn--danger btn--sm" %>
                 </td>
               </tr>
             <% end %>
