@@ -26,9 +26,10 @@
     </div>
     <div class="btn-group">
       <%= link_to "Edit", edit_novel_bible_story_entry_path(@novel, @entry), class: "btn btn--secondary btn--sm" %>
-      <%= button_to "Remove", novel_bible_story_entry_path(@novel, @entry), method: :delete,
-          class: "btn btn--danger btn--sm",
-          data: { turbo_confirm: "Remove \"#{@entry.title}\"?" } %>
+      <%= modal_button_to "Remove", novel_bible_story_entry_path(@novel, @entry),
+            method:        :delete,
+            message:       "Remove \"#{@entry.title}\"?",
+            confirm_label: "Remove" %>
     </div>
   </div>
 </div>

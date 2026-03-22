@@ -1,3 +1,15 @@
-<h1>New Novel</h1>
-<%= render "form", novel: @novel %>
-<%= link_to "Back", novels_path %>
+<%# app/views/novels/new.html.erb %>
+<% content_for :title, "New Novel — Hawk" %>
+
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      ["New Novel", nil]
+    ] %>
+
+<div class="page-header">
+  <h1 class="page-title">New Novel</h1>
+</div>
+
+<div class="card">
+  <%= render "form", novel: @novel, editing: false %>
+</div>

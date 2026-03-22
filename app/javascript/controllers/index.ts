@@ -13,3 +13,12 @@ application.register("poll", PollController)
 
 import ComboboxController from "./combobox_controller"
 application.register("combobox", ComboboxController)
+
+import ModalController from "./modal_controller"
+application.register("modal", ModalController)
+
+import DialogController from "./dialog_controller"
+application.register("dialog", DialogController)
+
+import ToastController from "./toast_controller"
+application.register("toast", ToastController)

@@ -16,9 +16,10 @@
     </div>
     <div class="btn-group">
       <%= link_to "Edit", edit_novel_path(@novel), class: "btn btn--secondary btn--sm" %>
-      <%= button_to "Remove", @novel, method: :delete,
-            class: "btn btn--danger btn--sm",
-            data: { turbo_confirm: "Remove \"#{@novel.title}\"? This cannot be undone." } %>
+      <%= modal_button_to "Remove", @novel,
+            method:        :delete,
+            message:       "Remove \"#{@novel.title}\"? This cannot be undone.",
+            confirm_label: "Remove" %>
     </div>
   </div>
 
@@ -60,7 +61,6 @@
   <% if @chapters.none? %>
     <p class="empty-state__message">No chapters yet.</p>
   <% else %>
-    <%# Status summary row %>
     <% untranslated_count = @chapters.count(&:untranslated?) %>
     <% translated_count   = @chapters.count(&:translated?) %>
     <% reviewed_count     = @chapters.count(&:reviewed?) %>

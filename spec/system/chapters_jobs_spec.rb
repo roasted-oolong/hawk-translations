@@ -258,8 +258,14 @@ RSpec.describe "M16 Chapter List & Translation Jobs", type: :system do
 
       it "removes the job and shows a notice after cancellation" do
         visit novel_translation_jobs_path(novel)
+
+        # Cancel button now opens the shared confirmation modal.
+        # Complete the modal flow before asserting the flash.
         click_button "Cancel"
-        expect(page).to have_text("Job cancelled")
+        expect(page).to have_selector("[data-testid='modal-dialog'][open]")
+        find("[data-testid='modal-dialog'] [data-modal-confirm]").click
+
+        expect(page).to have_text("Job cancelled.")
       end
     end
   end

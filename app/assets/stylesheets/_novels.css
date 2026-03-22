@@ -1,6 +1,6 @@
 /* ==========================================================================
    _novels.css
-   Novel card, novel index grid, and novel show page layout.
+   Novel card, novel index grid, novel show page layout, and novel form.
    ========================================================================== */
 
 /* --- Novel grid — used on dashboard and novel index --- */
@@ -200,40 +200,52 @@
   letter-spacing: 0.05em;
 }
 
-/* --- Bible summary grid (novel show) --- */
-/* NOTE: These classes are no longer used as of M17 (bible section moved to
-   BibleController). Retained here for safety; remove at M18 polish pass. */
-.bible-summary-grid {
+/* --- Novel form (new + edit) --- */
+
+/* Two-column grid for short fields — mirrors .bible-form__grid */
+.novel-form__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
-  gap: var(--space-3);
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4) var(--space-6);
+  margin-bottom: var(--space-4);
 }
 
-.bible-summary-grid__item {
-  background-color: var(--color-accent-subtle);
+/* Read-only directory_name display on edit */
+.novel-form__readonly {
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  font-family: var(--font-family-mono);
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: var(--space-4);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  margin: 0;
+  /* Prevents the element from looking interactive */
+  cursor: default;
+  user-select: all; /* Allow copy but not edit */
 }
 
-.bible-summary-grid__label {
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-accent);
-  text-decoration: none;
-}
+/* --- Mobile layout pass --- */
+@media (max-width: 640px) {
+  /* Novel index card grid: single column */
+  .novel-grid {
+    grid-template-columns: 1fr;
+  }
 
-.bible-summary-grid__label:hover {
-  text-decoration: underline;
-}
+  /* Novel show section header: stack title above button */
+  .novel-show__section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
 
-.bible-summary-grid__count {
-  font-size: var(--text-xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text);
-  line-height: 1;
+  /* Chapter status summary: tighten horizontal gap */
+  .chapter-status-summary {
+    gap: var(--space-4);
+  }
+
+  /* Novel form grid: single column on mobile */
+  .novel-form__grid {
+    grid-template-columns: 1fr;
+  }
 }

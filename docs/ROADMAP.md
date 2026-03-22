@@ -192,16 +192,28 @@ Deliverables:
 ---
 
 ## Milestone 18 — Forms & Polish
-**Status: 🔲 Not Started**
+**Status: ✅ Complete**
 
-Remaining forms and overall UI consistency pass. The app should feel finished after this.
+Remaining forms, modal confirmation system, toast infrastructure, and overall UI consistency pass.
 
 Deliverables:
-- `app/views/novels/new.html.erb` + `edit.html.erb` — styled novel creation/edit form
-- `app/views/novels/_form.html.erb` — clean field layout, inline validation errors
-- Empty state components — consistent across all index views
-- Destructive action confirmation styling — modal controller replaces turbo_confirm where appropriate
-- Mobile layout pass — readable on a phone (not a native app, just not broken)
-- System specs: novel create/edit form, empty state rendering
-- Final UI.md pass — all components and patterns documented
-- Final DECISIONS.md pass — any deferred frontend decisions resolved
+- ✅ `app/views/novels/new.html.erb` — breadcrumb + page header + card-wrapped form
+- ✅ `app/views/novels/edit.html.erb` — same structure; Korean title in subtitle; `directory_name` read-only
+- ✅ `app/views/novels/_form.html.erb` — two-column grid layout, inline validation errors, `series_id` + `poc_user_id` selects scoped to org, `directory_name` field absent on edit (static display only)
+- ✅ `app/controllers/novels_controller.rb` — `novel_create_params` / `novel_update_params` split; `set_form_collections` before_action for org-scoped series + POC selects; `directory_name` excluded from update params as defence-in-depth
+- ✅ `app/helpers/application_helper.rb` — `modal_button_to` helper replaces all `button_to` + `turbo_confirm` call sites (15 total across 9 view files)
+- ✅ `app/javascript/controllers/modal_controller.ts` — mounts on each destructive trigger; opens shared dialog; stores pending form
+- ✅ `app/javascript/controllers/dialog_controller.ts` — mounts on `<dialog>`; routes confirm/cancel back to active modal controller via top-layer-safe callback pattern
+- ✅ `app/javascript/controllers/toast_controller.ts` — enter/exit animation, auto-dismiss, type variants; infrastructure-ready for Turbo Stream job notifications
+- ✅ `app/javascript/controllers/index.ts` — modal, dialog, toast controllers registered
+- ✅ `app/views/layouts/application.html.erb` — shared `<dialog id="modal-dialog">` + `#toast-region` added
+- ✅ All 15 `turbo_confirm` call sites replaced with `modal_button_to` across novels, chapters, jobs, and all five bible categories
+- ✅ `app/assets/stylesheets/_modal.css` — dialog panel, backdrop, toast region, toast variants, mobile stacking
+- ✅ `app/assets/stylesheets/_novels.css` — `.novel-form__grid`, `.novel-form__readonly`, mobile stacking; dead `.bible-summary-grid` CSS removed
+- ✅ `app/assets/stylesheets/_layout.css` — `.sr-only` utility; mobile stacking for `.page-header__row`
+- ✅ `app/assets/stylesheets/_buttons.css` — `.btn--xs` size variant added; `.btn-group` properties consolidated
+- ✅ `app/assets/stylesheets/application.css` — `_modal.css` added to import chain
+- ✅ `spec/system/novels_forms_spec.rb` — novel create/edit form, validation errors, directory_name read-only, empty state, modal open/cancel/confirm
+- ✅ `spec/system/chapters_jobs_spec.rb` — cancel flow updated to go through modal confirmation
+- ✅ `rspec` — full suite passing, no regressions
+- ✅ DECISIONS.md updated — M18 entries (directory_name read-only, modal controller split, modal_button_to helper, toast controller, org-scoped form collections)
