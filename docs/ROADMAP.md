@@ -48,199 +48,13 @@ Goal: sidebar navigation, gallery-style novel cards with cover art, and a refine
 ---
 
 # M18.5 — Design System Reconciliation
- 
-**Status: 🔲 Not Started**
- 
-Adopt the editorial palette and typography from the Literary Workspace design spec
-before any Phase 3 work begins. Changes are confined to `application.css` and
-`_typography.css` plus two font files. No structural changes to views or component
-partials — existing views pick up the new palette automatically through the token system.
- 
----
- 
-## What changes and why
- 
-The app was built with a blue-slate SaaS palette (`primary: #2563EB`, `background:
-#F8FAFC`) chosen at M14 via a design generator. The intended design direction is an
-editorial slate-blue palette (`primary: #4e6078`, `background: #f9f9f8`) with
-Newsreader serif and tinted ambient shadows. The Phase 3 sidebar and novel card will
-be built against these tokens — doing the swap now means nothing written in M19–M21
-needs to be rewritten.
- 
----
- 
-## `application.css` — token changes
- 
-Replace the entire `:root` block. Changes from current state:
- 
-### Colours — replace M14 blue-slate with editorial slate-blue
- 
-```css
-/* --- Colour: base --- */
---color-bg:                   #f9f9f8;
---color-surface:              #f9f9f8;
---color-surface-manuscript:   #ffffff;  /* NEW — active reading/translation area */
---color-surface-low:          #f2f4f3;  /* NEW — side panels, secondary containers */
---color-surface-container:    #ebeeed;  /* NEW — utility panels */
---color-surface-dim:          #d4dcda;  /* NEW — tonal boundary element */
---color-border:               rgba(173, 179, 178, 0.15); /* ghost border — felt, not seen */
---color-border-strong:        #adb3b2;  /* full opacity — focus rings, explicit dividers */
- 
-/* --- Colour: text --- */
---color-text:                 #2d3433;  /* on_surface — never pure black */
---color-text-secondary:       #5a6672;
---color-text-muted:           #adb3b2;
---color-text-inverse:         #f5f7ff;
- 
-/* --- Colour: brand --- */
---color-primary:              #4e6078;
---color-primary-hover:        #42546c;  /* primary_dim */
---color-primary-subtle:       #f2f4f3;
---color-secondary:            #adb3b2;
---color-accent:               #7C3AED;  /* unchanged — violet bible identity */
---color-accent-subtle:        #F5F3FF;  /* unchanged */
-```
- 
-### Shadows — retint with `on_surface` base instead of black
- 
-```css
---shadow-xs: 0 1px 2px rgba(45, 52, 51, 0.04);
---shadow-sm: 0 1px 3px rgba(45, 52, 51, 0.06), 0 1px 2px rgba(45, 52, 51, 0.03);
---shadow-md: 0 12px 32px -4px rgba(45, 52, 51, 0.06);
---shadow-lg: 0 12px 32px -4px rgba(45, 52, 51, 0.08), 0 4px 8px rgba(45, 52, 51, 0.04);
-```
- 
-### Glassmorphism — new tokens
- 
-```css
---glass-bg:   rgba(255, 255, 255, 0.80);
---glass-blur: blur(20px);
-```
- 
-### Typography — add serif
- 
-```css
---font-family-serif: "Newsreader", Georgia, "Times New Roman", serif;
-```
- 
-### Layout — replace `--nav-height` with sidebar/topbar tokens
- 
-```css
---sidebar-width:  15rem;   /* 240px */
---topbar-height:  3rem;    /* 48px */
-```
- 
-Remove `--nav-height: 3.5rem`.
- 
-### Status tokens — update to match new primary
- 
-```css
---color-status-translated-text:   #4e6078;
---color-status-translated-bg:     #e8ecf0;
---color-status-untranslated-text:  #5a6672;
---color-status-queued-text:        #5a6672;
-```
- 
-All other status tokens (reviewed, running, completed, failed) and all flash tokens
-are unchanged — they are semantic greens/ambers/reds that work with both palettes.
- 
-### Add Newsreader `@font-face` declarations
- 
-Add above the existing Inter `@font-face` blocks:
- 
-```css
-@font-face {
-  font-family: "Newsreader";
-  src: url("/assets/fonts/newsreader/Newsreader-VariableFont_opsz,wght.woff2") format("woff2-variations");
-  font-weight: 300 700;
-  font-style: normal;
-  font-display: swap;
-}
- 
-@font-face {
-  font-family: "Newsreader";
-  src: url("/assets/fonts/newsreader/Newsreader-Italic-VariableFont_opsz,wght.woff2") format("woff2-variations");
-  font-weight: 300 700;
-  font-style: italic;
-  font-display: swap;
-}
-```
- 
----
- 
-## `_typography.css` — add serif utilities
- 
-Add after the existing utility classes:
- 
-```css
-/* --- Serif utilities (Newsreader) --- */
-.text-serif {
-  font-family: var(--font-family-serif);
-  line-height: 1.6;
-}
- 
-.text-serif-display {
-  font-family: var(--font-family-serif);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: -0.01em;
-  line-height: 1.2;
-}
- 
-.text-serif-body {
-  font-family: var(--font-family-serif);
-  font-size: var(--text-base);
-  line-height: 1.6;
-}
-```
- 
----
- 
-## Font files required
- 
-Place before running the app. Not committed to the repo — same pattern as Inter.
- 
-```
-app/assets/fonts/newsreader/Newsreader-VariableFont_opsz,wght.woff2
-app/assets/fonts/newsreader/Newsreader-Italic-VariableFont_opsz,wght.woff2
-```
- 
-Download from [Google Fonts — Newsreader](https://fonts.google.com/specimen/Newsreader).
-Select the variable font download. Filenames must match exactly as shown above.
- 
----
- 
-## Things to check after the swap
- 
-Grep each component CSS file for any hardcoded raw values that should be tokens —
-there should be zero if the token system has been used correctly throughout, but
-worth confirming before calling the milestone done:
- 
-- `#2563EB` — old primary
-- `#0F172A` — old text
-- `#F8FAFC` — old background
- 
-`--color-surface` is still present (now `#f9f9f8` instead of `#ffffff`). Cards
-and panels that need paper-white should now use `--color-surface-manuscript`
-explicitly. Scan for `.novel-card`, `.card`, and `.bible-entry` usages in the
-component CSS and update where appropriate.
- 
----
- 
-## Specs
- 
-No new specs required. Run the full system spec suite after the token swap and
-confirm visually:
- 
-- Login page
-- Dashboard
-- Novel index
-- Novel show
-- A bible entry show page (accent colour)
-- A job show page (status badge colours)
- 
-No functional behaviour changes — all existing specs should pass without
-modification. If any spec asserts a specific hex colour value, update it to match
-the new token.
+**Status: ✅ Done**
+
+Editorial slate-blue palette replaces the M14 blue-slate SaaS palette. Newsreader
+variable font added as `--font-family-serif`. `--color-surface` split into ambient
+(`#f9f9f8`) and manuscript (`#ffffff`) tokens; six component files updated.
+`--nav-height` retained; `--sidebar-width` and `--topbar-height` tokens added ahead
+of M19. No structural view changes — all existing specs pass.
 
 ---
 
@@ -253,7 +67,7 @@ for primary navigation and a slim fixed topbar for page-contextual items
 layout — every page must look right and all existing specs must pass before M20 begins.
 
 ### CSS & tokens
-- `application.css` `:root` — add `--sidebar-width: 15rem`, `--topbar-height: 3rem`; remove `--nav-height`
+- `application.css` `:root` — remove `--nav-height` (tokens `--sidebar-width` and `--topbar-height` already present from M18.5)
 - `_nav.css` → rename to `_sidebar.css`; `.app-nav` → `.app-sidebar`; fixed left, full height, `--sidebar-width` wide; tonal background separation (no right border — no-line rule); brand mark at top; vertical nav link list with active state via `current_page?`
 - New `_topbar.css` — `.app-topbar`: fixed top, `left: var(--sidebar-width)`, `right: 0`, `height: var(--topbar-height)`; left slot: breadcrumb; right slot: user name + sign-out + `yield :topbar_actions`
 - `_layout.css` — `.app-main`: replace `padding-top: var(--nav-height)` with `padding-left: var(--sidebar-width)` and `padding-top: var(--topbar-height)`; update any other `--nav-height` references
@@ -287,7 +101,7 @@ Update existing specs:
 
 ### Docs
 - `docs/DECISIONS.md` — two-bar layout change, rationale
-- `docs/UI.md` — update Layout section; replace Nav Bar component entry with Sidebar + Topbar; update `--nav-height` token
+- `docs/UI.md` — update Layout section; replace Nav Bar component entry with Sidebar + Topbar
 
 ---
 

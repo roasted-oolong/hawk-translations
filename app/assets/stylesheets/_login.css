@@ -16,7 +16,7 @@
 .login-card {
   width: 100%;
   max-width: 24rem; /* 384px */
-  background-color: var(--color-surface);
+  background-color: var(--color-surface-manuscript);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
@@ -68,7 +68,7 @@
 .btn--google {
   width: 100%;
   justify-content: center;
-  background-color: var(--color-surface);
+  background-color: var(--color-surface-manuscript);
   border-color: var(--color-border-strong);
   color: var(--color-text);
   font-weight: var(--font-weight-medium);

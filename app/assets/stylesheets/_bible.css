@@ -17,7 +17,7 @@
 
 /* --- Category card --- */
 .bible-category-card {
-  background-color: var(--color-surface);
+  background-color: var(--color-surface-manuscript);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
@@ -113,7 +113,7 @@
   top: calc(100% + var(--space-1));
   left: 0;
   right: 0;
-  background-color: var(--color-surface);
+  background-color: var(--color-surface-manuscript);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);

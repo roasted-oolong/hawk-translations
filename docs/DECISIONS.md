@@ -762,6 +762,29 @@ is reached.
 
 ---
 
+## 2026-03 · Editorial palette + Newsreader serif adopted at M18.5
+
+Replaced the M14 blue-slate SaaS palette (#2563EB primary, #F8FAFC background)
+with an editorial slate-blue palette (#4e6078 primary, #f9f9f8 background) ahead
+of Phase 3 work. Changes confined to application.css (:root block) and
+_typography.css. All component files already used tokens exclusively — no
+hardcoded values were found in any component stylesheet.
+
+--color-surface split into two tokens: --color-surface (#f9f9f8, ambient chrome —
+nav, utility panels) and --color-surface-manuscript (#ffffff, document surfaces —
+cards, panels, dialogs, login card). Six component files updated to use
+--color-surface-manuscript where appropriate.
+
+--nav-height retained alongside new --sidebar-width and --topbar-height tokens;
+removal deferred to M19 when the nav is structurally replaced.
+
+Newsreader variable font (self-hosted, same pattern as Inter) added as
+--font-family-serif with three utility classes: .text-serif, .text-serif-display,
+.text-serif-body. Font files follow the same convention as Inter — not committed
+to the repo, dropped into app/assets/fonts/newsreader/ before running the app.
+
+---
+
 ## 2026-03 · Two-bar app shell: fixed sidebar + slim topbar — M19
 
 The top nav (single fixed bar, full width) is replaced by two elements: a fixed

@@ -35,7 +35,7 @@
 .empty-state {
   padding: var(--space-12) var(--space-8);
   text-align: center;
-  background-color: var(--color-surface);
+  background-color: var(--color-surface-manuscript);
   border: 1px dashed var(--color-border-strong);
   border-radius: var(--radius-lg);
 }
