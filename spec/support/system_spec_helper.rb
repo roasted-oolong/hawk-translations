@@ -1,9 +1,21 @@
 # spec/support/system_spec_helper.rb
 #
 # Registers the Cuprite driver for system specs and configures Capybara.
+# Configures DatabaseCleaner to use truncation for system specs.
 #
 # Driver: Cuprite (CDP-based, uses Ferrum under the hood to drive Chrome/Chromium).
 # See DECISIONS.md for rationale over Playwright / Selenium.
+#
+# Why truncation for system specs:
+#   Cuprite drives a real browser, which makes HTTP requests through Puma in a
+#   separate thread with its own database connection. Rails' transactional
+#   fixtures wrap each test in a transaction on the test thread's connection —
+#   the browser's connection never sees that transaction and its writes are never
+#   rolled back. Truncation cleans the database at the OS level after each
+#   example, regardless of which connection created the rows.
+#
+#   All other spec types (model, request) keep the default transaction strategy
+#   because they share a single connection with the test thread.
 #
 # Chrome/Chromium must be installed on the system. In WSL2 development this
 # is the Windows Chrome binary exposed via PATH, or the Linux Chromium package.
@@ -16,6 +28,7 @@
 #   HEADLESS=false bundle exec rspec spec/system
 
 require "capybara/cuprite"
+require "database_cleaner/active_record"
 
 # ---------------------------------------------------------------------------
 # Cuprite driver registration
@@ -45,12 +58,40 @@ Capybara.configure do |config|
 end
 
 # ---------------------------------------------------------------------------
-# RSpec configuration for system specs
+# RSpec configuration
 # ---------------------------------------------------------------------------
 RSpec.configure do |config|
+  # --- DatabaseCleaner setup ------------------------------------------------
+
+  config.before(:suite) do
+    DatabaseCleaner.clean_with(:truncation)  # start with a clean slate
+  end
+
+  # System specs: truncation — required for cross-thread browser requests
   config.before(:each, type: :system) do
-    # Use Cuprite for all system specs (they all need a real browser for
-    # Turbo and Stimulus to function correctly).
+    DatabaseCleaner.strategy = :truncation
+    DatabaseCleaner.start
+  end
+
+  config.after(:each, type: :system) do
+    DatabaseCleaner.clean
+  end
+
+  # All other spec types: transaction — fast, zero I/O, auto-rolled back
+  config.before(:each) do |example|
+    next if example.metadata[:type] == :system
+    DatabaseCleaner.strategy = :transaction
+    DatabaseCleaner.start
+  end
+
+  config.after(:each) do |example|
+    next if example.metadata[:type] == :system
+    DatabaseCleaner.clean
+  end
+
+  # --- Cuprite + WebMock ----------------------------------------------------
+
+  config.before(:each, type: :system) do
     driven_by :cuprite
 
     # Cuprite communicates with its Capybara test server and the Chrome
@@ -64,8 +105,6 @@ RSpec.configure do |config|
   end
 
   config.after(:each, type: :system) do
-    # Re-enable WebMock after each system spec so request/service specs
-    # that run afterwards still have HTTP stubbing active.
     WebMock.enable!
   end
 end

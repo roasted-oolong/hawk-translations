@@ -48,24 +48,24 @@
    -------------------------------------------------------------------------- */
 :root {
   /* --- Colour: base --- */
-  --color-bg:                   #f9f9f8;  /* editorial warm off-white — page background */
-  --color-surface:              #f9f9f8;  /* ambient surfaces — nav, utility chrome */
+  --color-bg:                   #f9f9f8;
+  --color-surface:              #f9f9f8;  /* ambient surfaces — sidebar, utility chrome */
   --color-surface-manuscript:   #ffffff;  /* active reading/translation area — cards, panels, dialogs */
   --color-surface-low:          #f2f4f3;  /* side panels, secondary containers */
   --color-surface-container:    #ebeeed;  /* utility panels */
   --color-surface-dim:          #d4dcda;  /* tonal boundary element */
-  --color-border:               rgba(173, 179, 178, 0.15); /* ghost border — felt, not seen */
-  --color-border-strong:        #adb3b2;  /* full opacity — focus rings, explicit dividers */
+  --color-border:               rgba(173, 179, 178, 0.15);
+  --color-border-strong:        #adb3b2;  /* focus rings, explicit dividers */
 
   /* --- Colour: text --- */
-  --color-text:            #2d3433;  /* on_surface — never pure black */
+  --color-text:            #2d3433;
   --color-text-secondary:  #5a6672;
   --color-text-muted:      #adb3b2;
   --color-text-inverse:    #f5f7ff;
 
   /* --- Colour: brand --- */
   --color-primary:         #4e6078;  /* editorial slate-blue */
-  --color-primary-hover:   #42546c;  /* primary_dim */
+  --color-primary-hover:   #42546c;
   --color-primary-subtle:  #f2f4f3;
   --color-secondary:       #adb3b2;
   --color-accent:          #7C3AED;  /* violet-600 — bible / literary identity */
@@ -89,20 +89,20 @@
   --color-status-failed-bg:         #FEF2F2;
 
   /* --- Colour: feedback --- */
-  --color-danger:          #DC2626; /* red-600 */
-  --color-danger-subtle:   #FEF2F2; /* red-50 */
-  --color-success:         #059669; /* emerald-600 */
-  --color-success-subtle:  #ECFDF5; /* emerald-50 */
-  --color-warning:         #D97706; /* amber-600 */
-  --color-warning-subtle:  #FFFBEB; /* amber-50 */
+  --color-danger:          #DC2626;
+  --color-danger-subtle:   #FEF2F2;
+  --color-success:         #059669;
+  --color-success-subtle:  #ECFDF5;
+  --color-warning:         #D97706;
+  --color-warning-subtle:  #FFFBEB;
 
   /* --- Colour: flash messages --- */
-  --color-flash-notice-text: #065F46;
-  --color-flash-notice-bg:   #D1FAE5;
+  --color-flash-notice-text:   #065F46;
+  --color-flash-notice-bg:     #D1FAE5;
   --color-flash-notice-border: #6EE7B7;
-  --color-flash-alert-text:  #991B1B;
-  --color-flash-alert-bg:    #FEE2E2;
-  --color-flash-alert-border: #FCA5A5;
+  --color-flash-alert-text:    #991B1B;
+  --color-flash-alert-bg:      #FEE2E2;
+  --color-flash-alert-border:  #FCA5A5;
 
   /* --- Typography --- */
   --font-family:           "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -116,34 +116,34 @@
   --font-weight-bold:      700;
 
   /* --- Type scale --- */
-  --text-xs:    0.75rem;   /* 12px */
-  --text-sm:    0.875rem;  /* 14px */
-  --text-base:  1rem;      /* 16px */
-  --text-lg:    1.125rem;  /* 18px */
-  --text-xl:    1.25rem;   /* 20px */
-  --text-2xl:   1.5rem;    /* 24px */
-  --text-3xl:   1.875rem;  /* 30px */
+  --text-xs:    0.75rem;
+  --text-sm:    0.875rem;
+  --text-base:  1rem;
+  --text-lg:    1.125rem;
+  --text-xl:    1.25rem;
+  --text-2xl:   1.5rem;
+  --text-3xl:   1.875rem;
 
   /* --- Spacing (4px base unit) --- */
-  --space-1:   0.25rem;   /* 4px */
-  --space-2:   0.5rem;    /* 8px */
-  --space-3:   0.75rem;   /* 12px */
-  --space-4:   1rem;      /* 16px */
-  --space-5:   1.25rem;   /* 20px */
-  --space-6:   1.5rem;    /* 24px */
-  --space-8:   2rem;      /* 32px */
-  --space-10:  2.5rem;    /* 40px */
-  --space-12:  3rem;      /* 48px */
-  --space-16:  4rem;      /* 64px */
+  --space-1:   0.25rem;
+  --space-2:   0.5rem;
+  --space-3:   0.75rem;
+  --space-4:   1rem;
+  --space-5:   1.25rem;
+  --space-6:   1.5rem;
+  --space-8:   2rem;
+  --space-10:  2.5rem;
+  --space-12:  3rem;
+  --space-16:  4rem;
 
   /* --- Border radius --- */
-  --radius-sm:   0.25rem;  /* 4px  — badges, tags */
-  --radius-md:   0.5rem;   /* 8px  — inputs, buttons */
-  --radius-lg:   0.75rem;  /* 12px — cards, panels */
-  --radius-xl:   1rem;     /* 16px — modals */
-  --radius-full: 9999px;   /* pills */
+  --radius-sm:   0.25rem;
+  --radius-md:   0.5rem;
+  --radius-lg:   0.75rem;
+  --radius-xl:   1rem;
+  --radius-full: 9999px;
 
-  /* --- Shadows — retinted with on_surface base (#2d3433) --- */
+  /* --- Shadows --- */
   --shadow-xs: 0 1px 2px rgba(45, 52, 51, 0.04);
   --shadow-sm: 0 1px 3px rgba(45, 52, 51, 0.06), 0 1px 2px rgba(45, 52, 51, 0.03);
   --shadow-md: 0 12px 32px -4px rgba(45, 52, 51, 0.06);
@@ -159,17 +159,16 @@
   --transition-slow:   300ms ease;
 
   /* --- Layout --- */
-  --nav-height:        3.5rem;  /* 56px — retained until M19 sidebar replaces nav */
-  --sidebar-width:     15rem;   /* 240px — M19 sidebar */
-  --topbar-height:     3rem;    /* 48px  — M19 topbar */
+  --sidebar-width:     15rem;   /* 240px — fixed left sidebar (desktop) */
+  --topbar-height:     3rem;    /* 48px  — slim contextual topbar */
   --content-max-width: 72rem;   /* 1152px */
   --content-padding-x: var(--space-6);
 
   /* --- Z-index scale --- */
-  --z-base:    10;
+  --z-base:     10;
   --z-dropdown: 20;
-  --z-nav:     30;
-  --z-modal:   50;
+  --z-nav:      30;
+  --z-modal:    50;
 }
 
 /* --------------------------------------------------------------------------
@@ -178,7 +177,9 @@
 @import "_reset.css";
 @import "_typography.css";
 @import "_layout.css";
-@import "_nav.css";
+@import "_sidebar.css";
+@import "_topbar.css";
+@import "_bottom_nav.css";
 @import "_flash.css";
 @import "_buttons.css";
 @import "_login.css";

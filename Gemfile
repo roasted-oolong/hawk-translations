@@ -59,6 +59,11 @@ group :development, :test do
   gem "faker"
   gem "webmock"
 
+  # Database cleanup between tests. Truncation strategy is required for system
+  # specs because Cuprite drives a real browser in a separate thread — transactional
+  # fixtures cannot roll back the browser's writes across connection boundaries.
+  gem "database_cleaner-active_record"
+
   # System spec driver — CDP-based browser automation via Ferrum
   gem "cuprite"
 end

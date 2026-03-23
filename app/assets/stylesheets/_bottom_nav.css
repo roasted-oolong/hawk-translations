@@ -1,0 +1,60 @@
+/* ==========================================================================
+   _bottom_nav.css
+   Fixed bottom navigation bar — mobile only (≤768px).
+   Hidden at desktop widths; sidebar handles desktop navigation.
+   ========================================================================== */
+
+.app-bottom-nav {
+  display: none; /* hidden on desktop — shown only at ≤768px */
+}
+
+@media (max-width: 768px) {
+  .app-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3.5rem;
+    z-index: var(--z-nav);
+
+    background-color: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    box-shadow: 0 -1px 4px rgba(45, 52, 51, 0.06);
+  }
+
+  .app-bottom-nav__link {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-medium);
+    transition: color var(--transition-fast), background-color var(--transition-fast);
+  }
+
+  .app-bottom-nav__link:hover {
+    color: var(--color-text);
+    background-color: var(--color-surface-low);
+    text-decoration: none;
+  }
+
+  .app-bottom-nav__link--active {
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .app-bottom-nav__label {
+    font-size: var(--text-xs);
+    line-height: 1;
+  }
+
+  /* Ensure main content doesn't get clipped behind the bottom nav */
+  .app-main {
+    padding-bottom: 3.5rem;
+  }
+}

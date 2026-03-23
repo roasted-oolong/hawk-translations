@@ -59,7 +59,7 @@ of M19. No structural view changes — all existing specs pass.
 ---
 
 ## Milestone 19 — Sidebar Navigation
-**Status: 🔲 Not Started**
+**Status: ✅ Done**
 
 Replace the fixed top nav bar with a two-element app shell: a fixed left sidebar
 for primary navigation and a slim fixed topbar for page-contextual items

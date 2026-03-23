@@ -15,7 +15,6 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
-    <%# modern-normalize — cross-browser baseline, no install required %>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/modern-normalize/2.0.0/modern-normalize.min.css">
 
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
@@ -24,7 +23,9 @@
 
   <body class="app-body">
     <% if authenticated? %>
-      <%= render "layouts/nav" %>
+      <%= render "layouts/sidebar" %>
+      <%= render "layouts/topbar" %>
+      <%= render "layouts/bottom_nav" %>
     <% end %>
 
     <main class="app-main" id="main-content">
@@ -35,11 +36,6 @@
       </div>
     </main>
 
-    <%# ------------------------------------------------------------------ %>
-    <%# Shared confirmation modal — one instance, opened by modal_controller %>
-    <%# The inner panel intercepts clicks so backdrop clicks (on <dialog>   %>
-    <%# itself) fall through to dialog_controller's backdrop handler.       %>
-    <%# ------------------------------------------------------------------ %>
     <dialog id="modal-dialog"
             class="modal-dialog"
             data-testid="modal-dialog"
@@ -63,9 +59,6 @@
       </div>
     </dialog>
 
-    <%# ------------------------------------------------------------------ %>
-    <%# Toast region — Turbo Streams append toast elements here             %>
-    <%# ------------------------------------------------------------------ %>
     <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
   </body>
 </html>

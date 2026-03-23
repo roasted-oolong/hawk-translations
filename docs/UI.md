@@ -38,11 +38,13 @@ tool. See DECISIONS.md for full rationale.
 
 ## Layout
 
+Two-bar app shell introduced at M19:
+
 - Fixed left sidebar for primary navigation — `--sidebar-width: 15rem`
 - Fixed slim topbar for page-contextual items (breadcrumb, user, sign-out) — `--topbar-height: 3rem`
 - Sidebar and topbar absent on the login page
 - Main content area offset: `padding-left: var(--sidebar-width)`, `padding-top: var(--topbar-height)`
-- `--nav-height: 3.5rem` retained in tokens until M19 structurally replaces the nav
+- On mobile (≤768px): sidebar is off-canvas by default; hamburger in topbar toggles it via `sidebar_controller.ts`
 
 ---
 
@@ -56,7 +58,7 @@ All components reference variables, never raw values. Finalized at M14.
 | Token | Value | Usage |
 |-------|-------|-------|
 | `--color-bg` | `#f9f9f8` | Page background |
-| `--color-surface` | `#f9f9f8` | Ambient chrome — nav, utility panels |
+| `--color-surface` | `#f9f9f8` | Ambient chrome — sidebar, utility panels |
 | `--color-surface-manuscript` | `#ffffff` | Document surfaces — cards, panels, dialogs |
 | `--color-surface-low` | `#f2f4f3` | Side panels, secondary containers |
 | `--color-surface-container` | `#ebeeed` | Utility panels |
@@ -208,7 +210,8 @@ app/assets/stylesheets/
   _reset.css           ← thin reset on top of modern-normalize
   _typography.css      ← heading scale, body defaults, text utilities, serif utilities
   _layout.css          ← app shell, content container, card, page-header
-  _nav.css             ← fixed top nav bar (replaced by _sidebar.css + _topbar.css at M19)
+  _sidebar.css         ← fixed left sidebar (replaces _nav.css at M19)
+  _topbar.css          ← slim fixed topbar (new at M19)
   _flash.css           ← flash message bar (notice + alert variants)
   _buttons.css         ← btn base + variants (primary, secondary, ghost, danger)
   _login.css           ← login page standalone layout
@@ -222,6 +225,7 @@ app/assets/stylesheets/
 ```
 
 Import order is intentional: tokens must load before any component that references them.
+`_nav.css` is superseded by `_sidebar.css` + `_topbar.css` and is no longer imported.
 
 ---
 

@@ -1,0 +1,22 @@
+<%# app/views/layouts/_bottom_nav.html.erb
+  Fixed bottom navigation bar. Mobile only (≤768px).
+  Hidden at desktop widths — sidebar handles desktop navigation.
+  data-testid="app-bottom-nav" used by system specs.
+%>
+<nav class="app-bottom-nav"
+     data-testid="app-bottom-nav"
+     aria-label="Mobile navigation">
+
+  <%= link_to root_path,
+        class: "app-bottom-nav__link #{'app-bottom-nav__link--active' if current_page?(root_path)}",
+        aria: { current: current_page?(root_path) ? "page" : nil } do %>
+    <span class="app-bottom-nav__label">Dashboard</span>
+  <% end %>
+
+  <%= link_to novels_path,
+        class: "app-bottom-nav__link #{'app-bottom-nav__link--active' if current_page?(novels_path)}",
+        aria: { current: current_page?(novels_path) ? "page" : nil } do %>
+    <span class="app-bottom-nav__label">Novels</span>
+  <% end %>
+
+</nav>
