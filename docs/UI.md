@@ -44,7 +44,7 @@ Two-bar app shell introduced at M19:
 - Fixed slim topbar for page-contextual items (breadcrumb, user, sign-out) — `--topbar-height: 3rem`
 - Sidebar and topbar absent on the login page
 - Main content area offset: `padding-left: var(--sidebar-width)`, `padding-top: var(--topbar-height)`
-- On mobile (≤768px): sidebar is off-canvas by default; hamburger in topbar toggles it via `sidebar_controller.ts`
+- On mobile (≤768px): fixed bottom nav bar (`_bottom_nav.html.erb`) replaces the sidebar — no JavaScript, no hamburger. See DECISIONS.md M19 entry for rationale.
 
 ---
 
@@ -330,17 +330,19 @@ page and renders as plain text (no link) regardless of whether a path is supplie
 `with_attached_cover_art` must be called on the query (enforced at M21) to avoid N+1
 **Partial:** `app/views/novels/_card.html.erb`
 **Notes:** Gallery-style card. Cover image area (`aspect-ratio: 2/3`) at top, full card
-width, `overflow: hidden` clips to card border-radius. At M20: `--color-surface-low`
-placeholder div. At M21: renders `image_tag` when `cover_art.attached?`, placeholder
-otherwise. Cover area is wrapped in a link to the novel (`aria-hidden="true"
+width, `overflow: hidden` clips to card border-radius. Renders `image_tag` when
+`cover_art.attached?` and `cover_art.blob.persisted?`; placeholder `--color-surface-low`
+div otherwise. Cover area is wrapped in a link to the novel (`aria-hidden="true"
 tabindex="-1"`) — decorative only; screen readers navigate via the title link.
-Title uses serif font stack (`--font-family-serif`). Progress bar fill is static
-`width: 0%` at M20; wired to chapter completion ratio at M21. Pending jobs badge
-renders only when queued + running count > 0. Card has no root padding — cover goes
-edge-to-edge; body section carries its own inner padding. Used on both dashboard and
-novel index; grid context controls rendered width.
+Title uses serif font stack (`--font-family-serif`). Progress bar fill wired to
+`floor(translated_count / total_chapters * 100)%` — uses `.floor` so the bar only
+advances when work is complete. Pending jobs badge renders only when queued + running
+count > 0. Card has no root padding — cover goes edge-to-edge; body section carries
+its own inner padding. Used on both dashboard and novel index; grid context controls
+rendered width. Query must call `.with_attached_cover_art` to avoid N+1 on the cover
+slot — enforced in both `NovelsController#index` and `DashboardController#index`.
 
-**data-testid attributes (M20):**
+**data-testid attributes:**
 - `novel-card` — card root
 - `novel-card-cover-link` — cover `<a>` (href assertions in specs)
 - `novel-card-cover` — cover block (presence check)

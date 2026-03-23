@@ -13,6 +13,7 @@ class DashboardController < ApplicationController
     @novels = Novel
       .where(id: novel_ids)
       .includes(:series, chapters: [], translation_jobs: [])
+      .with_attached_cover_art
       .order(:title)
   end
 end

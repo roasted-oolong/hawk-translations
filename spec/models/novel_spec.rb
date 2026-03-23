@@ -50,6 +50,35 @@ RSpec.describe Novel, type: :model do
       novel = create(:novel)
       expect(novel.visibility).to eq("discoverable")
     end
+
+    # --- M21: cover_art attachment validations ---
+
+    it "is valid without a cover_art attachment" do
+      novel = create(:novel)
+      expect(novel).to be_valid
+    end
+
+    it "rejects cover_art with an invalid content type" do
+      novel = build(:novel)
+      novel.cover_art.attach(
+        io: StringIO.new("fake gif data"),
+        filename: "cover.gif",
+        content_type: "image/gif"
+      )
+      expect(novel).not_to be_valid
+      expect(novel.errors[:cover_art]).to be_present
+    end
+
+    it "rejects cover_art larger than 5MB" do
+      novel = build(:novel)
+      novel.cover_art.attach(
+        io: StringIO.new("x" * (5.megabytes + 1)),
+        filename: "cover.jpg",
+        content_type: "image/jpeg"
+      )
+      expect(novel).not_to be_valid
+      expect(novel.errors[:cover_art]).to be_present
+    end
   end
 
   describe "enums" do
