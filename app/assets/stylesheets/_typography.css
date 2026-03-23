@@ -87,3 +87,22 @@ pre {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* --- Serif utilities (Newsreader) --- */
+.text-serif {
+  font-family: var(--font-family-serif);
+  line-height: 1.6;
+}
+
+.text-serif-display {
+  font-family: var(--font-family-serif);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.text-serif-body {
+  font-family: var(--font-family-serif);
+  font-size: var(--text-base);
+  line-height: 1.6;
+}

@@ -1,9 +1,28 @@
 /* ==========================================================================
    application.css
    Entry point. Defines all design tokens as CSS custom properties, declares
-   @font-face for self-hosted Inter, then imports component stylesheets in
-   dependency order.
+   @font-face for self-hosted Newsreader and Inter, then imports component
+   stylesheets in dependency order.
    ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   @font-face — Newsreader Variable (self-hosted, Propshaft-served)
+   -------------------------------------------------------------------------- */
+@font-face {
+  font-family: "Newsreader";
+  src: url("/assets/fonts/newsreader/Newsreader-VariableFont_opsz,wght.woff2") format("woff2-variations");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Newsreader";
+  src: url("/assets/fonts/newsreader/Newsreader-Italic-VariableFont_opsz,wght.woff2") format("woff2-variations");
+  font-weight: 300 700;
+  font-style: italic;
+  font-display: swap;
+}
 
 /* --------------------------------------------------------------------------
    @font-face — Inter Variable (self-hosted, Propshaft-served)
@@ -29,34 +48,38 @@
    -------------------------------------------------------------------------- */
 :root {
   /* --- Colour: base --- */
-  --color-bg:              #F8FAFC; /* slate-50 — page background */
-  --color-surface:         #FFFFFF; /* cards, panels, nav */
-  --color-border:          #E2E8F0; /* slate-200 — dividers, input borders */
-  --color-border-strong:   #CBD5E1; /* slate-300 — hover borders, focus rings */
+  --color-bg:                   #f9f9f8;  /* editorial warm off-white — page background */
+  --color-surface:              #f9f9f8;  /* ambient surfaces — nav, utility chrome */
+  --color-surface-manuscript:   #ffffff;  /* active reading/translation area — cards, panels, dialogs */
+  --color-surface-low:          #f2f4f3;  /* side panels, secondary containers */
+  --color-surface-container:    #ebeeed;  /* utility panels */
+  --color-surface-dim:          #d4dcda;  /* tonal boundary element */
+  --color-border:               rgba(173, 179, 178, 0.15); /* ghost border — felt, not seen */
+  --color-border-strong:        #adb3b2;  /* full opacity — focus rings, explicit dividers */
 
   /* --- Colour: text --- */
-  --color-text:            #0F172A; /* slate-900 — primary body text */
-  --color-text-secondary:  #475569; /* slate-600 — labels, metadata, captions */
-  --color-text-muted:      #94A3B8; /* slate-400 — placeholder, disabled */
-  --color-text-inverse:    #FFFFFF; /* text on dark/accent backgrounds */
+  --color-text:            #2d3433;  /* on_surface — never pure black */
+  --color-text-secondary:  #5a6672;
+  --color-text-muted:      #adb3b2;
+  --color-text-inverse:    #f5f7ff;
 
   /* --- Colour: brand --- */
-  --color-primary:         #2563EB; /* blue-600 — actions, links */
-  --color-primary-hover:   #1D4ED8; /* blue-700 */
-  --color-primary-subtle:  #EFF6FF; /* blue-50 — hover backgrounds */
-  --color-secondary:       #64748B; /* slate-500 — secondary actions */
-  --color-accent:          #7C3AED; /* violet-600 — bible / literary identity */
-  --color-accent-subtle:   #F5F3FF; /* violet-50 */
+  --color-primary:         #4e6078;  /* editorial slate-blue */
+  --color-primary-hover:   #42546c;  /* primary_dim */
+  --color-primary-subtle:  #f2f4f3;
+  --color-secondary:       #adb3b2;
+  --color-accent:          #7C3AED;  /* violet-600 — bible / literary identity */
+  --color-accent-subtle:   #F5F3FF;  /* violet-50 */
 
   /* --- Colour: status (chapter + job) --- */
-  --color-status-untranslated-text: #64748B;
+  --color-status-untranslated-text: #5a6672;
   --color-status-untranslated-bg:   #F1F5F9;
-  --color-status-translated-text:   #2563EB;
-  --color-status-translated-bg:     #EFF6FF;
+  --color-status-translated-text:   #4e6078;
+  --color-status-translated-bg:     #e8ecf0;
   --color-status-reviewed-text:     #059669;
   --color-status-reviewed-bg:       #ECFDF5;
 
-  --color-status-queued-text:       #64748B;
+  --color-status-queued-text:       #5a6672;
   --color-status-queued-bg:         #F1F5F9;
   --color-status-running-text:      #D97706;
   --color-status-running-bg:        #FFFBEB;
@@ -83,6 +106,7 @@
 
   /* --- Typography --- */
   --font-family:           "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-family-serif:     "Newsreader", Georgia, "Times New Roman", serif;
   --font-family-korean:    "Apple SD Gothic Neo", "Malgun Gothic", "Nanum Gothic", sans-serif;
   --font-family-mono:      ui-monospace, "SFMono-Regular", Menlo, monospace;
 
@@ -119,11 +143,15 @@
   --radius-xl:   1rem;     /* 16px — modals */
   --radius-full: 9999px;   /* pills */
 
-  /* --- Shadows --- */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.04);
+  /* --- Shadows — retinted with on_surface base (#2d3433) --- */
+  --shadow-xs: 0 1px 2px rgba(45, 52, 51, 0.04);
+  --shadow-sm: 0 1px 3px rgba(45, 52, 51, 0.06), 0 1px 2px rgba(45, 52, 51, 0.03);
+  --shadow-md: 0 12px 32px -4px rgba(45, 52, 51, 0.06);
+  --shadow-lg: 0 12px 32px -4px rgba(45, 52, 51, 0.08), 0 4px 8px rgba(45, 52, 51, 0.04);
+
+  /* --- Glassmorphism --- */
+  --glass-bg:   rgba(255, 255, 255, 0.80);
+  --glass-blur: blur(20px);
 
   /* --- Transitions --- */
   --transition-fast:   150ms ease;
@@ -131,7 +159,9 @@
   --transition-slow:   300ms ease;
 
   /* --- Layout --- */
-  --nav-height:        3.5rem;  /* 56px */
+  --nav-height:        3.5rem;  /* 56px — retained until M19 sidebar replaces nav */
+  --sidebar-width:     15rem;   /* 240px — M19 sidebar */
+  --topbar-height:     3rem;    /* 48px  — M19 topbar */
   --content-max-width: 72rem;   /* 1152px */
   --content-padding-x: var(--space-6);
 

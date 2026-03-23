@@ -42,7 +42,7 @@ tool. See DECISIONS.md for full rationale.
 - Fixed slim topbar for page-contextual items (breadcrumb, user, sign-out) — `--topbar-height: 3rem`
 - Sidebar and topbar absent on the login page
 - Main content area offset: `padding-left: var(--sidebar-width)`, `padding-top: var(--topbar-height)`
-- No sidebar — the novel → chapter → job hierarchy is shallow enough for breadcrumbs + topbar
+- `--nav-height: 3.5rem` retained in tokens until M19 structurally replaces the nav
 
 ---
 
@@ -55,28 +55,32 @@ All components reference variables, never raw values. Finalized at M14.
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--color-bg` | `#F8FAFC` | Page background (slate-50) |
-| `--color-surface` | `#FFFFFF` | Cards, panels, nav bar |
-| `--color-border` | `#E2E8F0` | Dividers, input borders (slate-200) |
-| `--color-border-strong` | `#CBD5E1` | Hover borders, focus rings (slate-300) |
+| `--color-bg` | `#f9f9f8` | Page background |
+| `--color-surface` | `#f9f9f8` | Ambient chrome — nav, utility panels |
+| `--color-surface-manuscript` | `#ffffff` | Document surfaces — cards, panels, dialogs |
+| `--color-surface-low` | `#f2f4f3` | Side panels, secondary containers |
+| `--color-surface-container` | `#ebeeed` | Utility panels |
+| `--color-surface-dim` | `#d4dcda` | Tonal boundary element |
+| `--color-border` | `rgba(173,179,178,0.15)` | Ghost border — felt, not seen |
+| `--color-border-strong` | `#adb3b2` | Focus rings, explicit dividers |
 
 ### Colour: Text
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--color-text` | `#0F172A` | Primary body text (slate-900) |
-| `--color-text-secondary` | `#475569` | Labels, metadata, captions (slate-600) |
-| `--color-text-muted` | `#94A3B8` | Placeholder, disabled (slate-400) |
-| `--color-text-inverse` | `#FFFFFF` | Text on dark/accent backgrounds |
+| `--color-text` | `#2d3433` | Primary body text — never pure black |
+| `--color-text-secondary` | `#5a6672` | Labels, metadata, captions |
+| `--color-text-muted` | `#adb3b2` | Placeholder, disabled |
+| `--color-text-inverse` | `#f5f7ff` | Text on dark/accent backgrounds |
 
 ### Colour: Brand
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--color-primary` | `#2563EB` | Actions, links (blue-600) |
-| `--color-primary-hover` | `#1D4ED8` | Hover state (blue-700) |
-| `--color-primary-subtle` | `#EFF6FF` | Hover backgrounds (blue-50) |
-| `--color-secondary` | `#64748B` | Secondary actions (slate-500) |
+| `--color-primary` | `#4e6078` | Actions, links — editorial slate-blue |
+| `--color-primary-hover` | `#42546c` | Hover state |
+| `--color-primary-subtle` | `#f2f4f3` | Hover backgrounds |
+| `--color-secondary` | `#adb3b2` | Secondary actions |
 | `--color-accent` | `#7C3AED` | Bible / literary identity (violet-600) |
 | `--color-accent-subtle` | `#F5F3FF` | Accent hover backgrounds (violet-50) |
 
@@ -84,10 +88,10 @@ All components reference variables, never raw values. Finalized at M14.
 
 | Token | Text | Background | Usage |
 |-------|------|------------|-------|
-| `untranslated` | `#64748B` | `#F1F5F9` | Chapter not yet started |
-| `translated` | `#2563EB` | `#EFF6FF` | Chapter translated, not reviewed |
+| `untranslated` | `#5a6672` | `#F1F5F9` | Chapter not yet started |
+| `translated` | `#4e6078` | `#e8ecf0` | Chapter translated, not reviewed |
 | `reviewed` | `#059669` | `#ECFDF5` | Chapter reviewed and approved |
-| `queued` | `#64748B` | `#F1F5F9` | Job waiting to run |
+| `queued` | `#5a6672` | `#F1F5F9` | Job waiting to run |
 | `running` | `#D97706` | `#FFFBEB` | Job actively running |
 | `completed` | `#059669` | `#ECFDF5` | Job finished successfully |
 | `failed` | `#DC2626` | `#FEF2F2` | Job failed |
@@ -108,6 +112,7 @@ All components reference variables, never raw values. Finalized at M14.
 | Token | Value |
 |-------|-------|
 | `--font-family` | `"Inter", ui-sans-serif, system-ui, sans-serif` |
+| `--font-family-serif` | `"Newsreader", Georgia, "Times New Roman", serif` |
 | `--font-family-korean` | `"Apple SD Gothic Neo", "Malgun Gothic", "Nanum Gothic", sans-serif` |
 | `--font-family-mono` | `ui-monospace, "SFMono-Regular", Menlo, monospace` |
 | `--font-weight-normal` | `400` |
@@ -115,9 +120,11 @@ All components reference variables, never raw values. Finalized at M14.
 | `--font-weight-semibold` | `600` |
 | `--font-weight-bold` | `700` |
 
+Newsreader is self-hosted as a variable font (`Newsreader-VariableFont_opsz,wght.woff2`,
+`Newsreader-Italic-VariableFont_opsz,wght.woff2`) in `app/assets/fonts/newsreader/`.
 Inter is self-hosted as a variable font (`inter-variable.woff2`, `inter-variable-italic.woff2`)
-in `app/assets/fonts/inter/`. No Google Fonts CDN request. Korean display text uses the
-system font stack — no web font loaded for Korean.
+in `app/assets/fonts/inter/`. Neither font is committed to the repo — drop in before running
+the app. Korean display text uses the system font stack — no web font loaded for Korean.
 
 ### Type Scale
 
@@ -160,10 +167,10 @@ system font stack — no web font loaded for Korean.
 
 | Token | Value |
 |-------|-------|
-| `--shadow-xs` | `0 1px 2px rgba(0,0,0,0.05)` |
-| `--shadow-sm` | `0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)` |
-| `--shadow-md` | `0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04)` |
-| `--shadow-lg` | `0 10px 15px rgba(0,0,0,0.08), 0 4px 6px rgba(0,0,0,0.04)` |
+| `--shadow-xs` | `0 1px 2px rgba(45,52,51,0.04)` |
+| `--shadow-sm` | `0 1px 3px rgba(45,52,51,0.06), 0 1px 2px rgba(45,52,51,0.03)` |
+| `--shadow-md` | `0 12px 32px -4px rgba(45,52,51,0.06)` |
+| `--shadow-lg` | `0 12px 32px -4px rgba(45,52,51,0.08), 0 4px 8px rgba(45,52,51,0.04)` |
 
 ### Transitions
 
@@ -197,19 +204,21 @@ system font stack — no web font loaded for Korean.
 
 ```
 app/assets/stylesheets/
-  application.css      ← tokens + @font-face + @import chain (entry point)
+  application.css      ← tokens + @font-face (Newsreader + Inter) + @import chain
   _reset.css           ← thin reset on top of modern-normalize
-  _typography.css      ← heading scale, body defaults, text utilities
-  _layout.css          ← app shell, content container, card, page-header, page-header__row
-  _nav.css             ← fixed top nav bar
+  _typography.css      ← heading scale, body defaults, text utilities, serif utilities
+  _layout.css          ← app shell, content container, card, page-header
+  _nav.css             ← fixed top nav bar (replaced by _sidebar.css + _topbar.css at M19)
   _flash.css           ← flash message bar (notice + alert variants)
   _buttons.css         ← btn base + variants (primary, secondary, ghost, danger)
   _login.css           ← login page standalone layout
-  _breadcrumb.css      ← breadcrumb trail (added M15)
-  _dashboard.css       ← dashboard section layout, empty state (added M15)
-  _novels.css          ← novel grid, novel card, novel show layout (added M15)
-  _chapters.css        ← data table base, chapter show, upload panels, form primitives (added M16)
-  _jobs.css            ← status badge, jobs trigger card, job detail page (added M16)
+  _breadcrumb.css      ← breadcrumb trail
+  _dashboard.css       ← dashboard section layout, empty state
+  _novels.css          ← novel grid, novel card, novel show layout
+  _chapters.css        ← data table base, chapter show, upload panels, form primitives
+  _jobs.css            ← status badge, jobs trigger card, job detail page
+  _bible.css           ← bible landing, category cards, search bar, entry detail
+  _modal.css           ← confirmation dialog, toast notifications
 ```
 
 Import order is intentional: tokens must load before any component that references them.
