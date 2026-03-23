@@ -6,20 +6,25 @@
 /* --- Novel grid — used on dashboard and novel index --- */
 .novel-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
   gap: var(--space-4);
 }
 
-/* --- Novel card --- */
+/* --- Novel card (gallery style, M20) --- */
+
+/*
+  Card is an <article>. No padding on the root — cover goes edge-to-edge
+  to the card border. Body section carries its own inner padding.
+*/
 .novel-card {
   background-color: var(--color-surface-manuscript);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  padding: var(--space-5);
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  overflow: hidden; /* clips cover image to card border-radius */
   transition: box-shadow var(--transition-base), border-color var(--transition-base);
 }
 
@@ -28,13 +33,43 @@
   border-color: var(--color-border-strong);
 }
 
-.novel-card__header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+/* Cover link — block-level wrapper so the entire cover area is clickable.
+   aria-hidden + tabindex="-1" on the element in the partial keeps it out
+   of the focus order; the title link is the meaningful navigation target. */
+.novel-card__cover-link {
+  display: block;
+  text-decoration: none;
 }
 
+/* Cover image slot — 2:3 portrait aspect ratio, full card width.
+   At M20: placeholder background. At M21: <img> renders inside this div. */
+.novel-card__cover {
+  aspect-ratio: 2 / 3;
+  width: 100%;
+  background-color: var(--color-surface-low);
+  overflow: hidden;
+}
+
+/* Cover <img> — wired at M21 */
+.novel-card__cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Body section — inner padding, flex column layout */
+.novel-card__body {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1; /* fills remaining height so footer sits at bottom */
+}
+
+/* Title — serif stack, primary link */
 .novel-card__title {
+  font-family: var(--font-family-serif);
   font-size: var(--text-lg);
   font-weight: var(--font-weight-semibold);
   color: var(--color-primary);
@@ -47,12 +82,14 @@
   text-decoration: underline;
 }
 
+/* Korean title */
 .novel-card__korean-title {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   font-family: var(--font-family-korean);
 }
 
+/* Metadata row: series · genre */
 .novel-card__meta {
   display: flex;
   align-items: center;
@@ -60,35 +97,38 @@
   gap: var(--space-2);
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
+  min-height: 1.25rem; /* reserves space even when empty */
 }
 
 .novel-card__meta-sep {
   color: var(--color-text-muted);
 }
 
-.novel-card__visibility {
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-medium);
-  padding: 2px var(--space-2);
+/* Progress bar */
+.novel-card__progress-track {
+  width: 100%;
+  height: 4px;
+  background-color: var(--color-surface-low);
   border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-top: var(--space-1);
 }
 
-.novel-card__visibility--discoverable {
-  background-color: var(--color-primary-subtle);
-  color: var(--color-primary);
+.novel-card__progress-fill {
+  height: 100%;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-slow);
 }
 
-.novel-card__visibility--hidden {
-  background-color: var(--color-status-queued-bg);
-  color: var(--color-status-queued-text);
-}
-
-.novel-card__stats {
+/* Footer: chapter count stat + optional pending jobs badge */
+.novel-card__footer {
   display: flex;
-  gap: var(--space-4);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
   margin-top: auto;
   padding-top: var(--space-2);
-  border-top: 1px solid var(--color-border);
 }
 
 .novel-card__stat {
@@ -101,8 +141,15 @@
   color: var(--color-text);
 }
 
-.novel-card__stat--jobs .novel-card__stat-value {
+/* Pending jobs badge */
+.novel-card__jobs-badge {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
   color: var(--color-status-running-text);
+  background-color: var(--color-status-running-bg);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  white-space: nowrap;
 }
 
 /* --- Novel show --- */
@@ -220,9 +267,8 @@
   border-radius: var(--radius-md);
   padding: var(--space-2) var(--space-3);
   margin: 0;
-  /* Prevents the element from looking interactive */
   cursor: default;
-  user-select: all; /* Allow copy but not edit */
+  user-select: all;
 }
 
 /* --- Mobile layout pass --- */
