@@ -18,6 +18,9 @@ class Novel < ApplicationRecord
   has_many :bible_cultural_phrases, dependent: :destroy
   has_many :bible_story_entries,    dependent: :destroy
 
+  # Cover art — optional, single image attachment
+  has_one_attached :cover_art
+
   # ---------------------------------------------------------------------------
   # Enums
   # ---------------------------------------------------------------------------
@@ -31,4 +34,23 @@ class Novel < ApplicationRecord
   validates :directory_name, presence: true
   validates :directory_name, uniqueness: { scope: :organization_id,
                                message: "is already used by another novel in this organization" }
+
+  validate :cover_art_content_type, if: -> { cover_art.attached? }
+  validate :cover_art_size,         if: -> { cover_art.attached? }
+
+  private
+
+  COVER_ART_ALLOWED_TYPES = %w[image/jpeg image/png image/webp].freeze
+
+  def cover_art_content_type
+    unless cover_art.content_type.in?(COVER_ART_ALLOWED_TYPES)
+      errors.add(:cover_art, "must be a JPEG, PNG, or WebP image")
+    end
+  end
+
+  def cover_art_size
+    if cover_art.byte_size > 5.megabytes
+      errors.add(:cover_art, "must be smaller than 5MB")
+    end
+  end
 end

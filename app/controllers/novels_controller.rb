@@ -1,10 +1,11 @@
 class NovelsController < ApplicationController
-  before_action :set_novel,            only: [ :show, :edit, :update, :destroy ]
+  before_action :set_novel,            only: [ :show, :edit, :update, :destroy, :destroy_cover_art ]
   before_action :set_form_collections, only: [ :new, :create, :edit, :update ]
 
   def index
     @novels = Novel
       .includes(:series, chapters: [], translation_jobs: [])
+      .with_attached_cover_art
       .order(:title)
   end
 
@@ -40,6 +41,13 @@ class NovelsController < ApplicationController
     redirect_to novels_path, notice: "Novel removed."
   end
 
+  # DELETE /novels/:id/cover_art
+  # Purges the cover_art Active Storage attachment and redirects back to the novel.
+  def destroy_cover_art
+    @novel.cover_art.purge
+    redirect_to @novel, notice: "Cover art removed."
+  end
+
   private
 
   def set_novel
@@ -66,7 +74,7 @@ class NovelsController < ApplicationController
   def novel_create_params
     params.require(:novel).permit(
       :title, :directory_name, :korean_title, :genre, :summary, :tone, :notes,
-      :visibility, :series_id, :poc_user_id, :organization_id
+      :visibility, :series_id, :poc_user_id, :organization_id, :cover_art
     )
   end
 
@@ -76,7 +84,7 @@ class NovelsController < ApplicationController
   def novel_update_params
     params.require(:novel).permit(
       :title, :korean_title, :genre, :summary, :tone, :notes,
-      :visibility, :series_id, :poc_user_id
+      :visibility, :series_id, :poc_user_id, :cover_art
     )
   end
 end

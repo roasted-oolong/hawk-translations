@@ -81,6 +81,32 @@ RSpec.describe "Novels", type: :request do
         expect(response).to have_http_status(:unprocessable_entity)
       end
     end
+
+    # --- M21: cover_art attachment via PATCH ---
+
+    context "with a valid cover image" do
+      it "attaches cover_art to the novel" do
+        image = fixture_file_upload(
+          Rails.root.join("spec/fixtures/files/cover.jpg"),
+          "image/jpeg"
+        )
+        patch novel_path(novel), params: { novel: { cover_art: image } }
+        expect(response).to redirect_to(novel_path(novel))
+        expect(novel.reload.cover_art).to be_attached
+      end
+    end
+
+    context "with an invalid cover image content type" do
+      it "does not attach the file and re-renders edit" do
+        gif = fixture_file_upload(
+          Rails.root.join("spec/fixtures/files/cover.gif"),
+          "image/gif"
+        )
+        patch novel_path(novel), params: { novel: { cover_art: gif } }
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(novel.reload.cover_art).not_to be_attached
+      end
+    end
   end
 
   describe "DELETE /novels/:id" do
@@ -90,6 +116,21 @@ RSpec.describe "Novels", type: :request do
       }.to change(Novel, :count).by(-1)
 
       expect(response).to redirect_to(novels_path)
+    end
+  end
+
+  describe "DELETE /novels/:id/cover_art" do
+    it "purges the cover_art attachment and redirects to the novel" do
+      novel.cover_art.attach(
+        io: StringIO.new("\xFF\xD8\xFF" + "x" * 100),
+        filename: "cover.jpg",
+        content_type: "image/jpeg"
+      )
+      expect(novel.cover_art).to be_attached
+
+      delete cover_art_novel_path(novel)
+      expect(response).to redirect_to(novel_path(novel))
+      expect(novel.reload.cover_art).not_to be_attached
     end
   end
 

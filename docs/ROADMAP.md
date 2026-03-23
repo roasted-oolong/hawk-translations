@@ -138,7 +138,7 @@ System specs — `spec/system/novel_card_spec.rb`:
 ---
 
 ## Milestone 21 — Wire Data + Cover Art Upload
-**Status: 🔲 Not Started**
+**Status: ✅ Done**
 
 Replace all card placeholders with real data. Add `cover_art` Active Storage attachment
 to `Novel`. Progress bar reflects real chapter completion ratio. Cover image renders when

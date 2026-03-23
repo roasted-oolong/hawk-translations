@@ -10,6 +10,11 @@ Rails.application.routes.draw do
 
   # Novels + nested resources
   resources :novels, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
+    member do
+      # Cover art — purge the attachment for a novel
+      delete "cover_art", action: :destroy_cover_art, as: :cover_art
+    end
+
     resources :chapters, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
       member do
         get :download_korean_source

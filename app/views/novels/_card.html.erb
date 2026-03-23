@@ -3,11 +3,11 @@
 
   Gallery-style novel card. Used on the dashboard and the novel index.
   Expects a `novel` local with preloaded chapters and translation_jobs.
-  At M21, `with_attached_cover_art` must also be called on the query.
+  Query must call `.with_attached_cover_art` to avoid N+1 on the cover slot.
 
   Structure:
     - Cover image slot (aspect-ratio 2/3, full card width)
-        -> placeholder background at M20; real image wired at M21
+        -> renders <img> when cover_art attached; placeholder div otherwise
     - Body: serif title, Korean title, metadata row, progress bar,
             chapter count stat, pending jobs badge
 
@@ -18,9 +18,10 @@
   data-testid="novel-card-progress"     -> progress bar track (presence check)
   data-testid="novel-card-jobs-badge"   -> pending jobs badge (conditional)
 %>
-<% translated_count = novel.chapters.count { |c| c.translated? || c.reviewed? } %>
-<% total_chapters   = novel.chapters.size %>
-<% pending_jobs     = novel.translation_jobs.count { |j| j.queued? || j.running? } %>
+<% translated_count  = novel.chapters.count { |c| c.translated? || c.reviewed? } %>
+<% total_chapters    = novel.chapters.size %>
+<% progress_pct      = total_chapters > 0 ? (translated_count.to_f / total_chapters * 100).floor : 0 %>
+<% pending_jobs      = novel.translation_jobs.count { |j| j.queued? || j.running? } %>
 
 <article class="novel-card" data-testid="novel-card">
 
@@ -31,7 +32,9 @@
         "aria-hidden": "true",
         tabindex: "-1" do %>
     <div class="novel-card__cover" data-testid="novel-card-cover">
-      <%# Placeholder only at M20. At M21: render image_tag when cover_art.attached? %>
+      <% if novel.cover_art.attached? %>
+        <%= image_tag novel.cover_art, alt: novel.title %>
+      <% end %>
     </div>
   <% end %>
 
@@ -58,9 +61,9 @@
       <% end %>
     </div>
 
-    <%# Progress bar (static width: 0% at M20; wired to real data at M21) %>
+    <%# Progress bar — wired to real chapter completion ratio %>
     <div class="novel-card__progress-track" data-testid="novel-card-progress">
-      <div class="novel-card__progress-fill" style="width: 0%;"></div>
+      <div class="novel-card__progress-fill" style="width: <%= progress_pct %>%;"></div>
     </div>
 
     <%# Footer: chapter count stat + optional pending jobs badge %>

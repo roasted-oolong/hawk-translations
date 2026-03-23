@@ -843,3 +843,53 @@ meaningful navigation target.
 `novel-grid` column floor reduced from `20rem` to `14rem` to accommodate the taller
 portrait-ratio cards without forcing the grid to collapse to a single column too early.
 Progress bar wired to `width: 0%` static placeholder at M20; real chapter ratio wired at M21.
+
+---
+
+## 2026-03 · Cover art optional with placeholder; purge via dedicated route; `.with_attached_cover_art` on both queries — M21
+
+`Novel` gains `has_one_attached :cover_art`. No migration needed — Active Storage tables
+already exist from the initial Rails setup. Cover art is optional; the card renders a
+`--color-surface-low` placeholder div when nothing is attached and an `<img>` when it is.
+
+Content type (JPEG, PNG, WebP) and size (< 5MB) are validated via two custom `validate`
+methods rather than the `active_storage_validations` gem, which is not in the Gemfile.
+The methods check `cover_art.content_type` and `cover_art.byte_size` directly — no gem
+required, trivially testable.
+
+Purge is a dedicated `DELETE /novels/:id/cover_art` member route calling `destroy_cover_art`
+rather than a hidden `_destroy` form field. This keeps the intent explicit in the route,
+gives the action a named route helper (`cover_art_novel_path`), and avoids magic boolean
+fields on the update params.
+
+`.with_attached_cover_art` added to both `NovelsController#index` and
+`DashboardController#index` — both queries already `includes` chapters and
+translation_jobs, and the cover art attachment must join the same way to avoid N+1
+on the card's `cover_art.attached?` check.
+
+---
+
+## 2026-03 · Progress bar uses `.floor`, not `.round` — M21
+
+`(translated_count.to_f / total_chapters * 100).floor` is used for the novel card
+progress bar. `.round` produces 67% for 2/3 chapters (66.6̄%), which overstates
+progress — a chapter is not counted as done until it is. `.floor` truncates toward
+zero so the bar only advances when work is actually complete. The 100% case is
+unaffected (`100.0.floor == 100`).
+
+---
+
+## 2026-03 · `cover_art.blob.persisted?` guard on edit form thumbnail — M21
+
+When `PATCH /novels/:id` is submitted with an invalid file (wrong content type),
+`@novel.update(params)` assigns the blob to the record in memory and begins the
+Active Storage transaction. Validation then fails and the transaction rolls back —
+the blob is never written to `active_storage_blobs`. However, `cover_art.attached?`
+still returns true on the in-memory record (the attachment proxy has a blob object
+set), so the edit form's cover thumbnail branch is entered. `image_tag novel.cover_art`
+then calls `signed_id` on a blob with no persisted `id`, raising
+`ArgumentError: Cannot get a signed_id for a new record`.
+
+Fix: guard with `novel.cover_art.attached? && novel.cover_art.blob.persisted?`.
+The `persisted?` check is false on the rolled-back blob, so the thumbnail branch
+is correctly skipped and the form re-renders cleanly.

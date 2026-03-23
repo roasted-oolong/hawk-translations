@@ -271,6 +271,27 @@
   user-select: all;
 }
 
+/* Cover art current state on edit form */
+.novel-form__cover-current {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.novel-form__cover-thumb {
+  width: 7.5rem;
+  height: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.novel-form__cover-remove {
+  align-self: flex-end;
+}
+
 /* --- Mobile layout pass --- */
 @media (max-width: 640px) {
   /* Novel index card grid: single column */

@@ -8,7 +8,7 @@
     @series_options    — ActiveRecord relation of Series scoped to the novel's org
     @poc_user_options  — ActiveRecord relation of Users scoped to the novel's org members
 %>
-<%= form_with model: novel, data: { testid: "novel-form" } do |f| %>
+<%= form_with model: novel, multipart: true, data: { testid: "novel-form" } do |f| %>
   <% if novel.errors.any? %>
     <div class="form-errors" data-testid="form-errors">
       <p class="form-errors__summary">
@@ -86,6 +86,45 @@
             { include_blank: "— Not assigned —" },
             class: "form-select" %>
     </div>
+  </div>
+
+  <%# --- Cover art --- %>
+  <div class="form-group">
+    <%= f.label :cover_art, "Cover art", class: "form-label" %>
+
+    <% if editing && novel.cover_art.attached? && novel.cover_art.blob.persisted? %>
+      <%# Show current thumbnail with a remove button on the edit form %>
+      <div class="novel-form__cover-current" data-testid="cover-art-current">
+        <%= image_tag novel.cover_art,
+              alt: "Current cover art",
+              class: "novel-form__cover-thumb" %>
+        <%= link_to "Remove cover art",
+              cover_art_novel_path(novel),
+              data: { turbo_method: :delete },
+              class: "btn btn--ghost btn--sm novel-form__cover-remove" %>
+      </div>
+      <span class="form-hint">Upload a new file below to replace the current cover.</span>
+    <% end %>
+
+    <div class="file-upload"
+         data-controller="file-upload"
+         data-testid="cover-art-upload"
+         data-action="dragover->file-upload#onDragOver dragleave->file-upload#onDragLeave drop->file-upload#onDrop">
+      <%= f.file_field :cover_art,
+            accept: "image/jpeg,image/png,image/webp",
+            class: "sr-only",
+            "data-file-upload-target": "input",
+            "data-action": "change->file-upload#onChange" %>
+      <label for="<%= f.field_id(:cover_art) %>"
+             class="file-upload__zone"
+             data-file-upload-target="zone">
+        <strong>Click to browse</strong> or drag an image here
+        <p class="file-upload__zone-hint">JPEG, PNG, or WebP &mdash; max 5MB</p>
+      </label>
+      <div class="file-upload__preview file-upload__preview--empty"
+           data-file-upload-target="preview"></div>
+    </div>
+    <span class="form-hint">Optional. Displayed on the novel card.</span>
   </div>
 
   <%# --- Full-width: long-form fields --- %>
