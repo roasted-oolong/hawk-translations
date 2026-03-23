@@ -1,0 +1,65 @@
+/* ==========================================================================
+   _topbar.css
+   Slim fixed topbar — page-contextual items (breadcrumb, user, sign-out).
+   ========================================================================== */
+
+.app-topbar {
+  position: fixed;
+  top: 0;
+  left: var(--sidebar-width);
+  right: 0;
+  height: var(--topbar-height);
+  z-index: var(--z-nav);
+
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: var(--content-padding-x);
+  gap: var(--space-4);
+}
+
+/* --------------------------------------------------------------------------
+   Left slot: breadcrumb
+   -------------------------------------------------------------------------- */
+.app-topbar__left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  flex: 1;
+}
+
+.app-topbar__breadcrumb {
+  min-width: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Right slot: topbar actions + user + sign-out
+   -------------------------------------------------------------------------- */
+.app-topbar__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+.app-topbar__user {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+/* --------------------------------------------------------------------------
+   Mobile: topbar spans full width (sidebar is hidden)
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .app-topbar {
+    left: 0;
+  }
+
+  .app-topbar__user {
+    display: none;
+  }
+}

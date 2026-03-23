@@ -1,0 +1,31 @@
+<%# app/views/layouts/_topbar.html.erb
+  Slim fixed topbar. Renders on every authenticated page.
+  Left slot: breadcrumb. Right slot: user name, topbar_actions, sign-out.
+  No hamburger — mobile navigation is handled by _bottom_nav.html.erb.
+  data-testid="app-topbar" used by system specs.
+%>
+<header class="app-topbar" data-testid="app-topbar" aria-label="Page toolbar">
+
+  <div class="app-topbar__left">
+    <div class="app-topbar__breadcrumb">
+      <%= yield :breadcrumb if content_for?(:breadcrumb) %>
+    </div>
+  </div>
+
+  <div class="app-topbar__right">
+    <%= yield :topbar_actions if content_for?(:topbar_actions) %>
+
+    <span class="app-topbar__user"><%= current_user.name %></span>
+
+    <%= button_to logout_path,
+          method: :delete,
+          class: "btn btn--ghost btn--sm",
+          form: { data: { turbo: false } },
+          aria: { label: "Sign out" },
+          title: "Sign out" do %>
+      <%= render "components/icon", name: "arrow-right-start-on-rectangle", size: 16 %>
+      <span>Sign out</span>
+    <% end %>
+  </div>
+
+</header>

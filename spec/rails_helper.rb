@@ -39,10 +39,11 @@ RSpec.configure do |config|
     Rails.root.join('spec/fixtures')
   ]
 
-  # If you're not using ActiveRecord, or you'd prefer not to run each of your
-  # examples within a transaction, remove the following line or assign false
-  # instead of true.
-  config.use_transactional_fixtures = true
+  # Disabled — DatabaseCleaner in spec/support/system_spec_helper.rb owns all
+  # cleanup. It uses :transaction for model/request specs (fast) and :truncation
+  # for system specs (required because Cuprite's browser runs in a separate
+  # thread with its own DB connection that transactional fixtures cannot reach).
+  config.use_transactional_fixtures = false
 
   # You can uncomment this line to turn off ActiveRecord support entirely.
   # config.use_active_record = false
@@ -57,11 +58,8 @@ RSpec.configure do |config|
   # The different available types are documented in the features, such as in
   # https://rspec.info/features/7-1/rspec-rails
   #
-  # You can also this infer these behaviours automatically by location, e.g.
-  # /spec/models would pull in the same behaviour as `type: :model` but this
-  # behaviour is considered legacy and will be removed in a future version.
-  #
-  # To enable this behaviour uncomment the line below.
+  # You can also this infer these behaviours automatically by location, by
+  # uncommenting the line below.
   config.infer_spec_type_from_file_location!
 
   # Filter lines from Rails gems in backtraces.

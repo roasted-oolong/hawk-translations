@@ -2,9 +2,10 @@
 #
 # M19 — Sidebar Navigation
 #
-# Replaces the top nav bar with a two-element app shell:
-#   - Fixed left sidebar  (data-testid="app-sidebar")  — primary navigation
-#   - Fixed slim topbar   (data-testid="app-topbar")   — breadcrumb, user, sign-out
+# Two-element app shell:
+#   - Fixed left sidebar  (data-testid="app-sidebar")    — desktop primary nav
+#   - Fixed slim topbar   (data-testid="app-topbar")     — breadcrumb, user, sign-out
+#   - Fixed bottom nav    (data-testid="app-bottom-nav") — mobile primary nav
 #
 # Covers:
 #   1. Sidebar renders on every authenticated page
@@ -13,25 +14,13 @@
 #   4. Sign-out is reachable from the topbar
 #   5. Dashboard link in sidebar navigates correctly
 #   6. Novels link in sidebar navigates correctly
-#   7. Mobile: hamburger button present at narrow viewport
-#   8. Mobile: hamburger toggles sidebar open and closed
+#   7. Bottom nav in DOM on authenticated pages, absent on login
+#   8. Bottom nav links navigate correctly
 
 RSpec.describe "M19 Sidebar Navigation", type: :system do
-  # ---------------------------------------------------------------------------
-  # Helpers
-  # ---------------------------------------------------------------------------
-
   def sign_in_as(user)
     mock_google_oauth(email: user.email, name: user.name, uid: user.uid)
     visit "/auth/google_oauth2/callback"
-  end
-
-  def resize_to_mobile
-    page.driver.resize(375, 812)
-  end
-
-  def resize_to_desktop
-    page.driver.resize(1280, 800)
   end
 
   # ---------------------------------------------------------------------------
@@ -168,13 +157,10 @@ RSpec.describe "M19 Sidebar Navigation", type: :system do
     before { sign_in_as(user) }
 
     it "navigates to the dashboard" do
-      # Start on novel index so the click is meaningful.
       visit novels_path
-
       within "[data-testid='app-sidebar']" do
         click_link "Dashboard"
       end
-
       expect(page).to have_current_path(root_path)
     end
   end
@@ -189,57 +175,64 @@ RSpec.describe "M19 Sidebar Navigation", type: :system do
 
     it "navigates to the novel index" do
       visit root_path
-
       within "[data-testid='app-sidebar']" do
         click_link "Novels"
       end
-
       expect(page).to have_current_path(novels_path)
     end
   end
 
   # ---------------------------------------------------------------------------
-  # 7 & 8. Mobile — hamburger button and sidebar toggle
+  # 7 & 8. Bottom nav — DOM presence and navigation
+  #
+  # The bottom nav is CSS-hidden at desktop widths (display: none) but always
+  # present in the DOM on authenticated pages. Tests use visible: :all because
+  # Capybara's default visibility filter would reject a display:none element.
+  # Navigation tests use find(..., visible: :all) for the same reason.
   # ---------------------------------------------------------------------------
-  describe "mobile sidebar toggle" do
+  describe "bottom nav" do
     let(:user) { create(:user) }
 
-    before do
-      sign_in_as(user)
+    before { sign_in_as(user) }
+
+    it "is present in the DOM on authenticated pages" do
       visit root_path
-      resize_to_mobile
+      expect(page).to have_selector("[data-testid='app-bottom-nav']", visible: :all)
     end
 
-    after { resize_to_desktop }
-
-    it "shows a hamburger button at narrow viewport" do
-      expect(page).to have_selector("[data-testid='sidebar-hamburger']")
+    it "is absent on the login page" do
+      visit login_path
+      expect(page).not_to have_selector("[data-testid='app-bottom-nav']", visible: :all)
     end
 
-    it "sidebar is not open by default at narrow viewport" do
-      expect(page).not_to have_selector("[data-testid='app-sidebar'][data-sidebar-open='true']")
+    it "contains a Dashboard link" do
+      visit root_path
+      within :css, "[data-testid='app-bottom-nav']", visible: :all do
+        expect(page).to have_link("Dashboard", visible: :all)
+      end
     end
 
-    it "opens the sidebar when the hamburger is clicked" do
-      find("[data-testid='sidebar-hamburger']").click
-      expect(page).to have_selector("[data-testid='app-sidebar'][data-sidebar-open='true']")
+    it "contains a Novels link" do
+      visit root_path
+      within :css, "[data-testid='app-bottom-nav']", visible: :all do
+        expect(page).to have_link("Novels", visible: :all)
+      end
     end
 
-    it "closes the sidebar when the hamburger is clicked a second time" do
-      find("[data-testid='sidebar-hamburger']").click
-      expect(page).to have_selector("[data-testid='app-sidebar'][data-sidebar-open='true']")
-
-      find("[data-testid='sidebar-hamburger']").click
-      expect(page).not_to have_selector("[data-testid='app-sidebar'][data-sidebar-open='true']")
+    it "Dashboard link navigates to the dashboard" do
+      visit novels_path
+      find("[data-testid='app-bottom-nav']", visible: :all)
+        .find("a", text: "Dashboard", visible: :all)
+        .click
+      expect(page).to have_current_path(root_path)
     end
 
-    it "closes the sidebar when clicking outside it" do
-      find("[data-testid='sidebar-hamburger']").click
-      expect(page).to have_selector("[data-testid='app-sidebar'][data-sidebar-open='true']")
-
-      # Click somewhere in the topbar area — outside the sidebar
-      find("[data-testid='app-topbar']").click
-      expect(page).not_to have_selector("[data-testid='app-sidebar'][data-sidebar-open='true']")
+    it "Novels link navigates to the novel index" do
+      visit root_path
+      find("[data-testid='app-bottom-nav']", visible: :all)
+        .find("a", text: "Novels", visible: :all)
+        .click
+      expect(page).to have_current_path(novels_path)
     end
   end
 end

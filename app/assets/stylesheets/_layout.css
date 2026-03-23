@@ -1,6 +1,8 @@
 /* ==========================================================================
    _layout.css
-   App shell. Nav offset, main content container, page-level structure.
+   App shell. Sidebar + topbar offset, main content container, page-level
+   structure. Updated at M19: nav-height offset replaced by sidebar-width
+   and topbar-height.
    ========================================================================== */
 
 /* --- App shell --- */
@@ -10,10 +12,11 @@
   min-height: 100vh;
 }
 
-/* Offset main content below the fixed nav bar */
+/* Offset main content to the right of the fixed sidebar and below the topbar */
 .app-main {
   flex: 1;
-  padding-top: var(--nav-height);
+  padding-left: var(--sidebar-width);
+  padding-top: var(--topbar-height);
 }
 
 /* --- Content container --- */
@@ -84,6 +87,14 @@
 }
 
 /* --- Responsive adjustments --- */
+
+/* Mobile: sidebar goes off-canvas, so app-main spans full width */
+@media (max-width: 768px) {
+  .app-main {
+    padding-left: 0;
+  }
+}
+
 @media (max-width: 640px) {
   :root {
     --content-padding-x: var(--space-4);

@@ -1,0 +1,37 @@
+<%# app/views/layouts/_sidebar.html.erb
+  Fixed left sidebar. Desktop only (≥769px).
+  Hidden on mobile — bottom nav (_bottom_nav.html.erb) handles mobile navigation.
+  data-testid="app-sidebar" used by system specs.
+%>
+<aside class="app-sidebar"
+       data-testid="app-sidebar"
+       aria-label="Primary navigation">
+
+  <%= link_to root_path, class: "app-sidebar__brand", aria: { label: "Hawk Translations home" } do %>
+    <span class="app-sidebar__brand-mark" aria-hidden="true">鷹</span>
+    <span class="app-sidebar__brand-name">Hawk</span>
+  <% end %>
+
+  <nav class="app-sidebar__nav" aria-label="Main navigation">
+    <ul class="app-sidebar__nav-list" role="list">
+
+      <li>
+        <%= link_to root_path,
+              class: "app-sidebar__nav-link #{'app-sidebar__nav-link--active' if current_page?(root_path)}",
+              aria: { current: current_page?(root_path) ? "page" : nil } do %>
+          Dashboard
+        <% end %>
+      </li>
+
+      <li>
+        <%= link_to novels_path,
+              class: "app-sidebar__nav-link #{'app-sidebar__nav-link--active' if current_page?(novels_path)}",
+              aria: { current: current_page?(novels_path) ? "page" : nil } do %>
+          Novels
+        <% end %>
+      </li>
+
+    </ul>
+  </nav>
+
+</aside>
