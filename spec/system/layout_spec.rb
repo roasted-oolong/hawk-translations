@@ -4,7 +4,7 @@ require "rails_helper"
 #
 # Covers:
 #   1. Login page renders with expected elements
-#   2. Nav bar renders on every authenticated page
+#   2. Sidebar renders on every authenticated page (renamed from app-nav at M19)
 #   3. Sign-out works and redirects to login
 
 RSpec.describe "M14 Layout, Navigation & Login", type: :system do
@@ -22,8 +22,8 @@ RSpec.describe "M14 Layout, Navigation & Login", type: :system do
       expect(page).to have_button("Sign in with Google")
     end
 
-    it "has no nav bar" do
-      expect(page).not_to have_selector("[data-testid='app-nav']")
+    it "has no sidebar" do
+      expect(page).not_to have_selector("[data-testid='app-sidebar']")
     end
 
     it "shows an alert when present" do
@@ -33,7 +33,7 @@ RSpec.describe "M14 Layout, Navigation & Login", type: :system do
   end
 
   # ---------------------------------------------------------------------------
-  # Nav bar — present on every authenticated page
+  # Sidebar — present on every authenticated page
   # ---------------------------------------------------------------------------
   describe "navigation" do
     let(:user) { create(:user) }
@@ -43,18 +43,18 @@ RSpec.describe "M14 Layout, Navigation & Login", type: :system do
       visit "/auth/google_oauth2/callback"
     end
 
-    it "renders the nav bar on the dashboard" do
-      expect(page).to have_selector("[data-testid='app-nav']")
+    it "renders the sidebar on the dashboard" do
+      expect(page).to have_selector("[data-testid='app-sidebar']")
     end
 
-    it "shows the app name in the nav" do
-      within "[data-testid='app-nav']" do
+    it "shows the app name in the sidebar" do
+      within "[data-testid='app-sidebar']" do
         expect(page).to have_text("Hawk")
       end
     end
 
-    it "shows a sign-out button in the nav" do
-      within "[data-testid='app-nav']" do
+    it "shows a sign-out button in the topbar" do
+      within "[data-testid='app-topbar']" do
         expect(page).to have_button("Sign out")
       end
     end
@@ -72,14 +72,14 @@ RSpec.describe "M14 Layout, Navigation & Login", type: :system do
     end
 
     it "redirects to login after signing out" do
-      within "[data-testid='app-nav']" do
+      within "[data-testid='app-topbar']" do
         click_button "Sign out"
       end
       expect(page).to have_current_path(login_path)
     end
 
     it "shows a confirmation notice after signing out" do
-      within "[data-testid='app-nav']" do
+      within "[data-testid='app-topbar']" do
         click_button "Sign out"
       end
       expect(page).to have_selector("[data-testid='flash-notice']")
