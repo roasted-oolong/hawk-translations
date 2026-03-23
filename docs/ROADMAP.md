@@ -106,7 +106,7 @@ Update existing specs:
 ---
 
 ## Milestone 20 — Novel Card Layout Shell
-**Status: 🔲 Not Started**
+**Status: ✅ Done**
 
 Rewrite `novels/_card.html.erb` in place with the gallery card structure: cover image
 slot, serif title, metadata row, progress bar. All placeholder — no real data wired,
@@ -125,7 +125,7 @@ and novel index. Tests pass before M21 begins.
 - No controllers, models, or migrations
 
 ### Specs (written first)
-System specs — `spec/system/m20_novel_card_spec.rb`:
+System specs — `spec/system/novel_card_spec.rb`:
 - Dashboard: novel card renders with cover placeholder
 - Dashboard: novel card title links to novel
 - Novel index: novel card renders with cover placeholder

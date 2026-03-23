@@ -327,12 +327,26 @@ page and renders as plain text (no link) regardless of whether a path is supplie
 **Type:** Display — no behavior
 **Stimulus controller:** None
 **Inputs:** `novel:` record — must have chapters and translation_jobs preloaded;
-`with_attached_cover_art` must be called on the query to avoid N+1
+`with_attached_cover_art` must be called on the query (enforced at M21) to avoid N+1
 **Partial:** `app/views/novels/_card.html.erb`
-**Notes:** Gallery-style card. Cover image area (`aspect-ratio: 2/3`) at top —
-renders attached `cover_art` image if present, `--color-surface-low` placeholder
-if not. Progress bar below title reflects completed-chapter ratio. Used on both
-dashboard and novel index; grid context controls rendered width.
+**Notes:** Gallery-style card. Cover image area (`aspect-ratio: 2/3`) at top, full card
+width, `overflow: hidden` clips to card border-radius. At M20: `--color-surface-low`
+placeholder div. At M21: renders `image_tag` when `cover_art.attached?`, placeholder
+otherwise. Cover area is wrapped in a link to the novel (`aria-hidden="true"
+tabindex="-1"`) — decorative only; screen readers navigate via the title link.
+Title uses serif font stack (`--font-family-serif`). Progress bar fill is static
+`width: 0%` at M20; wired to chapter completion ratio at M21. Pending jobs badge
+renders only when queued + running count > 0. Card has no root padding — cover goes
+edge-to-edge; body section carries its own inner padding. Used on both dashboard and
+novel index; grid context controls rendered width.
+
+**data-testid attributes (M20):**
+- `novel-card` — card root
+- `novel-card-cover-link` — cover `<a>` (href assertions in specs)
+- `novel-card-cover` — cover block (presence check)
+- `novel-card-korean-title` — Korean title span (conditional)
+- `novel-card-progress` — progress bar track (presence check)
+- `novel-card-jobs-badge` — pending jobs badge (conditional)
 
 ### Data Table
 **Type:** Layout — no behavior  

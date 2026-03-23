@@ -1,48 +1,81 @@
 <%#
   app/views/novels/_card.html.erb
 
-  Reusable novel card. Used on the dashboard and the novel index.
+  Gallery-style novel card. Used on the dashboard and the novel index.
   Expects a `novel` local with preloaded chapters and translation_jobs.
+  At M21, `with_attached_cover_art` must also be called on the query.
 
-  Displays: title, Korean title, series, chapter progress, pending jobs count.
-  data-testid="novel-card" is used by system specs.
+  Structure:
+    - Cover image slot (aspect-ratio 2/3, full card width)
+        -> placeholder background at M20; real image wired at M21
+    - Body: serif title, Korean title, metadata row, progress bar,
+            chapter count stat, pending jobs badge
+
+  data-testid="novel-card"              -> card root (system specs)
+  data-testid="novel-card-cover-link"   -> cover <a> (href check)
+  data-testid="novel-card-cover"        -> cover block (presence check)
+  data-testid="novel-card-korean-title" -> Korean title (conditional)
+  data-testid="novel-card-progress"     -> progress bar track (presence check)
+  data-testid="novel-card-jobs-badge"   -> pending jobs badge (conditional)
 %>
 <% translated_count = novel.chapters.count { |c| c.translated? || c.reviewed? } %>
 <% total_chapters   = novel.chapters.size %>
 <% pending_jobs     = novel.translation_jobs.count { |j| j.queued? || j.running? } %>
 
 <article class="novel-card" data-testid="novel-card">
-  <div class="novel-card__header">
-    <%= link_to novel.title, novel, class: "novel-card__title" %>
-    <% if novel.korean_title.present? %>
-      <span class="novel-card__korean-title"><%= novel.korean_title %></span>
-    <% end %>
-  </div>
 
-  <div class="novel-card__meta">
-    <% if novel.series.present? %>
-      <span class="novel-card__series"><%= novel.series.name %></span>
-      <span class="novel-card__meta-sep" aria-hidden="true">·</span>
-    <% end %>
-    <% if novel.genre.present? %>
-      <span class="novel-card__genre"><%= novel.genre %></span>
-      <span class="novel-card__meta-sep" aria-hidden="true">·</span>
-    <% end %>
-    <span class="novel-card__visibility novel-card__visibility--<%= novel.visibility %>">
-      <%= novel.visibility.capitalize %>
-    </span>
-  </div>
-
-  <div class="novel-card__stats">
-    <div class="novel-card__stat">
-      <span class="novel-card__stat-value"><%= translated_count %></span>
-      <span class="novel-card__stat-label"> / <%= total_chapters %> translated</span>
+  <%# Cover image slot — aria-hidden so screen readers only hit the title link %>
+  <%= link_to novel,
+        class: "novel-card__cover-link",
+        "data-testid": "novel-card-cover-link",
+        "aria-hidden": "true",
+        tabindex: "-1" do %>
+    <div class="novel-card__cover" data-testid="novel-card-cover">
+      <%# Placeholder only at M20. At M21: render image_tag when cover_art.attached? %>
     </div>
-    <% if pending_jobs > 0 %>
-      <div class="novel-card__stat novel-card__stat--jobs">
-        <span class="novel-card__stat-value"><%= pending_jobs %></span>
-        <span class="novel-card__stat-label"> pending <%= "job".pluralize(pending_jobs) %></span>
-      </div>
+  <% end %>
+
+  <div class="novel-card__body">
+
+    <%# Title — primary navigation link %>
+    <%= link_to novel.title, novel, class: "novel-card__title" %>
+
+    <%# Korean title — conditional %>
+    <% if novel.korean_title.present? %>
+      <span class="novel-card__korean-title" data-testid="novel-card-korean-title">
+        <%= novel.korean_title %>
+      </span>
     <% end %>
+
+    <%# Metadata row: series · genre %>
+    <div class="novel-card__meta">
+      <% if novel.series.present? %>
+        <span class="novel-card__series"><%= novel.series.name %></span>
+        <span class="novel-card__meta-sep" aria-hidden="true">·</span>
+      <% end %>
+      <% if novel.genre.present? %>
+        <span class="novel-card__genre"><%= novel.genre %></span>
+      <% end %>
+    </div>
+
+    <%# Progress bar (static width: 0% at M20; wired to real data at M21) %>
+    <div class="novel-card__progress-track" data-testid="novel-card-progress">
+      <div class="novel-card__progress-fill" style="width: 0%;"></div>
+    </div>
+
+    <%# Footer: chapter count stat + optional pending jobs badge %>
+    <div class="novel-card__footer">
+      <span class="novel-card__stat">
+        <span class="novel-card__stat-value"><%= translated_count %></span>
+        <span class="novel-card__stat-label"> / <%= total_chapters %> translated</span>
+      </span>
+
+      <% if pending_jobs > 0 %>
+        <span class="novel-card__jobs-badge" data-testid="novel-card-jobs-badge">
+          <%= pending_jobs %> pending <%= "job".pluralize(pending_jobs) %>
+        </span>
+      <% end %>
+    </div>
+
   </div>
 </article>
