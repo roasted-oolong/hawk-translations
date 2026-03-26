@@ -75,3 +75,5 @@ group :development do
   # Run web + JS build processes together in development
   gem "foreman"
 end
+
+gem "honeybadger", "~> 6.5"
