@@ -11,4 +11,10 @@
 # KAMAL_DESTINATION (if set)
 # KAMAL_RUNTIME
 
+bundle exec honeybadger deploy \
+  --repository https://github.com/your_org/your_repo \
+  --revision $KAMAL_VERSION \
+  --environment production \
+  --user $KAMAL_PERFORMER
+  
 echo "$KAMAL_PERFORMER deployed $KAMAL_VERSION to $KAMAL_DESTINATION in $KAMAL_RUNTIME seconds"
