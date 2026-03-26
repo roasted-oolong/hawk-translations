@@ -20,6 +20,7 @@ class NovelsController < ApplicationController
   def create
     @novel = Novel.new(novel_create_params)
     if @novel.save
+      AutoAssignNovel.call(@novel, current_user)
       redirect_to @novel, notice: "Novel created."
     else
       render :new, status: :unprocessable_entity

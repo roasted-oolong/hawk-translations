@@ -9,6 +9,7 @@ class SessionsController < ApplicationController
   # GET /auth/google_oauth2/callback
   def create
     user = User.from_omniauth(request.env["omniauth.auth"])
+    ProvisionWorkspace.call(user) if user.previously_new_record?
     session[:user_id] = user.id
     redirect_to root_path, notice: "Signed in as #{user.name}"
   rescue ActiveRecord::RecordInvalid => e

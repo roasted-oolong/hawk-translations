@@ -905,6 +905,17 @@ This means the dashboard's `NovelTeamAssignment`-based query works for solo
 translators from day one with no manual setup. The org/team structure is real —
 not a bypass — so it is ready for collaborators when they are invited.
 
+**Trigger for ProvisionWorkspace:** `SessionsController#create` calls
+`ProvisionWorkspace.call(user)` only when `user.previously_new_record?` is true
+(Rails 6.1+ — returns true if the record was just inserted in this request).
+This is cheaper than a separate `provisioned_at` column and requires no migration.
+`ProvisionWorkspace` also has its own idempotency guard (`memberships.exists?`),
+so a double-call on the same user is safe.
+
+**Trigger for AutoAssignNovel:** `NovelsController#create` calls
+`AutoAssignNovel.call(@novel, current_user)` immediately after a successful save.
+Uses `find_or_create_by!` so re-running on the same (novel, team) pair is a no-op.
+
 **MVP assumption:** `AutoAssignNovel` picks `current_user.teams.first` as the
 target team. This is correct for a solo translator with one team. When multi-team
 users exist (a translator who is a member of several teams), the assignment target
