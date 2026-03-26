@@ -15,6 +15,20 @@ class User < ApplicationRecord
   validates :uid,      presence: true, uniqueness: { scope: :provider }
 
   # ---------------------------------------------------------------------------
+  # Instance methods
+  # ---------------------------------------------------------------------------
+
+  # Returns the most privileged role label for display purposes.
+  # Hierarchy: platform_admin > team_admin > team_member > (none)
+  def display_role
+    return "Platform Admin" if platform_admin?
+    return "Team Admin"     if memberships.any?(&:team_admin?)
+    return "Team Member"    if memberships.any?(&:team_member?)
+
+    "No role assigned"
+  end
+
+  # ---------------------------------------------------------------------------
   # Class methods
   # ---------------------------------------------------------------------------
 

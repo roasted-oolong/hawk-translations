@@ -103,4 +103,46 @@ RSpec.describe User, type: :model do
       end
     end
   end
+
+  describe "#display_role" do
+    context "when the user is a platform admin" do
+      it "returns 'Platform Admin' regardless of memberships" do
+        user = create(:user, platform_admin: true)
+        create(:membership, user: user, role: "team_member")
+        expect(user.display_role).to eq("Platform Admin")
+      end
+    end
+
+    context "when the user has a team_admin membership" do
+      it "returns 'Team Admin'" do
+        user = create(:user, platform_admin: false)
+        create(:membership, user: user, role: "team_admin")
+        expect(user.display_role).to eq("Team Admin")
+      end
+    end
+
+    context "when the user has only team_member memberships" do
+      it "returns 'Team Member'" do
+        user = create(:user, platform_admin: false)
+        create(:membership, user: user, role: "team_member")
+        expect(user.display_role).to eq("Team Member")
+      end
+    end
+
+    context "when the user has both team_admin and team_member memberships" do
+      it "returns 'Team Admin' (highest role wins)" do
+        user = create(:user, platform_admin: false)
+        create(:membership, user: user, role: "team_member")
+        create(:membership, user: user, role: "team_admin")
+        expect(user.display_role).to eq("Team Admin")
+      end
+    end
+
+    context "when the user has no memberships" do
+      it "returns 'No role assigned'" do
+        user = create(:user, platform_admin: false)
+        expect(user.display_role).to eq("No role assigned")
+      end
+    end
+  end
 end
