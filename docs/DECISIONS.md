@@ -893,3 +893,20 @@ then calls `signed_id` on a blob with no persisted `id`, raising
 Fix: guard with `novel.cover_art.attached? && novel.cover_art.blob.persisted?`.
 The `persisted?` check is false on the rolled-back blob, so the thumbnail branch
 is correctly skipped and the form re-renders cleanly.
+
+## 2026-03 · Solo translator workspace auto-provisioned on first sign-in
+
+When a new user authenticates for the first time, `ProvisionWorkspace` is called
+automatically to create their org, default team, and team_admin membership.
+When they create a novel, `AutoAssignNovel` creates a `NovelTeamAssignment` at
+`permission_level: "translator"` against their first team.
+
+This means the dashboard's `NovelTeamAssignment`-based query works for solo
+translators from day one with no manual setup. The org/team structure is real —
+not a bypass — so it is ready for collaborators when they are invited.
+
+**MVP assumption:** `AutoAssignNovel` picks `current_user.teams.first` as the
+target team. This is correct for a solo translator with one team. When multi-team
+users exist (a translator who is a member of several teams), the assignment target
+will need to be explicit — either chosen during novel creation or derived from
+org membership. See ROADMAP.md.

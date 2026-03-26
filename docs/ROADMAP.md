@@ -182,3 +182,19 @@ System specs — `spec/system/m21_cover_art_spec.rb`:
 ### Docs
 - `docs/DECISIONS.md` — cover art optional with placeholder; purge via dedicated route; `.with_attached_cover_art` on both queries
 - `docs/UI.md` — update novel card component entry: cover image slot, progress bar, N+1 note on query
+
+---
+
+## Future — Multi-team novel assignment
+
+`AutoAssignNovel` currently assigns every new novel to `current_user.teams.first`.
+This is correct for a solo translator with one team. When a user belongs to
+multiple teams (e.g. a translator who is a member of two orgs, or an org with
+multiple specialist teams), the assignment target must be explicit.
+
+Options to evaluate at that milestone:
+- A team selector added to the novel creation form
+- Assignment derived from the org selected during novel creation
+- A post-creation assignment UI on the novel show page
+
+Prerequisite: invite flow and multi-team membership are in scope first.
