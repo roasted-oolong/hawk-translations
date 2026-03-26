@@ -1,0 +1,14 @@
+<%# app/views/components/_user_widget.html.erb
+  Sidebar user identity widget. Displays initials avatar, name, and highest role.
+  Rendered at the bottom of _sidebar.html.erb.
+  Local: user — the current_user object.
+%>
+<div class="sidebar-user" data-testid="sidebar-user-widget">
+  <div class="sidebar-user__avatar" aria-hidden="true">
+    <%= user.name.split.first(2).map { |w| w[0].upcase }.join %>
+  </div>
+  <div class="sidebar-user__info">
+    <span class="sidebar-user__name"><%= user.name %></span>
+    <span class="sidebar-user__role"><%= user.display_role %></span>
+  </div>
+</div>
