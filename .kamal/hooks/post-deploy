@@ -11,8 +11,11 @@
 # KAMAL_DESTINATION (if set)
 # KAMAL_RUNTIME
 
+API_KEY=$(RAILS_ENV=production bundle exec rails runner "print Rails.application.credentials.dig(:honeybadger, :api_key)")
+
 bundle exec honeybadger deploy \
-  --repository https://github.com/your_org/your_repo \
+  --api-key "$API_KEY" \
+  --repository https://github.com/roasted-oolong/hawk \
   --revision $KAMAL_VERSION \
   --environment production \
   --user $KAMAL_PERFORMER
