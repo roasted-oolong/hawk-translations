@@ -198,3 +198,11 @@ Options to evaluate at that milestone:
 - A post-creation assignment UI on the novel show page
 
 Prerequisite: invite flow and multi-team membership are in scope first.
+
+---
+
+## Future — Data Cleanup: poc_user_id
+
+`novels.poc_user_id` is currently `nil` for all seeded/imported novels.
+Add a one-time task or admin UI to assign the POC user on existing records.
+For new novels, `poc_user_id` should default to `current_user` at creation time.
