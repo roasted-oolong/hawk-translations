@@ -1,14 +1,30 @@
 require "rails_helper"
 
 RSpec.describe "Chapters", type: :request do
-  let(:user)    { create(:user) }
-  let(:novel)   { create(:novel) }
+  let(:user)     { create(:user) }
+  let(:novel)    { create(:novel) }
   let!(:chapter) { create(:chapter, novel: novel, number: 1, status: "untranslated") }
 
   before { sign_in(user) }
 
   # ---------------------------------------------------------------------------
-  # Chapter list (story #12)
+  # Helpers — build uploaded files whose *content* drives language detection
+  # ---------------------------------------------------------------------------
+  # Enough Hangul to be unambiguously >50% of non-ASCII, non-whitespace chars.
+  KOREAN_CONTENT  = ("가나다라마바사아자차" * 40).freeze
+  # Pure ASCII — no non-ASCII chars at all → :english
+  ENGLISH_CONTENT = ("The manager stepped into the boardroom. " * 40).freeze
+
+  def uploaded_file(content:, filename:)
+    Rack::Test::UploadedFile.new(
+      StringIO.new(content),
+      "text/plain",
+      original_filename: filename
+    )
+  end
+
+  # ---------------------------------------------------------------------------
+  # Chapter list
   # ---------------------------------------------------------------------------
   describe "GET /novels/:novel_id/chapters" do
     it "returns 200 and lists chapters" do
@@ -38,41 +54,54 @@ RSpec.describe "Chapters", type: :request do
   end
 
   # ---------------------------------------------------------------------------
-  # Single upload (story #10)
+  # Single upload
   # ---------------------------------------------------------------------------
   describe "POST /novels/:novel_id/chapters — single file" do
-    let(:korean_file) do
-      Rack::Test::UploadedFile.new(
-        StringIO.new("Korean source content"),
-        "text/plain",
-        original_filename: "ch5_korean"
-      )
-    end
+    context "when file content is Korean" do
+      let(:file) { uploaded_file(content: KOREAN_CONTENT, filename: "3화.txt") }
 
-    context "with valid params" do
-      it "creates a chapter record and attaches the file" do
+      it "creates a chapter, attaches to korean_source, status untranslated" do
         expect {
           post novel_chapters_path(novel), params: {
-            chapter: {
-              number:        5,
-              status:        "untranslated",
-              korean_source: [ korean_file ]
-            }
+            chapter: { files: [file], number: 3 }
           }
         }.to change(Chapter, :count).by(1)
 
         ch = Chapter.last
-        expect(ch.number).to eq(5)
+        expect(ch.number).to eq(3)
+        expect(ch.status).to eq("untranslated")
         expect(ch.korean_source).to be_attached
+        expect(ch.translated_output).not_to be_attached
         expect(response).to redirect_to(novel_chapter_path(novel, ch))
       end
     end
 
-    context "with missing chapter number" do
-      it "does not create a chapter and re-renders new" do
+    context "when file content is English" do
+      let(:file) { uploaded_file(content: ENGLISH_CONTENT, filename: "Chapter 3.txt") }
+
+      it "creates a chapter, attaches to translated_output, status translated" do
         expect {
           post novel_chapters_path(novel), params: {
-            chapter: { number: nil, korean_source: [ korean_file ] }
+            chapter: { files: [file], number: 3 }
+          }
+        }.to change(Chapter, :count).by(1)
+
+        ch = Chapter.last
+        expect(ch.number).to eq(3)
+        expect(ch.status).to eq("translated")
+        expect(ch.translated_output).to be_attached
+        expect(ch.korean_source).not_to be_attached
+        expect(response).to redirect_to(novel_chapter_path(novel, ch))
+      end
+    end
+
+    context "when the chapter number param is missing" do
+      let(:file) { uploaded_file(content: KOREAN_CONTENT, filename: "notes.txt") }
+
+      it "does not create a chapter and returns unprocessable_entity" do
+        expect {
+          post novel_chapters_path(novel), params: {
+            chapter: { files: [file], number: nil }
           }
         }.not_to change(Chapter, :count)
 
@@ -80,11 +109,14 @@ RSpec.describe "Chapters", type: :request do
       end
     end
 
-    context "with a duplicate chapter number" do
-      it "does not create a chapter and re-renders new" do
+    context "when the chapter number is a duplicate" do
+      # chapter 1 already exists (created in outer let!)
+      let(:file) { uploaded_file(content: KOREAN_CONTENT, filename: "1화.txt") }
+
+      it "does not create a chapter and returns unprocessable_entity" do
         expect {
           post novel_chapters_path(novel), params: {
-            chapter: { number: 1, korean_source: [ korean_file ] }  # chapter 1 already exists
+            chapter: { files: [file], number: 1 }
           }
         }.not_to change(Chapter, :count)
 
@@ -94,58 +126,109 @@ RSpec.describe "Chapters", type: :request do
   end
 
   # ---------------------------------------------------------------------------
-  # Bulk upload (story #11)
+  # Bulk upload
   # ---------------------------------------------------------------------------
   describe "POST /novels/:novel_id/chapters — bulk upload" do
-    let(:file_ch10) do
-      Rack::Test::UploadedFile.new(
-        StringIO.new("ch10 content"),
-        "text/plain",
-        original_filename: "ch10_korean"
-      )
-    end
+    context "with one Korean-content file and one English-content file" do
+      let(:korean_file)  { uploaded_file(content: KOREAN_CONTENT,  filename: "5화.txt") }
+      let(:english_file) { uploaded_file(content: ENGLISH_CONTENT, filename: "Chapter 6.txt") }
 
-    let(:file_ch11) do
-      Rack::Test::UploadedFile.new(
-        StringIO.new("ch11 content"),
-        "text/plain",
-        original_filename: "ch11_korean"
-      )
-    end
-
-    it "creates one chapter per file and redirects to chapter list" do
-      expect {
-        post novel_chapters_path(novel), params: {
-          chapter: { korean_source: [ file_ch10, file_ch11 ] }
-        }
-      }.to change(Chapter, :count).by(2)
-
-      expect(response).to redirect_to(novel_chapters_path(novel))
-    end
-
-    context "when a filename cannot be parsed" do
-      let(:bad_file) do
-        Rack::Test::UploadedFile.new(
-          StringIO.new("bad"),
-          "text/plain",
-          original_filename: "not_a_chapter.txt"
-        )
-      end
-
-      it "skips the unparseable file and still creates the valid ones" do
+      it "creates two chapters with correct attachment slots and statuses" do
         expect {
           post novel_chapters_path(novel), params: {
-            chapter: { korean_source: [ file_ch10, bad_file ] }
+            chapter: {
+              files: [korean_file, english_file],
+              numbers: {
+                "5화.txt"       => 5,
+                "Chapter 6.txt" => 6
+              }
+            }
+          }
+        }.to change(Chapter, :count).by(2)
+
+        korean_ch  = Chapter.find_by(number: 5)
+        english_ch = Chapter.find_by(number: 6)
+
+        expect(korean_ch.korean_source).to be_attached
+        expect(korean_ch.translated_output).not_to be_attached
+        expect(korean_ch.status).to eq("untranslated")
+
+        expect(english_ch.translated_output).to be_attached
+        expect(english_ch.korean_source).not_to be_attached
+        expect(english_ch.status).to eq("translated")
+
+        expect(response).to redirect_to(novel_chapters_path(novel))
+      end
+    end
+
+    context "when a filename is parseable" do
+      let(:file) { uploaded_file(content: KOREAN_CONTENT, filename: "10화.txt") }
+
+      it "uses the number parsed from the filename when no per-file number param is given" do
+        expect {
+          post novel_chapters_path(novel), params: {
+            chapter: { files: [file], numbers: {} }
+          }
+        }.to change(Chapter, :count).by(1)
+
+        expect(Chapter.last.number).to eq(10)
+      end
+    end
+
+    context "when a filename is unparseable and a per-file number param is provided" do
+      let(:file) { uploaded_file(content: KOREAN_CONTENT, filename: "notes.txt") }
+
+      it "uses the number from the param" do
+        expect {
+          post novel_chapters_path(novel), params: {
+            chapter: {
+              files: [file],
+              numbers: { "notes.txt" => 7 }
+            }
+          }
+        }.to change(Chapter, :count).by(1)
+
+        expect(Chapter.last.number).to eq(7)
+      end
+    end
+
+    context "when a filename is unparseable and no per-file number param is provided" do
+      let(:good_file) { uploaded_file(content: KOREAN_CONTENT,  filename: "5화.txt") }
+      let(:bad_file)  { uploaded_file(content: ENGLISH_CONTENT, filename: "notes.txt") }
+
+      it "skips the file with no resolvable number and creates the valid ones" do
+        expect {
+          post novel_chapters_path(novel), params: {
+            chapter: {
+              files: [good_file, bad_file],
+              numbers: {}
+            }
           }
         }.to change(Chapter, :count).by(1)
 
         expect(response).to redirect_to(novel_chapters_path(novel))
       end
     end
+
+    context "when a chapter number would duplicate an existing record" do
+      let(:dup_file)  { uploaded_file(content: KOREAN_CONTENT, filename: "1화.txt") }
+      let(:good_file) { uploaded_file(content: KOREAN_CONTENT, filename: "9화.txt") }
+
+      it "skips the duplicate and still creates the valid file" do
+        expect {
+          post novel_chapters_path(novel), params: {
+            chapter: { files: [dup_file, good_file], numbers: {} }
+          }
+        }.to change(Chapter, :count).by(1)
+
+        expect(Chapter.find_by(number: 9)).to be_present
+        expect(response).to redirect_to(novel_chapters_path(novel))
+      end
+    end
   end
 
   # ---------------------------------------------------------------------------
-  # Edit / update status (story #14)
+  # Edit / update status
   # ---------------------------------------------------------------------------
   describe "GET /novels/:novel_id/chapters/:id/edit" do
     it "returns 200" do
@@ -185,14 +268,14 @@ RSpec.describe "Chapters", type: :request do
   end
 
   # ---------------------------------------------------------------------------
-  # Downloads (stories #13)
+  # Downloads
   # ---------------------------------------------------------------------------
   describe "GET download_korean_source" do
     context "when file is attached" do
       before do
         chapter.korean_source.attach(
-          io: StringIO.new("korean"),
-          filename: "ch1_korean",
+          io:           StringIO.new("korean"),
+          filename:     "3화.txt",
           content_type: "text/plain"
         )
       end
@@ -215,8 +298,8 @@ RSpec.describe "Chapters", type: :request do
     context "when file is attached" do
       before do
         chapter.translated_output.attach(
-          io: StringIO.new("translated"),
-          filename: "Chapter_1.txt",
+          io:           StringIO.new("translated"),
+          filename:     "Chapter 1.txt",
           content_type: "text/plain"
         )
       end

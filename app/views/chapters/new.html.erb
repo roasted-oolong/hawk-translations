@@ -11,131 +11,65 @@
 <div class="page-header">
   <h1 class="page-title">Upload Chapter(s)</h1>
   <p class="page-subtitle">
-    Upload a single chapter with an explicit number, or drop multiple Korean
-    source files and chapter numbers will be parsed from filenames automatically.
+    Select or drop <code>.txt</code> files — any number. Language is detected
+    from file content automatically. Provide a chapter number for each file
+    before submitting.
   </p>
 </div>
 
-<div class="upload-panels">
+<%= form_with url: novel_chapters_path(@novel),
+      multipart: true,
+      data: { controller: "upload-review" } do |f| %>
 
-  <%# ------------------------------------------------------------------ %>
-  <%# Panel A — Bulk upload                                               %>
-  <%# ------------------------------------------------------------------ %>
-  <div class="card upload-panel" data-testid="bulk-upload-fieldset">
-    <div class="upload-panel__header">
-      <h2 class="upload-panel__title">Bulk upload</h2>
-      <p class="upload-panel__description">
-        Select multiple <code>ch{N}_korean</code> or <code>Chapter_{N}...</code>
-        files. Chapter numbers are parsed from filenames automatically.
-      </p>
-    </div>
+  <%# Drop zone %>
+  <div class="upload-zone"
+       data-upload-review-target="dropZone"
+       data-testid="upload-zone"
+       data-action="dragover->upload-review#onDragOver
+                    dragleave->upload-review#onDragLeave
+                    drop->upload-review#onDrop">
 
-    <%= form_with url: novel_chapters_path(@novel), multipart: true,
-          html: { class: "upload-panel__form" } do |f| %>
-      <div class="form-group">
-        <%= f.label :korean_source, "Korean source files",
-              for: "bulk_korean_source", class: "form-label" %>
-        <div class="file-upload"
-             data-controller="file-upload"
-             data-action="dragover->file-upload#onDragOver dragleave->file-upload#onDragLeave drop->file-upload#onDrop">
-          <%= f.file_field :korean_source,
-                id: "bulk_korean_source",
-                name: "chapter[korean_source][]",
-                multiple: true,
-                accept: "text/plain,.txt",
-                class: "sr-only",
-                "data-file-upload-target": "input",
-                "data-action": "change->file-upload#onChange",
-                "data-testid": "bulk-file-input" %>
-          <label for="bulk_korean_source"
-                 class="file-upload__zone"
-                 data-file-upload-target="zone">
-            <strong>Click to browse</strong> or drag files here
-            <p class="file-upload__zone-hint">Accepts .txt &mdash; numbers parsed from filenames</p>
-          </label>
-          <div class="file-upload__preview file-upload__preview--empty"
-               data-file-upload-target="preview"></div>
-        </div>
-      </div>
-      <div class="form-actions">
-        <%= f.submit "Upload files", class: "btn btn--primary",
-              data: { "file-upload-target": "submit" },
-              disabled: true %>
-      </div>
-    <% end %>
+    <%= f.file_field :files,
+          name:     "chapter[files][]",
+          multiple: true,
+          accept:   "text/plain,.txt",
+          class:    "sr-only",
+          id:       "chapter_files",
+          data:     {
+            "upload-review-target": "input",
+            action: "change->upload-review#onFilesChanged"
+          } %>
+
+    <label for="chapter_files" class="upload-zone__label">
+      <span class="upload-zone__icon" aria-hidden="true">⬆</span>
+      <strong>Click to browse</strong> or drag files here
+      <span class="upload-zone__hint">Accepts .txt — language detected from content</span>
+    </label>
   </div>
 
-  <%# ------------------------------------------------------------------ %>
-  <%# Panel B — Single chapter upload                                     %>
-  <%# ------------------------------------------------------------------ %>
-  <div class="card upload-panel" data-testid="single-upload-fieldset">
-    <div class="upload-panel__header">
-      <h2 class="upload-panel__title">Single chapter</h2>
-      <p class="upload-panel__description">
-        Upload one chapter with an explicit chapter number.
-      </p>
-    </div>
-
-    <%= form_with url: novel_chapters_path(@novel), multipart: true,
-          html: { class: "upload-panel__form" } do |f| %>
-      <div class="form-group">
-        <%= f.label :number, "Chapter number", class: "form-label" %>
-        <%= f.number_field :number,
-              name: "chapter[number]",
-              min: 1,
-              class: "form-input",
-              placeholder: "e.g. 5" %>
-      </div>
-
-      <div class="form-group">
-        <%= f.label :title, "Title (optional subtitle)", class: "form-label" %>
-        <%= f.text_field :title,
-              name: "chapter[title]",
-              class: "form-input",
-              placeholder: "e.g. The Manager's Regression" %>
-      </div>
-
-      <div class="form-group">
-        <%= f.label :korean_source, "Korean source file",
-              for: "single_korean_source", class: "form-label" %>
-        <div class="file-upload"
-             data-controller="file-upload"
-             data-action="dragover->file-upload#onDragOver dragleave->file-upload#onDragLeave drop->file-upload#onDrop">
-          <%= f.file_field :korean_source,
-                id: "single_korean_source",
-                name: "chapter[korean_source][]",
-                multiple: false,
-                accept: "text/plain,.txt",
-                class: "sr-only",
-                "data-file-upload-target": "input",
-                "data-action": "change->file-upload#onChange" %>
-          <label for="single_korean_source"
-                 class="file-upload__zone"
-                 data-file-upload-target="zone">
-            <strong>Click to browse</strong> or drag a file here
-            <p class="file-upload__zone-hint">Accepts .txt files</p>
-          </label>
-          <div class="file-upload__preview file-upload__preview--empty"
-               data-file-upload-target="preview"></div>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <%= f.label :status, "Status", class: "form-label" %>
-        <%= f.select :status,
-              options_for_select(
-                Chapter.statuses.keys.map { |s| [s.humanize, s] },
-                "untranslated"
-              ),
-              {},
-              name: "chapter[status]",
-              class: "form-select" %>
-      </div>
-
-      <div class="form-actions">
-        <%= f.submit "Upload", class: "btn btn--primary" %>
-      </div>
-    <% end %>
+  <%# Review table — hidden until files are selected; populated by controller %>
+  <div class="upload-review" data-upload-review-target="reviewTable" hidden>
+    <table class="data-table upload-review__table" data-testid="upload-review-table">
+      <thead>
+        <tr>
+          <th class="data-table__th">File</th>
+          <th class="data-table__th upload-review__th--language">Language</th>
+          <th class="data-table__th upload-review__th--number">Chapter #</th>
+          <th class="data-table__th upload-review__th--remove"></th>
+        </tr>
+      </thead>
+      <tbody data-upload-review-target="reviewBody">
+        <%# Rows are rendered here by upload_review_controller.ts %>
+      </tbody>
+    </table>
   </div>
 
-</div>
+  <div class="form-actions">
+    <%= f.submit "Upload",
+          class:    "btn btn--primary",
+          disabled: true,
+          data:     { "upload-review-target": "submitButton", testid: "upload-submit" } %>
+    <%= link_to "Cancel", novel_chapters_path(@novel), class: "btn btn--ghost" %>
+  </div>
+
+<% end %>

@@ -1,6 +1,6 @@
 /* ==========================================================================
    _chapters.css
-   Chapter index table, chapter show page, and upload form panels.
+   Chapter index table, chapter show page, and upload form.
    ========================================================================== */
 
 /* --- Data table — shared base used by chapters and jobs --- */
@@ -139,37 +139,6 @@
   font-size: var(--text-sm);
 }
 
-/* --- Upload form panels --- */
-.upload-panels {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
-  gap: var(--space-6);
-  margin-top: var(--space-2);
-}
-
-.upload-panel__header {
-  margin-bottom: var(--space-5);
-}
-
-.upload-panel__title {
-  font-size: var(--text-lg);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text);
-  margin-bottom: var(--space-2);
-}
-
-.upload-panel__description {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  line-height: 1.5;
-}
-
-.upload-panel__form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
 /* --- Shared form primitives (used across chapters + jobs) --- */
 .form-group {
   display: flex;
@@ -255,54 +224,97 @@
   padding-left: var(--space-4);
 }
 
-/* --- File upload drop zone --- */
-.file-upload {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.file-upload__zone {
-  display: block;
+/* --- Upload drop zone --- */
+.upload-zone {
+  position: relative;
   border: 2px dashed var(--color-border);
   border-radius: var(--radius-md);
-  padding: var(--space-8) var(--space-6);
-  text-align: center;
-  cursor: pointer;
-  transition: border-color var(--transition-fast), background-color var(--transition-fast);
   background-color: var(--color-bg);
-  user-select: none;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+  margin-bottom: var(--space-6);
 }
 
-.file-upload__zone:hover,
-.file-upload--dragging .file-upload__zone,
-.file-upload__zone.file-upload--dragging {
+.upload-zone--dragging {
   border-color: var(--color-primary);
   background-color: var(--color-primary-subtle);
 }
 
-.file-upload__zone-hint {
+.upload-zone__label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-10) var(--space-6);
+  cursor: pointer;
+  text-align: center;
+  user-select: none;
+  color: var(--color-text-secondary);
   font-size: var(--text-sm);
+}
+
+.upload-zone__label:hover {
+  color: var(--color-text);
+}
+
+.upload-zone__icon {
+  font-size: var(--text-2xl);
+  color: var(--color-text-muted);
+}
+
+.upload-zone__hint {
+  display: block;
+  font-size: var(--text-xs);
   color: var(--color-text-muted);
   margin-top: var(--space-1);
 }
 
-.file-upload__preview {
-  min-height: 1.5rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+/* --- Upload review table --- */
+.upload-review {
+  margin-bottom: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
-.file-upload__preview--empty {
-  display: none;
+.upload-review__table {
+  /* filename column stretches; language, number, remove are fixed */
 }
 
-.file-upload__filename {
-  font-size: var(--text-xs);
-  font-family: var(--font-family-mono);
-  background-color: var(--color-accent-subtle);
-  color: var(--color-accent);
-  border-radius: var(--radius-sm);
+.upload-review__th--language {
+  width: 7rem;
+}
+
+.upload-review__th--number {
+  width: 7rem;
+}
+
+.upload-review__th--remove {
+  width: 5rem;
+  text-align: right;
+}
+
+.upload-review__number-input {
+  width: 6rem;
+}
+
+/* --- Language badge --- */
+.upload-language-badge {
+  display: inline-block;
   padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.03em;
+}
+
+/* Korean source → same palette as untranslated status badge */
+.upload-language-badge--korean {
+  background-color: var(--color-status-untranslated-bg, #fef3c7);
+  color: var(--color-status-untranslated-text, #92400e);
+}
+
+/* English / translated output → same palette as translated status badge */
+.upload-language-badge--english {
+  background-color: var(--color-status-translated-bg, #d1fae5);
+  color: var(--color-status-translated-text, #065f46);
 }

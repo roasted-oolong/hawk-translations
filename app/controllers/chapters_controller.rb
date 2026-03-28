@@ -13,16 +13,22 @@ class ChaptersController < ApplicationController
     @chapter = @novel.chapters.build
   end
 
-  # Handles both single-file and bulk uploads.
-  # Bulk: multiple korean_source files → creates one chapter record per file.
-  # Single: one korean_source file → standard create.
+  # Unified upload: one or many files through a single `chapter[files][]` input.
+  # Language is detected from file content by ChapterFileClassifier.
+  #
+  # Routing:
+  #   - If the request omits chapter[number] (the scalar field), use the bulk
+  #     path. The review table never sends chapter[number]; it sends
+  #     chapter[numbers][filename] instead — but Rack drops empty hashes, so
+  #     the absence of the scalar key is the only reliable discriminator.
+  #   - If chapter[number] is present, use the legacy single-file path.
   def create
-    files = Array(chapter_params[:korean_source]).compact_blank
+    files = Array(params.dig(:chapter, :files)).compact_blank
 
-    if files.many?
+    if bulk_upload?
       create_bulk(files)
     else
-      create_single
+      create_single(files.first)
     end
   end
 
@@ -69,25 +75,46 @@ class ChaptersController < ApplicationController
     @chapter = @novel.chapters.find(params[:id])
   end
 
-  # Params for creating a new chapter (includes file uploads)
-  def chapter_params
-    params.require(:chapter).permit(:number, :title, :status, korean_source: [])
-  end
-
   # Params for updating an existing chapter (status only — files attached separately)
   def chapter_update_params
     params.require(:chapter).permit(:title, :status, :korean_source, :translated_output)
   end
 
-  def create_single
+  # Distinguish bulk (review-table) submissions from legacy single-file uploads.
+  #
+  # The legacy single-file form sends chapter[number] (a scalar integer field).
+  # The review table sends chapter[numbers] (a per-filename hash), but Rack
+  # silently drops empty hashes during form encoding — so chapter[numbers] is
+  # absent from params whenever every number was resolved from the filename
+  # and the user overrode nothing.
+  #
+  # The only reliable discriminator is therefore the *absence* of the scalar
+  # chapter[number] key: single-file always sends it; bulk never does.
+  def bulk_upload?
+    !params[:chapter]&.key?(:number)
+  end
+
+  # Resolves the chapter number for one file in a bulk upload.
+  # Priority: classifier result (from filename) → per-file param → nil.
+  def resolve_number(filename:, classified_number:)
+    return classified_number if classified_number
+
+    raw = params.dig(:chapter, :numbers, filename).presence
+    raw&.to_i
+  end
+
+  def create_single(file)
+    return render_single_error("No file provided.") if file.nil?
+
+    classification = ChapterFileClassifier.new(file, file.original_filename).classify
+    number         = params.dig(:chapter, :number).presence&.to_i
+
     @chapter = @novel.chapters.build(
-      number: chapter_params[:number],
-      title:  chapter_params[:title],
-      status: chapter_params[:status].presence || "untranslated"
+      number: number,
+      title:  params.dig(:chapter, :title).presence
     )
 
-    file = Array(chapter_params[:korean_source]).first
-    @chapter.korean_source.attach(file) if file.present?
+    attach_file(@chapter, file, classification[:language])
 
     if @chapter.save
       redirect_to novel_chapter_path(@novel, @chapter), notice: "Chapter created."
@@ -101,15 +128,19 @@ class ChaptersController < ApplicationController
     failures = []
 
     files.each do |file|
-      number = extract_chapter_number(file.original_filename)
+      classification = ChapterFileClassifier.new(file, file.original_filename).classify
+      number         = resolve_number(
+        filename:          file.original_filename,
+        classified_number: classification[:chapter_number]
+      )
 
       if number.nil?
-        failures << "#{file.original_filename} — could not parse chapter number"
+        failures << "#{file.original_filename} — could not determine chapter number"
         next
       end
 
-      chapter = @novel.chapters.build(number: number, status: "untranslated")
-      chapter.korean_source.attach(file)
+      chapter = @novel.chapters.build(number: number)
+      attach_file(chapter, file, classification[:language])
 
       if chapter.save
         created << chapter
@@ -124,24 +155,22 @@ class ChaptersController < ApplicationController
     redirect_to novel_chapters_path(@novel), notice: notice, alert: alert
   end
 
-  # Parses chapter number from filenames like:
-  #   ch1_korean, ch74_korean
-  #   Chapter_1 - The Super Manager's Regression.txt
-  #   Chapter_68 - Script Reading(1).txt
-  #   Chapter_10.txt
-  def extract_chapter_number(filename)
-    base = File.basename(filename, ".*")
-
-    # ch1_korean, ch74_korean
-    if base =~ /\Ach(\d+)_korean\z/i
-      return $1.to_i
+  # Attaches `file` to the correct Active Storage slot and sets chapter status
+  # based on detected language. Language is the sole authority — no status param.
+  def attach_file(chapter, file, language)
+    case language
+    when :korean
+      chapter.korean_source.attach(file)
+      chapter.status = "untranslated"
+    when :english
+      chapter.translated_output.attach(file)
+      chapter.status = "translated"
     end
+  end
 
-    # Chapter_1, Chapter_68 - Script Reading(1), Chapter_10
-    if base =~ /\AChapter_(\d+)/i
-      return $1.to_i
-    end
-
-    nil
+  def render_single_error(message)
+    @chapter = @novel.chapters.build
+    flash.now[:alert] = message
+    render :new, status: :unprocessable_entity
   end
 end
