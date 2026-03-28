@@ -1,10 +1,11 @@
 # spec/system/m16_chapters_jobs_spec.rb
 #
 # M16 — Chapter List & Translation Jobs
+# M22 — Unified Chapter Upload (upload form section rewritten)
 #
 # Covers:
 #   1. Chapter index — table renders, status badges present, upload + download links
-#   2. Chapter new — single upload form, bulk upload form
+#   2. Chapter new — unified upload form (M22)
 #   3. Translation jobs index — job list, trigger form, cancel action
 #   4. Translation jobs show — job detail, result payload, Turbo Frame polling markup
 #
@@ -109,7 +110,7 @@ RSpec.describe "M16 Chapter List & Translation Jobs", type: :system do
   end
 
   # ---------------------------------------------------------------------------
-  # 2. Chapter new — upload form
+  # 2. Chapter new — unified upload form (M22)
   # ---------------------------------------------------------------------------
   describe "chapter new / upload form" do
     let(:org)   { create(:organization) }
@@ -129,35 +130,119 @@ RSpec.describe "M16 Chapter List & Translation Jobs", type: :system do
       expect(page).to have_selector("[data-testid='breadcrumb']")
     end
 
-    it "has a single chapter upload fieldset" do
-      expect(page).to have_selector("[data-testid='single-upload-fieldset']")
+    it "renders the drop zone" do
+      expect(page).to have_selector("[data-testid='upload-zone']")
     end
 
-    it "has a bulk upload fieldset" do
-      expect(page).to have_selector("[data-testid='bulk-upload-fieldset']")
+    it "submit button is disabled before any files are selected" do
+      expect(page).to have_button("Upload", disabled: true)
     end
 
-    it "has a chapter number field in the single upload section" do
-      within "[data-testid='single-upload-fieldset']" do
-        expect(page).to have_field("Chapter number")
+    it "does not show the review table before files are selected" do
+      expect(page).not_to have_selector("[data-testid='upload-review-table']")
+    end
+
+    context "after attaching a Korean-content file" do
+      let(:korean_content) { "가나다라마바사아자차" * 40 }
+
+      before do
+        # Attach a file whose content is Hangul-majority → Korean
+        file_path = file_fixture_path("korean_source.txt", korean_content)
+        attach_file("chapter[files][]", file_path, make_visible: true)
+      end
+
+      it "shows the review table" do
+        expect(page).to have_selector("[data-testid='upload-review-table']")
+      end
+
+      it "shows a row for the attached file" do
+        expect(page).to have_selector("[data-testid='upload-review-row']")
+      end
+
+      it "shows a Korean language badge" do
+        expect(page).to have_selector("[data-testid='upload-language-badge']", text: "Korean")
       end
     end
 
-    it "has a file input for single upload" do
-      within "[data-testid='single-upload-fieldset']" do
-        expect(page).to have_field("Korean source file")
+    context "after attaching an English-content file" do
+      let(:english_content) { "The manager stepped into the boardroom. " * 40 }
+
+      before do
+        file_path = file_fixture_path("english_output.txt", english_content)
+        attach_file("chapter[files][]", file_path, make_visible: true)
+      end
+
+      it "shows an English language badge" do
+        expect(page).to have_selector("[data-testid='upload-language-badge']", text: "English")
       end
     end
 
-    it "has a multi-file input for bulk upload" do
-      within "[data-testid='bulk-upload-fieldset']" do
-        expect(page).to have_field("Korean source files")
+    context "chapter number pre-fill from filename" do
+      let(:korean_content) { "가나다라마바사아자차" * 40 }
+
+      it "pre-fills the number input when the filename matches a known pattern" do
+        file_path = file_fixture_path("3화.txt", korean_content)
+        attach_file("chapter[files][]", file_path, make_visible: true)
+        expect(page).to have_field("chapter[numbers][3화.txt]", with: "3")
+      end
+
+      it "leaves the number input blank when the filename does not match" do
+        file_path = file_fixture_path("notes.txt", korean_content)
+        attach_file("chapter[files][]", file_path, make_visible: true)
+        expect(page).to have_field("chapter[numbers][notes.txt]", with: "")
       end
     end
 
-    it "has a status select in the single upload section" do
-      within "[data-testid='single-upload-fieldset']" do
-        expect(page).to have_select("Status")
+    context "submit button validation" do
+      let(:korean_content) { "가나다라마바사아자차" * 40 }
+
+      it "remains disabled while any row has no chapter number" do
+        file_path = file_fixture_path("notes.txt", korean_content)
+        attach_file("chapter[files][]", file_path, make_visible: true)
+        expect(page).to have_button(disabled: true, text: /Upload/)
+      end
+
+      it "enables once all rows have a valid number" do
+        file_path = file_fixture_path("3화.txt", korean_content)
+        attach_file("chapter[files][]", file_path, make_visible: true)
+        expect(page).to have_button(disabled: false, text: "Upload 1 file")
+      end
+
+      it "updates the button label to reflect the file count" do
+        attach_file("chapter[files][]", [
+          file_fixture_path("3화.txt", korean_content),
+          file_fixture_path("4화.txt", korean_content)
+        ], make_visible: true)
+        expect(page).to have_button(text: "Upload 2 files")
+      end
+    end
+
+    context "remove button" do
+      let(:korean_content) { "가나다라마바사아자차" * 40 }
+
+      it "removes the row from the review table" do
+        file_path = file_fixture_path("3화.txt", korean_content)
+        attach_file("chapter[files][]", file_path, make_visible: true)
+        expect(page).to have_selector("[data-testid='upload-review-row']")
+
+        click_button "Remove"
+        expect(page).not_to have_selector("[data-testid='upload-review-row']")
+      end
+
+      it "hides the review table after the last row is removed" do
+        file_path = file_fixture_path("3화.txt", korean_content)
+        attach_file("chapter[files][]", file_path, make_visible: true)
+
+        click_button "Remove"
+        expect(page).not_to have_selector("[data-testid='upload-review-table']")
+      end
+
+      it "disables the submit button after all rows are removed" do
+        file_path = file_fixture_path("3화.txt", korean_content)
+        attach_file("chapter[files][]", file_path, make_visible: true)
+
+        click_button "Remove"
+        expect(page).to have_button("Upload", disabled: true)
       end
     end
   end
