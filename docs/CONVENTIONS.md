@@ -169,3 +169,87 @@ Added at M13 as a layer before the Ruby/Rails layer:
 - `yarn` installed via `npm install -g yarn` after Node install
 - `yarn build` run during image build to compile assets before container starts
 - `.dockerignore` already excludes `node_modules` — verify at M13
+
+---
+
+## Version Control
+
+### Commit Convention
+
+This project follows the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
+specification. Every commit message must have the form:
+
+```
+<type>(<scope>): <description>
+
+[optional body]
+
+[optional footer]
+```
+
+**Types**
+
+| Type       | When to use                                                          |
+|------------|----------------------------------------------------------------------|
+| `feat`     | A new feature or user-visible behaviour                              |
+| `fix`      | A bug fix                                                            |
+| `test`     | Adding or correcting tests — no production code changes              |
+| `refactor` | Code change that neither fixes a bug nor adds a feature              |
+| `style`    | CSS / visual changes only — no logic changes                         |
+| `chore`    | Tooling, config, dependencies, CI — nothing the app ships            |
+| `docs`     | Documentation only (`/docs`, README, inline comments)                |
+| `db`       | Migrations and schema changes                                        |
+
+**Scopes** (optional but encouraged)
+
+Use the area of the app being changed, e.g.: `novels`, `chapters`, `bible`,
+`jobs`, `auth`, `dashboard`, `uploads`, `sidebar`, `tabs`, `api`.
+
+**Examples**
+
+```
+feat(chapters): add chapter status badge to chapter list row
+fix(jobs): prevent duplicate job submission on double-click
+test(novels): add request specs for NovelsController#create
+refactor(auth): extract ProvisionWorkspace call into SessionsController concern
+style(sidebar): adjust user widget avatar spacing for narrow viewports
+chore: add esbuild watch script to Procfile.dev
+docs: document Conventional Commits convention in CONVENTIONS.md
+db: add pgvector extension to initial migration
+```
+
+---
+
+### Atomic Commits
+
+Each commit must represent **one logical change**. That means:
+
+- A migration and its corresponding model change belong together in one commit.
+- A new feature and its tests belong together in one commit — or tests first in
+  a `test:` commit if you are working TDD and want a visible red→green record.
+- A refactor must not be bundled with a behaviour change. Split them.
+- CSS changes that are purely cosmetic belong in their own `style:` commit,
+  separate from Stimulus or template logic changes.
+
+**Signs a commit needs to be split:**
+
+- The description requires "and" to be accurate.
+- The diff touches unrelated files (e.g. a migration + a CSS tweak).
+- The commit would be hard to revert without affecting unrelated work.
+
+---
+
+### Commit Body
+
+The body is optional. Use it when the *why* is not obvious from the description
+alone — e.g. a non-obvious architectural decision, a constraint from an external
+API, or why a simpler approach was rejected. Keep the description line ≤ 72
+characters. The body is free-form prose.
+
+---
+
+### CHANGELOG
+
+`docs/CHANGELOG.md` is updated **per milestone**, not per commit. It summarises
+what shipped at the milestone level for human readers. Commit messages are the
+authoritative per-change record.
