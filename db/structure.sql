@@ -1002,7 +1002,8 @@ CREATE TABLE public.translation_jobs (
     result_payload text,
     solid_queue_job_id character varying,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    progress_pct integer
 );
 
 
@@ -2168,6 +2169,7 @@ ALTER TABLE ONLY public.novels
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260607184400'),
 ('20260607000001'),
 ('20260320000002'),
 ('20260320000001'),
