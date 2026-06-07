@@ -22,11 +22,9 @@
   </head>
 
   <body class="app-body">
-    <% if authenticated? %>
-      <%= render "layouts/sidebar" %>
-      <%= render "layouts/topbar" %>
-      <%= render "layouts/bottom_nav" %>
-    <% end %>
+    <%= render "layouts/sidebar" %>
+    <%= render "layouts/topbar" %>
+    <%= render "layouts/bottom_nav" %>
 
     <main class="app-main" id="main-content">
       <%= render "layouts/flash" %>
