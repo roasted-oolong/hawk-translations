@@ -36,3 +36,27 @@ application.register("file-upload", FileUploadController)
 //   Targets: input, dropZone, reviewTable, reviewBody, submitButton
 import UploadReviewController from "./upload_review_controller"
 application.register("upload-review", UploadReviewController)
+
+// tabs: novel show tab strip.
+//   Manages active tab state, lazy-loads Turbo Frame panels, persists
+//   selection to sessionStorage keyed by novel id.
+import TabsController from "./tabs_controller"
+application.register("tabs", TabsController)
+
+// form-panel: generic open/close for form <dialog> elements.
+//   Used on the novels index "New Novel" quick-create dialog.
+//   Targets: dialog
+import FormPanelController from "./form_panel_controller"
+application.register("form-panel", FormPanelController)
+
+// bulk-translate: Bulk Translate dialog on the chapters tab panel.
+//   Opens/closes the native <dialog>, manages chapter checkboxes,
+//   derives chapter_start/chapter_end (min/max of selected), updates counter.
+import BulkTranslateController from "./bulk_translate_controller"
+application.register("bulk-translate", BulkTranslateController)
+
+// chapter-select: row selection in the chapters table.
+//   Manages checkboxes, shows/hides the action bar, populates chapter_ids[]
+//   into the bulk destroy / download / update forms.
+import ChapterSelectController from "./chapter_select_controller"
+application.register("chapter-select", ChapterSelectController)

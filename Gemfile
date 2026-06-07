@@ -17,10 +17,6 @@ gem "stimulus-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
 
-# Authentication — Google OAuth
-gem "omniauth-google-oauth2"
-gem "omniauth-rails_csrf_protection"
-
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 
@@ -74,6 +70,10 @@ group :development do
 
   # Run web + JS build processes together in development
   gem "foreman"
+
+  # Load .env into Rails ENV at boot
+  gem "dotenv-rails"
 end
 
 gem "honeybadger", "~> 6.5"
+gem "rubyzip", "~> 2.3"
