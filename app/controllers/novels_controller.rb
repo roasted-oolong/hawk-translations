@@ -72,11 +72,23 @@ class NovelsController < ApplicationController
   end
 
   # directory_name is set on create only; it cannot be changed via the UI.
+  # When omitted (inline quick-create dialog), it is derived from the title.
   def novel_create_params
-    params.require(:novel).permit(
+    permitted = params.require(:novel).permit(
       :title, :directory_name, :korean_title, :genre, :summary, :tone, :notes,
       :visibility, :series_id, :poc_user_id, :organization_id, :cover_art
     )
+
+    if permitted[:directory_name].blank? && permitted[:title].present?
+      permitted[:directory_name] = permitted[:title]
+        .downcase
+        .gsub(/[^a-z0-9\s-]/, "")
+        .gsub(/\s+/, "-")
+        .gsub(/-+/, "-")
+        .gsub(/\A-|-\z/, "")
+    end
+
+    permitted
   end
 
   # directory_name intentionally excluded — the edit form does not render the
