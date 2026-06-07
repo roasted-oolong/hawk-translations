@@ -22,7 +22,7 @@ require "open3"
 #   entries. It accepts the same chapter range format as preread.
 # ---------------------------------------------------------------------------
 class PipelineDispatcher
-  PYTHON = "python3"
+  PYTHON = ENV.fetch("PYTHON", "python3")
 
   def self.call(translation_job)
     new(translation_job).call
@@ -35,6 +35,7 @@ class PipelineDispatcher
   def call
     case @job.job_type
     when "preread"                 then run_preread
+    when "translate_batch"         then run_translate_batch
     when "bible_build"             then run_bible_build
     when "post_translation_review" then run_post_translation_review
     else
@@ -52,6 +53,19 @@ class PipelineDispatcher
               "--novel-dir",  novel_directory,
               "--chapters",   "#{@job.chapter_start}-#{@job.chapter_end}",
               "--batch-size", "5" ])
+  end
+
+  # ---------------------------------------------------------------------------
+  # Translate batch — invokes translate_batch.py with chapter selection and novel name.
+  # translate_batch.py takes positional args: <chapter_selection> [novel_name]
+  # ---------------------------------------------------------------------------
+  def run_translate_batch
+    chapter_arg = @job.chapter_start == @job.chapter_end \
+      ? @job.chapter_start.to_s \
+      : "#{@job.chapter_start}-#{@job.chapter_end}"
+    execute([ PYTHON, script("translate_batch.py"),
+              chapter_arg,
+              @job.novel.directory_name ])
   end
 
   # ---------------------------------------------------------------------------

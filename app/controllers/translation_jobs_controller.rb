@@ -28,7 +28,7 @@ class TranslationJobsController < ApplicationController
 
     if @translation_job.save
       PipelineJob.perform_later(@translation_job.id)
-      redirect_to novel_translation_jobs_path(@novel),
+      redirect_to novel_translation_job_path(@novel, @translation_job),
                   notice: "#{@translation_job.job_type.humanize} job queued."
     else
       @translation_jobs = @novel.translation_jobs.recent

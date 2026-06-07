@@ -77,7 +77,7 @@ RSpec.describe "TranslationJobs", type: :request do
         expect(job.user).to eq(user)
         expect(job.novel).to eq(novel)
 
-        expect(response).to redirect_to(novel_translation_jobs_path(novel))
+        expect(response).to redirect_to(novel_translation_job_path(novel, job))
       end
     end
 
