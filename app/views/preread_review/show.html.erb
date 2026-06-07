@@ -1,0 +1,283 @@
+<%# app/views/preread_review/show.html.erb — full-page preread entry review, review layout %>
+<% content_for :title, "Preread Review — #{@novel.title} — Hawk" %>
+
+<%
+  preread_categories = [
+    [ :characters,       :name,   :korean_name  ],
+    [ :locations,        :name,   :korean_name  ],
+    [ :terminology,      :term,   :korean_term  ],
+    [ :cultural_phrases, :phrase, :korean_phrase ],
+    [ :story,            :title,  nil           ],
+  ].freeze
+
+  preread_display_fields = {
+    characters: [
+      [ "Role",                   :role                   ],
+      [ "First appears",          :first_appearance_chapter ],
+      [ "Aliases",                :aliases                ],
+      [ "Physical description",   :physical_description   ],
+      [ "Speech pattern",         :speech_pattern         ],
+      [ "Honorifics toward them", :honorifics_used_toward ],
+      [ "Honorifics they use",    :honorifics_they_use    ],
+      [ "Relationships",          :relationships          ],
+      [ "Notes",                  :notes                  ],
+    ],
+    locations: [
+      [ "First appears",  :first_appearance_chapter ],
+      [ "Significance",   :significance             ],
+      [ "Notes",          :notes                    ],
+    ],
+    terminology: [
+      [ "Definition",    :definition               ],
+      [ "First appears", :first_appearance_chapter ],
+      [ "Usage notes",   :usage_notes              ],
+      [ "Notes",         :notes                    ],
+    ],
+    cultural_phrases: [
+      [ "Literal translation",     :literal_translation    ],
+      [ "Intended meaning",        :intended_meaning       ],
+      [ "Context",                 :context                ],
+      [ "Established translation", :established_translation ],
+      [ "First appears",           :first_appearance_chapter ],
+      [ "Notes",                   :notes                  ],
+    ],
+    story: [
+      [ "Category",      :category                 ],
+      [ "First appears", :first_appearance_chapter ],
+      [ "Content",       :content                  ],
+      [ "Notes",         :notes                    ],
+    ],
+  }.freeze
+
+  total_entries = @pending_entries.values.sum(&:size)
+%>
+
+<div class="chapter-review"
+     data-controller="preread-review"
+     data-preread-review-import-url-value="<%= novel_bible_import_path(@novel) %>"
+     data-testid="preread-review-shell">
+
+  <%# ------------------------------------------------------------------ %>
+  <%# Sidebar                                                             %>
+  <%# ------------------------------------------------------------------ %>
+  <aside class="chapter-review__sidebar" data-testid="preread-review-sidebar">
+
+    <div class="chapter-review__back">
+      <%= link_to novel_path(@novel),
+            class: "chapter-review__back-link",
+            data: { testid: "link-back-novel" } do %>
+        ← Back to novel
+      <% end %>
+    </div>
+
+    <div class="chapter-review__novel-info">
+      <p class="chapter-review__label">Preread Review</p>
+      <h1 class="chapter-review__novel-title"><%= @novel.title %></h1>
+    </div>
+
+    <div class="chapter-review__progress">
+      <div class="chapter-review__progress-labels">
+        <span>Progress</span>
+        <span data-preread-review-target="progressText">0 / <%= total_entries %></span>
+      </div>
+      <div class="chapter-review__progress-track">
+        <div class="chapter-review__progress-fill"
+             data-preread-review-target="progressFill"
+             style="width: 0%"
+             data-testid="preread-review-progress-bar"></div>
+      </div>
+    </div>
+
+    <nav class="chapter-review__chapter-list" aria-label="Entries" data-testid="preread-nav">
+      <% flat_index = 0 %>
+      <% preread_categories.each do |cat, name_key, _| %>
+        <% next if @pending_entries[cat].empty? %>
+        <div class="preread-review__nav-group">
+          <p class="preread-review__nav-group-label"><%= cat.to_s.humanize %></p>
+          <% @pending_entries[cat].each do |entry| %>
+            <button class="chapter-review__nav-item"
+                    data-preread-review-target="navItem"
+                    data-action="click->preread-review#jumpTo"
+                    data-preread-review-index-param="<%= flat_index %>"
+                    data-category="<%= cat %>"
+                    data-korean-key="<%= entry[:korean_key] %>"
+                    type="button"
+                    data-testid="preread-nav-item-<%= flat_index %>">
+              <span class="chapter-review__nav-number"><%= flat_index + 1 %></span>
+              <div class="chapter-review__nav-text">
+                <p class="chapter-review__nav-title"><%= entry[name_key] %></p>
+                <p class="chapter-review__nav-status"
+                   data-preread-review-target="navStatus"></p>
+              </div>
+            </button>
+            <% flat_index += 1 %>
+          <% end %>
+        </div>
+      <% end %>
+    </nav>
+
+    <div class="chapter-review__counter">
+      <p data-preread-review-target="counterText">Entry 1 of <%= total_entries %></p>
+    </div>
+
+  </aside>
+
+  <%# ------------------------------------------------------------------ %>
+  <%# Main content area                                                   %>
+  <%# ------------------------------------------------------------------ %>
+  <main class="chapter-review__main" data-testid="preread-review-main">
+
+    <div class="chapter-review__topbar">
+      <span data-preread-review-target="topbarTitle">
+        <% first_cat, first_key, _ = preread_categories.find { |c, _, _| @pending_entries[c].any? } %>
+        <% if first_cat %>
+          <%= first_cat.to_s.humanize %> — <%= @pending_entries[first_cat].first[first_key] %>
+        <% end %>
+      </span>
+      <span class="chapter-review__saved"
+            data-preread-review-target="savedIndicator"
+            hidden
+            aria-live="polite">
+        ✓ Saved
+      </span>
+    </div>
+
+    <%# ---- Slideshow screen ---- %>
+    <div class="chapter-review__screen"
+         data-preread-review-target="slideshowScreen"
+         data-testid="preread-slideshow-screen">
+      <% first_card = true %>
+      <% preread_categories.each do |cat, name_key, korean_key| %>
+        <% @pending_entries[cat].each do |entry| %>
+          <div class="chapter-review__chapter-card"
+               data-preread-review-target="entryCard"
+               data-category="<%= cat %>"
+               data-korean-key="<%= entry[:korean_key] %>"
+               data-display-name="<%= entry[name_key] %>"
+               data-category-label="<%= cat.to_s.humanize %>"
+               <%= first_card ? "" : "hidden" %>
+               data-testid="preread-entry-card">
+            <div class="chapter-review__chapter-header">
+              <p class="chapter-review__chapter-label preread-review__category-badge preread-review__category-badge--<%= cat.to_s.tr("_", "-") %>">
+                <%= cat.to_s.humanize %>
+              </p>
+              <h2 class="chapter-review__chapter-title"><%= entry[name_key] %></h2>
+              <% if korean_key && entry[korean_key].present? %>
+                <p class="preread-review__korean"><%= entry[korean_key] %></p>
+              <% end %>
+            </div>
+
+            <table class="preread-review__fields" data-testid="entry-fields">
+              <tbody>
+                <% preread_display_fields[cat].each do |label, key| %>
+                  <% next if entry[key].blank? %>
+                  <tr>
+                    <th class="preread-review__field-label"><%= label %></th>
+                    <td class="preread-review__field-value"><%= entry[key] %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+          <% first_card = false %>
+        <% end %>
+      <% end %>
+    </div>
+
+    <%# ---- Summary screen ---- %>
+    <div class="chapter-review__screen"
+         data-preread-review-target="summaryScreen"
+         hidden
+         data-testid="preread-summary-screen">
+      <div class="chapter-review__summary">
+        <div class="chapter-review__summary-icon">✓</div>
+        <h2>Review complete</h2>
+        <p>Ready to import entries into the bible for <strong><%= @novel.title %></strong>.</p>
+
+        <table class="preread-review__summary-table" data-testid="preread-summary-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Approved</th>
+              <th>Skipped</th>
+              <th>Pending</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% preread_categories.each do |cat, _, _| %>
+              <% count = @pending_entries[cat].size %>
+              <% next if count == 0 %>
+              <tr data-preread-review-target="summaryRow"
+                  data-category="<%= cat %>"
+                  data-total="<%= count %>">
+                <td><%= cat.to_s.humanize %></td>
+                <td data-preread-review-target="summaryApproved">0</td>
+                <td data-preread-review-target="summarySkipped">0</td>
+                <td data-preread-review-target="summaryPending"><%= count %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+
+        <div class="chapter-review__summary-actions">
+          <%= form_with url: novel_bible_import_path(@novel),
+                method: :post,
+                data: {
+                  preread_review_target: "importForm",
+                  action: "submit->preread-review#onImportSubmit",
+                  turbo: false,
+                  testid: "import-form"
+                } do |f| %>
+            <%= f.submit "Import 0 entries to Bible",
+                  class: "btn btn--primary",
+                  data: {
+                    preread_review_target: "importBtn",
+                    testid: "button-import"
+                  },
+                  disabled: true %>
+          <% end %>
+
+          <button type="button"
+                  class="chapter-review__back-to-editing"
+                  data-action="click->preread-review#backToSlideshow"
+                  data-testid="button-back-editing">
+            Go back and keep editing
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <%# ---- Footer navigation ---- %>
+    <div class="chapter-review__footer"
+         data-preread-review-target="footer"
+         data-testid="preread-review-footer">
+      <button type="button"
+              class="btn btn--ghost"
+              data-action="click->preread-review#prev"
+              data-preread-review-target="prevBtn"
+              data-testid="button-prev-entry"
+              disabled>
+        ← Previous
+      </button>
+
+      <div class="chapter-review__footer-end">
+        <button type="button"
+                class="btn btn--ghost"
+                data-action="click->preread-review#skip"
+                data-testid="button-skip-entry">
+          Skip
+        </button>
+
+        <button type="button"
+                class="btn btn--primary"
+                data-action="click->preread-review#approve"
+                data-preread-review-target="approveBtn"
+                data-testid="button-approve-entry">
+          Approve &amp; Next
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+</div>
