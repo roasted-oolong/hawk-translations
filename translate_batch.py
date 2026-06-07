@@ -110,7 +110,7 @@ def _prompt_confirm(novel_name: str, selected: list[int]) -> bool:
   Novel    : {novel_name}
   Chapters : {ch_range} ({len(selected)} chapter(s))
   Model    : Opus
-  Method   : Anthropic Batch API (results within 24h)
+  Method   : Local LLM (sequential)
   Output   : chapters/Chapter_N.txt per chapter
   ──────────────────────────────────────────────────────────""")
 

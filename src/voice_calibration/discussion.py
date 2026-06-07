@@ -13,9 +13,9 @@ were generated. It receives the context already assembled by the caller and
 conducts the conversation. Nothing more.
 """
 
-import anthropic
+from openai import OpenAI
 
-from config import OPUS_MODEL, MAX_TOKENS
+from config import OPUS_MODEL, MAX_TOKENS, LLM_BASE_URL, LLM_API_KEY
 
 
 # ---------------------------------------------------------------------------
@@ -66,7 +66,7 @@ def run_discussion(
     item_label: str,
     item_content: str,
     original_context: str,
-    client: anthropic.Anthropic,
+    client: OpenAI,
 ) -> DiscussionResult:
     """
     Run an interactive discussion loop about a single review item.
@@ -81,7 +81,7 @@ def run_discussion(
         The original user message from the review call — contains the
         translated chapter and voice calibration, giving Opus full context
         for the discussion.
-    client : anthropic.Anthropic
+    client : OpenAI
         Pre-built Anthropic client.
 
     Returns
@@ -127,18 +127,16 @@ def run_discussion(
         # Treat anything else as a message to Opus.
         history.append({"role": "user", "content": raw})
 
-        response = client.messages.create(
+        response = client.chat.completions.create(
             model=OPUS_MODEL,
             max_tokens=MAX_TOKENS,
-            system=_DISCUSSION_SYSTEM,
-            messages=history,
+            messages=[
+                {"role": "system", "content": _DISCUSSION_SYSTEM},
+                *history,
+            ],
         )
 
-        reply = "".join(
-            block.text
-            for block in response.content
-            if hasattr(block, "text")
-        )
+        reply = response.choices[0].message.content or ""
 
         history.append({"role": "assistant", "content": reply})
 
