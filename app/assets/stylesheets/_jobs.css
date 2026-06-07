@@ -22,9 +22,24 @@
   background-color: var(--color-status-untranslated-bg);
 }
 
-.status-badge--translated {
+.status-badge--prereading {
+  color: var(--color-status-running-text);
+  background-color: var(--color-status-running-bg);
+}
+
+.status-badge--preread_failed {
+  color: var(--color-status-failed-text);
+  background-color: var(--color-status-failed-bg);
+}
+
+.status-badge--preread {
   color: var(--color-status-translated-text);
   background-color: var(--color-status-translated-bg);
+}
+
+.status-badge--translated {
+  color: var(--color-status-completed-text);
+  background-color: var(--color-status-completed-bg);
 }
 
 .status-badge--reviewed {
@@ -175,4 +190,69 @@
 .page-title__sub {
   font-weight: var(--font-weight-normal);
   color: var(--color-text-secondary);
+}
+
+/* --- Job output terminal panel --- */
+.job-terminal {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid #2a3330;
+}
+
+.job-terminal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background-color: #161c1a;
+  border-bottom: 1px solid #2a3330;
+}
+
+.job-terminal__label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: #6b7e7a;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.job-terminal__polling {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-warning);
+}
+
+@keyframes terminal-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.job-terminal__spin {
+  animation: terminal-spin 1s linear infinite;
+  flex-shrink: 0;
+}
+
+.job-terminal__body {
+  background-color: #1e2322;
+  min-height: 12rem;
+  padding: var(--space-4);
+}
+
+.job-terminal__pre {
+  font-family: var(--font-family-mono);
+  font-size: var(--text-xs);
+  color: #b2c9c4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.job-terminal__placeholder {
+  font-size: var(--text-sm);
+  color: #5a7570;
+  margin: 0;
+  line-height: 1.6;
 }
