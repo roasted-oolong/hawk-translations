@@ -58,6 +58,17 @@ class TranslationJob < ApplicationRecord
     queued? || running?
   end
 
+  def cancel!
+    transaction do
+      update!(status: :cancelled)
+      if preread?
+        novel.chapters
+          .where(number: chapter_start..chapter_end, status: "prereading")
+          .update_all(status: "preread_failed")
+      end
+    end
+  end
+
   private
 
   # ---------------------------------------------------------------------------
