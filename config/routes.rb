@@ -42,6 +42,9 @@ Rails.application.routes.draw do
     get "bible/search", to: "bible_search#show", as: :bible_search
   end
 
+  # Top-level jobs index — cross-novel view
+  get "translation_jobs", to: "jobs#index", as: :translation_jobs
+
   # Root
   root "dashboard#index"
 end
