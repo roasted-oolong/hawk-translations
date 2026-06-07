@@ -117,7 +117,8 @@ class PipelineDispatcher
   # Passes the current process environment through so the Python pipeline picks
   # up ANTHROPIC_API_KEY and HAWK_PROJECT_ROOT from ENV.
   def execute(cmd)
-    stdout, stderr, status = Open3.capture3(ENV.to_h, *cmd)
+    env = ENV.to_h.merge("HAWK_JOB_ID" => @job.id.to_s)
+    stdout, stderr, status = Open3.capture3(env, *cmd)
     [ stdout, stderr, status.success? ]
   rescue => e
     [ "", "Dispatch error: #{e.class}: #{e.message}", false ]

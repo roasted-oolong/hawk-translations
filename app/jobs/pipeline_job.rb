@@ -20,14 +20,32 @@ class PipelineJob < ApplicationJob
     translation_job = TranslationJob.find(translation_job_id)
 
     update_chapters(translation_job, :start)
+    translation_job.update!(status: "running", progress_pct: 0)
 
-    translation_job.update!(status: "running")
+    stop_polling = false
+    progress_thread = Thread.new do
+      ActiveRecord::Base.connection_pool.with_connection do
+        progress_file = "/tmp/hawk_job_#{translation_job.id}.progress"
+        until stop_polling
+          if File.exist?(progress_file)
+            pct = File.read(progress_file).strip.to_i.clamp(0, 100)
+            TranslationJob.where(id: translation_job.id).update_all(progress_pct: pct)
+          end
+          sleep 2
+        end
+        File.delete(progress_file) if File.exist?(progress_file)
+      end
+    end
 
     stdout, stderr, success = PipelineDispatcher.call(translation_job)
+
+    stop_polling = true
+    progress_thread.join
 
     if success
       translation_job.update!(
         status:         "completed",
+        progress_pct:   100,
         result_payload: stdout.presence || "(no output)"
       )
       update_chapters(translation_job, :success)
@@ -39,6 +57,8 @@ class PipelineJob < ApplicationJob
       update_chapters(translation_job, :failure)
     end
   rescue => e
+    stop_polling = true
+    progress_thread&.join
     translation_job&.update!(
       status:         "failed",
       result_payload: "Unexpected error: #{e.class}: #{e.message}"
