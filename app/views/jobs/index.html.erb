@@ -44,7 +44,7 @@
               <%= render "components/status_badge", status: job.status %>
             </td>
             <td class="data-table__td job-progress">
-              <% if job.progress_pct %>
+              <% if job.shows_progress? && job.progress_pct %>
                 <%= job.progress_pct %>%
               <% else %>
                 <span class="text-muted">—</span>

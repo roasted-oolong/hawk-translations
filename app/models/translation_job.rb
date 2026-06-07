@@ -58,6 +58,10 @@ class TranslationJob < ApplicationRecord
     queued? || running?
   end
 
+  def shows_progress?
+    false
+  end
+
   def cancel!
     transaction do
       update!(status: :cancelled)

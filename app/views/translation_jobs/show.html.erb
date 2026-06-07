@@ -76,7 +76,7 @@
           <%= render "components/status_badge", status: @translation_job.status %>
         </dd>
       </div>
-      <% if @translation_job.progress_pct %>
+      <% if @translation_job.shows_progress? && @translation_job.progress_pct %>
         <div class="job-detail__meta-row">
           <dt class="job-detail__meta-label">Progress</dt>
           <dd class="job-detail__meta-value job-progress">

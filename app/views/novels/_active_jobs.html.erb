@@ -21,7 +21,7 @@
           <span class="novel-active-jobs__chapters"><%= job.chapter_range_label %></span>
         <% end %>
         <%= render "components/status_badge", status: job.status %>
-        <% if job.progress_pct %>
+        <% if job.shows_progress? && job.progress_pct %>
           <span class="novel-active-jobs__pct"><%= job.progress_pct %>%</span>
         <% end %>
       </li>
