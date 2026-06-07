@@ -141,7 +141,7 @@
                     <% end %>
                   <% elsif chapter.prereading? %>
                     <% if (cancel_job = @cancellable_jobs[chapter.number]) %>
-                      <% if cancel_job.progress_pct %>
+                      <% if cancel_job.shows_progress? && cancel_job.progress_pct %>
                         <span class="chapter-job-progress"><%= cancel_job.progress_pct %>%</span>
                       <% end %>
                       <%= modal_button_to "Cancel", novel_translation_job_path(@novel, cancel_job),
