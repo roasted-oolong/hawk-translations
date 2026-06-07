@@ -47,7 +47,7 @@
 <%# Poll wrapper — only rendered when job is active                    %>
 <%# ------------------------------------------------------------------ %>
 <% if @translation_job.queued? || @translation_job.running? %>
-  <div data-controller="poll" data-poll-interval-value="3000">
+  <div data-controller="poll" data-poll-interval-value="1000">
 <% end %>
 
 <%= turbo_frame_tag "job-status" do %>
@@ -76,6 +76,14 @@
           <%= render "components/status_badge", status: @translation_job.status %>
         </dd>
       </div>
+      <% if @translation_job.progress_pct %>
+        <div class="job-detail__meta-row">
+          <dt class="job-detail__meta-label">Progress</dt>
+          <dd class="job-detail__meta-value job-progress">
+            <%= @translation_job.progress_pct %>%
+          </dd>
+        </div>
+      <% end %>
       <div class="job-detail__meta-row">
         <dt class="job-detail__meta-label">Triggered by</dt>
         <dd class="job-detail__meta-value"><%= @translation_job.user.name %></dd>
