@@ -1,20 +1,14 @@
 <%# app/views/bible/show.html.erb %>
 <% content_for :title, "Bible — #{@novel.title} — Hawk" %>
 
+<%# Breadcrumb outside the frame — shown on direct page visits, ignored in the tab panel %>
 <%= render "layouts/breadcrumb", crumbs: [
       ["Novels", novels_path],
       [@novel.title, novel_path(@novel)],
       ["Bible", nil]
     ] %>
 
-<div class="page-header">
-  <div class="page-header__row">
-    <div>
-      <h1 class="page-title">Translation Bible</h1>
-      <p class="page-subtitle"><%= @novel.title %></p>
-    </div>
-  </div>
-</div>
+<%= turbo_frame_tag "tab-panel-bible" do %>
 
 <%# ------------------------------------------------------------------ %>
 <%# Search bar                                                          %>
@@ -63,7 +57,8 @@
          data-category="characters">
       <div class="bible-category-card__header">
         <%= link_to "Characters", novel_bible_characters_path(@novel),
-              class: "bible-category-card__title" %>
+              class: "bible-category-card__title",
+              data: { turbo_frame: "_top" } %>
       </div>
       <p class="bible-category-card__description">
         Named characters — roles, descriptions, speech patterns, honorifics, and relationships.
@@ -81,7 +76,8 @@
          data-category="locations">
       <div class="bible-category-card__header">
         <%= link_to "Locations", novel_bible_locations_path(@novel),
-              class: "bible-category-card__title" %>
+              class: "bible-category-card__title",
+              data: { turbo_frame: "_top" } %>
       </div>
       <p class="bible-category-card__description">
         Named places — type, description, and narrative significance.
@@ -99,7 +95,8 @@
          data-category="terminology">
       <div class="bible-category-card__header">
         <%= link_to "Terminology", novel_bible_terminologies_path(@novel),
-              class: "bible-category-card__title" %>
+              class: "bible-category-card__title",
+              data: { turbo_frame: "_top" } %>
       </div>
       <p class="bible-category-card__description">
         Terms with established translations — definitions and usage notes.
@@ -117,7 +114,8 @@
          data-category="cultural-phrases">
       <div class="bible-category-card__header">
         <%= link_to "Cultural Phrases", novel_bible_cultural_phrases_path(@novel),
-              class: "bible-category-card__title" %>
+              class: "bible-category-card__title",
+              data: { turbo_frame: "_top" } %>
       </div>
       <p class="bible-category-card__description">
         Korean phrases with literal translations, intended meanings, and established renderings.
@@ -135,7 +133,8 @@
          data-category="story-entries">
       <div class="bible-category-card__header">
         <%= link_to "Story Entries", novel_bible_story_entries_path(@novel),
-              class: "bible-category-card__title" %>
+              class: "bible-category-card__title",
+              data: { turbo_frame: "_top" } %>
       </div>
       <p class="bible-category-card__description">
         Plot threads, subplots, themes, watch-list items, and world-building notes.
@@ -150,3 +149,5 @@
 
   </div>
 </div>
+
+<% end %><%# /turbo-frame tab-panel-bible %>

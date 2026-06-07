@@ -40,7 +40,7 @@ RSpec.describe "M16 Chapter List & Translation Jobs", type: :system do
 
       it "shows the upload button even with no chapters" do
         visit novel_chapters_path(novel)
-        expect(page).to have_link("Upload Chapter(s)")
+        expect(page).to have_link("Upload Chapters")
       end
     end
 
