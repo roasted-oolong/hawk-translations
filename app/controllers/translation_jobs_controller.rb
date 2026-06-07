@@ -42,7 +42,7 @@ class TranslationJobsController < ApplicationController
   # Story #27 — cancel a queued job
   # ---------------------------------------------------------------------------
   def destroy
-    @translation_job.update!(status: :cancelled)
+    @translation_job.cancel!
     redirect_to novel_translation_job_path(@novel, @translation_job),
                 notice: "Job cancelled."
   end
