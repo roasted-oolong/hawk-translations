@@ -43,6 +43,7 @@ from src.translator.chapter_loader import (
     derive_output_path,
 )
 from src.translator.batch_runner import run_translation_batch
+from src.progress import report_progress
 
 
 # ---------------------------------------------------------------------------
@@ -206,8 +207,10 @@ def main() -> None:
         output_path.write_text(response_text, encoding="utf-8")
         print(f"  ✓ Chapter {chapter_num} — written to {output_path.name}")
         written.append(chapter_num)
+        report_progress(int(len(written) / len(requests) * 100))
 
     # ── Submit and retrieve ────────────────────────────────────────────────
+    report_progress(1)
     client = make_client()
     run_translation_batch(
         requests=requests,

@@ -55,6 +55,7 @@ from src.bible_review.bible_writer import (
     append_new_entry,
 )
 from src.bible_review.runner import _resolve_section_key
+from src.progress import report_progress
 
 
 # ---------------------------------------------------------------------------
@@ -131,8 +132,10 @@ def main() -> None:
             client=client,
         )
 
+    report_progress(50)
     print("Running review API call...")
     raw_response = api_call_fn(system_prompt, user_message)
+    report_progress(100)
 
     # -- Parse response ------------------------------------------------
     new_entries, proposed_edits, story_updates = parse_response(raw_response)

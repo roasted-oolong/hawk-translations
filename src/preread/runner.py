@@ -12,6 +12,7 @@ this file. Domain logic changes go in their respective modules.
 """
 
 import time
+from collections.abc import Callable
 from datetime import date
 from pathlib import Path
 
@@ -33,6 +34,7 @@ def run_preread(
     batch_size: int,
     resume_from: int | None,
     api_call_fn: ApiCallFn,
+    progress_fn: Callable[[int], None] | None = None,
 ) -> None:
     """
     Execute the full preread operation: read chapters in batches, call the
@@ -77,6 +79,9 @@ def run_preread(
     print(f"  Total batches     : {total_batches}")
     print()
 
+    if progress_fn:
+        progress_fn(1)
+
     for batch_index, batch_nums in enumerate(batches, start=1):
         print(f"── Batch {batch_index}/{total_batches}: chapters {batch_nums} ──")
 
@@ -110,6 +115,9 @@ def run_preread(
         # Parse and write.
         parsed = parse_response(raw_response)
         write_batch_findings(novel_dir, parsed, batch_nums)
+
+        if progress_fn:
+            progress_fn(int(batch_index / total_batches * 100))
 
         # Brief pause between batches to be kind to the API.
         if batch_index < total_batches:
