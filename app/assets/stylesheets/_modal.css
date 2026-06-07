@@ -102,6 +102,123 @@
   color: var(--color-text);
 }
 
+/* --- Bulk Translate dialog --- */
+.bulk-translate-dialog {
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  background: transparent;
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(90vw, 32rem);
+  max-height: min(90vh, 40rem);
+}
+
+.bulk-translate-dialog::backdrop {
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+}
+
+.bulk-translate-dialog__panel {
+  background-color: var(--color-surface-manuscript);
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  max-height: min(90vh, 40rem);
+  overflow: hidden;
+}
+
+.bulk-translate-dialog__header {
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.bulk-translate-dialog__title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-1);
+}
+
+.bulk-translate-dialog__subtitle {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.bulk-translate-dialog__empty {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
+}
+
+.bulk-translate-dialog__select-all {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface-low);
+}
+
+.bulk-translate-dialog__check-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.bulk-translate-dialog__checkbox {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.bulk-translate-dialog__count-label {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.bulk-translate-dialog__list {
+  overflow-y: auto;
+  flex: 1;
+  padding: var(--space-2) 0;
+}
+
+.bulk-translate-dialog__chapter-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.bulk-translate-dialog__chapter-row:hover {
+  background-color: var(--color-primary-subtle);
+}
+
+.bulk-translate-dialog__chapter-title {
+  color: var(--color-text-muted);
+}
+
+.bulk-translate-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--color-border);
+}
+
 /* --- Mobile --- */
 @media (max-width: 640px) {
   .modal-dialog {

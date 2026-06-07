@@ -1,27 +1,92 @@
 <%# app/views/novels/index.html.erb %>
 <% content_for :title, "Novels — Hawk" %>
 
-<div class="page-header">
-  <div class="page-header__row">
-    <div>
-      <h1 class="page-title">Novels</h1>
-      <p class="page-subtitle">All novels in the system.</p>
-    </div>
-    <%= link_to "New Novel", new_novel_path, class: "btn btn--primary" %>
-  </div>
-</div>
+<div data-controller="form-panel">
 
-<div data-testid="novels-index">
-  <% if @novels.none? %>
-    <div class="empty-state" data-testid="novels-empty">
-      <p class="empty-state__message">No novels yet.</p>
-      <%= link_to "Create the first novel", new_novel_path, class: "btn btn--primary" %>
+  <div class="page-header">
+    <div class="page-header__row">
+      <div>
+        <h1 class="page-title">Novels</h1>
+        <p class="page-subtitle">All novels in the system.</p>
+      </div>
+      <button type="button"
+              class="btn btn--primary"
+              data-action="click->form-panel#open"
+              data-testid="button-new-novel">
+        New Novel
+      </button>
     </div>
-  <% else %>
-    <div class="novel-grid">
-      <% @novels.each do |novel| %>
-        <%= render "novels/card", novel: novel %>
-      <% end %>
-    </div>
-  <% end %>
-</div>
+  </div>
+
+  <div data-testid="novels-index">
+    <% if @novels.none? %>
+      <div class="empty-state" data-testid="novels-empty">
+        <p class="empty-state__message">No novels yet.</p>
+        <button type="button"
+                class="btn btn--primary"
+                data-action="click->form-panel#open">
+          Create the first novel
+        </button>
+      </div>
+    <% else %>
+      <div class="novel-grid">
+        <% @novels.each do |novel| %>
+          <%= render "novels/card", novel: novel %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <%# ── Quick-create dialog ─────────────────────────────────────────── %>
+  <dialog class="novel-quick-dialog"
+          data-form-panel-target="dialog"
+          data-action="click->form-panel#backdropClose">
+    <%= form_with url: novels_path do |f| %>
+      <div class="novel-quick-dialog__panel">
+        <div class="novel-quick-dialog__header">
+          <h2 class="novel-quick-dialog__title">Create New Novel</h2>
+        </div>
+
+        <div class="novel-quick-dialog__body">
+          <div class="form-group">
+            <%= f.label :title, "English Title", class: "form-label" %>
+            <%= f.text_field :title,
+                  class: "form-input",
+                  required: true,
+                  placeholder: "e.g. The Crimson Phoenix",
+                  autofocus: true,
+                  name: "novel[title]" %>
+          </div>
+
+          <div class="form-group">
+            <%= f.label :korean_title, "Korean Title", class: "form-label" %>
+            <%= f.text_field :korean_title,
+                  class: "form-input",
+                  placeholder: "e.g. 붉은 봉황",
+                  name: "novel[korean_title]" %>
+          </div>
+
+          <div class="form-group">
+            <%= f.label :genre, "Genre", class: "form-label" %>
+            <%= f.text_field :genre,
+                  class: "form-input",
+                  placeholder: "e.g. Romance, Fantasy",
+                  name: "novel[genre]" %>
+          </div>
+
+          <%= f.hidden_field :organization_id,
+                value: current_user.teams.first&.organization_id,
+                name: "novel[organization_id]" %>
+        </div>
+
+        <div class="novel-quick-dialog__actions">
+          <button type="button"
+                  class="btn btn--ghost"
+                  data-action="click->form-panel#close">Cancel</button>
+          <%= f.submit "Create Novel", class: "btn btn--primary" %>
+        </div>
+      </div>
+    <% end %>
+  </dialog>
+
+</div><%# /data-controller="form-panel" %>
