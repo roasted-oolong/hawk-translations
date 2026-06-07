@@ -36,9 +36,10 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from config import SONNET_MODEL, MAX_TOKENS
 from src.agent import call, make_client
-from src.novel_resolver import find_untranslated_chapters
+from src.novel_resolver import find_all_korean_chapters
 from src.preread.chapter_resolver import parse_chapter_selection
 from src.preread.runner import run_preread
+from src.progress import report_progress
 
 
 # ---------------------------------------------------------------------------
@@ -83,20 +84,20 @@ def main() -> None:
         print(f"[error] chapters/ directory not found in: {novel_dir}", file=sys.stderr)
         sys.exit(1)
 
-    untranslated = find_untranslated_chapters(chapters_dir)
-    if not untranslated:
-        print("[info] No untranslated chapters found. Nothing to preread.")
+    all_chapters = find_all_korean_chapters(chapters_dir)
+    if not all_chapters:
+        print("[info] No Korean source files found. Nothing to preread.")
         sys.exit(0)
 
     try:
-        selected = parse_chapter_selection(args.chapters, untranslated)
+        selected = parse_chapter_selection(args.chapters, all_chapters)
     except ValueError as e:
         print(f"[error] Invalid chapter selection '{args.chapters}': {e}", file=sys.stderr)
         sys.exit(1)
 
     if not selected:
         print(
-            f"[error] No matching untranslated chapters for selection: {args.chapters}",
+            f"[error] No matching chapters with Korean source files for selection: {args.chapters}",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -118,6 +119,7 @@ def main() -> None:
         batch_size=args.batch_size,
         resume_from=None,
         api_call_fn=api_call_fn,
+        progress_fn=report_progress,
     )
 
 

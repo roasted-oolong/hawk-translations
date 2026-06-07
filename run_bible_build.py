@@ -42,6 +42,7 @@ from src.agent import call, make_client
 from src.novel_resolver import find_all_korean_chapters
 from src.preread.chapter_resolver import parse_chapter_selection
 from src.preread.runner import run_preread
+from src.progress import report_progress
 
 
 # ---------------------------------------------------------------------------
@@ -123,6 +124,7 @@ def main() -> None:
         batch_size=args.batch_size,
         resume_from=None,
         api_call_fn=api_call_fn,
+        progress_fn=report_progress,
     )
 
 
