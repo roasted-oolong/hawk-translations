@@ -3,13 +3,6 @@
 
   Renders a breadcrumb trail from an array of [label, path] pairs.
   The last item is the current page — rendered as plain text, not a link.
-
-  Usage:
-    <%= render "layouts/breadcrumb", crumbs: [
-          ["Novels", novels_path],
-          [@novel.title, nil]
-        ] %>
-
   data-testid="breadcrumb" is used by system specs.
 %>
 <nav class="breadcrumb" aria-label="Breadcrumb" data-testid="breadcrumb">

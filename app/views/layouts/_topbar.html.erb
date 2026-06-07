@@ -14,18 +14,6 @@
 
   <div class="app-topbar__right">
     <%= yield :topbar_actions if content_for?(:topbar_actions) %>
-
-    <span class="app-topbar__user"><%= current_user.name %></span>
-
-    <%= button_to logout_path,
-          method: :delete,
-          class: "btn btn--ghost btn--sm",
-          form: { data: { turbo: false } },
-          aria: { label: "Sign out" },
-          title: "Sign out" do %>
-      <%= render "components/icon", name: "arrow-right-start-on-rectangle", size: 16 %>
-      <span>Sign out</span>
-    <% end %>
   </div>
 
 </header>
