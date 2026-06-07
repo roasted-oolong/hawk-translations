@@ -5,7 +5,8 @@
     "build": "esbuild app/javascript/*.ts --bundle --sourcemap --outdir=app/assets/builds --public-path=/assets"
   },
   "devDependencies": {
-    "esbuild": "^0.25.0"
+    "esbuild": "^0.25.0",
+    "playwright": "^1.60.0"
   },
   "dependencies": {
     "@hotwired/stimulus": "^3.2.2",
