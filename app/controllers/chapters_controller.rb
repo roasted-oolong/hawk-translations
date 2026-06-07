@@ -4,7 +4,8 @@ class ChaptersController < ApplicationController
                                       :download_korean_source, :download_translated_output ]
 
   def index
-    @chapters = @novel.chapters.order(number: :desc)
+    @chapters         = @novel.chapters.order(number: :desc)
+    @cancellable_jobs = cancellable_job_map
   end
 
   def show; end
@@ -107,6 +108,12 @@ class ChaptersController < ApplicationController
 
   private
 
+  def cancellable_job_map
+    @novel.translation_jobs.where(status: %w[queued running]).each_with_object({}) do |job, map|
+      (job.chapter_start..job.chapter_end).each { |n| map[n] ||= job }
+    end
+  end
+
   def set_novel
     @novel = Novel.find(params[:novel_id])
   end
@@ -179,7 +186,7 @@ class ChaptersController < ApplicationController
         next
       end
 
-      chapter = @novel.chapters.build(number: number)
+      chapter = @novel.chapters.find_or_initialize_by(number: number)
       attach_file(chapter, file, classification[:language])
 
       if chapter.save

@@ -74,6 +74,11 @@
         </div>
       </div>
 
+      <% if @cancellable_jobs.any? %>
+        <div data-controller="poll" data-poll-interval-value="1000">
+      <% end %>
+
+      <%= turbo_frame_tag "chapters-table" do %>
       <div class="data-table-wrapper">
         <table class="data-table" data-testid="chapters-table">
           <thead>
@@ -135,7 +140,18 @@
                             data: { testid: "btn-translate-#{chapter.number}" } %>
                     <% end %>
                   <% elsif chapter.prereading? %>
-                    <span class="chapter-action--pending">Running…</span>
+                    <% if (cancel_job = @cancellable_jobs[chapter.number]) %>
+                      <% if cancel_job.progress_pct %>
+                        <span class="chapter-job-progress"><%= cancel_job.progress_pct %>%</span>
+                      <% end %>
+                      <%= modal_button_to "Cancel", novel_translation_job_path(@novel, cancel_job),
+                            method:        :delete,
+                            message:       "Cancel the queued job for Chapter #{chapter.number}? It cannot be restarted.",
+                            confirm_label: "Cancel job",
+                            button_class:  "btn btn--danger btn--xs" %>
+                    <% else %>
+                      <span class="chapter-action--pending">Running…</span>
+                    <% end %>
                   <% end %>
                 </td>
               </tr>
@@ -143,6 +159,12 @@
           </tbody>
         </table>
       </div>
+      <% end %><%# /turbo-frame chapters-table %>
+
+      <% if @cancellable_jobs.any? %>
+        </div>
+      <% end %>
+
     <% end %>
 
     <%# ── Bulk Translate dialog ───────────────────────────────────────────── %>
