@@ -75,7 +75,7 @@ leaving the novel show page or touching the jobs index.
 
 | Milestone | Summary |
 |-----------|---------|
-| M23 — Novel Show: Tabbed Layout | Header block with genre badge + progress bar; four-tab strip (Chapters, Bible, Review disabled, Voice Calibration disabled); Turbo Frame lazy-load per tab; `tabs_controller.ts` |
+| M23 — Novel Show: Tabbed Layout ✅ | Header block with genre badge + progress bar; four-tab strip (Chapters, Bible, Review disabled, Voice Calibration disabled); Turbo Frame lazy-load per tab; `tabs_controller.ts` |
 | M24 — Chapters Tab + Download Cleanup | Wire Chapters tab panel; remove download columns from chapter table (move to chapter show); Upload + inert Translate Chapters buttons in tab action area |
 | M25 — Bible Tab | Wire Bible tab panel; bible views work correctly inside Turbo Frame context; in-frame breadcrumb for deep navigation |
 | M26 — Chapter Table: Display States + Inline Actions | Job-derived display badges (`uploaded`, `prereading`, `preread-failed`, `preread`); ▶ Translate primary action; ▶ Preread recovery action; `TranslationJob.preread_covering` scope |
@@ -126,7 +126,7 @@ model. The `Chapter#status` enum remains `untranslated | translated | reviewed`.
 ---
 
 ## Milestone 23 — Novel Show: Tabbed Layout
-**Status: 🔲 Not Started**
+**Status: ✅ Complete**
 
 Restructure `novels/show` from a vertical stack of sections into a persistent header
 block + four-tab strip. The header holds novel identity and progress at a glance. The
@@ -136,7 +136,7 @@ tabs hold Chapters, Bible, Review, and Voice Calibration as peer workspaces.
 
 **Header block**
 - Cover art slot (existing Active Storage attachment — already wired at M21)
-- Genre badge (e.g. "FANT") derived from `@novel.genre`
+- Genre badge (e.g. "Fantasy") derived from `@novel.genre`
 - Title (serif), Korean title, summary
 - Progress bar with `X/Y · Z%` label — `reviewed / total` chapters
   (bar represents finished work; translated-but-unreviewed is still in flight)
