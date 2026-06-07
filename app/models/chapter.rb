@@ -11,9 +11,12 @@ class Chapter < ApplicationRecord
   # Enums
   # ---------------------------------------------------------------------------
   enum :status, {
-    untranslated: "untranslated",
-    translated:   "translated",
-    reviewed:     "reviewed"
+    untranslated:  "untranslated",
+    prereading:    "prereading",
+    preread_failed: "preread_failed",
+    preread:       "preread",
+    translated:    "translated",
+    reviewed:      "reviewed"
   }
 
   # ---------------------------------------------------------------------------

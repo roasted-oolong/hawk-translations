@@ -10,6 +10,7 @@ class TranslationJob < ApplicationRecord
   # ---------------------------------------------------------------------------
   enum :job_type, {
     preread:                  "preread",
+    translate_batch:          "translate_batch",
     bible_build:              "bible_build",
     post_translation_review:  "post_translation_review"
   }
