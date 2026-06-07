@@ -1,0 +1,16 @@
+# Install to ~/.config/systemd/user/hawk-translations.service
+# Run install-service.sh to do this automatically.
+[Unit]
+Description=Hawk Translations (Rails 8 + Solid Queue)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/jenna/hawk-translations
+ExecStart=/home/jenna/hawk-translations/bin/start-service
+EnvironmentFile=-/home/jenna/hawk-translations/.env
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

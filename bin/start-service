@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -e
+
+export HOME=/home/jenna
+
+# rbenv
+export RBENV_ROOT="$HOME/.rbenv"
+export PATH="$RBENV_ROOT/shims:$RBENV_ROOT/bin:$PATH"
+
+# nvm — pick the latest installed node version
+NVM_DIR="$HOME/.nvm"
+NODE_VERSION=$(ls "$NVM_DIR/versions/node/" | sort -V | tail -1)
+export PATH="$NVM_DIR/versions/node/$NODE_VERSION/bin:$PATH"
+
+cd /home/jenna/hawk-translations
+exec foreman start -f Procfile.dev
