@@ -176,33 +176,25 @@ RSpec.describe "M15 Dashboard, Novel Index & Novel Show", type: :system do
       expect(page).to have_selector("[data-testid='breadcrumb']")
     end
 
-    it "renders the chapter summary section" do
-      expect(page).to have_selector("[data-testid='novel-chapters-summary']")
+    it "renders the tab strip" do
+      expect(page).to have_selector("[data-testid='novel-tabs']")
     end
 
-    it "shows chapter status counts" do
-      create(:chapter, novel: novel, status: "translated")
+    it "renders the Chapters tab" do
+      expect(page).to have_selector("[data-testid='tab-chapters']")
+    end
+
+    it "renders the Bible tab" do
+      expect(page).to have_selector("[data-testid='tab-bible']")
+    end
+
+    it "renders the progress bar" do
       create(:chapter, novel: novel, status: "reviewed")
       create(:chapter, novel: novel, status: "untranslated")
       visit novel_path(novel)
 
-      within "[data-testid='novel-chapters-summary']" do
-        expect(page).to have_text("3") # total
-      end
-    end
-
-    it "renders the bible section" do
-      expect(page).to have_selector("[data-testid='novel-bible-summary']")
-    end
-
-    it "shows a link to the translation bible" do
-      within "[data-testid='novel-bible-summary']" do
-        expect(page).to have_link("Translation Bible →")
-      end
-    end
-
-    it "shows a link to translation jobs" do
-      expect(page).to have_link("Translation Jobs")
+      expect(page).to have_selector("[data-testid='novel-show-progress-track']")
+      expect(page).to have_selector("[data-testid='novel-show-progress-label']")
     end
   end
 end

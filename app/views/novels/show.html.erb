@@ -6,107 +6,140 @@
       [@novel.title, nil]
     ] %>
 
-<div class="page-header">
-  <div class="page-header__row">
-    <div>
-      <h1 class="page-title" data-testid="novel-title"><%= @novel.title %></h1>
-      <% if @novel.korean_title.present? %>
-        <p class="page-subtitle novel-show__korean-title"><%= @novel.korean_title %></p>
+<%# ================================================================== %>
+<%# Header block                                                        %>
+<%# ================================================================== %>
+<div class="novel-show__header-block">
+
+  <%# Cover art slot %>
+  <div class="novel-show__cover-slot" data-testid="novel-show-cover">
+    <% if @novel.cover_art.attached? && @novel.cover_art.blob.persisted? %>
+      <%= image_tag @novel.cover_art,
+            class: "novel-show__cover-img",
+            alt:   "Cover art for #{@novel.title}" %>
+    <% end %>
+  </div>
+
+  <%# Identity + actions %>
+  <div class="novel-show__header-body">
+    <div class="novel-show__header-top">
+      <%# Genre badge %>
+      <% if @novel.genre.present? %>
+        <span class="novel-show__genre-badge" data-testid="novel-genre-badge">
+          <%= @novel.genre %>
+        </span>
       <% end %>
+
+      <%# Edit + Remove actions %>
+      <div class="btn-group novel-show__header-actions">
+        <%= link_to "Edit", edit_novel_path(@novel), class: "btn btn--secondary btn--sm" %>
+        <%= modal_button_to "Remove", @novel,
+              method:        :delete,
+              message:       "Remove \"#{@novel.title}\"? This cannot be undone.",
+              confirm_label: "Remove" %>
+      </div>
     </div>
-    <div class="btn-group">
-      <%= link_to "Edit", edit_novel_path(@novel), class: "btn btn--secondary btn--sm" %>
-      <%= modal_button_to "Remove", @novel,
-            method:        :delete,
-            message:       "Remove \"#{@novel.title}\"? This cannot be undone.",
-            confirm_label: "Remove" %>
+
+    <%# Title %>
+    <h1 class="page-title" data-testid="novel-title"><%= @novel.title %></h1>
+    <% if @novel.korean_title.present? %>
+      <p class="page-subtitle novel-show__korean-title"><%= @novel.korean_title %></p>
+    <% end %>
+
+    <%# Summary %>
+    <% if @novel.summary.present? %>
+      <p class="novel-show__summary"><%= @novel.summary %></p>
+    <% end %>
+
+    <%# Progress bar — reviewed / total %>
+    <% total_chapters    = @chapters.size %>
+    <% reviewed_count    = @chapters.count(&:reviewed?) %>
+    <% progress_pct      = total_chapters > 0 ? (reviewed_count.to_f / total_chapters * 100).floor : 0 %>
+
+    <div class="novel-show__progress">
+      <div class="novel-show__progress-track"
+           data-testid="novel-show-progress-track"
+           role="progressbar"
+           aria-valuenow="<%= progress_pct %>"
+           aria-valuemin="0"
+           aria-valuemax="100">
+        <div class="novel-show__progress-fill"
+             style="width: <%= progress_pct %>%;"></div>
+      </div>
+      <p class="novel-show__progress-label" data-testid="novel-show-progress-label">
+        <%= reviewed_count %> / <%= total_chapters %> &middot; <%= progress_pct %>% reviewed
+      </p>
     </div>
   </div>
-
-  <div class="novel-show__meta">
-    <% if @novel.series.present? %>
-      <span class="novel-show__meta-item">
-        <span class="novel-show__meta-label">Series</span>
-        <span class="novel-show__meta-value"><%= @novel.series.name %></span>
-      </span>
-    <% end %>
-    <% if @novel.genre.present? %>
-      <span class="novel-show__meta-item">
-        <span class="novel-show__meta-label">Genre</span>
-        <span class="novel-show__meta-value"><%= @novel.genre %></span>
-      </span>
-    <% end %>
-    <span class="novel-show__meta-item">
-      <span class="novel-show__meta-label">Visibility</span>
-      <span class="novel-show__meta-value"><%= @novel.visibility.capitalize %></span>
-    </span>
-  </div>
-
-  <% if @novel.summary.present? %>
-    <p class="novel-show__summary"><%= @novel.summary %></p>
-  <% end %>
 </div>
 
-<%# ------------------------------------------------------------------ %>
-<%# Chapter summary                                                     %>
-<%# ------------------------------------------------------------------ %>
-<section class="novel-show__section" aria-labelledby="chapters-heading" data-testid="novel-chapters-summary">
-  <div class="novel-show__section-header">
-    <h2 class="novel-show__section-title" id="chapters-heading">
-      Chapters (<%= @chapters.size %>)
-    </h2>
-    <%= link_to "Upload Chapter(s)", new_novel_chapter_path(@novel), class: "btn btn--primary btn--sm" %>
-  </div>
+<%# ================================================================== %>
+<%# Tab strip + panels                                                  %>
+<%# ================================================================== %>
+<div class="novel-tabs"
+     data-controller="tabs"
+     data-tabs-novel-id-value="<%= @novel.id %>"
+     data-testid="novel-tabs">
 
-  <% if @chapters.none? %>
-    <p class="empty-state__message">No chapters yet.</p>
-  <% else %>
-    <% untranslated_count = @chapters.count(&:untranslated?) %>
-    <% translated_count   = @chapters.count(&:translated?) %>
-    <% reviewed_count     = @chapters.count(&:reviewed?) %>
+  <%# Tab buttons %>
+  <div class="novel-tabs__strip" role="tablist">
 
-    <div class="chapter-status-summary">
-      <div class="chapter-status-summary__item">
-        <span class="chapter-status-summary__count"><%= untranslated_count %></span>
-        <span class="chapter-status-summary__label">untranslated</span>
-      </div>
-      <div class="chapter-status-summary__item">
-        <span class="chapter-status-summary__count"><%= translated_count %></span>
-        <span class="chapter-status-summary__label">translated</span>
-      </div>
-      <div class="chapter-status-summary__item">
-        <span class="chapter-status-summary__count"><%= reviewed_count %></span>
-        <span class="chapter-status-summary__label">reviewed</span>
-      </div>
-    </div>
+    <button class="novel-tab"
+            role="tab"
+            data-action="click->tabs#select"
+            data-tabs-key-param="chapters"
+            data-testid="tab-chapters"
+            aria-controls="tab-panel-chapters"
+            aria-selected="false">
+      Chapters
+    </button>
 
-    <p class="novel-show__chapters-link">
-      <%= link_to "View all #{@chapters.size} chapters \u2192", novel_chapters_path(@novel) %>
-    </p>
-  <% end %>
-</section>
+    <button class="novel-tab"
+            role="tab"
+            data-action="click->tabs#select"
+            data-tabs-key-param="bible"
+            data-testid="tab-bible"
+            aria-controls="tab-panel-bible"
+            aria-selected="false">
+      Bible
+    </button>
 
-<hr class="divider">
+    <button class="novel-tab novel-tab--disabled"
+            role="tab"
+            aria-disabled="true"
+            aria-selected="false"
+            title="Coming soon"
+            data-testid="tab-review">
+      Review
+    </button>
 
-<%# ------------------------------------------------------------------ %>
-<%# Bible — link to landing page                                        %>
-<%# ------------------------------------------------------------------ %>
-<section class="novel-show__section" aria-labelledby="bible-heading" data-testid="novel-bible-summary">
-  <div class="novel-show__section-header">
-    <h2 class="novel-show__section-title" id="bible-heading">Translation Bible</h2>
-    <%= link_to "Translation Bible \u2192", novel_bible_path(@novel), class: "btn btn--secondary btn--sm" %>
-  </div>
-  <p class="novel-show__bible-hint">Characters, locations, terminology, cultural phrases, and story entries.</p>
-</section>
+    <button class="novel-tab novel-tab--disabled"
+            role="tab"
+            aria-disabled="true"
+            aria-selected="false"
+            title="Coming soon"
+            data-testid="tab-voice-calibration">
+      Voice Calibration
+    </button>
 
-<hr class="divider">
+  </div><%# /.novel-tabs__strip %>
 
-<%# ------------------------------------------------------------------ %>
-<%# Jobs link                                                           %>
-<%# ------------------------------------------------------------------ %>
-<section class="novel-show__section" aria-labelledby="jobs-heading">
-  <div class="novel-show__section-header">
-    <h2 class="novel-show__section-title" id="jobs-heading">Translation Jobs</h2>
-    <%= link_to "Translation Jobs", novel_translation_jobs_path(@novel), class: "btn btn--secondary btn--sm" %>
-  </div>
-</section>
+  <%# Tab panels — Turbo Frames; src set eagerly by tabs_controller on connect %>
+
+  <turbo-frame id="tab-panel-chapters"
+               data-tabs-src-value="<%= novel_chapters_path(@novel) %>"
+               data-testid="tab-panel-chapters"
+               role="tabpanel"
+               aria-labelledby="tab-chapters">
+    <%# src set by tabs_controller on connect(); content loads immediately. %>
+  </turbo-frame>
+
+  <turbo-frame id="tab-panel-bible"
+               data-tabs-src-value="<%= novel_bible_path(@novel) %>"
+               data-testid="tab-panel-bible"
+               role="tabpanel"
+               aria-labelledby="tab-bible">
+    <%# src set by tabs_controller on connect(); content loads immediately. %>
+  </turbo-frame>
+
+</div><%# /.novel-tabs %>
