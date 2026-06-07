@@ -19,7 +19,8 @@ class TranslationJob < ApplicationRecord
     queued:    "queued",
     running:   "running",
     completed: "completed",
-    failed:    "failed"
+    failed:    "failed",
+    cancelled: "cancelled"
   }
 
   # ---------------------------------------------------------------------------
@@ -35,7 +36,7 @@ class TranslationJob < ApplicationRecord
   # ---------------------------------------------------------------------------
   scope :recent,     -> { order(created_at: :desc) }
   scope :for_novel,  ->(novel) { where(novel: novel) }
-  scope :cancellable, -> { where(status: "queued") }
+  scope :cancellable, -> { where(status: %w[queued running]) }
 
   # ---------------------------------------------------------------------------
   # Instance methods
@@ -53,10 +54,8 @@ class TranslationJob < ApplicationRecord
     end
   end
 
-  # A job may only be cancelled while it is still queued — once a worker
-  # picks it up and it transitions to running, cancellation is not possible.
   def cancellable?
-    queued?
+    queued? || running?
   end
 
   private

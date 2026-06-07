@@ -87,6 +87,8 @@
   --color-status-completed-bg:      #ECFDF5;
   --color-status-failed-text:       #DC2626;
   --color-status-failed-bg:         #FEF2F2;
+  --color-status-cancelled-text:    #6B7280;
+  --color-status-cancelled-bg:      #F3F4F6;
 
   /* --- Colour: feedback --- */
   --color-danger:          #DC2626;

@@ -7,8 +7,9 @@ class TranslationJobsController < ApplicationController
   # Story #25 — job list with status
   # ---------------------------------------------------------------------------
   def index
-    @translation_jobs = @novel.translation_jobs.recent
-    @translation_job  = TranslationJob.new
+    @translation_jobs   = @novel.translation_jobs.recent
+    @translation_job    = TranslationJob.new
+    @has_active_jobs    = @translation_jobs.any?(&:cancellable?)
   end
 
   # ---------------------------------------------------------------------------
@@ -41,14 +42,8 @@ class TranslationJobsController < ApplicationController
   # Story #27 — cancel a queued job
   # ---------------------------------------------------------------------------
   def destroy
-    unless @translation_job.cancellable?
-      redirect_to novel_translation_job_path(@novel, @translation_job),
-                  alert: "This job cannot be cancelled — it is already #{@translation_job.status}."
-      return
-    end
-
-    @translation_job.destroy!
-    redirect_to novel_translation_jobs_path(@novel),
+    @translation_job.update!(status: :cancelled)
+    redirect_to novel_translation_job_path(@novel, @translation_job),
                 notice: "Job cancelled."
   end
 
