@@ -31,6 +31,14 @@
         <% end %>
       </li>
 
+      <li>
+        <%= link_to translation_jobs_path,
+              class: "app-sidebar__nav-link #{'app-sidebar__nav-link--active' if request.path.include?('translation_jobs')}",
+              aria: { current: request.path.include?('translation_jobs') ? "page" : nil } do %>
+          Jobs
+        <% end %>
+      </li>
+
     </ul>
   </nav>
   

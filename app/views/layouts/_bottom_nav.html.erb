@@ -19,4 +19,10 @@
     <span class="app-bottom-nav__label">Novels</span>
   <% end %>
 
+  <%= link_to translation_jobs_path,
+        class: "app-bottom-nav__link #{'app-bottom-nav__link--active' if request.path.include?('translation_jobs')}",
+        aria: { current: request.path.include?('translation_jobs') ? "page" : nil } do %>
+    <span class="app-bottom-nav__label">Jobs</span>
+  <% end %>
+
 </nav>
