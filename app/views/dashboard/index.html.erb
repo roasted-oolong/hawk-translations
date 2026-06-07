@@ -6,6 +6,18 @@
   <p class="page-subtitle">Your translation workspace.</p>
 </div>
 
+<% if @active_jobs.any? %>
+  <div data-controller="poll" data-poll-interval-value="1000">
+<% end %>
+
+<%= turbo_frame_tag "dashboard-active-jobs" do %>
+  <%= render "novels/active_jobs", active_jobs: @active_jobs, show_novel: true %>
+<% end %>
+
+<% if @active_jobs.any? %>
+  </div>
+<% end %>
+
 <section class="dashboard-section" aria-labelledby="assigned-novels-heading">
   <div class="dashboard-section__header">
     <h2 class="dashboard-section__title" id="assigned-novels-heading">My Novels</h2>

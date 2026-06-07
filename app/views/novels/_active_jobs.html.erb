@@ -1,0 +1,30 @@
+<% show_novel = local_assigns.fetch(:show_novel, false) %>
+<% return if active_jobs.empty? %>
+
+<div class="novel-active-jobs" data-testid="novel-active-jobs">
+  <div class="novel-active-jobs__header">
+    <svg class="novel-active-jobs__spin" xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+    </svg>
+    <span class="novel-active-jobs__heading">Active Jobs</span>
+  </div>
+
+  <ul class="novel-active-jobs__list">
+    <% active_jobs.each do |job| %>
+      <li class="novel-active-jobs__item">
+        <% if show_novel %>
+          <span class="novel-active-jobs__novel"><%= job.novel.title %></span>
+          <span class="novel-active-jobs__sep" aria-hidden="true">·</span>
+        <% end %>
+        <span class="novel-active-jobs__type"><%= job.job_type.humanize %></span>
+        <% if job.chapter_range_label %>
+          <span class="novel-active-jobs__chapters"><%= job.chapter_range_label %></span>
+        <% end %>
+        <%= render "components/status_badge", status: job.status %>
+        <% if job.progress_pct %>
+          <span class="novel-active-jobs__pct"><%= job.progress_pct %>%</span>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+</div>

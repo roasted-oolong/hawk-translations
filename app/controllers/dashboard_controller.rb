@@ -15,5 +15,11 @@ class DashboardController < ApplicationController
       .includes(:series, chapters: [], translation_jobs: [])
       .with_attached_cover_art
       .order(:title)
+
+    @active_jobs = TranslationJob
+      .cancellable
+      .where(novel_id: novel_ids)
+      .includes(:novel)
+      .recent
   end
 end
