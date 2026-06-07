@@ -68,6 +68,11 @@
   background-color: var(--color-status-failed-bg);
 }
 
+.status-badge--cancelled {
+  color: var(--color-status-cancelled-text);
+  background-color: var(--color-status-cancelled-bg);
+}
+
 /* --- Jobs index trigger card --- */
 .jobs-trigger {
   margin-bottom: var(--space-6);
@@ -255,4 +260,10 @@
   color: #5a7570;
   margin: 0;
   line-height: 1.6;
+}
+
+.job-progress {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
 }

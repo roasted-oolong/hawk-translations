@@ -26,53 +26,71 @@
 <%# ------------------------------------------------------------------ %>
 <%# Job list                                                            %>
 <%# ------------------------------------------------------------------ %>
-<% if @translation_jobs.empty? %>
-  <div class="empty-state" data-testid="jobs-empty">
-    <p class="empty-state__message">No jobs yet. Trigger one above.</p>
-  </div>
-<% else %>
-  <div class="data-table-wrapper">
-    <table class="data-table" data-testid="jobs-table">
-      <thead>
-        <tr>
-          <th class="data-table__th">Type</th>
-          <th class="data-table__th">Chapters</th>
-          <th class="data-table__th">Status</th>
-          <th class="data-table__th">Triggered by</th>
-          <th class="data-table__th">Started</th>
-          <th class="data-table__th data-table__th--actions"><span class="sr-only">Actions</span></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @translation_jobs.each do |job| %>
-          <tr class="data-table__row">
-            <td class="data-table__td data-table__td--type">
-              <%= job.job_type.humanize %>
-            </td>
-            <td class="data-table__td">
-              <%= job.chapter_range_label || %(<span class="text-muted">—</span>).html_safe %>
-            </td>
-            <td class="data-table__td">
-              <%= render "components/status_badge", status: job.status %>
-            </td>
-            <td class="data-table__td"><%= job.user.name %></td>
-            <td class="data-table__td data-table__td--date">
-              <%= job.created_at.strftime("%b %-d, %Y %H:%M") %>
-            </td>
-            <td class="data-table__td data-table__td--actions">
-              <%= link_to "View", novel_translation_job_path(@novel, job),
-                    class: "btn btn--ghost btn--xs" %>
-              <% if job.cancellable? %>
-                <%= modal_button_to "Cancel", novel_translation_job_path(@novel, job),
-                      method:        :delete,
-                      message:       "Cancel this queued job? It cannot be restarted.",
-                      confirm_label: "Cancel job",
-                      button_class:  "btn btn--danger btn--xs" %>
-              <% end %>
-            </td>
+<% if @has_active_jobs %>
+  <div data-controller="poll" data-poll-interval-value="1000">
+<% end %>
+
+<%= turbo_frame_tag "jobs-list" do %>
+  <% if @translation_jobs.empty? %>
+    <div class="empty-state" data-testid="jobs-empty">
+      <p class="empty-state__message">No jobs yet. Trigger one above.</p>
+    </div>
+  <% else %>
+    <div class="data-table-wrapper">
+      <table class="data-table" data-testid="jobs-table">
+        <thead>
+          <tr>
+            <th class="data-table__th">Type</th>
+            <th class="data-table__th">Chapters</th>
+            <th class="data-table__th">Status</th>
+            <th class="data-table__th">Progress</th>
+            <th class="data-table__th">Triggered by</th>
+            <th class="data-table__th">Started</th>
+            <th class="data-table__th data-table__th--actions"><span class="sr-only">Actions</span></th>
           </tr>
-        <% end %>
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          <% @translation_jobs.each do |job| %>
+            <tr class="data-table__row">
+              <td class="data-table__td data-table__td--type">
+                <%= job.job_type.humanize %>
+              </td>
+              <td class="data-table__td">
+                <%= job.chapter_range_label || %(<span class="text-muted">—</span>).html_safe %>
+              </td>
+              <td class="data-table__td">
+                <%= render "components/status_badge", status: job.status %>
+              </td>
+              <td class="data-table__td job-progress">
+                <% if job.progress_pct %>
+                  <%= job.progress_pct %>%
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+              </td>
+              <td class="data-table__td"><%= job.user.name %></td>
+              <td class="data-table__td data-table__td--date">
+                <%= job.created_at.strftime("%b %-d, %Y %H:%M") %>
+              </td>
+              <td class="data-table__td data-table__td--actions">
+                <%= link_to "View", novel_translation_job_path(@novel, job),
+                      class: "btn btn--ghost btn--xs" %>
+                <% if job.cancellable? %>
+                  <%= modal_button_to "Cancel", novel_translation_job_path(@novel, job),
+                        method:        :delete,
+                        message:       "Cancel this queued job? It cannot be restarted.",
+                        confirm_label: "Cancel job",
+                        button_class:  "btn btn--danger btn--xs" %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+<% end %>
+
+<% if @has_active_jobs %>
   </div>
 <% end %>
