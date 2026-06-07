@@ -1,11 +1,9 @@
 require "rails_helper"
 
 RSpec.describe "Chapters", type: :request do
-  let(:user)     { create(:user) }
+  let!(:user)    { create(:user) }
   let(:novel)    { create(:novel) }
   let!(:chapter) { create(:chapter, novel: novel, number: 1, status: "untranslated") }
-
-  before { sign_in(user) }
 
   # ---------------------------------------------------------------------------
   # Helpers — build uploaded files whose *content* drives language detection
@@ -315,6 +313,128 @@ RSpec.describe "Chapters", type: :request do
         get download_translated_output_novel_chapter_path(novel, chapter)
         expect(response).to redirect_to(novel_chapter_path(novel, chapter))
       end
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Bulk destroy
+  # ---------------------------------------------------------------------------
+  describe "DELETE /novels/:novel_id/chapters/bulk_destroy" do
+    let!(:chapter2) { create(:chapter, novel: novel, number: 2) }
+    let!(:chapter3) { create(:chapter, novel: novel, number: 3) }
+
+    it "destroys selected chapters and redirects to chapter list" do
+      expect {
+        delete bulk_destroy_novel_chapters_path(novel), params: { chapter_ids: [chapter2.id, chapter3.id] }
+      }.to change(Chapter, :count).by(-2)
+
+      expect(response).to redirect_to(novel_chapters_path(novel))
+    end
+
+    it "destroys only the selected chapters, leaving others intact" do
+      expect {
+        delete bulk_destroy_novel_chapters_path(novel), params: { chapter_ids: [chapter2.id] }
+      }.to change(Chapter, :count).by(-1)
+
+      expect(chapter.reload).to be_persisted
+    end
+
+    it "does not destroy chapters belonging to another novel" do
+      other = create(:chapter, novel: create(:novel), number: 99)
+
+      expect {
+        delete bulk_destroy_novel_chapters_path(novel), params: { chapter_ids: [other.id] }
+      }.not_to change(Chapter, :count)
+
+      expect(flash[:alert]).to be_present
+    end
+
+    it "redirects with alert when no chapter_ids are given" do
+      delete bulk_destroy_novel_chapters_path(novel), params: { chapter_ids: [] }
+
+      expect(response).to redirect_to(novel_chapters_path(novel))
+      expect(flash[:alert]).to be_present
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Bulk update status
+  # ---------------------------------------------------------------------------
+  describe "PATCH /novels/:novel_id/chapters/bulk_update" do
+    let!(:chapter2) { create(:chapter, novel: novel, number: 2, status: "untranslated") }
+    let!(:chapter3) { create(:chapter, novel: novel, number: 3, status: "untranslated") }
+
+    it "updates status for all selected chapters and redirects" do
+      patch bulk_update_novel_chapters_path(novel), params: {
+        chapter_ids: [chapter2.id, chapter3.id],
+        status: "translated"
+      }
+
+      expect(chapter2.reload.status).to eq("translated")
+      expect(chapter3.reload.status).to eq("translated")
+      expect(response).to redirect_to(novel_chapters_path(novel))
+    end
+
+    it "does not update chapters that were not selected" do
+      patch bulk_update_novel_chapters_path(novel), params: {
+        chapter_ids: [chapter2.id],
+        status: "translated"
+      }
+
+      expect(chapter3.reload.status).to eq("untranslated")
+    end
+
+    it "redirects with alert for an unrecognised status value" do
+      patch bulk_update_novel_chapters_path(novel), params: {
+        chapter_ids: [chapter2.id],
+        status: "published"
+      }
+
+      expect(response).to redirect_to(novel_chapters_path(novel))
+      expect(flash[:alert]).to be_present
+      expect(chapter2.reload.status).to eq("untranslated")
+    end
+
+    it "redirects with alert when no chapter_ids are given" do
+      patch bulk_update_novel_chapters_path(novel), params: { chapter_ids: [], status: "translated" }
+
+      expect(response).to redirect_to(novel_chapters_path(novel))
+      expect(flash[:alert]).to be_present
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Bulk download
+  # ---------------------------------------------------------------------------
+  describe "POST /novels/:novel_id/chapters/bulk_download" do
+    let!(:chapter2) { create(:chapter, novel: novel, number: 2) }
+
+    it "streams a zip file when chapters have attachments" do
+      chapter2.korean_source.attach(
+        io:           StringIO.new(KOREAN_CONTENT),
+        filename:     "2화.txt",
+        content_type: "text/plain"
+      )
+
+      post bulk_download_novel_chapters_path(novel), params: { chapter_ids: [chapter2.id] }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to eq("application/zip")
+      expect(response.headers["Content-Disposition"]).to include("attachment")
+    end
+
+    it "streams an empty zip when selected chapters have no attachments" do
+      post bulk_download_novel_chapters_path(novel), params: { chapter_ids: [chapter2.id] }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to eq("application/zip")
+    end
+
+    it "redirects with alert when no chapter_ids are given" do
+      post bulk_download_novel_chapters_path(novel), params: { chapter_ids: [] }
+
+      expect(response).to redirect_to(novel_chapters_path(novel))
+      expect(flash[:alert]).to be_present
     end
   end
 end

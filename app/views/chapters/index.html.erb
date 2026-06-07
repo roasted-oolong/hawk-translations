@@ -1,84 +1,219 @@
 <%# app/views/chapters/index.html.erb %>
 <% content_for :title, "Chapters — #{@novel.title} — Hawk" %>
 
+<%# Breadcrumb outside the frame — shown on direct page visits, ignored in the tab panel %>
 <%= render "layouts/breadcrumb", crumbs: [
       ["Novels", novels_path],
       [@novel.title, novel_path(@novel)],
       ["Chapters", nil]
     ] %>
 
-<div class="page-header">
-  <div class="page-header__row">
-    <h1 class="page-title">Chapters</h1>
-    <%= link_to "Upload Chapter(s)", new_novel_chapter_path(@novel),
-          class: "btn btn--primary btn--sm" %>
-  </div>
-</div>
+<%= turbo_frame_tag "tab-panel-chapters" do %>
 
-<% if @chapters.none? %>
-  <div class="empty-state" data-testid="chapters-empty">
-    <p class="empty-state__message">No chapters yet.</p>
-    <p class="empty-state__action">
-      <%= link_to "Upload the first chapter", new_novel_chapter_path(@novel),
-            class: "btn btn--primary" %>
-    </p>
-  </div>
-<% else %>
-  <div class="data-table-wrapper">
-    <table class="data-table" data-testid="chapters-table">
-      <thead>
-        <tr>
-          <th class="data-table__th data-table__th--number">#</th>
-          <th class="data-table__th">Title</th>
-          <th class="data-table__th">Status</th>
-          <th class="data-table__th">Korean Source</th>
-          <th class="data-table__th">Translated Output</th>
-          <th class="data-table__th data-table__th--actions"><span class="sr-only">Actions</span></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @chapters.each do |chapter| %>
-          <tr class="data-table__row">
-            <td class="data-table__td data-table__td--number">
-              <%= link_to chapter.number, novel_chapter_path(@novel, chapter),
-                    class: "data-table__link" %>
-            </td>
-            <td class="data-table__td data-table__td--title">
-              <%= chapter.title.presence || %(<span class="text-muted">—</span>).html_safe %>
-            </td>
-            <td class="data-table__td">
-              <%= render "components/status_badge", status: chapter.status %>
-            </td>
-            <td class="data-table__td">
-              <% if chapter.korean_source.attached? %>
-                <%= link_to "Download",
-                      download_korean_source_novel_chapter_path(@novel, chapter),
-                      class: "data-table__link" %>
-              <% else %>
-                <span class="text-muted">—</span>
+  <div data-controller="chapter-select bulk-translate">
+
+    <%# ── Tab panel toolbar ───────────────────────────────────────────────── %>
+    <div class="tab-panel-toolbar">
+      <h2 class="tab-panel-toolbar__title">Chapters</h2>
+      <div class="tab-panel-toolbar__actions">
+        <%= link_to "Upload Chapters",
+              new_novel_chapter_path(@novel),
+              class: "btn btn--secondary btn--sm",
+              data: { turbo_frame: "_top", testid: "link-upload-chapters" } %>
+        <button type="button"
+                class="btn btn--primary btn--sm"
+                data-action="click->bulk-translate#open"
+                data-testid="button-bulk-translate">
+          Translate Chapters
+        </button>
+      </div>
+    </div>
+
+    <%# ── Chapter table ───────────────────────────────────────────────────── %>
+    <% if @chapters.none? %>
+      <div class="empty-state" data-testid="chapters-empty">
+        <p class="empty-state__message">No chapters yet.</p>
+        <p class="empty-state__action">
+          <%= link_to "Upload the first chapter",
+                new_novel_chapter_path(@novel),
+                class: "btn btn--primary",
+                data: { turbo_frame: "_top" } %>
+        </p>
+      </div>
+    <% else %>
+
+      <%# ── Selection action bar (hidden until rows are checked) ─────────── %>
+      <div class="chapter-select-bar"
+           data-chapter-select-target="actionBar"
+           hidden>
+        <span class="chapter-select-bar__count">
+          <span data-chapter-select-target="counter">0</span> selected
+        </span>
+        <div class="chapter-select-bar__actions">
+
+          <%= form_with url: bulk_update_novel_chapters_path(@novel), method: :patch,
+                data: { chapter_select_target: "editForm", turbo_frame: "_top" } do |f| %>
+            <%= f.select :status,
+                  Chapter.statuses.keys.map { |s| [s.humanize, s] },
+                  {},
+                  class: "form-select chapter-select-bar__select" %>
+            <%= f.submit "Update Status", class: "btn btn--ghost btn--sm" %>
+          <% end %>
+
+          <%= form_with url: bulk_download_novel_chapters_path(@novel), method: :post,
+                data: { chapter_select_target: "downloadForm", turbo: false } do |f| %>
+            <%= f.submit "Download", class: "btn btn--ghost btn--sm" %>
+          <% end %>
+
+          <%= form_with url: bulk_destroy_novel_chapters_path(@novel), method: :delete,
+                data: { chapter_select_target: "deleteForm", turbo_frame: "_top",
+                        turbo_confirm: "Delete the selected chapters? This cannot be undone." } do |f| %>
+            <%= f.submit "Delete", class: "btn btn--danger btn--sm" %>
+          <% end %>
+
+        </div>
+      </div>
+
+      <div class="data-table-wrapper">
+        <table class="data-table" data-testid="chapters-table">
+          <thead>
+            <tr>
+              <th class="data-table__th data-table__th--checkbox">
+                <input type="checkbox"
+                       data-chapter-select-target="selectAll"
+                       data-action="change->chapter-select#toggleAll">
+              </th>
+              <th class="data-table__th data-table__th--number">#</th>
+              <th class="data-table__th">Title</th>
+              <th class="data-table__th">Status</th>
+              <th class="data-table__th data-table__th--actions"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @chapters.each do |chapter| %>
+              <tr class="data-table__row">
+                <td class="data-table__td data-table__td--checkbox">
+                  <input type="checkbox"
+                         value="<%= chapter.id %>"
+                         data-chapter-select-target="checkbox"
+                         data-action="change->chapter-select#update">
+                </td>
+                <td class="data-table__td data-table__td--number">
+                  <%= link_to chapter.number, novel_chapter_path(@novel, chapter),
+                        class: "data-table__link",
+                        data: { turbo_frame: "_top" } %>
+                </td>
+                <td class="data-table__td data-table__td--title">
+                  <%= chapter.title.presence || %(<span class="text-muted">—</span>).html_safe %>
+                </td>
+                <td class="data-table__td">
+                  <%= render "components/status_badge", status: chapter.status %>
+                </td>
+                <td class="data-table__td data-table__td--actions">
+                  <% if chapter.untranslated? || chapter.preread_failed? %>
+                    <%= form_with url: novel_translation_jobs_path(@novel),
+                          method: :post,
+                          scope: :translation_job,
+                          data: { turbo_frame: "_top" } do |f| %>
+                      <%= f.hidden_field :job_type, value: "preread" %>
+                      <%= f.hidden_field :chapter_start, value: chapter.number %>
+                      <%= f.hidden_field :chapter_end,   value: chapter.number %>
+                      <%= f.submit "Preread",
+                            class: "btn btn--ghost btn--xs",
+                            data: { testid: "btn-preread-#{chapter.number}" } %>
+                    <% end %>
+                  <% elsif chapter.preread? %>
+                    <%= form_with url: novel_translation_jobs_path(@novel),
+                          method: :post,
+                          scope: :translation_job,
+                          data: { turbo_frame: "_top" } do |f| %>
+                      <%= f.hidden_field :job_type, value: "translate_batch" %>
+                      <%= f.hidden_field :chapter_start, value: chapter.number %>
+                      <%= f.hidden_field :chapter_end,   value: chapter.number %>
+                      <%= f.submit "Translate",
+                            class: "btn btn--ghost btn--xs chapter-action--translate",
+                            data: { testid: "btn-translate-#{chapter.number}" } %>
+                    <% end %>
+                  <% elsif chapter.prereading? %>
+                    <span class="chapter-action--pending">Running…</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+
+    <%# ── Bulk Translate dialog ───────────────────────────────────────────── %>
+    <% preread_chapters = @chapters.select(&:preread?) %>
+    <dialog class="bulk-translate-dialog"
+            data-bulk-translate-target="dialog"
+            data-testid="bulk-translate-dialog">
+      <%= form_with url: novel_translation_jobs_path(@novel),
+            method: :post,
+            data: { turbo_frame: "_top" } do |f| %>
+        <%= f.hidden_field :job_type, value: "translate_batch" %>
+        <%= f.hidden_field :chapter_start, data: { "bulk-translate-target": "chapterStart" } %>
+        <%= f.hidden_field :chapter_end,   data: { "bulk-translate-target": "chapterEnd" } %>
+
+        <div class="bulk-translate-dialog__panel">
+          <div class="bulk-translate-dialog__header">
+            <div>
+              <h2 class="bulk-translate-dialog__title">Bulk Translation</h2>
+              <p class="bulk-translate-dialog__subtitle"><%= @novel.title %></p>
+            </div>
+          </div>
+
+          <% if preread_chapters.empty? %>
+            <p class="bulk-translate-dialog__empty">No chapters are ready for translation yet.</p>
+          <% else %>
+            <div class="bulk-translate-dialog__select-all">
+              <label class="bulk-translate-dialog__check-label">
+                <input type="checkbox"
+                       class="bulk-translate-dialog__checkbox"
+                       data-bulk-translate-target="selectAll"
+                       data-action="change->bulk-translate#toggleAll">
+                Select all
+              </label>
+              <span class="bulk-translate-dialog__count-label">
+                <span data-bulk-translate-target="counter">0</span> selected
+              </span>
+            </div>
+
+            <div class="bulk-translate-dialog__list">
+              <% preread_chapters.each do |chapter| %>
+                <label class="bulk-translate-dialog__chapter-row">
+                  <input type="checkbox"
+                         class="bulk-translate-dialog__checkbox"
+                         value="<%= chapter.number %>"
+                         data-bulk-translate-target="checkbox"
+                         data-action="change->bulk-translate#updateSelection">
+                  <span>Chapter <%= chapter.number %></span>
+                  <% if chapter.title.present? %>
+                    <span class="bulk-translate-dialog__chapter-title">— <%= chapter.title %></span>
+                  <% end %>
+                </label>
               <% end %>
-            </td>
-            <td class="data-table__td">
-              <% if chapter.translated_output.attached? %>
-                <%= link_to "Download",
-                      download_translated_output_novel_chapter_path(@novel, chapter),
-                      class: "data-table__link" %>
-              <% else %>
-                <span class="text-muted">—</span>
-              <% end %>
-            </td>
-            <td class="data-table__td data-table__td--actions">
-              <%= link_to "Edit", edit_novel_chapter_path(@novel, chapter),
-                    class: "btn btn--ghost btn--xs" %>
-              <%= modal_button_to "Remove", novel_chapter_path(@novel, chapter),
-                    method:        :delete,
-                    message:       "Remove Chapter #{chapter.number}? This cannot be undone.",
-                    confirm_label: "Remove",
-                    button_class:  "btn btn--danger btn--xs" %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
-<% end %>
+            </div>
+          <% end %>
+
+          <div class="bulk-translate-dialog__actions">
+            <button type="button"
+                    class="btn btn--ghost"
+                    data-action="click->bulk-translate#close">Cancel</button>
+            <%= f.submit "Translate",
+                  class: "btn btn--primary",
+                  disabled: true,
+                  data: {
+                    "bulk-translate-target": "submitBtn",
+                    testid: "btn-bulk-translate-submit"
+                  } %>
+          </div>
+        </div>
+      <% end %>
+    </dialog>
+
+  </div><%# /data-controller="chapter-select bulk-translate" %>
+
+<% end %><%# /turbo-frame tab-panel-chapters %>

@@ -4,7 +4,7 @@ class ChaptersController < ApplicationController
                                       :download_korean_source, :download_translated_output ]
 
   def index
-    @chapters = @novel.chapters.by_number
+    @chapters = @novel.chapters.order(number: :desc)
   end
 
   def show; end
@@ -63,6 +63,46 @@ class ChaptersController < ApplicationController
     else
       redirect_to novel_chapter_path(@novel, @chapter), alert: "No translated output file attached."
     end
+  end
+
+  def bulk_destroy
+    chapters = @novel.chapters.where(id: bulk_chapter_ids)
+    count = chapters.count
+    return redirect_to novel_chapters_path(@novel), alert: "No chapters selected." if count.zero?
+
+    chapters.destroy_all
+    redirect_to novel_chapters_path(@novel), notice: "#{count} chapter(s) removed."
+  end
+
+  def bulk_update
+    status = params[:status].to_s
+    unless Chapter.statuses.key?(status)
+      return redirect_to novel_chapters_path(@novel), alert: "Invalid status."
+    end
+
+    chapters = @novel.chapters.where(id: bulk_chapter_ids)
+    count = chapters.count
+    return redirect_to novel_chapters_path(@novel), alert: "No chapters selected." if count.zero?
+
+    chapters.update_all(status: status)
+    redirect_to novel_chapters_path(@novel), notice: "#{count} chapter(s) updated to #{status.humanize}."
+  end
+
+  def bulk_download
+    chapters = @novel.chapters.where(id: bulk_chapter_ids).order(:number).to_a
+    return redirect_to novel_chapters_path(@novel), alert: "No chapters selected." if chapters.empty?
+
+    zip_data = Zip::OutputStream.write_buffer do |zip|
+      chapters.each do |chapter|
+        append_attachment(zip, chapter, chapter.korean_source, "korean")
+        append_attachment(zip, chapter, chapter.translated_output, "translated")
+      end
+    end
+
+    send_data zip_data.string,
+      type: "application/zip",
+      filename: "#{@novel.title.parameterize}-chapters.zip",
+      disposition: "attachment"
   end
 
   private
@@ -172,5 +212,18 @@ class ChaptersController < ApplicationController
     @chapter = @novel.chapters.build
     flash.now[:alert] = message
     render :new, status: :unprocessable_entity
+  end
+
+  def bulk_chapter_ids
+    Array(params[:chapter_ids]).map(&:to_i)
+  end
+
+  def append_attachment(zip, chapter, attachment, label)
+    return unless attachment.attached?
+
+    ext = attachment.blob.filename.extension_without_delimiter
+    entry_name = "ch#{chapter.number.to_s.rjust(3, '0')}_#{label}.#{ext}"
+    zip.put_next_entry(entry_name)
+    zip.write(attachment.download)
   end
 end
