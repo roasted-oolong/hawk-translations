@@ -23,7 +23,17 @@
 
 <div class="page-header" data-testid="job-detail">
   <div class="page-header__row">
-    <h1 class="page-title"><%= @translation_job.job_type.humanize %></h1>
+    <div class="job-detail__heading">
+      <div class="job-detail__icon-wrap">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m6.75 7.5 3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0 0 21 18V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v12a2.25 2.25 0 0 0 2.25 2.25Z" />
+        </svg>
+      </div>
+      <h1 class="page-title">
+        <%= @translation_job.job_type.humanize %>
+        <span class="page-title__sub">#<%= @translation_job.id %></span>
+      </h1>
+    </div>
     <% if @translation_job.cancellable? %>
       <%= modal_button_to "Cancel job", novel_translation_job_path(@novel, @translation_job),
             method:        :delete,
@@ -87,21 +97,31 @@
     </dl>
   </div>
 
-  <%# ---------------------------------------------------------------- %>
-  <%# Output / result section                                           %>
-  <%# ---------------------------------------------------------------- %>
-  <% if @translation_job.result_payload.present? %>
-    <div class="card job-detail__output" data-testid="job-output">
-      <h2 class="job-detail__output-title">Output</h2>
-      <pre class="job-detail__output-pre"><%= @translation_job.result_payload %></pre>
+  <%# ── Output terminal panel ──────────────────────────────────────── %>
+  <div class="job-terminal" data-testid="job-output">
+    <div class="job-terminal__header">
+      <span class="job-terminal__label">Output Console</span>
+      <% if @translation_job.queued? || @translation_job.running? %>
+        <span class="job-terminal__polling" aria-live="polite">
+          <svg class="job-terminal__spin" xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+          </svg>
+          Polling
+        </span>
+      <% end %>
     </div>
-  <% elsif @translation_job.queued? || @translation_job.running? %>
-    <div class="job-detail__pending" data-testid="job-pending-message">
-      <p class="job-detail__pending-text">
-        Job is <strong><%= @translation_job.status %></strong> — output will appear here when complete.
-      </p>
+    <div class="job-terminal__body">
+      <% if @translation_job.result_payload.present? %>
+        <pre class="job-terminal__pre"><%= @translation_job.result_payload %></pre>
+      <% elsif @translation_job.queued? || @translation_job.running? %>
+        <p class="job-terminal__placeholder" data-testid="job-pending-message">
+          Job is <strong><%= @translation_job.status %></strong> — output will appear here when complete.
+        </p>
+      <% else %>
+        <p class="job-terminal__placeholder">(no output)</p>
+      <% end %>
     </div>
-  <% end %>
+  </div>
 
 <% end %>
 
