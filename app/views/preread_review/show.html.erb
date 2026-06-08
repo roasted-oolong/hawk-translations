@@ -49,6 +49,54 @@
     ],
   }.freeze
 
+  preread_edit_fields = {
+    characters: [
+      [ "Name",                   :name,                     :text     ],
+      [ "Korean name",            :korean_name,              :text     ],
+      [ "Role",                   :role,                     :text     ],
+      [ "Aliases",                :aliases,                  :text     ],
+      [ "Physical description",   :physical_description,     :textarea ],
+      [ "Speech pattern",         :speech_pattern,           :textarea ],
+      [ "Honorifics toward them", :honorifics_used_toward,   :text     ],
+      [ "Honorifics they use",    :honorifics_they_use,      :text     ],
+      [ "Relationships",          :relationships,            :textarea ],
+      [ "First appears (ch.)",    :first_appearance_chapter, :number   ],
+      [ "Notes",                  :notes,                    :textarea ],
+    ],
+    locations: [
+      [ "Name",                :name,                     :text     ],
+      [ "Korean name",         :korean_name,              :text     ],
+      [ "Significance",        :significance,             :textarea ],
+      [ "First appears (ch.)", :first_appearance_chapter, :number   ],
+      [ "Notes",               :notes,                    :textarea ],
+    ],
+    terminology: [
+      [ "Term",                :term,                     :text     ],
+      [ "Korean term",         :korean_term,              :text     ],
+      [ "Definition",          :definition,               :textarea ],
+      [ "Usage notes",         :usage_notes,              :textarea ],
+      [ "First appears (ch.)", :first_appearance_chapter, :number   ],
+      [ "Notes",               :notes,                    :textarea ],
+    ],
+    cultural_phrases: [
+      [ "Phrase",                  :phrase,                   :text     ],
+      [ "Korean phrase",           :korean_phrase,            :text     ],
+      [ "Literal translation",     :literal_translation,      :textarea ],
+      [ "Intended meaning",        :intended_meaning,         :textarea ],
+      [ "Context",                 :context,                  :textarea ],
+      [ "Established translation", :established_translation,  :text     ],
+      [ "First appears (ch.)",     :first_appearance_chapter, :number   ],
+      [ "Notes",                   :notes,                    :textarea ],
+    ],
+    story: [
+      [ "Title",               :title,                    :text     ],
+      [ "Category",            :category,                 :text     ],
+      [ "Content",             :content,                  :textarea ],
+      [ "First appears (ch.)", :first_appearance_chapter, :number   ],
+      [ "Notes",               :notes,                    :textarea ],
+    ],
+  }.freeze
+
   total_entries = @pending_entries.values.sum(&:size)
 %>
 
@@ -155,29 +203,102 @@
                data-korean-key="<%= entry[:korean_key] %>"
                data-display-name="<%= entry[name_key] %>"
                data-category-label="<%= cat.to_s.humanize %>"
+               data-name-key="<%= name_key %>"
+               data-entry-json="<%= entry.except(:korean_key, :is_existing, :field_changes).to_json %>"
                <%= first_card ? "" : "hidden" %>
                data-testid="preread-entry-card">
-            <div class="chapter-review__chapter-header">
-              <p class="chapter-review__chapter-label preread-review__category-badge preread-review__category-badge--<%= cat.to_s.tr("_", "-") %>">
-                <%= cat.to_s.humanize %>
-              </p>
-              <h2 class="chapter-review__chapter-title"><%= entry[name_key] %></h2>
-              <% if korean_key && entry[korean_key].present? %>
-                <p class="preread-review__korean"><%= entry[korean_key] %></p>
-              <% end %>
+
+            <%# -- View panel -- %>
+            <div class="preread-review__view-panel" data-preread-review-target="viewPanel">
+              <div class="chapter-review__chapter-header">
+                <p class="chapter-review__chapter-label preread-review__category-badge preread-review__category-badge--<%= cat.to_s.tr("_", "-") %>">
+                  <%= cat.to_s.humanize %>
+                </p>
+                <% if entry[:is_existing] %>
+                  <span class="preread-review__entry-type preread-review__entry-type--existing">Updating existing entry</span>
+                <% else %>
+                  <span class="preread-review__entry-type preread-review__entry-type--new">New entry</span>
+                <% end %>
+                <h2 class="chapter-review__chapter-title"><%= entry[name_key] %></h2>
+                <% if korean_key %>
+                  <p class="preread-review__korean" <%= entry[korean_key].blank? ? "hidden" : "" %>><%= entry[korean_key] %></p>
+                <% end %>
+              </div>
+
+              <% field_changes = entry[:field_changes] %>
+              <table class="preread-review__fields" data-testid="entry-fields">
+                <tbody>
+                  <% preread_display_fields[cat].each do |label, key| %>
+                    <% change = field_changes&.[](key) %>
+                    <tr <%= (entry[key].blank? && change.nil?) ? "hidden" : "" %>>
+                      <th class="preread-review__field-label"><%= label %></th>
+                      <td class="preread-review__field-value" data-field="<%= key %>">
+                        <% if change %>
+                          <% if change[:was].present? %>
+                            <span class="preread-review__diff-removed"><%= change[:was] %></span>
+                          <% end %>
+                          <% if change[:now].present? %>
+                            <span class="preread-review__diff-added"><%= change[:now] %></span>
+                          <% end %>
+                        <% else %>
+                          <%= entry[key] %>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+
+              <div class="preread-review__card-actions">
+                <button type="button"
+                        class="btn btn--ghost btn--sm"
+                        data-action="click->preread-review#enterEditMode"
+                        data-testid="button-edit-entry">
+                  Edit entry
+                </button>
+              </div>
             </div>
 
-            <table class="preread-review__fields" data-testid="entry-fields">
-              <tbody>
-                <% preread_display_fields[cat].each do |label, key| %>
-                  <% next if entry[key].blank? %>
-                  <tr>
-                    <th class="preread-review__field-label"><%= label %></th>
-                    <td class="preread-review__field-value"><%= entry[key] %></td>
-                  </tr>
+            <%# -- Edit panel -- %>
+            <div class="preread-review__edit-panel" data-preread-review-target="editPanel" hidden>
+              <div class="chapter-review__chapter-header">
+                <p class="chapter-review__chapter-label preread-review__category-badge preread-review__category-badge--<%= cat.to_s.tr("_", "-") %>">
+                  <%= cat.to_s.humanize %> — Edit
+                </p>
+                <h2 class="chapter-review__chapter-title"><%= entry[name_key] %></h2>
+              </div>
+
+              <div class="preread-review__edit-form">
+                <% preread_edit_fields[cat].each do |label, key, type| %>
+                  <div class="preread-review__edit-field">
+                    <label class="form-label"><%= label %></label>
+                    <% if type == :textarea %>
+                      <textarea class="form-input preread-review__edit-textarea" data-field="<%= key %>" rows="3"><%= entry[key] %></textarea>
+                    <% elsif type == :number %>
+                      <input type="number" class="form-input" data-field="<%= key %>" value="<%= entry[key] %>">
+                    <% else %>
+                      <input type="text" class="form-input" data-field="<%= key %>" value="<%= entry[key] %>">
+                    <% end %>
+                  </div>
                 <% end %>
-              </tbody>
-            </table>
+              </div>
+
+              <div class="preread-review__edit-actions">
+                <button type="button"
+                        class="btn btn--primary"
+                        data-action="click->preread-review#saveEdit"
+                        data-testid="button-save-edit">
+                  Save changes
+                </button>
+                <button type="button"
+                        class="btn btn--ghost"
+                        data-action="click->preread-review#cancelEdit"
+                        data-testid="button-cancel-edit">
+                  Cancel
+                </button>
+              </div>
+            </div>
+
           </div>
           <% first_card = false %>
         <% end %>
