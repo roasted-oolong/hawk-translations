@@ -114,12 +114,13 @@
       Review
     </button>
 
-    <button class="novel-tab novel-tab--disabled"
+    <button class="novel-tab"
             role="tab"
-            aria-disabled="true"
-            aria-selected="false"
-            title="Coming soon"
-            data-testid="tab-voice-calibration">
+            data-action="click->tabs#select"
+            data-tabs-key-param="voice-calibration"
+            data-testid="tab-voice-calibration"
+            aria-controls="tab-panel-voice-calibration"
+            aria-selected="false">
       Voice Calibration
     </button>
 
@@ -148,6 +149,14 @@
                data-testid="tab-panel-review"
                role="tabpanel"
                aria-labelledby="tab-review">
+    <%# src set by tabs_controller on connect(); content loads immediately. %>
+  </turbo-frame>
+
+  <turbo-frame id="tab-panel-voice-calibration"
+               data-tabs-src-value="<%= novel_voice_calibration_tab_path(@novel) %>"
+               data-testid="tab-panel-voice-calibration"
+               role="tabpanel"
+               aria-labelledby="tab-voice-calibration">
     <%# src set by tabs_controller on connect(); content loads immediately. %>
   </turbo-frame>
 

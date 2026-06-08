@@ -12,7 +12,8 @@ class TranslationJob < ApplicationRecord
     preread:                  "preread",
     translate_batch:          "translate_batch",
     bible_build:              "bible_build",
-    post_translation_review:  "post_translation_review"
+    post_translation_review:  "post_translation_review",
+    voice_calibration:        "voice_calibration"
   }
 
   enum :status, {

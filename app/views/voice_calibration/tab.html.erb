@@ -1,0 +1,59 @@
+<%# app/views/voice_calibration/tab.html.erb %>
+<%= turbo_frame_tag "tab-panel-voice-calibration" do %>
+
+<div class="vc-tab" data-testid="voice-calibration-tab">
+
+  <%# ── Pending review card ──────────────────────────────────────────────────── %>
+  <% if @pending_cards > 0 %>
+    <div class="vc-tab__section">
+      <div class="vc-tab__section-header">
+        <h2 class="vc-tab__section-title">Calibration Review</h2>
+        <span class="vc-tab__count"><%= @pending_cards %> pending</span>
+      </div>
+
+      <div class="vc-tab__card" data-testid="vc-pending-review-card">
+        <p class="vc-tab__card-desc">
+          <%= @pending_cards %> <%= "suggestion".pluralize(@pending_cards) %> from the last calibration run are waiting for your review.
+        </p>
+        <%= link_to "Review Calibration",
+              novel_voice_calibration_review_path(@novel),
+              class: "btn btn--primary",
+              data: { turbo_frame: "_top", testid: "button-review-calibration" } %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# ── Current passages ────────────────────────────────────────────────────── %>
+  <div class="vc-tab__section">
+    <div class="vc-tab__section-header">
+      <h2 class="vc-tab__section-title">Voice Calibration Passages</h2>
+      <% if @passages.any? %>
+        <span class="vc-tab__count"><%= @passages.size %> <%= "passage".pluralize(@passages.size) %></span>
+      <% end %>
+    </div>
+
+    <% if @passages.empty? %>
+      <div class="vc-tab__empty" data-testid="vc-passages-empty">
+        <p>No calibration passages yet. Run a voice calibration job on a translated chapter to get started.</p>
+      </div>
+    <% else %>
+      <div class="vc-tab__passages" data-testid="vc-passages-list">
+        <% @passages.each do |passage| %>
+          <div class="vc-passage-card" data-testid="vc-passage-<%= passage.id %>">
+            <div class="vc-passage-card__header">
+              <span class="vc-passage-card__heading"><%= passage.heading %></span>
+              <% if passage.chapter_ref.present? %>
+                <span class="vc-passage-card__ref"><%= passage.chapter_ref %></span>
+              <% end %>
+            </div>
+            <blockquote class="vc-passage-card__quote"><%= passage.quote %></blockquote>
+            <p class="vc-passage-card__rule"><%= passage.rule %></p>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+</div>
+
+<% end %><%# /turbo-frame tab-panel-voice-calibration %>
