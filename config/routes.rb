@@ -48,8 +48,10 @@ Rails.application.routes.draw do
     get "bible/search", to: "bible_search#show", as: :bible_search
 
     # Full-page chapter review slideshow
-    # GET /novels/:novel_id/chapter_review  → novel_chapter_review_path
-    get "chapter_review",  to: "chapter_review#show", as: :chapter_review
+    # GET  /novels/:novel_id/chapter_review              → novel_chapter_review_path
+    # PATCH /novels/:novel_id/chapter_review/chapters/:id/text → save edited text
+    get   "chapter_review",                         to: "chapter_review#show",        as: :chapter_review
+    patch "chapter_review/chapters/:id/text",       to: "chapter_review#update_text", as: :update_chapter_review_text
 
     # Preread results review + bible import
     # GET  /novels/:novel_id/preread_review  → novel_preread_review_path

@@ -23,6 +23,17 @@ class ChapterReviewController < ApplicationController
     render layout: "review"
   end
 
+  def update_text
+    chapter = @novel.chapters.find(params[:id])
+    text = params.require(:text)
+    chapter.translated_output.attach(
+      io: StringIO.new(text),
+      filename: "chapter_#{chapter.number}.txt",
+      content_type: "text/plain"
+    )
+    head :ok
+  end
+
   private
 
   def set_novel
