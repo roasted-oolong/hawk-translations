@@ -58,6 +58,14 @@ Rails.application.routes.draw do
     # POST /novels/:novel_id/bible_import    → novel_bible_import_path
     get  "preread_review", to: "preread_review#show", as: :preread_review
     post "bible_import",   to: "bible_import#create", as: :bible_import
+
+    # Voice calibration tab (Turbo Frame) + full-page review
+    # GET   /novels/:novel_id/voice_calibration               → novel_voice_calibration_tab_path
+    # GET   /novels/:novel_id/voice_calibration/review        → novel_voice_calibration_review_path
+    # PATCH /novels/:novel_id/voice_calibration/review/cards/:card_id → novel_voice_calibration_review_card_path
+    get   "voice_calibration",                      to: "voice_calibration#tab",    as: :voice_calibration_tab
+    get   "voice_calibration/review",               to: "voice_calibration_review#show",   as: :voice_calibration_review
+    patch "voice_calibration/review/cards/:card_id", to: "voice_calibration_review#update", as: :voice_calibration_review_card
   end
 
   # Top-level jobs index — cross-novel view

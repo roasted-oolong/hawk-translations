@@ -1062,6 +1062,44 @@ ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
+-- Name: voice_calibration_passages; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.voice_calibration_passages (
+    id bigint NOT NULL,
+    novel_id bigint NOT NULL,
+    heading character varying NOT NULL,
+    chapter_ref character varying,
+    quote text NOT NULL,
+    what_it_demonstrates text,
+    wrong_version text,
+    rule text NOT NULL,
+    "position" integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: voice_calibration_passages_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.voice_calibration_passages_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: voice_calibration_passages_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.voice_calibration_passages_id_seq OWNED BY public.voice_calibration_passages.id;
+
+
+--
 -- Name: active_storage_attachments id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1262,6 +1300,13 @@ ALTER TABLE ONLY public.translation_jobs ALTER COLUMN id SET DEFAULT nextval('pu
 --
 
 ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+
+
+--
+-- Name: voice_calibration_passages id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.voice_calibration_passages ALTER COLUMN id SET DEFAULT nextval('public.voice_calibration_passages_id_seq'::regclass);
 
 
 --
@@ -1510,6 +1555,14 @@ ALTER TABLE ONLY public.translation_jobs
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: voice_calibration_passages voice_calibration_passages_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.voice_calibration_passages
+    ADD CONSTRAINT voice_calibration_passages_pkey PRIMARY KEY (id);
 
 
 --
@@ -1947,6 +2000,20 @@ CREATE UNIQUE INDEX index_users_on_provider_and_uid ON public.users USING btree 
 
 
 --
+-- Name: index_voice_calibration_passages_on_novel_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_voice_calibration_passages_on_novel_id ON public.voice_calibration_passages USING btree (novel_id);
+
+
+--
+-- Name: index_voice_calibration_passages_on_novel_id_and_position; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_voice_calibration_passages_on_novel_id_and_position ON public.voice_calibration_passages USING btree (novel_id, "position");
+
+
+--
 -- Name: bible_cultural_phrases fk_rails_083e5312ca; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2163,12 +2230,21 @@ ALTER TABLE ONLY public.novels
 
 
 --
+-- Name: voice_calibration_passages fk_rails_ff97b3af70; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.voice_calibration_passages
+    ADD CONSTRAINT fk_rails_ff97b3af70 FOREIGN KEY (novel_id) REFERENCES public.novels(id);
+
+
+--
 -- PostgreSQL database dump complete
 --
 
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260607200000'),
 ('20260607184400'),
 ('20260607000001'),
 ('20260320000002'),

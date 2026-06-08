@@ -16,7 +16,8 @@ class Novel < ApplicationRecord
   has_many :bible_locations,        dependent: :destroy
   has_many :bible_terminologies,    dependent: :destroy
   has_many :bible_cultural_phrases, dependent: :destroy
-  has_many :bible_story_entries,    dependent: :destroy
+  has_many :bible_story_entries,         dependent: :destroy
+  has_many :voice_calibration_passages,  dependent: :destroy
 
   # Cover art — optional, single image attachment
   has_one_attached :cover_art

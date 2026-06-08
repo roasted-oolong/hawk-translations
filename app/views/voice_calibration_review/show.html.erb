@@ -1,0 +1,251 @@
+<%# app/views/voice_calibration_review/show.html.erb — full-page calibration card review, review layout %>
+<% content_for :title, "Voice Calibration — #{@novel.title} — Hawk" %>
+
+<div class="vc-review"
+     data-controller="voice-calibration-review"
+     data-voice-calibration-review-update-url-value="<%= novel_voice_calibration_review_card_path(@novel, card_id: ":card_id") %>"
+     data-testid="vc-review-shell">
+
+  <%# ------------------------------------------------------------------ %>
+  <%# Left sidebar                                                        %>
+  <%# ------------------------------------------------------------------ %>
+  <aside class="vc-review__sidebar" data-testid="vc-review-sidebar">
+
+    <div class="vc-review__back">
+      <%= link_to novel_path(@novel),
+            class: "vc-review__back-link",
+            data: { testid: "link-back-novel" } do %>
+        ← Back to novel
+      <% end %>
+    </div>
+
+    <div class="vc-review__novel-info">
+      <p class="vc-review__label">Voice Calibration</p>
+      <h1 class="vc-review__novel-title"><%= @novel.title %></h1>
+      <% if @novel.korean_title.present? %>
+        <p class="vc-review__korean-title"><%= @novel.korean_title %></p>
+      <% end %>
+      <% chapter_label = @job.chapter_range_label %>
+      <% if chapter_label.present? %>
+        <p class="vc-review__chapter-label"><%= chapter_label %> calibration</p>
+      <% end %>
+    </div>
+
+    <div class="vc-review__progress-section">
+      <div class="vc-review__progress-labels">
+        <span>Progress</span>
+        <span data-voice-calibration-review-target="progressText">0 / <%= @cards.size %></span>
+      </div>
+      <div class="vc-review__progress-track">
+        <div class="vc-review__progress-fill"
+             data-voice-calibration-review-target="progressFill"
+             style="width: 0%"
+             data-testid="vc-progress-bar"></div>
+      </div>
+    </div>
+
+    <nav class="vc-review__card-list" aria-label="Calibration cards" data-testid="vc-card-list-nav">
+      <% @cards.each_with_index do |card, i| %>
+        <button class="vc-review__nav-item"
+                data-voice-calibration-review-target="navItem"
+                data-action="click->voice-calibration-review#jumpTo"
+                data-voice-calibration-review-index-param="<%= i %>"
+                data-card-id="<%= card["id"] %>"
+                data-card-type="<%= card["card_type"] %>"
+                data-testid="vc-nav-item-<%= i %>"
+                type="button">
+          <span class="vc-review__nav-badge vc-review__nav-badge--<%= card["card_type"] == "new_pattern" ? "new" : "retire" %>">
+            <%= card["card_type"] == "new_pattern" ? "NEW" : "RET" %>
+          </span>
+          <div class="vc-review__nav-text">
+            <p class="vc-review__nav-title">
+              <%= card["card_type"] == "new_pattern" ? card["heading"] : "Retire: #{card["passage_heading"]}" %>
+            </p>
+            <p class="vc-review__nav-status"
+               data-voice-calibration-review-target="navStatus"></p>
+          </div>
+        </button>
+      <% end %>
+    </nav>
+
+    <div class="vc-review__counter">
+      <p data-voice-calibration-review-target="counterText">Card 1 of <%= @cards.size %></p>
+    </div>
+
+  </aside>
+
+  <%# ------------------------------------------------------------------ %>
+  <%# Main content area                                                   %>
+  <%# ------------------------------------------------------------------ %>
+  <main class="vc-review__main" data-testid="vc-review-main">
+
+    <div class="vc-review__topbar">
+      <span data-voice-calibration-review-target="topbarTitle">
+        <%= @cards.first["card_type"] == "new_pattern" ? "New pattern" : "Retirement proposal" %>
+      </span>
+      <div class="vc-review__topbar-end">
+        <span class="vc-review__saved"
+              data-voice-calibration-review-target="savedIndicator"
+              hidden
+              aria-live="polite">
+          ✓ Saved to voice_calibration.md
+        </span>
+      </div>
+    </div>
+
+    <%# ---- Slideshow screen ---- %>
+    <div class="vc-review__screen"
+         data-voice-calibration-review-target="slideshowScreen"
+         data-testid="slideshow-screen">
+      <% @cards.each_with_index do |card, i| %>
+        <div class="vc-review__card"
+             data-voice-calibration-review-target="card"
+             data-card-id="<%= card["id"] %>"
+             data-card-type="<%= card["card_type"] %>"
+             <%= i == 0 ? "" : "hidden" %>
+             data-testid="vc-card-<%= i %>">
+          <% if card["card_type"] == "new_pattern" %>
+            <%# New pattern card %>
+            <div class="vc-review__card-inner">
+              <div class="vc-review__card-meta">
+                <span class="vc-review__type-badge vc-review__type-badge--new">+ New pattern</span>
+                <% if card["chapter_ref"].present? %>
+                  <span class="vc-review__chapter-ref"><%= card["chapter_ref"] %></span>
+                <% end %>
+              </div>
+
+              <h2 class="vc-review__heading" data-testid="pattern-heading"><%= card["heading"] %></h2>
+
+              <blockquote class="vc-review__quote"><%= card["quote"] %></blockquote>
+
+              <% if card["what_it_demonstrates"].present? %>
+                <div class="vc-review__field">
+                  <p class="vc-review__field-label">What it demonstrates</p>
+                  <p class="vc-review__field-body"><%= card["what_it_demonstrates"] %></p>
+                </div>
+              <% end %>
+
+              <% if card["wrong_version"].present? %>
+                <div class="vc-review__field">
+                  <p class="vc-review__field-label">Wrong version</p>
+                  <p class="vc-review__field-body vc-review__field-body--wrong"><%= card["wrong_version"] %></p>
+                </div>
+              <% end %>
+
+              <div class="vc-review__field">
+                <p class="vc-review__field-label">The rule</p>
+                <p class="vc-review__field-body"
+                   data-voice-calibration-review-target="ruleDisplay"><%= card["rule"] %></p>
+                <textarea class="vc-review__rule-edit"
+                          data-voice-calibration-review-target="ruleEdit"
+                          rows="5"
+                          hidden
+                          data-testid="edit-rule-textarea"><%= card["rule"] %></textarea>
+                <button type="button"
+                        class="vc-review__edit-btn"
+                        data-action="click->voice-calibration-review#toggleEdit"
+                        data-voice-calibration-review-target="editBtn"
+                        data-testid="button-toggle-edit">
+                  Edit
+                </button>
+              </div>
+            </div>
+          <% else %>
+            <%# Retirement card %>
+            <div class="vc-review__card-inner">
+              <div class="vc-review__card-meta">
+                <span class="vc-review__type-badge vc-review__type-badge--retire">Retirement proposal</span>
+              </div>
+
+              <h2 class="vc-review__heading" data-testid="retirement-heading">
+                Retire: <%= card["passage_heading"] %>
+              </h2>
+
+              <blockquote class="vc-review__quote vc-review__quote--struck"><%= card["passage_quote"] %></blockquote>
+
+              <div class="vc-review__field">
+                <p class="vc-review__field-label">Reason</p>
+                <p class="vc-review__field-body"><%= card["reason"] %></p>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <%# ---- Summary screen ---- %>
+    <div class="vc-review__screen"
+         data-voice-calibration-review-target="summaryScreen"
+         hidden
+         data-testid="summary-screen">
+      <div class="vc-review__summary">
+        <div class="vc-review__summary-icon">✓</div>
+        <h2>Calibration review complete</h2>
+        <p>Changes were applied as you accepted them.</p>
+
+        <div class="vc-review__summary-list" data-testid="summary-card-list">
+          <% @cards.each do |card| %>
+            <div class="vc-review__summary-row" data-card-id="<%= card["id"] %>">
+              <div>
+                <span class="vc-review__summary-type vc-review__summary-type--<%= card["card_type"] == "new_pattern" ? "new" : "retire" %>">
+                  <%= card["card_type"] == "new_pattern" ? "Pattern" : "Retire" %>
+                </span>
+                <span class="vc-review__summary-name">
+                  <%= card["card_type"] == "new_pattern" ? card["heading"] : card["passage_heading"] %>
+                </span>
+              </div>
+              <span class="vc-review__summary-decision"
+                    data-voice-calibration-review-target="summaryDecision"
+                    data-card-id="<%= card["id"] %>">—</span>
+            </div>
+          <% end %>
+        </div>
+
+        <%= link_to "Back to novel",
+              novel_path(@novel),
+              class: "btn btn--primary",
+              data: { turbo_frame: "_top", testid: "button-back-novel" } %>
+      </div>
+    </div>
+
+    <%# ---- Footer navigation (slideshow only) ---- %>
+    <div class="vc-review__footer"
+         data-voice-calibration-review-target="footer"
+         data-testid="vc-review-footer">
+
+      <button type="button"
+              class="btn btn--ghost"
+              data-action="click->voice-calibration-review#prev"
+              data-voice-calibration-review-target="prevBtn"
+              data-testid="button-prev"
+              disabled>
+        ← Previous
+      </button>
+
+      <div class="vc-review__footer-end">
+        <button type="button"
+                class="btn btn--ghost"
+                data-action="click->voice-calibration-review#skip"
+                data-testid="button-skip">
+          Skip
+        </button>
+
+        <button type="button"
+                class="btn btn--primary"
+                data-action="click->voice-calibration-review#accept"
+                data-voice-calibration-review-target="acceptBtn"
+                data-testid="button-accept">
+          Accept &amp; Next
+        </button>
+      </div>
+
+    </div>
+
+  </main>
+
+</div>
+
+<%# Embed card data for the Stimulus controller %>
+<script type="application/json" id="vc-cards-data">
+  <%= raw @cards.to_json %>
+</script>

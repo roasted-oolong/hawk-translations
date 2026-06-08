@@ -72,3 +72,9 @@ application.register("chapter-review", ChapterReviewController)
 //   shows per-category summary, batch-imports approved entries via form POST.
 import PrereadReviewController from "./preread_review_controller"
 application.register("preread-review", PrereadReviewController)
+
+// voice-calibration-review: full-page calibration card review slideshow.
+//   Accepts/skips new-pattern and retirement cards, sends PATCH per decision,
+//   flashes saved indicator, and shows summary on completion.
+import VoiceCalibrationReviewController from "./voice_calibration_review_controller"
+application.register("voice-calibration-review", VoiceCalibrationReviewController)
