@@ -60,3 +60,15 @@ application.register("bulk-translate", BulkTranslateController)
 //   into the bulk destroy / download / update forms.
 import ChapterSelectController from "./chapter_select_controller"
 application.register("chapter-select", ChapterSelectController)
+
+// chapter-review: full-page chapter review slideshow.
+//   Manages slideshow index, per-chapter approve (fetch PATCH) and skip,
+//   progress bar, sidebar nav highlights, and screen transitions (slideshow → summary).
+import ChapterReviewController from "./chapter_review_controller"
+application.register("chapter-review", ChapterReviewController)
+
+// preread-review: full-page preread bible entry review slideshow.
+//   Tracks approve/skip per entry (composite category:korean_key keys),
+//   shows per-category summary, batch-imports approved entries via form POST.
+import PrereadReviewController from "./preread_review_controller"
+application.register("preread-review", PrereadReviewController)

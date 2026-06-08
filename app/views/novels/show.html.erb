@@ -104,12 +104,13 @@
       Bible
     </button>
 
-    <button class="novel-tab novel-tab--disabled"
+    <button class="novel-tab"
             role="tab"
-            aria-disabled="true"
-            aria-selected="false"
-            title="Coming soon"
-            data-testid="tab-review">
+            data-action="click->tabs#select"
+            data-tabs-key-param="review"
+            data-testid="tab-review"
+            aria-controls="tab-panel-review"
+            aria-selected="false">
       Review
     </button>
 
@@ -139,6 +140,14 @@
                data-testid="tab-panel-bible"
                role="tabpanel"
                aria-labelledby="tab-bible">
+    <%# src set by tabs_controller on connect(); content loads immediately. %>
+  </turbo-frame>
+
+  <turbo-frame id="tab-panel-review"
+               data-tabs-src-value="<%= novel_chapter_review_tab_path(@novel) %>"
+               data-testid="tab-panel-review"
+               role="tabpanel"
+               aria-labelledby="tab-review">
     <%# src set by tabs_controller on connect(); content loads immediately. %>
   </turbo-frame>
 

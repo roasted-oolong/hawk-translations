@@ -1,0 +1,75 @@
+<%# app/views/chapter_review/tab.html.erb %>
+<% content_for :title, "Review — #{@novel.title} — Hawk" %>
+
+<%= turbo_frame_tag "tab-panel-review" do %>
+
+<div class="chapter-review-tab" data-testid="chapter-review-tab">
+
+  <div class="chapter-review-tab__header">
+    <h2 class="chapter-review-tab__title">Translated Chapters</h2>
+    <% if @total_count > 0 %>
+      <span class="chapter-review-tab__count">
+        <%= @reviewed_count %> / <%= @total_count %> reviewed
+      </span>
+    <% end %>
+  </div>
+
+  <% if @chapters_for_review.empty? %>
+    <div class="chapter-review-tab__empty" data-testid="chapter-review-empty">
+      <% if @reviewed_count == @total_count && @total_count > 0 %>
+        <p>All <%= @total_count %> <%= "chapter".pluralize(@total_count) %> reviewed.</p>
+      <% else %>
+        <p>No translated chapters ready for review yet.</p>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="chapter-review-tab__card" data-testid="chapter-review-card">
+      <div class="chapter-review-tab__progress-row">
+        <span class="chapter-review-tab__progress-label">
+          <%= @chapters_for_review.size %> <%= "chapter".pluralize(@chapters_for_review.size) %> ready
+        </span>
+        <span class="chapter-review-tab__progress-count">
+          <%= @reviewed_count %> / <%= @total_count %> reviewed
+        </span>
+      </div>
+
+      <% pct = @total_count > 0 ? (@reviewed_count.to_f / @total_count * 100).round : 0 %>
+      <div class="chapter-review-tab__progress-track">
+        <div class="chapter-review-tab__progress-fill"
+             style="width: <%= pct %>%"
+             data-testid="review-tab-progress-bar"></div>
+      </div>
+
+      <%= link_to "Review Chapters",
+            novel_chapter_review_path(@novel),
+            class: "btn btn--primary",
+            data: { turbo_frame: "_top", testid: "button-review-chapters" } %>
+    </div>
+  <% end %>
+
+  <% if @pending_count > 0 %>
+    <div class="chapter-review-tab__header chapter-review-tab__header--section">
+      <h2 class="chapter-review-tab__title">Preread Bible Entries</h2>
+      <span class="chapter-review-tab__count"><%= @pending_count %> pending</span>
+    </div>
+
+    <div class="chapter-review-tab__card" data-testid="preread-entries-card">
+      <div class="preread-review-tab__breakdown">
+        <% @pending_breakdown.each do |cat, count| %>
+          <% next if count == 0 %>
+          <span class="preread-review-tab__cat">
+            <strong><%= count %></strong> <%= cat.to_s.humanize.downcase %>
+          </span>
+        <% end %>
+      </div>
+
+      <%= link_to "Review Entries",
+            novel_preread_review_path(@novel),
+            class: "btn btn--primary",
+            data: { turbo_frame: "_top", testid: "button-review-preread" } %>
+    </div>
+  <% end %>
+
+</div>
+
+<% end %><%# /turbo-frame tab-panel-review %>
