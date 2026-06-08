@@ -141,4 +141,4 @@ def derive_output_path(novel_dir: Path, chapter_num: int) -> Path:
 
     Format: chapters/Chapter {N}.txt
     """
-    return novel_dir / "chapters" / f"Chapter_{chapter_num}.txt"
+    return novel_dir / "chapters" / f"Chapter {chapter_num}.txt"
