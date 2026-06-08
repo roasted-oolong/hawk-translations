@@ -1,0 +1,207 @@
+<%# app/views/chapter_review/show.html.erb — full-page slideshow, review layout %>
+<% content_for :title, "Review — #{@novel.title} — Hawk" %>
+
+<div class="chapter-review"
+     data-controller="chapter-review"
+     data-chapter-review-approve-url-value="<%= approve_novel_chapter_path(@novel, ":id") %>"
+     data-testid="chapter-review-shell">
+
+  <%# ------------------------------------------------------------------ %>
+  <%# Left sidebar                                                        %>
+  <%# ------------------------------------------------------------------ %>
+  <aside class="chapter-review__sidebar" data-testid="chapter-review-sidebar">
+
+    <div class="chapter-review__back">
+      <%= link_to novel_path(@novel),
+            class: "chapter-review__back-link",
+            data: { testid: "link-back-novel" } do %>
+        ← Back to novel
+      <% end %>
+    </div>
+
+    <div class="chapter-review__novel-info">
+      <p class="chapter-review__label">Chapter Review</p>
+      <h1 class="chapter-review__novel-title"><%= @novel.title %></h1>
+    </div>
+
+    <div class="chapter-review__progress">
+      <div class="chapter-review__progress-labels">
+        <span>Progress</span>
+        <span data-chapter-review-target="progressText">0 / <%= @chapters.size %></span>
+      </div>
+      <div class="chapter-review__progress-track">
+        <div class="chapter-review__progress-fill"
+             data-chapter-review-target="progressFill"
+             style="width: 0%"
+             data-testid="chapter-review-progress-bar"></div>
+      </div>
+    </div>
+
+    <nav class="chapter-review__chapter-list" aria-label="Chapters" data-testid="chapter-list-nav">
+      <% @chapters.each_with_index do |chapter, i| %>
+        <button class="chapter-review__nav-item"
+                data-chapter-review-target="navItem"
+                data-action="click->chapter-review#jumpTo"
+                data-chapter-review-index-param="<%= i %>"
+                data-chapter-id="<%= chapter.id %>"
+                data-testid="chapter-nav-item-<%= chapter.number %>"
+                type="button">
+          <span class="chapter-review__nav-number"><%= chapter.number %></span>
+          <div class="chapter-review__nav-text">
+            <p class="chapter-review__nav-title">
+              <%= chapter.title.presence || "Chapter #{chapter.number}" %>
+            </p>
+            <p class="chapter-review__nav-status"
+               data-chapter-review-target="navStatus"></p>
+          </div>
+        </button>
+      <% end %>
+    </nav>
+
+    <div class="chapter-review__counter">
+      <p data-chapter-review-target="counterText">Chapter 1 of <%= @chapters.size %></p>
+    </div>
+
+  </aside>
+
+  <%# ------------------------------------------------------------------ %>
+  <%# Main content area                                                   %>
+  <%# ------------------------------------------------------------------ %>
+  <main class="chapter-review__main" data-testid="chapter-review-main">
+
+    <div class="chapter-review__topbar">
+      <span data-chapter-review-target="topbarTitle">
+        <% first = @chapters.first %>
+        <%= first.title.present? ? "Chapter #{first.number} — #{first.title}" : "Chapter #{first.number}" %>
+      </span>
+      <span class="chapter-review__saved"
+            data-chapter-review-target="savedIndicator"
+            hidden
+            aria-live="polite">
+        ✓ Saved
+      </span>
+    </div>
+
+    <%# ---- Slideshow screen ---- %>
+    <div class="chapter-review__screen"
+         data-chapter-review-target="slideshowScreen"
+         data-testid="slideshow-screen">
+      <% @chapters.each_with_index do |chapter, i| %>
+        <div class="chapter-review__chapter-card"
+             data-chapter-review-target="chapterCard"
+             data-chapter-id="<%= chapter.id %>"
+             data-chapter-number="<%= chapter.number %>"
+             data-chapter-title="<%= chapter.title.to_s %>"
+             <%= i == 0 ? "" : "hidden" %>
+             data-testid="chapter-card-<%= chapter.number %>">
+          <div class="chapter-review__chapter-header">
+            <p class="chapter-review__chapter-label">Chapter <%= chapter.number %></p>
+            <% if chapter.title.present? %>
+              <h2 class="chapter-review__chapter-title"><%= chapter.title %></h2>
+            <% end %>
+          </div>
+          <div class="chapter-review__prose" data-testid="chapter-review-content">
+            <% prose = @chapter_texts[chapter.id].to_s %>
+            <% if prose.present? %>
+              <% prose.split("\n\n").each do |para| %>
+                <p><%= para.strip %></p>
+              <% end %>
+            <% else %>
+              <p class="chapter-review__no-content">No translated content available.</p>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%# ---- Summary screen ---- %>
+    <div class="chapter-review__screen"
+         data-chapter-review-target="summaryScreen"
+         hidden
+         data-testid="summary-screen">
+      <div class="chapter-review__summary">
+        <div class="chapter-review__summary-icon">✓</div>
+        <h2>Review complete</h2>
+        <p>Ready to mark chapters as reviewed in <strong><%= @novel.title %></strong>.</p>
+
+        <div class="chapter-review__summary-list" data-testid="summary-chapter-list">
+          <% @chapters.each do |chapter| %>
+            <div class="chapter-review__summary-row" data-chapter-id="<%= chapter.id %>">
+              <div>
+                <p>Chapter <%= chapter.number %></p>
+                <% if chapter.title.present? %>
+                  <p><%= chapter.title %></p>
+                <% end %>
+              </div>
+              <span class="chapter-review__summary-badge"
+                    data-chapter-review-target="summaryBadge"
+                    data-chapter-id="<%= chapter.id %>">
+                Pending
+              </span>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="chapter-review__summary-actions">
+          <%# Stimulus injects chapter_ids[] hidden inputs before submit %>
+          <%= form_with url: approve_all_novel_chapters_path(@novel),
+                method: :patch,
+                data: {
+                  chapter_review_target: "approveAllForm",
+                  action: "submit->chapter-review#onApproveAllSubmit",
+                  turbo: false,
+                  testid: "approve-all-form"
+                } do |f| %>
+            <%= f.submit "Mark 0 chapters as reviewed",
+                  class: "btn btn--primary",
+                  data: {
+                    chapter_review_target: "approveAllBtn",
+                    testid: "button-mark-reviewed"
+                  },
+                  disabled: true %>
+          <% end %>
+
+          <button type="button"
+                  class="chapter-review__back-to-editing"
+                  data-action="click->chapter-review#backToSlideshow"
+                  data-testid="button-back-editing">
+            Go back and keep editing
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <%# ---- Footer navigation (slideshow only) ---- %>
+    <div class="chapter-review__footer"
+         data-chapter-review-target="footer"
+         data-testid="review-footer">
+      <button type="button"
+              class="btn btn--ghost"
+              data-action="click->chapter-review#prev"
+              data-chapter-review-target="prevBtn"
+              data-testid="button-prev-chapter"
+              disabled>
+        ← Previous
+      </button>
+
+      <div class="chapter-review__footer-end">
+        <button type="button"
+                class="btn btn--ghost"
+                data-action="click->chapter-review#skip"
+                data-testid="button-skip-chapter">
+          Skip
+        </button>
+
+        <button type="button"
+                class="btn btn--primary"
+                data-action="click->chapter-review#approve"
+                data-chapter-review-target="approveBtn"
+                data-testid="button-approve-chapter">
+          Approve &amp; Next
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+</div>

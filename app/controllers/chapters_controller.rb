@@ -1,7 +1,8 @@
 class ChaptersController < ApplicationController
   before_action :set_novel
   before_action :set_chapter, only: [ :show, :edit, :update, :destroy,
-                                      :download_korean_source, :download_translated_output ]
+                                      :download_korean_source, :download_translated_output,
+                                      :approve ]
 
   def index
     @chapters         = @novel.chapters.order(number: :desc)
@@ -48,6 +49,17 @@ class ChaptersController < ApplicationController
   def destroy
     @chapter.destroy
     redirect_to novel_chapters_path(@novel), notice: "Chapter removed."
+  end
+
+  def approve
+    @chapter.update!(status: :reviewed)
+    head :ok
+  end
+
+  def approve_all
+    ids   = params[:chapter_ids].to_a.map(&:to_i)
+    count = @novel.chapters.where(id: ids).update_all(status: "reviewed")
+    redirect_to novel_path(@novel), notice: "#{count} chapter(s) marked as reviewed."
   end
 
   def download_korean_source

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title><%= content_for(:title) || "Review — Hawk" %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Hawk">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/modern-normalize/2.0.0/modern-normalize.min.css">
+
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
+  </head>
+
+  <body class="review-body">
+    <main class="review-main">
+      <%= yield %>
+    </main>
+
+    <dialog id="modal-dialog"
+            class="modal-dialog"
+            data-testid="modal-dialog"
+            data-controller="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-dialog-message">
+      <div class="modal-dialog__panel">
+        <p class="modal-dialog__message"
+           id="modal-dialog-message"
+           data-modal-message>Are you sure?</p>
+        <div class="modal-dialog__actions">
+          <button type="button"
+                  class="btn btn--ghost"
+                  data-modal-cancel
+                  data-action="click->dialog#cancel">Cancel</button>
+          <button type="button"
+                  class="btn btn--danger"
+                  data-modal-confirm
+                  data-action="click->dialog#confirm">Confirm</button>
+        </div>
+      </div>
+    </dialog>
+
+    <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
+  </body>
+</html>
