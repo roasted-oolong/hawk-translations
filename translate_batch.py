@@ -157,7 +157,7 @@ def main() -> None:
     else:
         selected = _prompt_chapters(available)
 
-    if not _prompt_confirm(novel_dir.name, selected):
+    if sys.stdin.isatty() and not _prompt_confirm(novel_dir.name, selected):
         print("\n  Cancelled.\n")
         return
 

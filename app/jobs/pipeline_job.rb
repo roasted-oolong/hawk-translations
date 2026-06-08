@@ -69,6 +69,26 @@ class PipelineJob < ApplicationJob
 
   private
 
+  def attach_translated_outputs(job, chapters)
+    novel_dir = File.join(
+      ENV.fetch("HAWK_PROJECT_ROOT"),
+      job.novel.directory_name
+    )
+
+    chapters.each do |chapter|
+      output_path = File.join(novel_dir, "chapters", "Chapter #{chapter.number}.txt")
+      next unless File.exist?(output_path)
+
+      File.open(output_path) do |file|
+        chapter.translated_output.attach(
+          io:           file,
+          filename:     "Chapter_#{chapter.number}.txt",
+          content_type: "text/plain"
+        )
+      end
+    end
+  end
+
   def update_chapters(job, phase)
     chapters = job.novel.chapters
       .where(number: job.chapter_start..job.chapter_end)
@@ -77,7 +97,9 @@ class PipelineJob < ApplicationJob
     in [ "preread", "start" ]            then chapters.update_all(status: "prereading")
     in [ "preread", "success" ]          then chapters.update_all(status: "preread")
     in [ "preread", "failure" ]          then chapters.update_all(status: "preread_failed")
-    in [ "translate_batch", "success" ]  then chapters.update_all(status: "translated")
+    in [ "translate_batch", "success" ]
+      attach_translated_outputs(job, chapters)
+      chapters.update_all(status: "translated")
     else # no chapter status change for other job types / phases
     end
   end
