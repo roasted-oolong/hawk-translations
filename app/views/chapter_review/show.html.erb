@@ -4,6 +4,7 @@
 <div class="chapter-review"
      data-controller="chapter-review"
      data-chapter-review-approve-url-value="<%= approve_novel_chapter_path(@novel, ":id") %>"
+     data-chapter-review-save-url-value="<%= novel_update_chapter_review_text_path(@novel, id: ":id") %>"
      data-testid="chapter-review-shell">
 
   <%# ------------------------------------------------------------------ %>
@@ -74,12 +75,25 @@
         <% first = @chapters.first %>
         <%= first.title.present? ? "Chapter #{first.number} — #{first.title}" : "Chapter #{first.number}" %>
       </span>
-      <span class="chapter-review__saved"
-            data-chapter-review-target="savedIndicator"
-            hidden
-            aria-live="polite">
-        ✓ Saved
-      </span>
+      <div class="chapter-review__topbar-end">
+        <button type="button"
+                class="chapter-review__save-btn"
+                data-action="click->chapter-review#saveCurrentText"
+                title="Save (Ctrl+S)"
+                data-testid="button-save-chapter">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+        </button>
+        <span class="chapter-review__saved"
+              data-chapter-review-target="savedIndicator"
+              hidden
+              aria-live="polite">
+          ✓ Saved
+        </span>
+      </div>
     </div>
 
     <%# ---- Slideshow screen ---- %>
@@ -100,17 +114,15 @@
               <h2 class="chapter-review__chapter-title"><%= chapter.title %></h2>
             <% end %>
           </div>
-          <div class="chapter-review__prose" data-testid="chapter-review-content">
-            <% prose = @chapter_texts[chapter.id].to_s %>
-            <% if prose.present? %>
-              <% prose.split("\n").each do |para| %>
-                <% next if para.strip.empty? %>
-                <p><%= para.strip %></p>
-              <% end %>
-            <% else %>
-              <p class="chapter-review__no-content">No translated content available.</p>
-            <% end %>
-          </div>
+          <textarea class="chapter-review__edit-textarea"
+                    data-chapter-review-target="editableText"
+                    data-action="input->chapter-review#autoResize"
+                    data-testid="chapter-review-content"
+                    spellcheck="false"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    placeholder="No translated content available."><%= @chapter_texts[chapter.id].to_s.strip %></textarea>
         </div>
       <% end %>
     </div>
@@ -198,7 +210,7 @@
                 data-action="click->chapter-review#approve"
                 data-chapter-review-target="approveBtn"
                 data-testid="button-approve-chapter">
-          Approve &amp; Next
+          Continue
         </button>
       </div>
     </div>

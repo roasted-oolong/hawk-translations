@@ -3,10 +3,12 @@ import { Controller } from "@hotwired/stimulus"
 export default class ChapterReviewController extends Controller<HTMLElement> {
   static values = {
     approveUrl: String,
+    saveUrl: String,
   }
 
   static targets = [
     "chapterCard",
+    "editableText",
     "navItem",
     "navStatus",
     "slideshowScreen",
@@ -25,7 +27,9 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
   ]
 
   declare approveUrlValue: string
+  declare saveUrlValue: string
   declare chapterCardTargets: HTMLElement[]
+  declare editableTextTargets: HTMLTextAreaElement[]
   declare navItemTargets: HTMLElement[]
   declare navStatusTargets: HTMLElement[]
   declare slideshowScreenTarget: HTMLElement
@@ -46,11 +50,48 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
   private approved = new Set<string>()
   private skipped = new Set<string>()
 
+  private handleKeydown = (event: KeyboardEvent) => {
+    if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+      event.preventDefault()
+      this.saveCurrentText()
+      return
+    }
+
+    const tag = (event.target as HTMLElement).tagName
+    if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT') return
+
+    switch (event.key) {
+      case 'ArrowLeft':
+      case 'p':
+      case 'P':
+        event.preventDefault()
+        this.prev()
+        break
+      case 'ArrowRight':
+      case 'a':
+      case 'A':
+        event.preventDefault()
+        this.approve()
+        break
+      case 's':
+      case 'S':
+        event.preventDefault()
+        this.skip()
+        break
+    }
+  }
+
   connect() {
     this.index = 0
     this.approved = new Set()
     this.skipped = new Set()
     this.renderCurrent()
+    this.resizeCurrentTextarea()
+    document.addEventListener('keydown', this.handleKeydown)
+  }
+
+  disconnect() {
+    document.removeEventListener('keydown', this.handleKeydown)
   }
 
   private get total(): number {
@@ -69,28 +110,22 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
     if (this.index > 0) {
       this.index--
       this.renderCurrent()
+      this.resizeCurrentTextarea()
     }
   }
 
   approve() {
     const id = this.currentChapterId
+    this.saveCurrentText()
     this.approved.add(id)
     this.skipped.delete(id)
-
-    const url = this.approveUrlValue.replace(":id", id)
-    fetch(url, {
-      method: "PATCH",
-      headers: {
-        "X-CSRF-Token": this.csrfToken(),
-        "Accept": "application/json",
-      },
-    }).then(() => this.flashSaved())
 
     if (this.index >= this.total - 1) {
       this.showSummary()
     } else {
       this.index++
       this.renderCurrent()
+      this.resizeCurrentTextarea()
     }
   }
 
@@ -104,6 +139,7 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
     } else {
       this.index++
       this.renderCurrent()
+      this.resizeCurrentTextarea()
     }
   }
 
@@ -111,7 +147,36 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
     if (index >= 0 && index < this.total) {
       this.index = index
       this.renderCurrent()
+      this.resizeCurrentTextarea()
     }
+  }
+
+  autoResize(event: Event) {
+    const textarea = event.target as HTMLTextAreaElement
+    textarea.style.height = "auto"
+    textarea.style.height = `${textarea.scrollHeight}px`
+  }
+
+  private resizeCurrentTextarea() {
+    const textarea = this.editableTextTargets[this.index]
+    if (!textarea) return
+    textarea.style.height = "auto"
+    textarea.style.height = `${textarea.scrollHeight}px`
+  }
+
+  saveCurrentText() {
+    const textarea = this.editableTextTargets[this.index]
+    if (!textarea) return
+    const id = this.currentChapterId
+    const url = this.saveUrlValue.replace(":id", id)
+    fetch(url, {
+      method: "PATCH",
+      headers: {
+        "X-CSRF-Token": this.csrfToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ text: textarea.value }),
+    }).then(() => this.flashSaved())
   }
 
   backToSlideshow() {
@@ -142,17 +207,8 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
 
     this.prevBtnTarget.disabled = this.index === 0
 
-    const id = this.currentChapterId
     const isLast = this.index >= this.total - 1
-    const isApproved = this.approved.has(id)
-
-    if (isApproved) {
-      this.approveBtnTarget.textContent = isLast ? "Approved — Finish" : "Approved — Next"
-      this.approveBtnTarget.classList.add("btn--approved")
-    } else {
-      this.approveBtnTarget.textContent = isLast ? "Approve & Finish" : "Approve & Next"
-      this.approveBtnTarget.classList.remove("btn--approved")
-    }
+    this.approveBtnTarget.textContent = isLast ? "Finish Review" : "Continue"
 
     const card = this.currentCard
     const num = card.dataset.chapterNumber ?? ""
