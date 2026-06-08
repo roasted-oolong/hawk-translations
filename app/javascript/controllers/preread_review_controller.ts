@@ -49,11 +49,60 @@ export default class PrereadReviewController extends Controller<HTMLElement> {
   private approved = new Set<string>()
   private skipped = new Set<string>()
 
+  private handleKeydown = (event: KeyboardEvent) => {
+    const editPanel = this.editPanelTargets[this.index]
+    const inEditMode = editPanel && !editPanel.hidden
+
+    if (inEditMode) {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        this.cancelEdit()
+      } else if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault()
+        this.saveEdit()
+      }
+      return
+    }
+
+    const tag = (event.target as HTMLElement).tagName
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+
+    switch (event.key) {
+      case 'ArrowLeft':
+      case 'p':
+      case 'P':
+        event.preventDefault()
+        this.prev()
+        break
+      case 'ArrowRight':
+      case 'a':
+      case 'A':
+        event.preventDefault()
+        this.approve()
+        break
+      case 's':
+      case 'S':
+        event.preventDefault()
+        this.skip()
+        break
+      case 'e':
+      case 'E':
+        event.preventDefault()
+        this.enterEditMode()
+        break
+    }
+  }
+
   connect() {
     this.index = 0
     this.approved = new Set()
     this.skipped = new Set()
     this.renderCurrent()
+    document.addEventListener('keydown', this.handleKeydown)
+  }
+
+  disconnect() {
+    document.removeEventListener('keydown', this.handleKeydown)
   }
 
   private get total(): number {
