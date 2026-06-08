@@ -103,7 +103,8 @@
           <div class="chapter-review__prose" data-testid="chapter-review-content">
             <% prose = @chapter_texts[chapter.id].to_s %>
             <% if prose.present? %>
-              <% prose.split("\n\n").each do |para| %>
+              <% prose.split("\n").each do |para| %>
+                <% next if para.strip.empty? %>
                 <p><%= para.strip %></p>
               <% end %>
             <% else %>
