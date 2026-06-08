@@ -677,3 +677,69 @@
   padding-top: var(--space-6);
   border-top: 1px solid var(--color-border);
 }
+
+/* --- Keyboard shortcut legend --- */
+.preread-review__shortcuts {
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border-top: 1px solid #2a3231;
+}
+
+.preread-review__shortcuts-title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: #4e6560;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.preread-review__shortcuts-list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.preread-review__shortcuts-list > div {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.preread-review__shortcuts-list dt {
+  display: flex;
+  gap: 3px;
+  min-width: 72px;
+  flex-shrink: 0;
+}
+
+.preread-review__shortcuts-list dd {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: #4e6560;
+}
+
+.preread-review__shortcuts-list kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-family: inherit;
+  color: #6b8a84;
+  background: #1a2220;
+  border: 1px solid #2a3231;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.preread-review__shortcuts-divider {
+  margin: var(--space-2) 0 var(--space-1);
+}
+
+.preread-review__shortcuts-divider span {
+  font-size: 10px;
+  color: #3a4e4a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
