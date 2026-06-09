@@ -31,6 +31,7 @@ class TranslationJob < ApplicationRecord
   validates :status,   presence: true
 
   validate :chapter_range_valid
+  validate :voice_calibration_chapter_reviewed, if: -> { voice_calibration? && chapter_start.present? }
 
   # ---------------------------------------------------------------------------
   # Scopes
@@ -117,6 +118,12 @@ class TranslationJob < ApplicationRecord
 
     if chapter_start > chapter_end
       errors.add(:chapter_start, "must be less than or equal to chapter_end")
+    end
+  end
+
+  def voice_calibration_chapter_reviewed
+    unless novel.chapters.reviewed.exists?(number: chapter_start)
+      errors.add(:chapter_start, "must be a reviewed chapter")
     end
   end
 end

@@ -48,6 +48,38 @@
   margin: 0;
 }
 
+.vc-tab__run-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.vc-tab__chapter-input {
+  width: 8rem;
+  flex-shrink: 0;
+}
+
+.vc-tab__hint {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.vc-tab__last-run {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.vc-tab__last-run-label {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.vc-tab__last-run-link {
+  font-size: var(--text-sm);
+}
+
 .vc-tab__empty {
   padding: var(--space-6) 0;
   color: var(--color-text-muted);
