@@ -30,20 +30,36 @@
     </div>
 
     <div class="vc-tab__card" data-testid="vc-run-calibration-card">
-      <% if @pending_job %>
-        <div class="vc-tab__last-run" data-testid="vc-last-run">
-          <span class="vc-tab__last-run-label">
-            Last run: <%= @pending_job.chapter_range_label.presence || "Job ##{@pending_job.id}" %> &middot; Completed
-          </span>
-          <%= link_to "Review Results →",
-                novel_voice_calibration_review_path(@novel),
-                class: "vc-tab__last-run-link",
-                data: { turbo_frame: "_top", testid: "link-review-results" } %>
+      <% if @active_job %>
+        <div data-controller="poll"
+             data-poll-interval-value="3000"
+             data-poll-url-value="<%= novel_voice_calibration_tab_path(@novel) %>">
+      <% end %>
+      <%= turbo_frame_tag "vc-calibration-status" do %>
+        <% if @active_job %>
+          <div class="vc-tab__last-run" data-testid="vc-last-run">
+            <span class="vc-tab__last-run-label">
+              <%= @active_job.chapter_range_label.presence || "Job ##{@active_job.id}" %> &middot; Running&hellip;
+            </span>
+          </div>
+        <% elsif @last_completed_job %>
+          <div class="vc-tab__last-run" data-testid="vc-last-run">
+            <span class="vc-tab__last-run-label">
+              Last run: <%= @last_completed_job.chapter_range_label.presence || "Job ##{@last_completed_job.id}" %> &middot; Completed
+            </span>
+            <%= link_to "Review Results →",
+                  novel_voice_calibration_review_path(@novel),
+                  class: "vc-tab__last-run-link",
+                  data: { turbo_frame: "_top", testid: "link-review-results" } %>
+          </div>
+        <% end %>
+      <% end %>
+      <% if @active_job %>
         </div>
       <% end %>
 
-      <%= form_with url: novel_translation_jobs_path(@novel), method: :post,
-            data: { testid: "form-run-calibration" } do |f| %>
+      <%= form_with url: novel_translation_jobs_path(@novel), scope: :translation_job, method: :post,
+            data: { testid: "form-run-calibration", turbo_frame: "_top" } do |f| %>
         <%= f.hidden_field :job_type, value: "voice_calibration" %>
         <datalist id="reviewed-chapters">
           <% @reviewed_chapters.each do |ch| %>
