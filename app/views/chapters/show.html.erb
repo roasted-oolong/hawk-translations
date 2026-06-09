@@ -4,7 +4,6 @@
 <%= render "layouts/breadcrumb", crumbs: [
       ["Novels", novels_path],
       [@novel.title, novel_path(@novel)],
-      ["Chapters", novel_chapters_path(@novel)],
       ["Chapter #{@chapter.number}", nil]
     ] %>
 
