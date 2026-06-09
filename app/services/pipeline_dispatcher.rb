@@ -38,6 +38,7 @@ class PipelineDispatcher
     when "translate_batch"         then run_translate_batch
     when "bible_build"             then run_bible_build
     when "post_translation_review" then run_post_translation_review
+    when "voice_calibration"       then run_voice_calibration
     else
       [ "", "Unknown job_type: #{@job.job_type}", false ]
     end
@@ -86,6 +87,15 @@ class PipelineDispatcher
     execute([ PYTHON, script("run_review.py"),
               "--novel-dir", novel_directory,
               "--chapter",   @job.chapter_start.to_s ])
+  end
+
+  # ---------------------------------------------------------------------------
+  # Voice calibration — invokes calibrate-voice.py with novel name and chapter.
+  # ---------------------------------------------------------------------------
+  def run_voice_calibration
+    execute([ PYTHON, script("calibrate-voice.py"),
+              @job.novel.directory_name,
+              @job.chapter_start.to_s ])
   end
 
   # ---------------------------------------------------------------------------
