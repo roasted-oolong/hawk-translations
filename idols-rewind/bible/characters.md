@@ -717,7 +717,7 @@ Last Updated: 2026-03-08
 
 ---
 
-## >r. Oh (오 대표)
+## Mr. Oh (오 대표)
 - Korean name: 오 대표
 - Aliases/Titles: 너희픽쳐스 대표
 - First appearance: 63
