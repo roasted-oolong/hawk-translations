@@ -1,7 +1,7 @@
 """
 src/agent.py
 ------------
-Responsible for one thing: making a single call to a local LLM via an
+Responsible for one thing: making a call to a local LLM via an
 OpenAI-compatible API and returning the model's text response.
 
 This module has no knowledge of translation, Korean, bible files, or any
@@ -26,13 +26,22 @@ it to avoid recreating it per call:
     client = make_client()
     result = call(system_prompt="...", user_message="...", client=client)
 
+To give the agent skills (e.g. web search), pass a list of Skill instances:
+
+    from src.skills.web_search import WebSearchSkill
+    result = call(system_prompt="...", user_message="...", skills=[WebSearchSkill()])
+
+The agent will loop — executing skill calls and feeding results back — until
+the model produces a final text response.
+
 The `ApiCallFn` Protocol is exported for type-checking callers that accept
 an api_call_fn argument.
 """
 
+import json
 import sys
 from pathlib import Path
-from typing import Protocol
+from typing import Protocol, TYPE_CHECKING
 
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -41,7 +50,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config import OPUS_MODEL, MAX_TOKENS, LLM_BASE_URL, LLM_API_KEY
 
+if TYPE_CHECKING:
+    from src.skills.base import Skill
+
 load_dotenv()
+
+_MAX_SKILL_ITERATIONS = 10
 
 
 # ---------------------------------------------------------------------------
@@ -71,9 +85,15 @@ def call(
     model: str = OPUS_MODEL,
     max_tokens: int = MAX_TOKENS,
     client: OpenAI | None = None,
+    skills: "list[Skill] | None" = None,
 ) -> str:
     """
     Send a request to the local LLM and return the model's text response.
+
+    When `skills` are provided the function runs an agentic loop: if the model
+    requests a skill call, the skill is executed and the result is fed back
+    into the conversation. This repeats until the model produces a plain text
+    response or the iteration ceiling is reached.
 
     Parameters
     ----------
@@ -86,9 +106,11 @@ def call(
     max_tokens : int
         Maximum tokens in the response. Defaults to MAX_TOKENS from config.py.
     client : OpenAI | None
-        Optional pre-built client. If None, one is created from the environment.
-        Pass a pre-built client for batch operations to avoid recreating it
-        on every call.
+        Optional pre-built client. Pass for batch operations to avoid
+        recreating the client on every call.
+    skills : list[Skill] | None
+        Optional skills the model may invoke. Each Skill provides its own
+        tool definition and execution logic.
 
     Returns
     -------
@@ -98,12 +120,62 @@ def call(
     if client is None:
         client = make_client()
 
-    response = client.chat.completions.create(
-        model=model,
-        max_tokens=max_tokens,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message},
-        ],
-    )
-    return response.choices[0].message.content or ""
+    messages: list[dict] = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_message},
+    ]
+
+    if not skills:
+        response = client.chat.completions.create(
+            model=model,
+            max_tokens=max_tokens,
+            messages=messages,
+        )
+        return response.choices[0].message.content or ""
+
+    skills_by_name = {skill.name: skill for skill in skills}
+    tools = [skill.tool_definition for skill in skills]
+
+    for _ in range(_MAX_SKILL_ITERATIONS):
+        response = client.chat.completions.create(
+            model=model,
+            max_tokens=max_tokens,
+            messages=messages,
+            tools=tools,
+        )
+
+        message = response.choices[0].message
+
+        if not message.tool_calls:
+            return message.content or ""
+
+        # Append the assistant turn (with its tool_calls) back into messages.
+        messages.append({
+            "role": "assistant",
+            "content": message.content,
+            "tool_calls": [
+                {
+                    "id": tc.id,
+                    "type": "function",
+                    "function": {
+                        "name": tc.function.name,
+                        "arguments": tc.function.arguments,
+                    },
+                }
+                for tc in message.tool_calls
+            ],
+        })
+
+        # Execute each requested skill and return results as tool messages.
+        for tool_call in message.tool_calls:
+            skill = skills_by_name.get(tool_call.function.name)
+            tool_args = json.loads(tool_call.function.arguments)
+            result = skill.execute(tool_args) if skill else f"[Unknown skill: {tool_call.function.name}]"
+
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "content": result,
+            })
+
+    return message.content or ""

@@ -124,9 +124,13 @@ Use the reference material below to ensure consistency with established \
 character names, speech patterns, terminology, cultural phrases, and \
 narrative voice.
 
+If you encounter a term, proper noun, or cultural reference you cannot \
+confidently translate, use the web_search tool to look it up before \
+proceeding. Flag only terms that remain unresolvable after searching: \
+[원래 한국어 / proposed translation?]
+
 Produce the complete translated chapter. Do not summarize, skip sections, or \
-add commentary outside the translation itself. Flag any term you cannot \
-resolve with: [원래 한국어 / proposed translation?]
+add commentary outside the translation itself.
 
 ---
 

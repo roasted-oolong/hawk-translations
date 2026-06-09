@@ -40,6 +40,7 @@ from config import PROJECT_ROOT, NOVEL_FILES
 from src.agent import call, make_client
 from src.novel_resolver import resolve_novel, find_next_chapter, extract_chapter_number
 from src.prompt_builder import TranslationContext, build_translation_prompt
+from src.skills.web_search import WebSearchSkill
 
 
 # ---------------------------------------------------------------------------
@@ -214,6 +215,7 @@ def run() -> None:
         system_prompt=system_prompt,
         user_message=korean_text,
         client=client,
+        skills=[WebSearchSkill()],
     )
     print("  ✓ Translation complete.")
 
