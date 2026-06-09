@@ -45,17 +45,30 @@
       <%= form_with url: novel_translation_jobs_path(@novel), method: :post,
             data: { testid: "form-run-calibration" } do |f| %>
         <%= f.hidden_field :job_type, value: "voice_calibration" %>
+        <datalist id="reviewed-chapters">
+          <% @reviewed_chapters.each do |ch| %>
+            <option value="<%= ch.number %>"></option>
+          <% end %>
+        </datalist>
         <div class="vc-tab__run-row">
-          <%= f.select :chapter_start,
-                @translated_chapters.map { |ch| ["Chapter #{ch.number}", ch.number] },
-                { include_blank: "Select a translated chapter…" },
-                class: "vc-tab__chapter-select",
+          <%= f.number_field :chapter_start,
+                placeholder: "Chapter #",
+                min: 1,
+                list: "reviewed-chapters",
+                class: "vc-tab__chapter-input",
                 data: { testid: "vc-chapter-select" } %>
           <%= f.submit "Run Calibration",
                 class: "btn btn--primary",
                 data: { testid: "button-run-calibration" } %>
         </div>
-        <p class="vc-tab__hint">Queues a background job. Review the output when it completes.</p>
+        <% if @reviewed_chapters.any? %>
+          <p class="vc-tab__hint">
+            Enter a reviewed chapter number (<%= @reviewed_chapters.size %> available).
+            Queues a background job — review the output when it completes.
+          </p>
+        <% else %>
+          <p class="vc-tab__hint">No chapters have been reviewed yet. Translate and approve a chapter before running calibration.</p>
+        <% end %>
       <% end %>
     </div>
   </div>

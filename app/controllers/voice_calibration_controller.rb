@@ -6,7 +6,7 @@ class VoiceCalibrationController < ApplicationController
     @pending_job    = @novel.translation_jobs.voice_calibration.completed
                             .where("result_payload IS NOT NULL").order(created_at: :desc).first
     @pending_cards  = pending_card_count(@pending_job)
-    @translated_chapters = @novel.chapters.translated.by_number
+    @reviewed_chapters = @novel.chapters.reviewed.by_number
   end
 
   private
