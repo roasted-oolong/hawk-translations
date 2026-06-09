@@ -38,10 +38,10 @@
 //                  data-testid="tab-panel-chapters">
 //     </turbo-frame>
 //
-//   chapters-table frame must carry data-translated-count so this controller
-//   can detect when new translations complete:
-//     <turbo-frame id="chapters-table"
-//                  data-translated-count="<%= @chapters.count(&:translated?) %>">
+//   chapters-table frame must contain an element with data-translated-count so
+//   this controller can detect when new translations complete. Must be on an
+//   inner element — Turbo only replaces inner content, not frame attributes:
+//     <div data-translated-count="<%= @chapters.count(&:translated?) %>">
 //
 //   Disabled tabs carry aria-disabled="true" and no data-action.
 //   The controller guards against them explicitly, but they should not fire
@@ -122,9 +122,12 @@ export default class TabsController extends Controller {
     const frame = event.target as HTMLElement
     if (frame.id !== "chapters-table") return
 
-    const count = parseInt(frame.dataset.translatedCount ?? "0", 10)
+    // Turbo only replaces inner content on frame navigation — the frame element's
+    // own attributes are never updated. Read the count from inside the frame.
+    const countEl = frame.querySelector<HTMLElement>("[data-translated-count]")
+    const count = countEl ? parseInt(countEl.dataset.translatedCount ?? "0", 10) : 0
 
-    if (this.lastTranslatedCount >= 0 && count > this.lastTranslatedCount) {
+    if (count > 0 && count > this.lastTranslatedCount) {
       const reviewFrame = document.getElementById("tab-panel-review") as any
       if (reviewFrame) {
         const src = reviewFrame.getAttribute("data-tabs-src-value")
