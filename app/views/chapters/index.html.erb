@@ -96,6 +96,7 @@
           </thead>
           <tbody>
             <% @chapters.each do |chapter| %>
+              <% cancel_job = @cancellable_jobs[chapter.number] %>
               <tr class="data-table__row">
                 <td class="data-table__td data-table__td--checkbox">
                   <input type="checkbox"
@@ -112,10 +113,26 @@
                   <%= chapter.title.presence || %(<span class="text-muted">—</span>).html_safe %>
                 </td>
                 <td class="data-table__td">
-                  <%= render "components/status_badge", status: chapter.status %>
+                  <% if cancel_job %>
+                    <% job_label = "#{cancel_job.job_type.humanize} [#{cancel_job.queued? ? 'Queued' : 'In Progress'}]" %>
+                    <%= render "components/status_badge", status: cancel_job.status, label: job_label %>
+                  <% else %>
+                    <%= render "components/status_badge", status: chapter.status %>
+                  <% end %>
                 </td>
                 <td class="data-table__td data-table__td--actions">
-                  <% if chapter.untranslated? || chapter.preread_failed? %>
+                  <% if cancel_job %>
+                    <% if cancel_job.shows_progress? && cancel_job.progress_pct %>
+                      <span class="chapter-job-progress"><%= cancel_job.progress_pct %>%</span>
+                    <% end %>
+                    <%= modal_button_to "Cancel", novel_translation_job_path(@novel, cancel_job),
+                          method:        :delete,
+                          message:       "Cancel the queued job for Chapter #{chapter.number}? It cannot be restarted.",
+                          confirm_label: "Cancel job",
+                          button_class:  "btn btn--danger btn--xs" %>
+                  <% elsif chapter.prereading? %>
+                    <span class="chapter-action--pending">Running…</span>
+                  <% elsif chapter.untranslated? || chapter.preread_failed? %>
                     <%= form_with url: novel_translation_jobs_path(@novel),
                           method: :post,
                           scope: :translation_job,
@@ -138,19 +155,6 @@
                       <%= f.submit "Translate",
                             class: "btn btn--ghost btn--xs chapter-action--translate",
                             data: { testid: "btn-translate-#{chapter.number}" } %>
-                    <% end %>
-                  <% elsif chapter.prereading? %>
-                    <% if (cancel_job = @cancellable_jobs[chapter.number]) %>
-                      <% if cancel_job.shows_progress? && cancel_job.progress_pct %>
-                        <span class="chapter-job-progress"><%= cancel_job.progress_pct %>%</span>
-                      <% end %>
-                      <%= modal_button_to "Cancel", novel_translation_job_path(@novel, cancel_job),
-                            method:        :delete,
-                            message:       "Cancel the queued job for Chapter #{chapter.number}? It cannot be restarted.",
-                            confirm_label: "Cancel job",
-                            button_class:  "btn btn--danger btn--xs" %>
-                    <% else %>
-                      <span class="chapter-action--pending">Running…</span>
                     <% end %>
                   <% end %>
                 </td>
