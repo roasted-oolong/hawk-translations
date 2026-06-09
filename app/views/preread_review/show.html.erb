@@ -374,7 +374,7 @@
           <button type="button"
                   class="chapter-review__back-to-editing"
                   data-action="click->preread-review#backToSlideshow"
-                  data-testid="button-back-editing">
+data-testid="button-back-editing">
             Go back and keep editing
           </button>
         </div>
@@ -400,6 +400,13 @@
                 data-action="click->preread-review#skip"
                 data-testid="button-skip-entry">
           Skip
+        </button>
+
+        <button type="button"
+                class="btn btn--ghost"
+                data-action="click->preread-review#skipAll"
+                data-testid="button-skip-all-entries">
+          Skip All
         </button>
 
         <button type="button"

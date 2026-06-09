@@ -3,6 +3,7 @@ class BibleImportController < ApplicationController
 
   def create
     approved = JSON.parse(params[:approved_entries].to_s)
+    skipped  = JSON.parse(params[:skipped_entries].to_s)
     count    = 0
 
     approved.each do |item|
@@ -17,6 +18,11 @@ class BibleImportController < ApplicationController
         next unless entry
         count += 1 if import_entry(category, entry.except(:korean_key))
       end
+    end
+
+    if skipped.any?
+      existing = JSON.parse(@novel.preread_dismissed_keys || "[]") rescue []
+      @novel.update_column(:preread_dismissed_keys, (existing + skipped).uniq.to_json)
     end
 
     redirect_to novel_path(@novel),
