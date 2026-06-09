@@ -24,6 +24,8 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
     "summaryBadge",
     "approveAllForm",
     "approveAllBtn",
+    "compareBtn",
+    "paraRows",
   ]
 
   declare approveUrlValue: string
@@ -45,8 +47,11 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
   declare summaryBadgeTargets: HTMLElement[]
   declare approveAllFormTarget: HTMLFormElement
   declare approveAllBtnTarget: HTMLButtonElement
+  declare compareBtnTarget: HTMLButtonElement
+  declare paraRowsTargets: HTMLElement[]
 
   private index = 0
+  private compareActive = false
   private approved = new Set<string>()
   private skipped = new Set<string>()
 
@@ -157,7 +162,45 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
     textarea.style.height = `${textarea.scrollHeight}px`
   }
 
+  toggleKorean() {
+    this.compareActive = !this.compareActive
+    this.compareBtnTarget.classList.toggle("chapter-review__compare-btn--active", this.compareActive)
+
+    this.chapterCardTargets.forEach((card, i) => {
+      card.classList.toggle("chapter-review__chapter-card--compare", this.compareActive)
+      const bigTextarea = this.editableTextTargets[i]
+      const paraRows    = this.paraRowsTargets[i]
+      if (!bigTextarea || !paraRows) return
+
+      if (this.compareActive) {
+        // Sync big textarea → individual para inputs
+        const paras = bigTextarea.value.split(/\n\n+/).map(s => s.trim()).filter(Boolean)
+        paraRows.querySelectorAll<HTMLTextAreaElement>(".chapter-review__para-input")
+          .forEach((input, j) => { input.value = paras[j] ?? "" })
+      } else {
+        // Sync para inputs → big textarea
+        const paraInputs = Array.from(
+          paraRows.querySelectorAll<HTMLTextAreaElement>(".chapter-review__para-input")
+        )
+        bigTextarea.value = paraInputs.map(el => el.value.trim()).filter(Boolean).join("\n\n")
+      }
+    })
+
+    if (this.compareActive) {
+      // Auto-size the para inputs for the currently visible chapter
+      const currentParaRows = this.paraRowsTargets[this.index]
+      currentParaRows?.querySelectorAll<HTMLTextAreaElement>(".chapter-review__para-input")
+        .forEach(input => {
+          input.style.height = "auto"
+          input.style.height = `${input.scrollHeight}px`
+        })
+    } else {
+      this.resizeCurrentTextarea()
+    }
+  }
+
   private resizeCurrentTextarea() {
+    if (this.compareActive) return
     const textarea = this.editableTextTargets[this.index]
     if (!textarea) return
     textarea.style.height = "auto"
@@ -167,6 +210,18 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
   saveCurrentText() {
     const textarea = this.editableTextTargets[this.index]
     if (!textarea) return
+
+    // In compare mode, collect para inputs → sync back to the big textarea first
+    if (this.compareActive) {
+      const paraRows = this.paraRowsTargets[this.index]
+      if (paraRows) {
+        const paraInputs = Array.from(
+          paraRows.querySelectorAll<HTMLTextAreaElement>(".chapter-review__para-input")
+        )
+        textarea.value = paraInputs.map(el => el.value.trim()).filter(Boolean).join("\n\n")
+      }
+    }
+
     const id = this.currentChapterId
     const url = this.saveUrlValue.replace(":id", id)
     fetch(url, {
