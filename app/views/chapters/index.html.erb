@@ -71,6 +71,30 @@
             <%= f.submit "Delete", class: "btn btn--danger btn--sm" %>
           <% end %>
 
+          <div data-chapter-select-target="bulkTranslateForm" hidden>
+            <%= form_with url: novel_translation_jobs_path(@novel),
+                  method: :post,
+                  scope: :translation_job,
+                  data: { turbo_frame: "_top" } do |f| %>
+              <%= f.hidden_field :job_type, value: "translate_batch" %>
+              <%= f.hidden_field :chapter_start, value: "", data: { "chapter-select-target": "bulkTranslateStart" } %>
+              <%= f.hidden_field :chapter_end,   value: "", data: { "chapter-select-target": "bulkTranslateEnd" } %>
+              <%= f.submit "Translate Chapters", class: "btn btn--primary btn--sm" %>
+            <% end %>
+          </div>
+
+          <div data-chapter-select-target="bulkPrereadForm" hidden>
+            <%= form_with url: novel_translation_jobs_path(@novel),
+                  method: :post,
+                  scope: :translation_job,
+                  data: { turbo_frame: "_top" } do |f| %>
+              <%= f.hidden_field :job_type, value: "preread" %>
+              <%= f.hidden_field :chapter_start, value: "", data: { "chapter-select-target": "bulkPrereadStart" } %>
+              <%= f.hidden_field :chapter_end,   value: "", data: { "chapter-select-target": "bulkPrereadEnd" } %>
+              <%= f.submit "Bulk Pre-read", class: "btn btn--primary btn--sm" %>
+            <% end %>
+          </div>
+
         </div>
       </div>
 
@@ -102,7 +126,9 @@
                   <input type="checkbox"
                          value="<%= chapter.id %>"
                          data-chapter-select-target="checkbox"
-                         data-action="change->chapter-select#update">
+                         data-action="change->chapter-select#update"
+                         data-status="<%= chapter.status %>"
+                         data-number="<%= chapter.number %>">
                 </td>
                 <td class="data-table__td data-table__td--number">
                   <%= link_to chapter.number, novel_chapter_path(@novel, chapter),
