@@ -27,7 +27,9 @@
 <%# Job list                                                            %>
 <%# ------------------------------------------------------------------ %>
 <% if @has_active_jobs %>
-  <div data-controller="poll" data-poll-interval-value="1000">
+  <div data-controller="poll"
+       data-poll-interval-value="1000"
+       data-poll-url-value="<%= novel_translation_jobs_path(@novel) %>">
 <% end %>
 
 <%= turbo_frame_tag "jobs-list" do %>

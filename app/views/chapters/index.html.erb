@@ -97,7 +97,9 @@
       </div>
 
       <% if @cancellable_jobs.any? %>
-        <div data-controller="poll" data-poll-interval-value="1000">
+        <div data-controller="poll"
+             data-poll-interval-value="1000"
+             data-poll-url-value="<%= novel_chapters_path(@novel) %>">
       <% end %>
 
       <%= turbo_frame_tag "chapters-table" do %>
