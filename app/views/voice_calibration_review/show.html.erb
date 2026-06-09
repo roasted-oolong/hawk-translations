@@ -88,7 +88,7 @@
               data-voice-calibration-review-target="savedIndicator"
               hidden
               aria-live="polite">
-          ✓ Saved to voice_calibration.md
+          ✓ Decision recorded
         </span>
       </div>
     </div>
@@ -181,7 +181,7 @@
       <div class="vc-review__summary">
         <div class="vc-review__summary-icon">✓</div>
         <h2>Calibration review complete</h2>
-        <p>Changes were applied as you accepted them.</p>
+        <p>Review your decisions below, then commit to apply accepted changes to the voice guide.</p>
 
         <div class="vc-review__summary-list" data-testid="summary-card-list">
           <% @cards.each do |card| %>
@@ -201,10 +201,15 @@
           <% end %>
         </div>
 
-        <%= link_to "Back to novel",
-              novel_path(@novel),
-              class: "btn btn--primary",
-              data: { turbo_frame: "_top", testid: "button-back-novel" } %>
+        <div class="vc-review__summary-actions">
+          <%= form_with url: novel_voice_calibration_review_commit_path(@novel), method: :post do |f| %>
+            <%= f.submit "Commit Changes", class: "btn btn--primary", data: { testid: "button-commit-changes" } %>
+          <% end %>
+          <%= link_to "Back without committing",
+                novel_path(@novel),
+                class: "btn btn--ghost",
+                data: { turbo_frame: "_top", testid: "link-back-novel" } %>
+        </div>
       </div>
     </div>
 
