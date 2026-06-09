@@ -102,7 +102,8 @@
              data-poll-url-value="<%= novel_chapters_path(@novel) %>">
       <% end %>
 
-      <%= turbo_frame_tag "chapters-table" do %>
+      <%= turbo_frame_tag "chapters-table",
+            data: { translated_count: @chapters.count(&:translated?) } do %>
       <div class="data-table-wrapper">
         <table class="data-table" data-testid="chapters-table">
           <thead>
