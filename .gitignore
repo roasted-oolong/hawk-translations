@@ -57,3 +57,6 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+
+# SQLite development database
+db/development.sqlite3
