@@ -11,6 +11,9 @@
 //   - Persists the active tab key to sessionStorage, keyed per-novel, so the
 //     selection survives same-session navigation away and back
 //   - Ignores clicks on aria-disabled tabs entirely
+//   - Reloads the review tab when chapters-table reports a higher translated
+//     count than the last observed value, so the review tab updates as soon
+//     as a translation job completes without requiring a page refresh.
 //
 // Panel visibility:
 //   All panel frames have their src set eagerly in connect() so content loads
@@ -35,6 +38,11 @@
 //                  data-testid="tab-panel-chapters">
 //     </turbo-frame>
 //
+//   chapters-table frame must carry data-translated-count so this controller
+//   can detect when new translations complete:
+//     <turbo-frame id="chapters-table"
+//                  data-translated-count="<%= @chapters.count(&:translated?) %>">
+//
 //   Disabled tabs carry aria-disabled="true" and no data-action.
 //   The controller guards against them explicitly, but they should not fire
 //   because no data-action is wired.
@@ -49,6 +57,9 @@ export default class TabsController extends Controller {
   }
 
   declare novelIdValue: number
+
+  private lastTranslatedCount = -1
+  private boundOnFrameLoad!: (e: Event) => void
 
   private get storageKey(): string {
     return `novel-tab-${this.novelIdValue}`
@@ -71,6 +82,13 @@ export default class TabsController extends Controller {
     // Default to "chapters" if nothing is stored or the stored key is unknown.
     const initialKey = saved && this.tabButtonFor(saved) ? saved : "chapters"
     this.activateTab(initialKey)
+
+    this.boundOnFrameLoad = this.onFrameLoad.bind(this)
+    document.addEventListener("turbo:frame-load", this.boundOnFrameLoad)
+  }
+
+  disconnect(): void {
+    document.removeEventListener("turbo:frame-load", this.boundOnFrameLoad)
   }
 
   // Called via data-action="click->tabs#select" on each enabled tab.
@@ -99,6 +117,26 @@ export default class TabsController extends Controller {
   // -------------------------------------------------------------------------
   // Private helpers
   // -------------------------------------------------------------------------
+
+  private onFrameLoad(event: Event): void {
+    const frame = event.target as HTMLElement
+    if (frame.id !== "chapters-table") return
+
+    const count = parseInt(frame.dataset.translatedCount ?? "0", 10)
+
+    if (this.lastTranslatedCount >= 0 && count > this.lastTranslatedCount) {
+      const reviewFrame = document.getElementById("tab-panel-review") as any
+      if (reviewFrame) {
+        const src = reviewFrame.getAttribute("data-tabs-src-value")
+        if (src) {
+          reviewFrame.src = null
+          reviewFrame.src = src
+        }
+      }
+    }
+
+    this.lastTranslatedCount = count
+  }
 
   private activateTab(key: string): void {
     // Deactivate all tab buttons
