@@ -40,6 +40,12 @@ def parse_chapter(str)
   int > 0 ? int : nil
 end
 
+# Split a markdown file into per-entry blocks, each starting with "## ".
+# Works whether or not "---" separators appear between entries.
+def extract_blocks(content)
+  content.scan(/^## .+?(?=^## |\z)/m).map(&:strip).reject(&:empty?)
+end
+
 # Given a raw block of "- Key: Value\n- Key: Value\n..." lines,
 # return a hash keyed by normalised field name.
 def parse_fields(block)
@@ -108,10 +114,7 @@ log "Novel: #{novel.title} (id: #{novel.id})"
 log "\nImporting characters..."
 
 characters_md = File.read(BIBLE_DIR.join("characters.md"))
-
-# Each character block starts at "## Name" and runs until the next "---" or
-# end of file. We split on the horizontal rule separator.
-character_blocks = characters_md.split(/^---+\s*$/).map(&:strip).reject(&:empty?)
+character_blocks = extract_blocks(characters_md)
 
 imported = 0
 skipped  = 0
@@ -181,7 +184,7 @@ log "Characters: #{imported} imported, #{skipped} skipped."
 log "\nImporting locations..."
 
 locations_md = File.read(BIBLE_DIR.join("locations.md"))
-location_blocks = locations_md.split(/^---+\s*$/).map(&:strip).reject(&:empty?)
+location_blocks = extract_blocks(locations_md)
 
 imported = 0
 skipped  = 0
@@ -227,7 +230,7 @@ log "Locations: #{imported} imported, #{skipped} skipped."
 log "\nImporting terminology..."
 
 terminology_md = File.read(BIBLE_DIR.join("terminology.md"))
-term_blocks = terminology_md.split(/^---+\s*$/).map(&:strip).reject(&:empty?)
+term_blocks = extract_blocks(terminology_md)
 
 imported = 0
 skipped  = 0
@@ -278,7 +281,7 @@ log "Terminology: #{imported} imported, #{skipped} skipped."
 log "\nImporting cultural phrases..."
 
 phrases_md = File.read(BIBLE_DIR.join("cultural_phrases.md"))
-phrase_blocks = phrases_md.split(/^---+\s*$/).map(&:strip).reject(&:empty?)
+phrase_blocks = extract_blocks(phrases_md)
 
 imported = 0
 skipped  = 0
@@ -367,66 +370,58 @@ def map_story_category(label)
   nil
 end
 
-# --- Parse the "Open arcs" bullet list as a single main_plot entry ---
+# Extract a short title from a bullet line's text content.
+# Prefers the label before the first colon; falls back to the first sentence.
+def bullet_title(text)
+  if (m = text.match(/^([^:—–\n]{1,70}):/))
+    m[1].strip
+  else
+    first = text.split(/[.!?]/).first.to_s.strip
+    first.length <= 70 ? first : "#{first[0, 67]}..."
+  end
+end
+
+def upsert_story_entry(novel, category, title, content, imported_count, skipped_count)
+  if novel.bible_story_entries.exists?(category: category, title: title)
+    [imported_count, skipped_count + 1, :skipped]
+  else
+    novel.bible_story_entries.create!(category: category, title: title, content: content)
+    [imported_count + 1, skipped_count, :created]
+  end
+end
+
+# --- Parse the "Open arcs:" bullet list — one entry per bullet ---
 if (arcs_match = story_md.match(/\*\*Open arcs:\*\*\s*\n((?:- .+\n?)+)/))
-  arcs_content = arcs_match[1].strip
-  title = "Open Arcs"
-
-  if novel.bible_story_entries.exists?(category: "main_plot", title: title)
-    log "  SKIP story entry already exists: #{title}"
-    skipped += 1
-  else
-    novel.bible_story_entries.create!(
-      category: "main_plot",
-      title:    title,
-      content:  arcs_content
-    )
-    log "  + main_plot: #{title}"
-    imported += 1
+  arcs_match[1].scan(/^- (.+)/).each do |m|
+    text  = m[0].strip
+    title = bullet_title(text)
+    imported, skipped, status = upsert_story_entry(novel, "main_plot", title, text, imported, skipped)
+    status == :skipped ? log("  SKIP story entry already exists: #{title}") : log("  + main_plot: #{title[0, 70]}")
   end
 end
 
-# --- Parse the "Watch list:" bullet list as watch_list entries (one entry) ---
+# --- Parse the "Watch list:" bullet list — one entry per bullet ---
 if (wl_match = story_md.match(/\*\*Watch list:\*\*\s*\n((?:- .+\n?)+)/))
-  wl_content = wl_match[1].strip
-  title = "Watch List Notes"
-
-  if novel.bible_story_entries.exists?(category: "watch_list", title: title)
-    log "  SKIP story entry already exists: #{title}"
-    skipped += 1
-  else
-    novel.bible_story_entries.create!(
-      category: "watch_list",
-      title:    title,
-      content:  wl_content
-    )
-    log "  + watch_list: #{title}"
-    imported += 1
+  wl_match[1].scan(/^- (.+)/).each do |m|
+    text  = m[0].strip
+    title = bullet_title(text)
+    imported, skipped, status = upsert_story_entry(novel, "watch_list", title, text, imported, skipped)
+    status == :skipped ? log("  SKIP story entry already exists: #{title}") : log("  + watch_list: #{title[0, 70]}")
   end
 end
 
-# --- Parse the "Translation-relevant context:" bullet list as a main_plot note ---
+# --- Parse the "Translation-relevant context:" bullet list — one entry per bullet ---
 if (ctx_match = story_md.match(/\*\*Translation-relevant context:\*\*\s*\n((?:- .+\n?)+)/))
-  ctx_content = ctx_match[1].strip
-  title = "Translation-Relevant Context"
-
-  if novel.bible_story_entries.exists?(category: "main_plot", title: title)
-    log "  SKIP story entry already exists: #{title}"
-    skipped += 1
-  else
-    novel.bible_story_entries.create!(
-      category: "main_plot",
-      title:    title,
-      content:  ctx_content
-    )
-    log "  + main_plot: #{title}"
-    imported += 1
+  ctx_match[1].scan(/^- (.+)/).each do |m|
+    text  = m[0].strip
+    title = "Translation note: #{bullet_title(text)}"
+    imported, skipped, status = upsert_story_entry(novel, "main_plot", title, text, imported, skipped)
+    status == :skipped ? log("  SKIP story entry already exists: #{title}") : log("  + main_plot: #{title[0, 70]}")
   end
 end
 
 # --- Parse the freeform bold-labelled paragraph entries ---
 # Pattern: **Category Label** — Content paragraph
-# These appear after the horizontal rules in the lower portion of the file.
 story_md.scan(/^\*\*([^*]+)\*\*\s+[—–-]\s+(.+?)(?=\n\n|\n---|\z)/m) do |label, content|
   label   = label.strip
   content = content.strip.gsub(/\s+/, " ")
@@ -434,25 +429,12 @@ story_md.scan(/^\*\*([^*]+)\*\*\s+[—–-]\s+(.+?)(?=\n\n|\n---|\z)/m) do |labe
   category = map_story_category(label)
   next unless category
 
-  # Build a short title from the first sentence or first ~60 chars of content
   first_sentence = content.split(/[.!?]/).first.to_s.strip
   title = first_sentence.length <= 80 ? first_sentence : "#{first_sentence[0, 77]}..."
-  # Fallback: use label + a counter if title is still empty
   title = label if title.empty?
 
-  if novel.bible_story_entries.exists?(category: category, title: title)
-    log "  SKIP story entry already exists: #{title}"
-    skipped += 1
-    next
-  end
-
-  novel.bible_story_entries.create!(
-    category: category,
-    title:    title,
-    content:  content
-  )
-  log "  + #{category}: #{title[0, 60]}"
-  imported += 1
+  imported, skipped, status = upsert_story_entry(novel, category, title, content, imported, skipped)
+  status == :skipped ? log("  SKIP story entry already exists: #{title[0, 60]}") : log("  + #{category}: #{title[0, 60]}")
 end
 
 log "Story entries: #{imported} imported, #{skipped} skipped."
