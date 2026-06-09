@@ -47,7 +47,9 @@
 <%# Poll wrapper — only rendered when job is active                    %>
 <%# ------------------------------------------------------------------ %>
 <% if @translation_job.queued? || @translation_job.running? %>
-  <div data-controller="poll" data-poll-interval-value="1000">
+  <div data-controller="poll"
+       data-poll-interval-value="1000"
+       data-poll-url-value="<%= novel_translation_job_path(@novel, @translation_job) %>">
 <% end %>
 
 <%= turbo_frame_tag "job-status" do %>
