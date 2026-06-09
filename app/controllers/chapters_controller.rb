@@ -5,6 +5,7 @@ class ChaptersController < ApplicationController
                                       :approve ]
 
   def index
+    redirect_to novel_path(@novel) and return unless turbo_frame_request?
     @chapters         = @novel.chapters.order(number: :desc)
     @cancellable_jobs = cancellable_job_map
   end
@@ -48,7 +49,7 @@ class ChaptersController < ApplicationController
 
   def destroy
     @chapter.destroy
-    redirect_to novel_chapters_path(@novel), notice: "Chapter removed."
+    redirect_to novel_path(@novel), notice: "Chapter removed."
   end
 
   def approve
@@ -211,7 +212,7 @@ class ChaptersController < ApplicationController
     notice = "#{created.size} chapter(s) uploaded."
     alert  = failures.any? ? "Some files were skipped: #{failures.join('; ')}" : nil
 
-    redirect_to novel_chapters_path(@novel), notice: notice, alert: alert
+    redirect_to novel_path(@novel), notice: notice, alert: alert
   end
 
   # Attaches `file` to the correct Active Storage slot and sets chapter status

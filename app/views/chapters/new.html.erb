@@ -4,7 +4,6 @@
 <%= render "layouts/breadcrumb", crumbs: [
       ["Novels", novels_path],
       [@novel.title, novel_path(@novel)],
-      ["Chapters", novel_chapters_path(@novel)],
       ["Upload", nil]
     ] %>
 
@@ -74,7 +73,7 @@
           class:    "btn btn--primary",
           disabled: true,
           data:     { "upload-review-target": "submitButton", testid: "upload-submit" } %>
-    <%= link_to "Cancel", novel_chapters_path(@novel), class: "btn btn--ghost" %>
+    <%= link_to "Cancel", novel_path(@novel), class: "btn btn--ghost" %>
   </div>
 
 <% end %>

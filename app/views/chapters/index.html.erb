@@ -52,7 +52,7 @@
         <div class="chapter-select-bar__actions">
 
           <%= form_with url: bulk_update_novel_chapters_path(@novel), method: :patch,
-                data: { chapter_select_target: "editForm", turbo_frame: "_top" } do |f| %>
+                data: { chapter_select_target: "editForm" } do |f| %>
             <%= f.select :status,
                   Chapter.statuses.keys.map { |s| [s.humanize, s] },
                   {},
@@ -66,7 +66,7 @@
           <% end %>
 
           <%= form_with url: bulk_destroy_novel_chapters_path(@novel), method: :delete,
-                data: { chapter_select_target: "deleteForm", turbo_frame: "_top",
+                data: { chapter_select_target: "deleteForm",
                         turbo_confirm: "Delete the selected chapters? This cannot be undone." } do |f| %>
             <%= f.submit "Delete", class: "btn btn--danger btn--sm" %>
           <% end %>
@@ -74,8 +74,7 @@
           <div data-chapter-select-target="bulkTranslateForm" hidden>
             <%= form_with url: novel_translation_jobs_path(@novel),
                   method: :post,
-                  scope: :translation_job,
-                  data: { turbo_frame: "_top" } do |f| %>
+                  scope: :translation_job do |f| %>
               <%= f.hidden_field :job_type, value: "translate_batch" %>
               <%= f.hidden_field :chapter_start, value: "", data: { "chapter-select-target": "bulkTranslateStart" } %>
               <%= f.hidden_field :chapter_end,   value: "", data: { "chapter-select-target": "bulkTranslateEnd" } %>
@@ -86,8 +85,7 @@
           <div data-chapter-select-target="bulkPrereadForm" hidden>
             <%= form_with url: novel_translation_jobs_path(@novel),
                   method: :post,
-                  scope: :translation_job,
-                  data: { turbo_frame: "_top" } do |f| %>
+                  scope: :translation_job do |f| %>
               <%= f.hidden_field :job_type, value: "preread" %>
               <%= f.hidden_field :chapter_start, value: "", data: { "chapter-select-target": "bulkPrereadStart" } %>
               <%= f.hidden_field :chapter_end,   value: "", data: { "chapter-select-target": "bulkPrereadEnd" } %>
@@ -162,7 +160,7 @@
                     <%= form_with url: novel_translation_jobs_path(@novel),
                           method: :post,
                           scope: :translation_job,
-                          data: { turbo_frame: "_top" } do |f| %>
+                          data: { turbo_frame: "tab-panel-chapters" } do |f| %>
                       <%= f.hidden_field :job_type, value: "preread" %>
                       <%= f.hidden_field :chapter_start, value: chapter.number %>
                       <%= f.hidden_field :chapter_end,   value: chapter.number %>
@@ -174,7 +172,7 @@
                     <%= form_with url: novel_translation_jobs_path(@novel),
                           method: :post,
                           scope: :translation_job,
-                          data: { turbo_frame: "_top" } do |f| %>
+                          data: { turbo_frame: "tab-panel-chapters" } do |f| %>
                       <%= f.hidden_field :job_type, value: "translate_batch" %>
                       <%= f.hidden_field :chapter_start, value: chapter.number %>
                       <%= f.hidden_field :chapter_end,   value: chapter.number %>
@@ -203,8 +201,7 @@
             data-bulk-translate-target="dialog"
             data-testid="bulk-translate-dialog">
       <%= form_with url: novel_translation_jobs_path(@novel),
-            method: :post,
-            data: { turbo_frame: "_top" } do |f| %>
+            method: :post do |f| %>
         <%= f.hidden_field :job_type, value: "translate_batch" %>
         <%= f.hidden_field :chapter_start, data: { "bulk-translate-target": "chapterStart" } %>
         <%= f.hidden_field :chapter_end,   data: { "bulk-translate-target": "chapterEnd" } %>

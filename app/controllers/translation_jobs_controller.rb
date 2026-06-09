@@ -29,12 +29,8 @@ class TranslationJobsController < ApplicationController
 
     if @translation_job.save
       PipelineJob.perform_later(@translation_job.id)
-      if @translation_job.preread?
-        redirect_to novel_chapters_path(@novel), notice: "Preread job queued."
-      else
-        redirect_to novel_translation_job_path(@novel, @translation_job),
-                    notice: "#{@translation_job.job_type.humanize} job queued."
-      end
+      redirect_to novel_chapters_path(@novel),
+                  notice: "#{@translation_job.job_type.humanize} job queued."
     else
       @translation_jobs = @novel.translation_jobs.recent
       render :index, status: :unprocessable_entity
@@ -47,8 +43,8 @@ class TranslationJobsController < ApplicationController
   # ---------------------------------------------------------------------------
   def destroy
     @translation_job.cancel!
-    redirect_to novel_translation_job_path(@novel, @translation_job),
-                notice: "Job cancelled."
+    redirect_back fallback_location: novel_translation_job_path(@novel, @translation_job),
+                  notice: "Job cancelled."
   end
 
   private
