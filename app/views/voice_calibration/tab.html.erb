@@ -23,6 +23,43 @@
     </div>
   <% end %>
 
+  <%# ── Run Calibration ─────────────────────────────────────────────────────── %>
+  <div class="vc-tab__section">
+    <div class="vc-tab__section-header">
+      <h2 class="vc-tab__section-title">Run Calibration</h2>
+    </div>
+
+    <div class="vc-tab__card" data-testid="vc-run-calibration-card">
+      <% if @pending_job %>
+        <div class="vc-tab__last-run" data-testid="vc-last-run">
+          <span class="vc-tab__last-run-label">
+            Last run: <%= @pending_job.chapter_range_label.presence || "Job ##{@pending_job.id}" %> &middot; Completed
+          </span>
+          <%= link_to "Review Results →",
+                novel_voice_calibration_review_path(@novel),
+                class: "vc-tab__last-run-link",
+                data: { turbo_frame: "_top", testid: "link-review-results" } %>
+        </div>
+      <% end %>
+
+      <%= form_with url: novel_translation_jobs_path(@novel), method: :post,
+            data: { testid: "form-run-calibration" } do |f| %>
+        <%= f.hidden_field :job_type, value: "voice_calibration" %>
+        <div class="vc-tab__run-row">
+          <%= f.select :chapter_start,
+                @translated_chapters.map { |ch| ["Chapter #{ch.number}", ch.number] },
+                { include_blank: "Select a translated chapter…" },
+                class: "vc-tab__chapter-select",
+                data: { testid: "vc-chapter-select" } %>
+          <%= f.submit "Run Calibration",
+                class: "btn btn--primary",
+                data: { testid: "button-run-calibration" } %>
+        </div>
+        <p class="vc-tab__hint">Queues a background job. Review the output when it completes.</p>
+      <% end %>
+    </div>
+  </div>
+
   <%# ── Current passages ────────────────────────────────────────────────────── %>
   <div class="vc-tab__section">
     <div class="vc-tab__section-header">
