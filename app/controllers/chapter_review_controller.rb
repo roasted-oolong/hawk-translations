@@ -20,6 +20,9 @@ class ChapterReviewController < ApplicationController
     @chapter_texts = @chapters.each_with_object({}) do |ch, h|
       h[ch.id] = ch.translated_output.attached? ? ch.translated_output.download.force_encoding("UTF-8") : ""
     end
+    @korean_texts = @chapters.each_with_object({}) do |ch, h|
+      h[ch.id] = ch.korean_source.attached? ? ch.korean_source.download.force_encoding("UTF-8") : nil
+    end
     render layout: "review"
   end
 
