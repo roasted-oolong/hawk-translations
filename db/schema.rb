@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_20_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_08_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -166,6 +166,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_20_000002) do
     t.text "notes"
     t.bigint "organization_id", null: false
     t.bigint "poc_user_id"
+    t.text "preread_dismissed_keys", default: "[]", null: false
     t.bigint "series_id"
     t.text "summary"
     t.string "title", null: false

@@ -431,6 +431,7 @@
   justify-content: space-between;
   gap: var(--space-4);
 }
+.chapter-review__footer[hidden] { display: none; }
 
 .chapter-review__footer-end {
   display: flex;

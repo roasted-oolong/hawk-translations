@@ -231,12 +231,14 @@ class BibleMarkdownParser
   # ---------------------------------------------------------------------------
 
   def filter_pending(cat, entries)
-    fields = COMPARABLE_FIELDS[cat]
+    dismissed = dismissed_keys
+    fields    = COMPARABLE_FIELDS[cat]
     case cat
     when :characters
       by_korean = @novel.bible_characters.index_by(&:korean_name)
       by_name   = @novel.bible_characters.index_by(&:name)
       entries.filter_map { |e|
+        next if dismissed.include?("#{cat}:#{e[:korean_key]}")
         record = by_korean[e[:korean_key]] || by_name[e[:name]]
         classify_entry(e, record, fields)
       }
@@ -244,6 +246,7 @@ class BibleMarkdownParser
       by_korean = @novel.bible_locations.index_by(&:korean_name)
       by_name   = @novel.bible_locations.index_by(&:name)
       entries.filter_map { |e|
+        next if dismissed.include?("#{cat}:#{e[:korean_key]}")
         record = by_korean[e[:korean_key]] || by_name[e[:name]]
         classify_entry(e, record, fields)
       }
@@ -251,6 +254,7 @@ class BibleMarkdownParser
       by_korean = @novel.bible_terminologies.index_by(&:korean_term)
       by_name   = @novel.bible_terminologies.index_by(&:term)
       entries.filter_map { |e|
+        next if dismissed.include?("#{cat}:#{e[:korean_key]}")
         record = by_korean[e[:korean_key]] || by_name[e[:term]]
         classify_entry(e, record, fields)
       }
@@ -258,18 +262,26 @@ class BibleMarkdownParser
       by_korean = @novel.bible_cultural_phrases.index_by(&:korean_phrase)
       by_name   = @novel.bible_cultural_phrases.index_by(&:phrase)
       entries.filter_map { |e|
+        next if dismissed.include?("#{cat}:#{e[:korean_key]}")
         record = by_korean[e[:korean_key]] || by_name[e[:phrase]]
         classify_entry(e, record, fields)
       }
     when :story
       by_title = @novel.bible_story_entries.index_by(&:title)
       entries.filter_map { |e|
+        next if dismissed.include?("#{cat}:#{e[:korean_key]}")
         record = by_title[e[:title]]
         classify_entry(e, record, fields)
       }
     else
       entries.map { |e| e.merge(is_existing: false) }
     end
+  end
+
+  def dismissed_keys
+    @dismissed_keys ||= JSON.parse(@novel.preread_dismissed_keys || "[]")
+  rescue JSON::ParserError
+    []
   end
 
   def classify_entry(entry, record, fields)

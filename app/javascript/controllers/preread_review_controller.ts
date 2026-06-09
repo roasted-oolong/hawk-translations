@@ -151,6 +151,16 @@ export default class PrereadReviewController extends Controller<HTMLElement> {
     }
   }
 
+  skipAll() {
+    this.entryCardTargets.forEach(card => {
+      const key = this.compositeKey(card)
+      if (!this.approved.has(key)) {
+        this.skipped.add(key)
+      }
+    })
+    this.showSummary()
+  }
+
   jumpTo({ params: { index } }: { params: { index: number } }) {
     this.closeCurrentEditPanel()
     if (index >= 0 && index < this.total) {
@@ -250,7 +260,7 @@ export default class PrereadReviewController extends Controller<HTMLElement> {
   onImportSubmit(event: Event) {
     event.preventDefault()
     const form = this.importFormTarget
-    form.querySelectorAll("input[name='approved_entries']").forEach(el => el.remove())
+    form.querySelectorAll("input[name='approved_entries'], input[name='skipped_entries']").forEach(el => el.remove())
 
     const approvedData = Array.from(this.approved).map(compositeKey => {
       const card = this.entryCardTargets.find(c => this.compositeKey(c) === compositeKey)
@@ -261,11 +271,18 @@ export default class PrereadReviewController extends Controller<HTMLElement> {
       }
     }).filter(Boolean)
 
-    const input = document.createElement("input")
-    input.type = "hidden"
-    input.name = "approved_entries"
-    input.value = JSON.stringify(approvedData)
-    form.appendChild(input)
+    const approvedInput = document.createElement("input")
+    approvedInput.type = "hidden"
+    approvedInput.name = "approved_entries"
+    approvedInput.value = JSON.stringify(approvedData)
+    form.appendChild(approvedInput)
+
+    const skippedInput = document.createElement("input")
+    skippedInput.type = "hidden"
+    skippedInput.name = "skipped_entries"
+    skippedInput.value = JSON.stringify(Array.from(this.skipped))
+    form.appendChild(skippedInput)
+
     form.submit()
   }
 
@@ -364,6 +381,6 @@ export default class PrereadReviewController extends Controller<HTMLElement> {
 
     const count = this.approved.size
     this.importBtnTarget.textContent = `Import ${count} ${count === 1 ? "entry" : "entries"} to Bible`
-    this.importBtnTarget.disabled = count === 0
+    this.importBtnTarget.disabled = false
   }
 }

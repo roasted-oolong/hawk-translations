@@ -491,7 +491,8 @@ CREATE TABLE public.novels (
     visibility character varying DEFAULT 'discoverable'::character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    directory_name character varying
+    directory_name character varying,
+    preread_dismissed_keys text DEFAULT '[]'::text NOT NULL
 );
 
 
@@ -2244,6 +2245,7 @@ ALTER TABLE ONLY public.voice_calibration_passages
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260608000001'),
 ('20260607200000'),
 ('20260607184400'),
 ('20260607000001'),
