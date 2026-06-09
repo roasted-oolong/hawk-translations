@@ -127,6 +127,7 @@ export default class VoiceCalibrationReviewController extends Controller<HTMLEle
     if (!card) return
     const cardId = card.dataset.cardId!
 
+    this.sendDecision(cardId, "skipped")
     this.decisions.set(cardId, "skipped")
     this.updateNavStatus(this.index, "skipped")
     this.cancelEdit()

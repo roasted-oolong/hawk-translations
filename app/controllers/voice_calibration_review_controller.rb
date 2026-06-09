@@ -38,15 +38,31 @@ class VoiceCalibrationReviewController < ApplicationController
       return
     end
 
-    if decision.in?(%w[accepted accepted_revised])
-      apply_card!(card, decision)
-    end
-
+    card["rule"]     = params[:rule] if params[:rule].present? && card["card_type"] == "new_pattern"
     card["decision"] = decision
     payload["cards"] = cards
     job.update!(result_payload: payload.to_json)
 
     render json: { ok: true }
+  end
+
+  def commit
+    job = @novel.translation_jobs.voice_calibration.completed
+                .where("result_payload IS NOT NULL").order(created_at: :desc).first
+    unless job
+      redirect_to novel_path(@novel), alert: "No calibration job found." and return
+    end
+
+    payload = JSON.parse(job.result_payload) rescue {}
+    cards   = payload["cards"] || []
+
+    ActiveRecord::Base.transaction do
+      cards.each do |card|
+        apply_card!(card, card["decision"]) if card["decision"].in?(%w[accepted accepted_revised])
+      end
+    end
+
+    redirect_to novel_path(@novel), notice: "Voice calibration applied."
   end
 
   private

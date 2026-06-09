@@ -63,9 +63,11 @@ Rails.application.routes.draw do
     # GET   /novels/:novel_id/voice_calibration               → novel_voice_calibration_tab_path
     # GET   /novels/:novel_id/voice_calibration/review        → novel_voice_calibration_review_path
     # PATCH /novels/:novel_id/voice_calibration/review/cards/:card_id → novel_voice_calibration_review_card_path
-    get   "voice_calibration",                      to: "voice_calibration#tab",    as: :voice_calibration_tab
-    get   "voice_calibration/review",               to: "voice_calibration_review#show",   as: :voice_calibration_review
+    # POST  /novels/:novel_id/voice_calibration/review/commit → novel_voice_calibration_review_commit_path
+    get   "voice_calibration",                       to: "voice_calibration#tab",           as: :voice_calibration_tab
+    get   "voice_calibration/review",                to: "voice_calibration_review#show",   as: :voice_calibration_review
     patch "voice_calibration/review/cards/:card_id", to: "voice_calibration_review#update", as: :voice_calibration_review_card
+    post  "voice_calibration/review/commit",         to: "voice_calibration_review#commit", as: :voice_calibration_review_commit
   end
 
   # Top-level jobs index — cross-novel view
