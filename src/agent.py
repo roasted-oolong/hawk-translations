@@ -58,7 +58,7 @@ class ApiCallFn(Protocol):
 
 def make_client() -> OpenAI:
     """Build and return an OpenAI-compatible client from the environment."""
-    return OpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
+    return OpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY, timeout=1200.0)
 
 
 # ---------------------------------------------------------------------------

@@ -52,7 +52,7 @@ class PipelineDispatcher
     execute([ PYTHON, script("run_preread.py"),
               "--novel-dir",  novel_directory,
               "--chapters",   "#{@job.chapter_start}-#{@job.chapter_end}",
-              "--batch-size", "5" ])
+              "--batch-size", "2" ])
   end
 
   # ---------------------------------------------------------------------------
