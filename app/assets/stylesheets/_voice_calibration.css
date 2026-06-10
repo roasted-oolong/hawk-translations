@@ -80,6 +80,14 @@
   font-size: var(--text-sm);
 }
 
+.vc-tab__last-run--failed .vc-tab__last-run-label {
+  color: var(--color-danger);
+}
+
+.vc-tab__last-run-link--error {
+  color: var(--color-danger);
+}
+
 .vc-tab__empty {
   padding: var(--space-6) 0;
   color: var(--color-text-muted);
