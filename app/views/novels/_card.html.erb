@@ -23,7 +23,7 @@
 <% progress_pct      = total_chapters > 0 ? (translated_count.to_f / total_chapters * 100).floor : 0 %>
 <% pending_jobs      = novel.translation_jobs.count { |j| j.queued? || j.running? } %>
 
-<article class="novel-card" data-testid="novel-card">
+<article id="novel-card-<%= novel.id %>" class="novel-card" data-testid="novel-card">
 
   <%# Cover image slot — aria-hidden so screen readers only hit the title link %>
   <%= link_to novel,

@@ -1,0 +1,14 @@
+<li id="active-job-<%= job.id %>" class="novel-active-jobs__item">
+  <% if show_novel %>
+    <span class="novel-active-jobs__novel"><%= job.novel.title %></span>
+    <span class="novel-active-jobs__sep" aria-hidden="true">·</span>
+  <% end %>
+  <span class="novel-active-jobs__type"><%= job.job_type.humanize %></span>
+  <% if job.chapter_range_label %>
+    <span class="novel-active-jobs__chapters"><%= job.chapter_range_label %></span>
+  <% end %>
+  <%= render "components/status_badge", status: job.status %>
+  <% if job.shows_progress? && job.progress_pct %>
+    <span class="novel-active-jobs__pct"><%= job.progress_pct %>%</span>
+  <% end %>
+</li>

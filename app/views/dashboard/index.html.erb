@@ -1,5 +1,6 @@
 <%# app/views/dashboard/index.html.erb %>
 <% content_for :title, "Dashboard — Hawk" %>
+<%= turbo_stream_from "translation_jobs" %>
 
 <div class="page-header">
   <h1 class="page-title" data-testid="dashboard-heading">Dashboard</h1>
@@ -7,7 +8,7 @@
 </div>
 
 <% if @active_jobs.any? %>
-  <div data-controller="poll" data-poll-interval-value="1000">
+  <div data-controller="poll" data-poll-interval-value="5000">
 <% end %>
 
 <%= turbo_frame_tag "dashboard-active-jobs" do %>

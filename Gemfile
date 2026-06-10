@@ -77,3 +77,5 @@ end
 
 gem "honeybadger", "~> 6.5"
 gem "rubyzip", "~> 2.3"
+
+gem "solid_cable", "~> 4.0"

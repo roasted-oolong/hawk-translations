@@ -41,6 +41,11 @@ class TranslationJob < ApplicationRecord
   scope :cancellable, -> { where(status: %w[queued running]) }
 
   # ---------------------------------------------------------------------------
+  # Broadcasts
+  # ---------------------------------------------------------------------------
+  after_update_commit :broadcast_status_change, if: :saved_change_to_status?
+
+  # ---------------------------------------------------------------------------
   # Instance methods
   # ---------------------------------------------------------------------------
 
@@ -124,6 +129,28 @@ class TranslationJob < ApplicationRecord
   def voice_calibration_chapter_reviewed
     unless novel.chapters.reviewed.exists?(number: chapter_start)
       errors.add(:chapter_start, "must be a reviewed chapter")
+    end
+  end
+
+  def broadcast_status_change
+    if cancellable?
+      broadcast_replace_later_to(
+        "translation_jobs",
+        target: "active-job-#{id}",
+        partial: "novels/active_job_item",
+        locals: { job: self, show_novel: true }
+      )
+    else
+      broadcast_remove_to "translation_jobs", target: "active-job-#{id}"
+      fresh_novel = Novel.includes(chapters: [], translation_jobs: [])
+                         .with_attached_cover_art
+                         .find(novel_id)
+      broadcast_replace_later_to(
+        "translation_jobs",
+        target: "novel-card-#{novel_id}",
+        partial: "novels/card",
+        locals: { novel: fresh_novel }
+      )
     end
   end
 end
