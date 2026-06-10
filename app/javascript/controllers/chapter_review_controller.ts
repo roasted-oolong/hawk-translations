@@ -124,6 +124,7 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
     this.saveCurrentText()
     this.approved.add(id)
     this.skipped.delete(id)
+    this.persistApproval(id)
 
     if (this.index >= this.total - 1) {
       this.showSummary()
@@ -232,6 +233,14 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
       },
       body: JSON.stringify({ text: textarea.value }),
     }).then(() => this.flashSaved())
+  }
+
+  private persistApproval(id: string) {
+    const url = this.approveUrlValue.replace(":id", id)
+    fetch(url, {
+      method: "PATCH",
+      headers: { "X-CSRF-Token": this.csrfToken() },
+    })
   }
 
   backToSlideshow() {
