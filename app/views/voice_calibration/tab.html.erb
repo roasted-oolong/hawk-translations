@@ -41,6 +41,12 @@
             <span class="vc-tab__last-run-label">
               <%= @active_job.chapter_range_label.presence || "Job ##{@active_job.id}" %> &middot; Running&hellip;
             </span>
+            <%= modal_button_to "Cancel",
+                  novel_translation_job_path(@novel, @active_job),
+                  method:        :delete,
+                  message:       "Cancel this voice calibration job?",
+                  confirm_label: "Cancel job",
+                  button_class:  "btn btn--danger btn--xs" %>
           </div>
         <% elsif @last_completed_job %>
           <div class="vc-tab__last-run" data-testid="vc-last-run">
