@@ -1,5 +1,6 @@
 <%# app/views/novels/index.html.erb %>
 <% content_for :title, "Novels — Hawk" %>
+<%= turbo_stream_from "translation_jobs" %>
 
 <div data-controller="form-panel">
 
