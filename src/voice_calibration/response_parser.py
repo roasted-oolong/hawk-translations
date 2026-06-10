@@ -11,6 +11,7 @@ To change the expected output format (section headers), edit only this file.
 """
 
 import re
+import sys
 
 # The two section headers the model is instructed to produce.
 # Key: canonical section name used downstream.
@@ -64,6 +65,6 @@ def parse_response(raw: str) -> dict[str, str]:
 
     missing = [h for key, h in SECTION_HEADERS.items() if key not in results]
     if missing:
-        print(f"  [warning] Response missing expected sections: {missing}")
+        print(f"  [warning] Response missing expected sections: {missing}", file=sys.stderr)
 
     return results
