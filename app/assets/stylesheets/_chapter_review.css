@@ -465,49 +465,36 @@
   margin: 0;
 }
 
-.chapter-review-tab__count {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-}
-
 .chapter-review-tab__card {
   background-color: var(--color-surface-manuscript);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: var(--space-6);
+  padding: var(--space-5);
   box-shadow: var(--shadow-sm);
-}
-
-.chapter-review-tab__progress-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-3);
+  gap: var(--space-4);
 }
 
-.chapter-review-tab__progress-label {
+.chapter-review-tab__card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.chapter-review-tab__ready-count {
   font-size: var(--text-sm);
   font-weight: var(--font-weight-medium);
   color: var(--color-text);
+  margin: 0;
 }
 
-.chapter-review-tab__progress-count {
-  font-size: var(--text-sm);
+.chapter-review-tab__chapter-list {
+  font-size: var(--text-xs);
   color: var(--color-text-secondary);
-}
-
-.chapter-review-tab__progress-track {
-  height: 0.375rem;
-  background-color: var(--color-surface-container);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-  margin-bottom: var(--space-6);
-}
-
-.chapter-review-tab__progress-fill {
-  height: 100%;
-  background-color: var(--color-success);
-  border-radius: var(--radius-full);
+  margin: 0;
 }
 
 .chapter-review-tab__empty {

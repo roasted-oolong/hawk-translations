@@ -7,11 +7,6 @@
 
   <div class="chapter-review-tab__header">
     <h2 class="chapter-review-tab__title">Translated Chapters</h2>
-    <% if @total_count > 0 %>
-      <span class="chapter-review-tab__count">
-        <%= @reviewed_count %> / <%= @total_count %> reviewed
-      </span>
-    <% end %>
   </div>
 
   <% if @chapters_for_review.empty? %>
@@ -24,22 +19,14 @@
     </div>
   <% else %>
     <div class="chapter-review-tab__card" data-testid="chapter-review-card">
-      <div class="chapter-review-tab__progress-row">
-        <span class="chapter-review-tab__progress-label">
-          <%= @chapters_for_review.size %> <%= "chapter".pluralize(@chapters_for_review.size) %> ready
-        </span>
-        <span class="chapter-review-tab__progress-count">
-          <%= @reviewed_count %> / <%= @total_count %> reviewed
-        </span>
+      <div class="chapter-review-tab__card-body">
+        <p class="chapter-review-tab__ready-count">
+          <%= @chapters_for_review.size %> <%= "chapter".pluralize(@chapters_for_review.size) %> ready to review
+        </p>
+        <p class="chapter-review-tab__chapter-list">
+          <%= @chapters_for_review.map { |c| "Ch. #{c.number}" }.join(" · ") %>
+        </p>
       </div>
-
-      <% pct = @total_count > 0 ? (@reviewed_count.to_f / @total_count * 100).round : 0 %>
-      <div class="chapter-review-tab__progress-track">
-        <div class="chapter-review-tab__progress-fill"
-             style="width: <%= pct %>%"
-             data-testid="review-tab-progress-bar"></div>
-      </div>
-
       <%= link_to "Review Chapters",
             novel_chapter_review_path(@novel),
             class: "btn btn--primary",
