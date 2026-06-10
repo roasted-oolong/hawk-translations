@@ -16,6 +16,12 @@ FactoryBot.define do
       chapter_end   { 74 }
     end
 
+    trait :voice_calibration do
+      job_type      { "voice_calibration" }
+      chapter_start { 1 }
+      chapter_end   { 1 }
+    end
+
     trait :post_translation_review do
       job_type      { "post_translation_review" }
       chapter_start { 1 }

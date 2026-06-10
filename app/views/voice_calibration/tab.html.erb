@@ -52,6 +52,16 @@
                   class: "vc-tab__last-run-link",
                   data: { turbo_frame: "_top", testid: "link-review-results" } %>
           </div>
+        <% elsif @last_failed_job %>
+          <div class="vc-tab__last-run vc-tab__last-run--failed" data-testid="vc-last-run-failed">
+            <span class="vc-tab__last-run-label">
+              Last run: <%= @last_failed_job.chapter_range_label.presence || "Job ##{@last_failed_job.id}" %> &middot; Failed
+            </span>
+            <%= link_to "View Error →",
+                  novel_translation_job_path(@novel, @last_failed_job),
+                  class: "vc-tab__last-run-link vc-tab__last-run-link--error",
+                  data: { turbo_frame: "_top", testid: "link-view-error" } %>
+          </div>
         <% end %>
       <% end %>
       <% if @active_job %>
