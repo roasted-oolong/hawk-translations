@@ -42,11 +42,14 @@ class PipelineJob < ApplicationJob
     stop_polling = true
     progress_thread.join
 
+    translation_job.reload
+    return if translation_job.cancelled?
+
     if success
       translation_job.update!(
         status:         "completed",
         progress_pct:   100,
-        result_payload: stdout.presence || "(no output)"
+        result_payload: build_result_payload(translation_job, stdout)
       )
       update_chapters(translation_job, :success)
     else
@@ -87,6 +90,21 @@ class PipelineJob < ApplicationJob
         )
       end
     end
+  end
+
+  def build_result_payload(job, stdout)
+    return stdout.presence || "(no output)" unless job.voice_calibration?
+
+    data  = JSON.parse(stdout)
+    cards = data["cards"] || []
+    cards.each do |card|
+      next unless card["card_type"] == "retirement"
+      passage = job.novel.voice_calibration_passages.find_by(heading: card["heading"])
+      card["passage_id"] = passage&.id
+    end
+    data.to_json
+  rescue JSON::ParserError
+    stdout.presence || "(no output)"
   end
 
   def update_chapters(job, phase)
