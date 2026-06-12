@@ -81,6 +81,23 @@ RSpec.describe "TranslationJobs", type: :request do
       end
     end
 
+    context "linking the record to its Solid Queue job" do
+      it "stores the provider_job_id so liveness can be verified later" do
+        allow(PipelineJob).to receive(:perform_later)
+          .and_return(instance_double(PipelineJob, provider_job_id: 627))
+
+        post novel_translation_jobs_path(novel), params: {
+          translation_job: {
+            job_type:      "preread",
+            chapter_start: "1",
+            chapter_end:   "10"
+          }
+        }
+
+        expect(TranslationJob.last.solid_queue_job_id).to eq("627")
+      end
+    end
+
     context "bible_build job with chapter range" do
       it "creates a TranslationJob record with chapter_start and chapter_end" do
         expect {

@@ -28,7 +28,10 @@ class TranslationJobsController < ApplicationController
     @translation_job.user = current_user
 
     if @translation_job.save
-      PipelineJob.perform_later(@translation_job.id)
+      enqueued = PipelineJob.perform_later(@translation_job.id)
+      # Link to the Solid Queue row so StaleTranslationJobSweeper can verify
+      # liveness; with the test adapter provider_job_id is nil, which is fine.
+      @translation_job.update_column(:solid_queue_job_id, enqueued.provider_job_id)
       redirect_to novel_chapters_path(@novel),
                   notice: "#{@translation_job.job_type.humanize} job queued."
     else
