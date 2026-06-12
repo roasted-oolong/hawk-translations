@@ -100,6 +100,7 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
     this.skipped = new Set()
     this.renderCurrent()
     this.resizeCurrentTextarea()
+    this.toggleKorean()
     document.addEventListener('keydown', this.handleKeydown)
   }
 

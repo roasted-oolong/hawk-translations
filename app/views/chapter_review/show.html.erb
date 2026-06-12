@@ -80,7 +80,7 @@
                 class="chapter-review__compare-btn"
                 data-action="click->chapter-review#toggleKorean"
                 data-chapter-review-target="compareBtn"
-                title="Show Korean source"
+                title="Toggle split view"
                 data-testid="button-ko-toggle">
           KO
         </button>
@@ -124,11 +124,11 @@
           </div>
           <%# Compare mode column headers — shown via CSS when --compare class is active %>
           <div class="chapter-review__compare-header">
-            <p class="chapter-review__column-label">Source · 원문</p>
-            <div aria-hidden="true"></div>
             <p class="chapter-review__column-label" title="Scroll here to sync both panels">
               Translation · English <span class="chapter-review__sync-hint" aria-hidden="true">↕</span>
             </p>
+            <div aria-hidden="true"></div>
+            <p class="chapter-review__column-label">Source · 원문</p>
           </div>
 
           <%# Single-column textarea (normal mode) %>
@@ -146,7 +146,21 @@
           <div class="chapter-review__split-panes"
                data-chapter-review-target="splitPanes">
 
-            <%# Korean pane (left) — scroll follows English %>
+            <%# English pane (left) — scroll master %>
+            <div class="chapter-review__english-pane"
+                 data-chapter-review-target="englishPane">
+              <textarea class="chapter-review__pane-textarea"
+                        data-chapter-review-target="paneText"
+                        data-action="input->chapter-review#autoResizePane"
+                        spellcheck="false"
+                        autocomplete="off"
+                        autocorrect="off"
+                        autocapitalize="off"><%= @chapter_texts[chapter.id].to_s.strip %></textarea>
+            </div>
+
+            <div class="chapter-review__pane-divider" aria-hidden="true"></div>
+
+            <%# Korean pane (right) — scroll follows English %>
             <div class="chapter-review__korean-pane"
                  data-chapter-review-target="koreanPane">
               <% ko_paras = (@korean_texts[chapter.id] || "").split(/\n\n+/).map(&:strip).reject(&:empty?) %>
@@ -157,20 +171,6 @@
               <% else %>
                 <p class="chapter-review__korean-empty">—</p>
               <% end %>
-            </div>
-
-            <div class="chapter-review__pane-divider" aria-hidden="true"></div>
-
-            <%# English pane (right) — scroll master %>
-            <div class="chapter-review__english-pane"
-                 data-chapter-review-target="englishPane">
-              <textarea class="chapter-review__pane-textarea"
-                        data-chapter-review-target="paneText"
-                        data-action="input->chapter-review#autoResizePane"
-                        spellcheck="false"
-                        autocomplete="off"
-                        autocorrect="off"
-                        autocapitalize="off"><%= @chapter_texts[chapter.id].to_s.strip %></textarea>
             </div>
           </div>
         </div>
