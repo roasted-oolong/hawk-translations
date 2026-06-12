@@ -59,15 +59,18 @@ RSpec.describe User, type: :model do
   end
 
   describe ".from_omniauth" do
+    # Duck-types OmniAuth::AuthHash (method-style access, mutable) — the
+    # omniauth gem is not installed, so the real constant is unavailable here.
     let(:auth) do
-      OmniAuth::AuthHash.new(
-        provider: "google_oauth2",
-        uid: "123456789",
-        info: {
-          email: "jenna@example.com",
-          name: "Jenna"
-        }
-      )
+      info = ActiveSupport::OrderedOptions.new
+      info.email = "jenna@example.com"
+      info.name  = "Jenna"
+
+      ActiveSupport::OrderedOptions.new.tap do |a|
+        a.provider = "google_oauth2"
+        a.uid      = "123456789"
+        a.info     = info
+      end
     end
 
     context "when the user does not exist" do
