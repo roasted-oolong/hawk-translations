@@ -25,7 +25,10 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
     "approveAllForm",
     "approveAllBtn",
     "compareBtn",
-    "paraRows",
+    "splitPanes",
+    "koreanPane",
+    "englishPane",
+    "paneText",
   ]
 
   declare approveUrlValue: string
@@ -48,12 +51,17 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
   declare approveAllFormTarget: HTMLFormElement
   declare approveAllBtnTarget: HTMLButtonElement
   declare compareBtnTarget: HTMLButtonElement
-  declare paraRowsTargets: HTMLElement[]
+  declare splitPanesTargets: HTMLElement[]
+  declare koreanPaneTargets: HTMLElement[]
+  declare englishPaneTargets: HTMLElement[]
+  declare paneTextTargets: HTMLTextAreaElement[]
 
   private index = 0
   private compareActive = false
   private approved = new Set<string>()
   private skipped = new Set<string>()
+  private scrollHandlers = new Map<HTMLElement, () => void>()
+  private lastEnglishScrollTop = 0
 
   private handleKeydown = (event: KeyboardEvent) => {
     if ((event.ctrlKey || event.metaKey) && event.key === 's') {
@@ -97,6 +105,7 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
 
   disconnect() {
     document.removeEventListener('keydown', this.handleKeydown)
+    this.detachScrollSync()
   }
 
   private get total(): number {
@@ -166,38 +175,59 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
   toggleKorean() {
     this.compareActive = !this.compareActive
     this.compareBtnTarget.classList.toggle("chapter-review__compare-btn--active", this.compareActive)
+    this.element.classList.toggle("chapter-review--compare", this.compareActive)
 
     this.chapterCardTargets.forEach((card, i) => {
       card.classList.toggle("chapter-review__chapter-card--compare", this.compareActive)
-      const bigTextarea = this.editableTextTargets[i]
-      const paraRows    = this.paraRowsTargets[i]
-      if (!bigTextarea || !paraRows) return
+      const textarea = this.editableTextTargets[i]
+      const paneText = this.paneTextTargets[i]
+      if (!textarea || !paneText) return
 
       if (this.compareActive) {
-        // Sync big textarea → individual para inputs
-        const paras = bigTextarea.value.split(/\n\n+/).map(s => s.trim()).filter(Boolean)
-        paraRows.querySelectorAll<HTMLTextAreaElement>(".chapter-review__para-input")
-          .forEach((input, j) => { input.value = paras[j] ?? "" })
+        paneText.value = textarea.value
+        paneText.style.height = "auto"
+        paneText.style.height = `${paneText.scrollHeight}px`
       } else {
-        // Sync para inputs → big textarea
-        const paraInputs = Array.from(
-          paraRows.querySelectorAll<HTMLTextAreaElement>(".chapter-review__para-input")
-        )
-        bigTextarea.value = paraInputs.map(el => el.value.trim()).filter(Boolean).join("\n\n")
+        textarea.value = paneText.value
       }
     })
 
     if (this.compareActive) {
-      // Auto-size the para inputs for the currently visible chapter
-      const currentParaRows = this.paraRowsTargets[this.index]
-      currentParaRows?.querySelectorAll<HTMLTextAreaElement>(".chapter-review__para-input")
-        .forEach(input => {
-          input.style.height = "auto"
-          input.style.height = `${input.scrollHeight}px`
-        })
+      this.attachScrollSync()
     } else {
+      this.detachScrollSync()
       this.resizeCurrentTextarea()
     }
+  }
+
+  autoResizePane(event: Event) {
+    const textarea = event.target as HTMLTextAreaElement
+    textarea.style.height = "auto"
+    textarea.style.height = `${textarea.scrollHeight}px`
+  }
+
+  private attachScrollSync() {
+    const screen = this.slideshowScreenTarget
+    this.lastEnglishScrollTop = screen.scrollTop
+    const handler = () => this.syncScrollToKorean(this.index)
+    screen.addEventListener("scroll", handler)
+    this.scrollHandlers.set(screen, handler)
+  }
+
+  private detachScrollSync() {
+    this.scrollHandlers.forEach((handler, el) => {
+      el.removeEventListener("scroll", handler)
+    })
+    this.scrollHandlers.clear()
+  }
+
+  private syncScrollToKorean(index: number) {
+    const screen = this.slideshowScreenTarget
+    const koPane = this.koreanPaneTargets[index]
+    if (!koPane) return
+    const delta = screen.scrollTop - this.lastEnglishScrollTop
+    this.lastEnglishScrollTop = screen.scrollTop
+    koPane.scrollTop += delta
   }
 
   private resizeCurrentTextarea() {
@@ -212,15 +242,9 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
     const textarea = this.editableTextTargets[this.index]
     if (!textarea) return
 
-    // In compare mode, collect para inputs → sync back to the big textarea first
     if (this.compareActive) {
-      const paraRows = this.paraRowsTargets[this.index]
-      if (paraRows) {
-        const paraInputs = Array.from(
-          paraRows.querySelectorAll<HTMLTextAreaElement>(".chapter-review__para-input")
-        )
-        textarea.value = paraInputs.map(el => el.value.trim()).filter(Boolean).join("\n\n")
-      }
+      const paneText = this.paneTextTargets[this.index]
+      if (paneText) textarea.value = paneText.value
     }
 
     const id = this.currentChapterId
@@ -284,6 +308,11 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
     this.counterTextTarget.textContent = `Chapter ${this.index + 1} of ${this.total}`
 
     this.renderProgress()
+
+    if (this.compareActive) {
+      this.detachScrollSync()
+      this.attachScrollSync()
+    }
   }
 
   private renderProgress() {
