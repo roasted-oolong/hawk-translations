@@ -76,6 +76,15 @@ class TranslationJob < ApplicationRecord
     end
   end
 
+  # Marks a job failed when its worker died out-of-process (e.g. the Solid
+  # Queue process was killed and pruned), so PipelineJob's rescue never ran.
+  def mark_dead!(reason)
+    transaction do
+      update!(status: :failed, result_payload: reason)
+      reset_prereading_chapters!
+    end
+  end
+
   private
 
   def reset_prereading_chapters!

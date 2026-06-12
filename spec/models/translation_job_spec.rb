@@ -241,4 +241,39 @@ RSpec.describe TranslationJob, type: :model do
     end
   end
 
+  describe "#mark_dead!" do
+    let(:novel) { create(:novel) }
+    let(:user)  { create(:user) }
+
+    it "marks the job failed and records the reason" do
+      job = create(:translation_job, :running, novel: novel, user: user)
+
+      job.mark_dead!("Worker process died.")
+
+      expect(job.reload.status).to eq("failed")
+      expect(job.result_payload).to eq("Worker process died.")
+    end
+
+    it "resets prereading chapters to preread_failed for preread jobs" do
+      create(:chapter, novel: novel, number: 1, status: "prereading")
+      create(:chapter, novel: novel, number: 2, status: "preread")
+      job = create(:translation_job, :running, novel: novel, user: user,
+                   job_type: "preread", chapter_start: 1, chapter_end: 2)
+
+      job.mark_dead!("Worker process died.")
+
+      expect(novel.chapters.find_by(number: 1).status).to eq("preread_failed")
+      expect(novel.chapters.find_by(number: 2).status).to eq("preread")
+    end
+
+    it "does not touch chapters for non-preread jobs" do
+      create(:chapter, novel: novel, number: 1, status: "prereading")
+      job = create(:translation_job, :running, novel: novel, user: user,
+                   job_type: "translate_batch", chapter_start: 1, chapter_end: 1)
+
+      job.mark_dead!("Worker process died.")
+
+      expect(novel.chapters.find_by(number: 1).status).to eq("prereading")
+    end
+  end
 end
