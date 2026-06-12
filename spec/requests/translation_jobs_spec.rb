@@ -77,7 +77,7 @@ RSpec.describe "TranslationJobs", type: :request do
         expect(job.user).to eq(user)
         expect(job.novel).to eq(novel)
 
-        expect(response).to redirect_to(novel_translation_job_path(novel, job))
+        expect(response).to redirect_to(novel_chapters_path(novel))
       end
     end
 
@@ -158,25 +158,27 @@ RSpec.describe "TranslationJobs", type: :request do
   # ---------------------------------------------------------------------------
   describe "DELETE /novels/:novel_id/translation_jobs/:id" do
     context "when the job is queued" do
-      it "destroys the job record and redirects to job list" do
+      it "cancels the job, keeping the record" do
         job = create(:translation_job, :queued, novel: novel, user: user)
 
         expect {
           delete novel_translation_job_path(novel, job)
-        }.to change(TranslationJob, :count).by(-1)
+        }.not_to change(TranslationJob, :count)
 
-        expect(response).to redirect_to(novel_translation_jobs_path(novel))
+        expect(job.reload.status).to eq("cancelled")
+        expect(response).to redirect_to(novel_translation_job_path(novel, job))
       end
     end
 
     context "when the job is already running" do
-      it "does not destroy the job and redirects with an alert" do
+      it "cancels the job, keeping the record" do
         job = create(:translation_job, :running, novel: novel, user: user)
 
         expect {
           delete novel_translation_job_path(novel, job)
         }.not_to change(TranslationJob, :count)
 
+        expect(job.reload.status).to eq("cancelled")
         expect(response).to redirect_to(novel_translation_job_path(novel, job))
       end
     end

@@ -182,13 +182,16 @@ RSpec.describe TranslationJob, type: :model do
     end
 
     describe ".cancellable" do
-      it "returns only queued jobs" do
-        queued   = create(:translation_job, novel: novel, user: user, status: "queued")
-        _running = create(:translation_job, novel: novel, user: user, status: "running")
-        _done    = create(:translation_job, novel: novel, user: user, status: "completed")
-        expect(TranslationJob.cancellable.to_a).to eq([ queued ])
+      it "returns queued and running jobs" do
+        queued    = create(:translation_job, :queued, novel: novel, user: user)
+        running   = create(:translation_job, :running, novel: novel, user: user)
+        create(:translation_job, :completed, novel: novel, user: user)
+        create(:translation_job, :failed, novel: novel, user: user)
+
+        expect(described_class.cancellable).to contain_exactly(queued, running)
       end
     end
+
   end
 
   # ---------------------------------------------------------------------------
@@ -222,9 +225,9 @@ RSpec.describe TranslationJob, type: :model do
       expect(job.cancellable?).to be true
     end
 
-    it "returns false when status is running" do
+    it "returns true when status is running" do
       job = build(:translation_job, status: "running")
-      expect(job.cancellable?).to be false
+      expect(job.cancellable?).to be true
     end
 
     it "returns false when status is completed" do
@@ -237,4 +240,5 @@ RSpec.describe TranslationJob, type: :model do
       expect(job.cancellable?).to be false
     end
   end
+
 end
