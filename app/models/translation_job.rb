@@ -72,15 +72,19 @@ class TranslationJob < ApplicationRecord
   def cancel!
     transaction do
       update!(status: :cancelled)
-      if preread?
-        novel.chapters
-          .where(number: chapter_start..chapter_end, status: "prereading")
-          .update_all(status: "preread_failed")
-      end
+      reset_prereading_chapters!
     end
   end
 
   private
+
+  def reset_prereading_chapters!
+    return unless preread?
+
+    novel.chapters
+      .where(number: chapter_start..chapter_end, status: "prereading")
+      .update_all(status: "preread_failed")
+  end
 
   # ---------------------------------------------------------------------------
   # Validation: chapter range consistency
