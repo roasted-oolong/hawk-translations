@@ -533,24 +533,78 @@
   color: #fff;
 }
 
-/* --- Card expands to full width in compare mode --- */
+/* Card expands to full width in compare mode */
 .chapter-review__chapter-card--compare {
   max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-6) var(--space-8) 0;
 }
 
-/* Hide big textarea and show para-rows in compare mode — driven by CSS class, not hidden attribute,
-   to avoid specificity conflicts with display:block on the textarea rule. */
+/* Hide big textarea in compare mode */
 .chapter-review__chapter-card--compare .chapter-review__edit-textarea {
   display: none;
 }
 
-.chapter-review__para-rows {
+/* --- Split panes (compare mode) --- */
+.chapter-review__split-panes {
   display: none;
-  flex-direction: column;
 }
 
-.chapter-review__chapter-card--compare .chapter-review__para-rows {
+.chapter-review__chapter-card--compare .chapter-review__split-panes {
   display: flex;
+  align-items: flex-start;
+}
+
+/* Korean pane: sticky column, scrolls programmatically, no visible scrollbar */
+.chapter-review__korean-pane {
+  position: sticky;
+  top: 0;
+  height: calc(100vh - var(--topbar-height));
+  flex: 1;
+  overflow-y: scroll;
+  scrollbar-width: none;
+  padding: var(--space-4) var(--space-4) var(--space-8);
+  min-width: 0;
+}
+
+.chapter-review__korean-pane::-webkit-scrollbar {
+  display: none;
+}
+
+/* English pane: natural height — uses the browser's page-level scrollbar */
+.chapter-review__english-pane {
+  flex: 1;
+  padding: var(--space-4) var(--space-4) var(--space-8);
+  min-width: 0;
+}
+
+.chapter-review__pane-divider {
+  width: 1px;
+  background: var(--color-border);
+  flex-shrink: 0;
+  align-self: stretch;
+}
+
+.chapter-review__pane-textarea {
+  display: block;
+  width: 100%;
+  font-family: var(--font-family-serif);
+  font-size: 0.9375rem;
+  line-height: 1.85;
+  color: var(--color-text);
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  padding: 0;
+}
+
+.chapter-review__sync-hint {
+  font-size: 10px;
+  opacity: 0.5;
+  margin-left: var(--space-1);
 }
 
 /* --- Compare mode column header row --- */
@@ -561,6 +615,7 @@
   margin-bottom: var(--space-4);
   padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
 }
 
 .chapter-review__chapter-card--compare .chapter-review__compare-header {
@@ -581,66 +636,19 @@
   padding-left: var(--space-6);
 }
 
-/* --- Paragraph pair rows --- */
-.chapter-review__para-row {
-  display: grid;
-  grid-template-columns: 1fr 1px 1fr;
-  gap: 0;
-  margin-bottom: var(--space-6);
-}
-
-.chapter-review__para-row:last-child {
-  margin-bottom: 0;
-}
-
-/* --- Korean paragraph text --- */
+/* --- Korean paragraph text (used in pane) --- */
 .chapter-review__korean-para {
   font-family: var(--font-family-serif);
   font-size: 0.9375rem;
   line-height: 1.85;
   color: var(--color-text-secondary);
-  margin: 0;
-  padding: var(--space-2) var(--space-4) var(--space-2) var(--space-2);
-  border-radius: var(--radius-md) 0 0 var(--radius-md);
-  transition: background-color var(--transition-fast);
+  margin: 0 0 var(--space-5);
 }
 
 .chapter-review__korean-empty {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   font-style: italic;
-  padding: var(--space-2);
-}
-
-/* --- Row divider --- */
-.chapter-review__para-divider {
-  background: #e5e7e6;
-}
-
-/* --- English paragraph input --- */
-.chapter-review__english-para {
-  padding-left: var(--space-6);
-}
-
-.chapter-review__para-input {
-  display: block;
-  width: 100%;
-  font-family: var(--font-family-serif);
-  font-size: 0.9375rem;
-  line-height: 1.85;
-  color: var(--color-text);
-  background: transparent;
-  border: none;
-  outline: none;
-  resize: none;
-  overflow: hidden;
-  padding: var(--space-2) var(--space-2) var(--space-2) 0;
-}
-
-/* --- Highlight corresponding Korean paragraph when English is hovered or focused --- */
-.chapter-review__para-row:has(.chapter-review__para-input:hover) .chapter-review__korean-para,
-.chapter-review__para-row:has(.chapter-review__para-input:focus) .chapter-review__korean-para {
-  background-color: var(--color-primary-subtle);
 }
 
 /* ==========================================================================
