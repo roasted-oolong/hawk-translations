@@ -5,7 +5,7 @@ require "rails_helper"
 RSpec.describe BibleSearchService do
   let(:organization) { create(:organization) }
   let(:novel)        { create(:novel, organization: organization) }
-  let(:fake_vector)  { Array.new(1024, 0.01) }
+  let(:fake_vector)  { Array.new(512, 0.01) }
 
   before do
     allow(VoyageClient).to receive(:embed).and_return(fake_vector)

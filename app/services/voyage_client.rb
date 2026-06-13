@@ -8,17 +8,17 @@ require "json"
 # VoyageClient
 #
 # Thin wrapper around the Voyage AI embeddings API.
-# Responsible for one thing: take a string, return a 1024-dimension vector.
+# Responsible for one thing: take a string, return a 512-dimension vector.
 #
 # Model: voyage-3-lite — Anthropic's recommended embedding partner model.
-# Dimensions: 1024 (matches vector(1024) column in bible_embeddings).
+# Dimensions: 512 (matches vector(512) column in bible_embeddings).
 #
 # API key read from Rails credentials under :voyage_api_key.
 # Raises typed errors so callers can handle API and config failures cleanly.
 #
 # Usage:
 #   vector = VoyageClient.embed("Hyuk Kang 강혁 former talent manager")
-#   # => [0.023, -0.041, ...] (1024 floats)
+#   # => [0.023, -0.041, ...] (512 floats)
 #
 # Design: mirrors PipelineDispatcher's pattern — thin wrapper, no knowledge
 # of models or jobs, typed errors, easy to stub in specs via WebMock.

@@ -8,7 +8,7 @@ RSpec.describe VoyageClient do
   # ---------------------------------------------------------------------------
   let(:api_key)   { "test-voyage-key" }
   let(:input_text) { "Hyuk Kang 강혁 Protagonist former top-tier talent manager" }
-  let(:fake_vector) { Array.new(1024) { rand } }
+  let(:fake_vector) { Array.new(512) { rand } }
 
   let(:success_response_body) do
     {
@@ -31,10 +31,10 @@ RSpec.describe VoyageClient do
                      headers: { "Content-Type" => "application/json" })
       end
 
-      it "returns an array of floats with 1024 dimensions" do
+      it "returns an array of floats with 512 dimensions" do
         result = VoyageClient.embed(input_text)
         expect(result).to be_an(Array)
-        expect(result.length).to eq(1024)
+        expect(result.length).to eq(512)
         expect(result).to all(be_a(Numeric))
       end
 
