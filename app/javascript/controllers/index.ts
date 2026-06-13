@@ -61,6 +61,12 @@ application.register("bulk-translate", BulkTranslateController)
 import ChapterSelectController from "./chapter_select_controller"
 application.register("chapter-select", ChapterSelectController)
 
+// chapter-viewer: single-chapter content editor on the chapter show page.
+//   Handles KO toggle (starts off), Ctrl+S save, auto-resize, and
+//   window-level scroll sync to the Korean sticky pane in compare mode.
+import ChapterViewerController from "./chapter_viewer_controller"
+application.register("chapter-viewer", ChapterViewerController)
+
 // chapter-review: full-page chapter review slideshow.
 //   Manages slideshow index, per-chapter approve (fetch PATCH) and skip,
 //   progress bar, sidebar nav highlights, and screen transitions (slideshow → summary).

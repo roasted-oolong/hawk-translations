@@ -46,6 +46,19 @@
   background-color: var(--color-primary-subtle);
 }
 
+[data-controller~="chapter-select"] .data-table__row {
+  cursor: pointer;
+  user-select: none;
+}
+
+.data-table__row--selected {
+  background-color: #e8edf4;
+}
+
+.data-table__row--selected:hover {
+  background-color: #dde5f0;
+}
+
 .data-table__td {
   padding: var(--space-3) var(--space-4);
   color: var(--color-text-secondary);
@@ -148,6 +161,24 @@
   padding-bottom: var(--space-1);
 }
 
+/* --- Running jobs bar (inside chapters-table frame, refreshes with poll) --- */
+.chapters-jobs-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--color-status-running-bg, #eff6ff);
+  border: 1px solid var(--color-status-running-text, #1d4ed8);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+}
+
+.chapters-jobs-bar__label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-status-running-text, #1d4ed8);
+}
+
 /* --- Chapter row action states --- */
 .chapter-action--pending {
   font-size: var(--text-xs);
@@ -214,6 +245,31 @@
 
 .chapter-show__file-value {
   font-size: var(--text-sm);
+}
+
+/* --- Chapter viewer (chapter show page content editor) --- */
+.chapter-viewer {
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-10);
+}
+
+.chapter-viewer__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+/* Override sticky top so the pane clears the fixed topbar in the app layout */
+.chapter-viewer__korean-pane {
+  top: var(--topbar-height);
+  height: calc(100vh - var(--topbar-height));
+}
+
+/* Remove container max-width in split-pane compare mode */
+.container--wide {
+  max-width: none;
 }
 
 /* --- Shared form primitives (used across chapters + jobs) --- */

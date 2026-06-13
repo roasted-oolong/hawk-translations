@@ -39,6 +39,37 @@ RSpec.describe "Chapters", type: :request do
       get novel_chapter_path(novel, chapter)
       expect(response).to have_http_status(:ok)
     end
+
+    context "when translated output is attached" do
+      before do
+        chapter.translated_output.attach(
+          io: StringIO.new("Hello world."),
+          filename: "chapter_1.txt",
+          content_type: "text/plain"
+        )
+      end
+
+      it "returns 200 and renders the translated text" do
+        get novel_chapter_path(novel, chapter)
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Hello world.")
+      end
+    end
+
+    context "when korean source is attached" do
+      before do
+        chapter.korean_source.attach(
+          io: StringIO.new(KOREAN_CONTENT),
+          filename: "chapter_1_ko.txt",
+          content_type: "text/plain"
+        )
+      end
+
+      it "returns 200 without error" do
+        get novel_chapter_path(novel, chapter)
+        expect(response).to have_http_status(:ok)
+      end
+    end
   end
 
   # ---------------------------------------------------------------------------
@@ -64,6 +95,7 @@ RSpec.describe "Chapters", type: :request do
             chapter: { files: [file], number: 3 }
           }
         }.to change(Chapter, :count).by(1)
+          .and have_enqueued_job(FormatKoreanChapterJob)
 
         ch = Chapter.last
         expect(ch.number).to eq(3)
@@ -90,6 +122,14 @@ RSpec.describe "Chapters", type: :request do
         expect(ch.translated_output).to be_attached
         expect(ch.korean_source).not_to be_attached
         expect(response).to redirect_to(novel_chapter_path(novel, ch))
+      end
+
+      it "does not enqueue a format job" do
+        expect {
+          post novel_chapters_path(novel), params: {
+            chapter: { files: [file], number: 3 }
+          }
+        }.not_to have_enqueued_job(FormatKoreanChapterJob)
       end
     end
 
@@ -143,6 +183,7 @@ RSpec.describe "Chapters", type: :request do
             }
           }
         }.to change(Chapter, :count).by(2)
+          .and have_enqueued_job(FormatKoreanChapterJob).exactly(:once)
 
         korean_ch  = Chapter.find_by(number: 5)
         english_ch = Chapter.find_by(number: 6)
