@@ -10,7 +10,12 @@ class ChaptersController < ApplicationController
     @cancellable_jobs = cancellable_job_map
   end
 
-  def show; end
+  def show
+    @chapter_text = @chapter.translated_output.attached? ?
+      @chapter.translated_output.download.force_encoding("UTF-8") : ""
+    @korean_text = @chapter.korean_source.attached? ?
+      @chapter.korean_source.download.force_encoding("UTF-8") : nil
+  end
 
   def new
     @chapter = @novel.chapters.build
@@ -177,6 +182,7 @@ class ChaptersController < ApplicationController
     attach_file(@chapter, file, classification[:language])
 
     if @chapter.save
+      FormatKoreanChapterJob.perform_later(@chapter.id) if classification[:language] == :korean
       redirect_to novel_chapter_path(@novel, @chapter), notice: "Chapter created."
     else
       render :new, status: :unprocessable_entity
@@ -204,6 +210,7 @@ class ChaptersController < ApplicationController
 
       if chapter.save
         created << chapter
+        FormatKoreanChapterJob.perform_later(chapter.id) if classification[:language] == :korean
       else
         failures << "#{file.original_filename} — #{chapter.errors.full_messages.to_sentence}"
       end

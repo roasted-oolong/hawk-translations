@@ -61,3 +61,88 @@
     </span>
   </div>
 </div>
+
+<%# ------------------------------------------------------------------ %>
+<%# Chapter content editor                                              %>
+<%# ------------------------------------------------------------------ %>
+<div class="chapter-viewer"
+     data-controller="chapter-viewer"
+     data-chapter-viewer-save-url-value="<%= novel_update_chapter_review_text_path(@novel, id: @chapter.id) %>">
+
+  <div class="chapter-viewer__toolbar">
+    <button type="button"
+            class="chapter-review__compare-btn"
+            data-action="click->chapter-viewer#toggleKorean"
+            data-chapter-viewer-target="compareBtn"
+            title="Toggle Korean source">
+      KO
+    </button>
+    <button type="button"
+            class="chapter-review__save-btn"
+            data-action="click->chapter-viewer#saveText"
+            title="Save (Ctrl+S)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+        <polyline points="17 21 17 13 7 13 7 21"/>
+        <polyline points="7 3 7 8 15 8"/>
+      </svg>
+    </button>
+    <span class="chapter-review__saved"
+          data-chapter-viewer-target="savedIndicator"
+          hidden
+          aria-live="polite">
+      ✓ Saved
+    </span>
+  </div>
+
+  <div class="chapter-review__chapter-card"
+       data-chapter-viewer-target="chapterCard"
+       data-chapter-id="<%= @chapter.id %>">
+
+    <%# Column headers shown via CSS when compare class is active %>
+    <div class="chapter-review__compare-header">
+      <p class="chapter-review__column-label">
+        Translation · English <span class="chapter-review__sync-hint" aria-hidden="true">↕</span>
+      </p>
+      <div aria-hidden="true"></div>
+      <p class="chapter-review__column-label">Source · 원문</p>
+    </div>
+
+    <%# Single-column textarea (normal mode) %>
+    <textarea class="chapter-review__edit-textarea"
+              data-chapter-viewer-target="editableText"
+              data-action="input->chapter-viewer#autoResize"
+              spellcheck="false"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              placeholder="No translated content available."><%= @chapter_text.to_s.strip %></textarea>
+
+    <%# Split panes — hidden until KO toggle %>
+    <div class="chapter-review__split-panes">
+      <div class="chapter-review__english-pane">
+        <textarea class="chapter-review__pane-textarea"
+                  data-chapter-viewer-target="paneText"
+                  data-action="input->chapter-viewer#autoResizePane"
+                  spellcheck="false"
+                  autocomplete="off"
+                  autocorrect="off"
+                  autocapitalize="off"><%= @chapter_text.to_s.strip %></textarea>
+      </div>
+
+      <div class="chapter-review__pane-divider" aria-hidden="true"></div>
+
+      <div class="chapter-review__korean-pane chapter-viewer__korean-pane"
+           data-chapter-viewer-target="koreanPane">
+        <% ko_paras = (@korean_text || "").split(/\n\n+/).map(&:strip).reject(&:empty?) %>
+        <% if ko_paras.any? %>
+          <% ko_paras.each do |para| %>
+            <p class="chapter-review__korean-para" lang="ko"><%= para %></p>
+          <% end %>
+        <% else %>
+          <p class="chapter-review__korean-empty">—</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
