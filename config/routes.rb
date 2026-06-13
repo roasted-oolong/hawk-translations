@@ -2,6 +2,9 @@ Rails.application.routes.draw do
   # Health check — used by load balancers / uptime monitors
   get "up" => "rails/health#show", as: :rails_health_check
 
+  # Local AI server liveness probe — no tokens consumed
+  get "ai_status", to: "ai_status#show"
+
   # Novels + nested resources
   resources :novels, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
     member do

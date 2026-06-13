@@ -42,6 +42,13 @@
     </ul>
   </nav>
   
+  <div class="app-sidebar__ai-status"
+       data-controller="ai-status"
+       data-status="unknown">
+    <span class="ai-status__dot" aria-hidden="true"></span>
+    <span class="ai-status__label" data-ai-status-target="label">AI checking…</span>
+  </div>
+
   <div class="app-sidebar__user-slot">
     <%= render "components/user_widget", user: current_user %>
   </div>
