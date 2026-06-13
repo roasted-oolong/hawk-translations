@@ -6,7 +6,7 @@ RSpec.describe "BibleSearch", type: :request do
   let(:organization) { create(:organization) }
   let(:novel)        { create(:novel, organization: organization) }
   let(:user)         { create(:user) }
-  let(:fake_vector)  { Array.new(1024, 0.01) }
+  let(:fake_vector)  { Array.new(512, 0.01) }
   let(:fake_results) do
     [
       {

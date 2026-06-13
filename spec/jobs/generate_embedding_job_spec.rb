@@ -5,7 +5,7 @@ require "rails_helper"
 RSpec.describe GenerateEmbeddingJob, type: :job do
   let(:novel)     { create(:novel) }
   let(:character) { create(:bible_character, novel: novel, name: "Hyuk Kang", korean_name: "강혁") }
-  let(:fake_vector) { Array.new(1024, 0.01) }
+  let(:fake_vector) { Array.new(512, 0.01) }
 
   before do
     allow(VoyageClient).to receive(:embed).and_return(fake_vector)

@@ -233,7 +233,7 @@ CREATE TABLE public.bible_embeddings (
     novel_id bigint NOT NULL,
     organization_id bigint NOT NULL,
     content_hash character varying NOT NULL,
-    embedding public.vector(1024),
+    embedding public.vector(512),
     search_text tsvector,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL
@@ -2313,6 +2313,7 @@ ALTER TABLE ONLY public.voice_calibration_passages
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260613071048'),
 ('20260609000001'),
 ('20260608000001'),
 ('20260607200000'),
