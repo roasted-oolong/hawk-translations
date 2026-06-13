@@ -38,10 +38,12 @@ The `ApiCallFn` Protocol is exported for type-checking callers that accept
 an api_call_fn argument.
 """
 
+import ipaddress
 import json
 import sys
 from pathlib import Path
 from typing import Protocol, TYPE_CHECKING
+from urllib.parse import urlparse
 
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -70,9 +72,32 @@ class ApiCallFn(Protocol):
 # Client construction
 # ---------------------------------------------------------------------------
 
+def _is_local_endpoint(url: str) -> bool:
+    """Return True when url points to a loopback or private-network host.
+
+    Local endpoints (localhost, 127.x, private RFC-1918 ranges) run on the
+    user's own hardware at no per-token cost, so we impose no timeout and let
+    inference finish however long it takes.  Remote endpoints (api.openai.com,
+    etc.) are metered, so we keep a sensible timeout.
+    """
+    try:
+        host = urlparse(url).hostname or ""
+        if host in ("localhost", "::1"):
+            return True
+        addr = ipaddress.ip_address(host)
+        return addr.is_loopback or addr.is_private
+    except ValueError:
+        return False  # non-IP hostname other than "localhost" → treat as remote
+
+
 def make_client() -> OpenAI:
-    """Build and return an OpenAI-compatible client from the environment."""
-    return OpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY, timeout=1200.0)
+    """Build and return an OpenAI-compatible client from the environment.
+
+    Timeout is disabled for local endpoints (no cost, just slow hardware) and
+    capped at 1200 s for remote/paid APIs.
+    """
+    timeout = None if _is_local_endpoint(LLM_BASE_URL) else 1200.0
+    return OpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY, timeout=timeout)
 
 
 # ---------------------------------------------------------------------------
