@@ -35,7 +35,11 @@ Rails.application.routes.draw do
     resources :bible_story_entries,    only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
 
     # Translation jobs — trigger, list, show output, cancel
-    resources :translation_jobs, only: [ :index, :show, :create, :destroy ]
+    resources :translation_jobs, only: [ :index, :show, :create, :destroy ] do
+      collection do
+        delete :bulk_cancel
+      end
+    end
 
     # Bible landing page — search + category overview (Milestone 17)
     # GET /novels/:novel_id/bible

@@ -50,6 +50,20 @@ class TranslationJobsController < ApplicationController
                   notice: "Job cancelled."
   end
 
+  # ---------------------------------------------------------------------------
+  # DELETE /novels/:novel_id/translation_jobs/bulk_cancel
+  # Cancel multiple jobs in one request (e.g. selection-based cancel from the
+  # chapters table or the "Cancel All" shortcut).
+  # ---------------------------------------------------------------------------
+  def bulk_cancel
+    job_ids = Array(params[:job_ids]).map(&:to_i).uniq
+    jobs    = @novel.translation_jobs.cancellable.where(id: job_ids)
+    count   = 0
+    jobs.each { |job| job.cancel! && count += 1 }
+    redirect_to novel_chapters_path(@novel),
+                notice: count.positive? ? "#{count} job(s) cancelled." : "No cancellable jobs found."
+  end
+
   private
 
   def set_novel

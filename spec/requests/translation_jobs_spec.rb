@@ -211,4 +211,49 @@ RSpec.describe "TranslationJobs", type: :request do
       end
     end
   end
+
+  # ---------------------------------------------------------------------------
+  # Bulk cancel queued/running jobs
+  # ---------------------------------------------------------------------------
+  describe "DELETE /novels/:novel_id/translation_jobs/bulk_cancel" do
+    it "cancels all specified cancellable jobs for the novel" do
+      job1 = create(:translation_job, :queued,   novel: novel, user: user)
+      job2 = create(:translation_job, :running,  novel: novel, user: user)
+
+      delete bulk_cancel_novel_translation_jobs_path(novel),
+             params: { job_ids: [job1.id, job2.id] }
+
+      expect(job1.reload.status).to eq("cancelled")
+      expect(job2.reload.status).to eq("cancelled")
+      expect(response).to redirect_to(novel_chapters_path(novel))
+    end
+
+    it "ignores jobs that are already completed or failed" do
+      done_job = create(:translation_job, :completed, novel: novel, user: user)
+      live_job = create(:translation_job, :queued,    novel: novel, user: user)
+
+      delete bulk_cancel_novel_translation_jobs_path(novel),
+             params: { job_ids: [done_job.id, live_job.id] }
+
+      expect(done_job.reload.status).to eq("completed")
+      expect(live_job.reload.status).to eq("cancelled")
+    end
+
+    it "does not cancel jobs belonging to another novel" do
+      other_novel = create(:novel)
+      other_job   = create(:translation_job, :queued, novel: other_novel, user: user)
+
+      delete bulk_cancel_novel_translation_jobs_path(novel),
+             params: { job_ids: [other_job.id] }
+
+      expect(other_job.reload.status).to eq("queued")
+    end
+
+    it "redirects with a notice when no cancellable jobs match" do
+      delete bulk_cancel_novel_translation_jobs_path(novel),
+             params: { job_ids: [] }
+
+      expect(response).to redirect_to(novel_chapters_path(novel))
+    end
+  end
 end
