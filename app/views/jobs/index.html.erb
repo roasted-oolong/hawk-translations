@@ -63,9 +63,18 @@
               </td>
               <td class="data-table__td data-table__td--actions">
                 <%= link_to "View", novel_translation_job_path(job.novel, job),
-                      class: "btn btn--ghost btn--xs" %>
+                      class: "btn btn--ghost btn--xs", data: { turbo_frame: "_top" } %>
               </td>
             </tr>
+            <% if job.failed? && job.result_payload.present? %>
+              <tr class="data-table__row job-error-row">
+                <td colspan="8" class="data-table__td">
+                  <span class="job-error-snippet" title="<%= job.result_payload %>">
+                    <%= job.result_payload.lines.first&.strip %>
+                  </span>
+                </td>
+              </tr>
+            <% end %>
           <% end %>
         </tbody>
       </table>

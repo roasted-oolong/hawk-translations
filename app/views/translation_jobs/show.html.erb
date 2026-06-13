@@ -109,8 +109,8 @@
 
   <%# ── Output terminal panel ──────────────────────────────────────── %>
   <div class="job-terminal" data-testid="job-output">
-    <div class="job-terminal__header">
-      <span class="job-terminal__label">Output Console</span>
+    <div class="job-terminal__header <%= 'job-terminal__header--failed' if @translation_job.failed? %>">
+      <span class="job-terminal__label"><%= @translation_job.failed? ? "Error Output" : "Output Console" %></span>
       <% if @translation_job.queued? || @translation_job.running? %>
         <span class="job-terminal__polling" aria-live="polite">
           <svg class="job-terminal__spin" xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true">

@@ -76,7 +76,7 @@
               </td>
               <td class="data-table__td data-table__td--actions">
                 <%= link_to "View", novel_translation_job_path(@novel, job),
-                      class: "btn btn--ghost btn--xs" %>
+                      class: "btn btn--ghost btn--xs", data: { turbo_frame: "_top" } %>
                 <% if job.cancellable? %>
                   <%= modal_button_to "Cancel", novel_translation_job_path(@novel, job),
                         method:        :delete,
@@ -86,6 +86,15 @@
                 <% end %>
               </td>
             </tr>
+            <% if job.failed? && job.result_payload.present? %>
+              <tr class="data-table__row job-error-row">
+                <td colspan="7" class="data-table__td">
+                  <span class="job-error-snippet" title="<%= job.result_payload %>">
+                    <%= job.result_payload.lines.first&.strip %>
+                  </span>
+                </td>
+              </tr>
+            <% end %>
           <% end %>
         </tbody>
       </table>
