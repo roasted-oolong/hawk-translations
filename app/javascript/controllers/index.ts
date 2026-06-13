@@ -84,3 +84,8 @@ application.register("preread-review", PrereadReviewController)
 //   flashes saved indicator, and shows summary on completion.
 import VoiceCalibrationReviewController from "./voice_calibration_review_controller"
 application.register("voice-calibration-review", VoiceCalibrationReviewController)
+
+// ai-status: polls /ai_status and updates the sidebar indicator dot.
+//   Targets: label
+import AiStatusController from "./ai_status_controller"
+application.register("ai-status", AiStatusController)
