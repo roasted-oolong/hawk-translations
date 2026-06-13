@@ -93,6 +93,17 @@
             <% end %>
           </div>
 
+          <div data-chapter-select-target="cancelJobsWrapper" hidden>
+            <%= form_with url: bulk_cancel_novel_translation_jobs_path(@novel),
+                  method: :delete,
+                  data: {
+                    turbo_confirm: "Cancel jobs for selected chapters? This cannot be undone.",
+                    chapter_select_target: "cancelJobsForm"
+                  } do |f| %>
+              <%= f.submit "Cancel Jobs", class: "btn btn--danger btn--sm" %>
+            <% end %>
+          </div>
+
         </div>
       </div>
 
@@ -103,6 +114,19 @@
       <% end %>
 
       <%= turbo_frame_tag "chapters-table" do %>
+      <% if @cancellable_jobs.any? %>
+        <div class="chapters-jobs-bar">
+          <span class="chapters-jobs-bar__label">Jobs in progress</span>
+          <%= form_with url: bulk_cancel_novel_translation_jobs_path(@novel),
+                method: :delete,
+                data: { turbo_confirm: "Cancel all running jobs? This cannot be undone." } do |f| %>
+            <% @cancellable_jobs.values.uniq.each do |job| %>
+              <input type="hidden" name="job_ids[]" value="<%= job.id %>">
+            <% end %>
+            <%= f.submit "Cancel All", class: "btn btn--danger btn--xs" %>
+          <% end %>
+        </div>
+      <% end %>
       <div class="data-table-wrapper"
            data-translated-count="<%= @chapters.count(&:translated?) %>">
         <table class="data-table" data-testid="chapters-table">
@@ -122,14 +146,17 @@
           <tbody>
             <% @chapters.each do |chapter| %>
               <% cancel_job = @cancellable_jobs[chapter.number] %>
-              <tr class="data-table__row">
+              <tr class="data-table__row"
+                  data-chapter-select-target="row"
+                  data-action="click->chapter-select#rowClick">
                 <td class="data-table__td data-table__td--checkbox">
                   <input type="checkbox"
                          value="<%= chapter.id %>"
                          data-chapter-select-target="checkbox"
                          data-action="change->chapter-select#update"
                          data-status="<%= chapter.status %>"
-                         data-number="<%= chapter.number %>">
+                         data-number="<%= chapter.number %>"
+                         <%= "data-cancellable-job-id=\"#{cancel_job.id}\"".html_safe if cancel_job %>>
                 </td>
                 <td class="data-table__td data-table__td--number">
                   <%= link_to chapter.number, novel_chapter_path(@novel, chapter),
