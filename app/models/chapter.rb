@@ -12,6 +12,7 @@ class Chapter < ApplicationRecord
   # ---------------------------------------------------------------------------
   enum :status, {
     untranslated:  "untranslated",
+    ocr_failed:    "ocr_failed",
     prereading:    "prereading",
     preread_failed: "preread_failed",
     preread:       "preread",
