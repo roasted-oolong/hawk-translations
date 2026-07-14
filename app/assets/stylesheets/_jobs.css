@@ -22,6 +22,11 @@
   background-color: var(--color-status-untranslated-bg);
 }
 
+.status-badge--ocr_failed {
+  color: var(--color-status-failed-text);
+  background-color: var(--color-status-failed-bg);
+}
+
 .status-badge--prereading {
   color: var(--color-status-running-text);
   background-color: var(--color-status-running-bg);

@@ -74,6 +74,11 @@ RSpec.describe Chapter, type: :model do
       chapter = build(:chapter, status: "reviewed")
       expect(chapter).to be_valid
     end
+
+    it "accepts ocr_failed status" do
+      chapter = build(:chapter, status: "ocr_failed")
+      expect(chapter).to be_valid
+    end
   end
 
   describe "associations" do
