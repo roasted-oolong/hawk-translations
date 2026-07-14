@@ -73,6 +73,11 @@ application.register("chapter-viewer", ChapterViewerController)
 import ChapterReviewController from "./chapter_review_controller"
 application.register("chapter-review", ChapterReviewController)
 
+// bible-tabs: simple two-panel tab switcher used on bible index pages
+//   to separate active bible entries from dismissed preread entries.
+import BibleTabsController from "./bible_tabs_controller"
+application.register("bible-tabs", BibleTabsController)
+
 // preread-review: full-page preread bible entry review slideshow.
 //   Tracks approve/skip per entry (composite category:korean_key keys),
 //   shows per-category summary, batch-imports approved entries via form POST.
@@ -89,3 +94,10 @@ application.register("voice-calibration-review", VoiceCalibrationReviewControlle
 //   Targets: label
 import AiStatusController from "./ai_status_controller"
 application.register("ai-status", AiStatusController)
+
+// photo-upload: "Photo scan (OCR)" chapter upload form.
+//   Ordered thumbnail list (add via drop/select order, move up/down, remove),
+//   keeps the file input's FileList in sync with on-screen order.
+//   Targets: input, dropZone, thumbList, submitButton, numberInput
+import PhotoUploadController from "./photo_upload_controller"
+application.register("photo-upload", PhotoUploadController)

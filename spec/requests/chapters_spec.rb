@@ -267,6 +267,156 @@ RSpec.describe "Chapters", type: :request do
   end
 
   # ---------------------------------------------------------------------------
+  # Photo scan (OCR) upload
+  # ---------------------------------------------------------------------------
+  describe "POST /novels/:novel_id/chapters/create_from_photos" do
+    def image_fixture(name = "cover.jpg", content_type = "image/jpeg")
+      fixture_file_upload(Rails.root.join("spec/fixtures/files/#{name}"), content_type)
+    end
+
+    context "with valid images and a chapter number" do
+      it "creates one chapter and enqueues OcrChapterJob with the ordered image paths" do
+        expect {
+          post create_from_photos_novel_chapters_path(novel), params: {
+            chapter: { number: 4, images: [ image_fixture, image_fixture ] }
+          }
+        }.to change(Chapter, :count).by(1)
+          .and have_enqueued_job(OcrChapterJob)
+
+        ch = Chapter.last
+        expect(ch.number).to eq(4)
+        expect(ch.status).to eq("untranslated")
+        job = enqueued_jobs.find { |j| j["job_class"] == "OcrChapterJob" }
+        expect(job["arguments"][0]).to eq(ch.id)
+        expect(job["arguments"][1].size).to eq(2)
+      end
+
+      it "redirects to the new chapter" do
+        post create_from_photos_novel_chapters_path(novel), params: {
+          chapter: { number: 4, images: [ image_fixture ] }
+        }
+
+        expect(response).to redirect_to(novel_chapter_path(novel, Chapter.last))
+      end
+    end
+
+    context "when the chapter number is missing" do
+      it "does not create a chapter and returns unprocessable_entity" do
+        expect {
+          post create_from_photos_novel_chapters_path(novel), params: {
+            chapter: { images: [ image_fixture ] }
+          }
+        }.not_to change(Chapter, :count)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+    end
+
+    context "when the chapter number is a duplicate" do
+      it "does not create a chapter and returns unprocessable_entity" do
+        expect {
+          post create_from_photos_novel_chapters_path(novel), params: {
+            chapter: { number: 1, images: [ image_fixture ] }
+          }
+        }.not_to change(Chapter, :count)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+    end
+
+    context "when no images are given" do
+      it "does not create a chapter and returns unprocessable_entity" do
+        expect {
+          post create_from_photos_novel_chapters_path(novel), params: {
+            chapter: { number: 4, images: [] }
+          }
+        }.not_to change(Chapter, :count)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+    end
+
+    context "when an image has a disallowed content type" do
+      it "does not create a chapter and returns unprocessable_entity" do
+        expect {
+          post create_from_photos_novel_chapters_path(novel), params: {
+            chapter: { number: 4, images: [ image_fixture("cover.gif", "image/gif") ] }
+          }
+        }.not_to change(Chapter, :count)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+    end
+
+    context "with a single PDF and a chapter number" do
+      def pdf_fixture(name = "sample.pdf")
+        fixture_file_upload(Rails.root.join("spec/fixtures/files/#{name}"), "application/pdf")
+      end
+
+      it "creates one chapter and enqueues OcrChapterJob with the PDF's staged path" do
+        expect {
+          post create_from_photos_novel_chapters_path(novel), params: {
+            chapter: { number: 4, images: [ pdf_fixture ] }
+          }
+        }.to change(Chapter, :count).by(1)
+          .and have_enqueued_job(OcrChapterJob)
+
+        ch  = Chapter.last
+        job = enqueued_jobs.find { |j| j["job_class"] == "OcrChapterJob" }
+        expect(job["arguments"][0]).to eq(ch.id)
+        expect(job["arguments"][1].size).to eq(1)
+        expect(job["arguments"][1].first).to end_with(".pdf")
+      end
+
+      it "redirects to the new chapter" do
+        post create_from_photos_novel_chapters_path(novel), params: {
+          chapter: { number: 4, images: [ pdf_fixture ] }
+        }
+
+        expect(response).to redirect_to(novel_chapter_path(novel, Chapter.last))
+      end
+
+      it "rejects a PDF over the size cap" do
+        stub_const("ChaptersController::PDF_MAX_BYTES", 100)
+
+        expect {
+          post create_from_photos_novel_chapters_path(novel), params: {
+            chapter: { number: 4, images: [ pdf_fixture ] }
+          }
+        }.not_to change(Chapter, :count)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+    end
+
+    context "when a PDF is submitted alongside other files" do
+      def pdf_fixture(name = "sample.pdf")
+        fixture_file_upload(Rails.root.join("spec/fixtures/files/#{name}"), "application/pdf")
+      end
+
+      it "rejects the whole batch rather than guessing what was meant" do
+        expect {
+          post create_from_photos_novel_chapters_path(novel), params: {
+            chapter: { number: 4, images: [ pdf_fixture, image_fixture ] }
+          }
+        }.not_to change(Chapter, :count)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it "rejects two PDFs in the same batch" do
+        expect {
+          post create_from_photos_novel_chapters_path(novel), params: {
+            chapter: { number: 4, images: [ pdf_fixture, pdf_fixture ] }
+          }
+        }.not_to change(Chapter, :count)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+    end
+  end
+
+  # ---------------------------------------------------------------------------
   # Edit / update status
   # ---------------------------------------------------------------------------
   describe "GET /novels/:novel_id/chapters/:id/edit" do
