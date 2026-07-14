@@ -10,70 +10,164 @@
 <div class="page-header">
   <h1 class="page-title">Upload Chapter(s)</h1>
   <p class="page-subtitle">
-    Select or drop <code>.txt</code> files — any number. Language is detected
-    from file content automatically. Provide a chapter number for each file
-    before submitting.
+    Upload from text files, or scan photos of a physical page and let OCR
+    extract the text.
   </p>
 </div>
 
-<%= form_with url: novel_chapters_path(@novel),
-      multipart: true,
-      data: { controller: "upload-review" } do |f| %>
-
-  <%# Drop zone %>
-  <div class="upload-zone"
-       data-upload-review-target="dropZone"
-       data-testid="upload-zone"
-       data-action="dragover->upload-review#onDragOver
-                    dragleave->upload-review#onDragLeave
-                    drop->upload-review#onDrop">
-
-    <%= f.file_field :files,
-          name:     "chapter[files][]",
-          multiple: true,
-          accept:   "text/plain,.txt",
-          class:    "sr-only",
-          id:       "chapter_files",
-          data:     {
-            "upload-review-target": "input",
-            action: "change->upload-review#onFilesChanged"
-          } %>
-
-    <label for="chapter_files" class="upload-zone__label">
-      <span class="upload-zone__icon-wrap" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
-        </svg>
-      </span>
-      <span class="upload-zone__heading">Drag and drop files here</span>
-      <span class="upload-zone__sub">or <strong>click to browse</strong> your computer</span>
-      <span class="upload-zone__hint">Accepts .txt — language detected from content</span>
-    </label>
+<div data-controller="bible-tabs">
+  <div class="bible-tabs__bar">
+    <button class="bible-tabs__btn bible-tabs__btn--active" type="button"
+            data-bible-tabs-target="btn"
+            data-action="click->bible-tabs#show"
+            data-bible-tabs-panel-param="text"
+            data-testid="upload-tab-text">
+      Text files
+    </button>
+    <button class="bible-tabs__btn" type="button"
+            data-bible-tabs-target="btn"
+            data-action="click->bible-tabs#show"
+            data-bible-tabs-panel-param="photos"
+            data-testid="upload-tab-photos">
+      Photo scan (OCR)
+    </button>
   </div>
 
-  <%# Review table — hidden until files are selected; populated by controller %>
-  <div class="upload-review" data-upload-review-target="reviewTable" hidden>
-    <table class="data-table upload-review__table" data-testid="upload-review-table">
-      <thead>
-        <tr>
-          <th class="data-table__th">File</th>
-          <th class="data-table__th upload-review__th--language">Language</th>
-          <th class="data-table__th upload-review__th--number">Chapter #</th>
-          <th class="data-table__th upload-review__th--remove"></th>
-        </tr>
-      </thead>
-      <tbody data-upload-review-target="reviewBody">
-        <%# Rows are rendered here by upload_review_controller.ts %>
-      </tbody>
-    </table>
+  <div data-bible-tabs-target="panel" data-bible-tabs-panel="text">
+    <p class="page-subtitle">
+      Select or drop <code>.txt</code> files — any number. Language is detected
+      from file content automatically. Provide a chapter number for each file
+      before submitting.
+    </p>
+
+    <%= form_with url: novel_chapters_path(@novel),
+          multipart: true,
+          data: { controller: "upload-review" } do |f| %>
+
+      <%# Drop zone %>
+      <div class="upload-zone"
+           data-upload-review-target="dropZone"
+           data-testid="upload-zone"
+           data-action="dragover->upload-review#onDragOver
+                        dragleave->upload-review#onDragLeave
+                        drop->upload-review#onDrop">
+
+        <%= f.file_field :files,
+              name:     "chapter[files][]",
+              multiple: true,
+              accept:   "text/plain,.txt",
+              class:    "sr-only",
+              id:       "chapter_files",
+              data:     {
+                "upload-review-target": "input",
+                action: "change->upload-review#onFilesChanged"
+              } %>
+
+        <label for="chapter_files" class="upload-zone__label">
+          <span class="upload-zone__icon-wrap" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
+            </svg>
+          </span>
+          <span class="upload-zone__heading">Drag and drop files here</span>
+          <span class="upload-zone__sub">or <strong>click to browse</strong> your computer</span>
+          <span class="upload-zone__hint">Accepts .txt — language detected from content</span>
+        </label>
+      </div>
+
+      <%# Review table — hidden until files are selected; populated by controller %>
+      <div class="upload-review" data-upload-review-target="reviewTable" hidden>
+        <table class="data-table upload-review__table" data-testid="upload-review-table">
+          <thead>
+            <tr>
+              <th class="data-table__th">File</th>
+              <th class="data-table__th upload-review__th--language">Language</th>
+              <th class="data-table__th upload-review__th--number">Chapter #</th>
+              <th class="data-table__th upload-review__th--remove"></th>
+            </tr>
+          </thead>
+          <tbody data-upload-review-target="reviewBody">
+            <%# Rows are rendered here by upload_review_controller.ts %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="form-actions">
+        <%= f.submit "Upload",
+              class:    "btn btn--primary",
+              disabled: true,
+              data:     { "upload-review-target": "submitButton", testid: "upload-submit" } %>
+        <%= link_to "Cancel", novel_path(@novel), class: "btn btn--ghost" %>
+      </div>
+
+    <% end %>
   </div>
 
-  <div class="form-actions">
-    <%= f.submit "Upload",
-          class:    "btn btn--primary",
-          disabled: true,
-          data:     { "upload-review-target": "submitButton", testid: "upload-submit" } %>
-    <%= link_to "Cancel", novel_path(@novel), class: "btn btn--ghost" %>
-  </div>
+  <div data-bible-tabs-target="panel" data-bible-tabs-panel="photos" hidden>
+    <p class="page-subtitle">
+      Drop photos of a single chapter's pages, in reading order — or add them
+      in any order and reorder with the arrows below. A single PDF works too
+      (one PDF per chapter — don't mix a PDF with photos). Text is extracted
+      via OCR, then cleaned up automatically.
+    </p>
 
-<% end %>
+    <%= form_with url: create_from_photos_novel_chapters_path(@novel),
+          multipart: true,
+          data: { controller: "photo-upload" } do |f| %>
+
+      <div class="form-group">
+        <%= label_tag "chapter_photo_number", "Chapter #", class: "form-label" %>
+        <%= number_field_tag "chapter[number]", nil,
+              min:   1,
+              class: "form-input",
+              id:    "chapter_photo_number",
+              data:  { "photo-upload-target": "numberInput", action: "input->photo-upload#onNumberChanged" } %>
+      </div>
+
+      <div class="upload-zone"
+           data-photo-upload-target="dropZone"
+           data-testid="photo-upload-zone"
+           data-action="dragover->photo-upload#onDragOver
+                        dragleave->photo-upload#onDragLeave
+                        drop->photo-upload#onDrop">
+
+        <%= f.file_field :images,
+              name:     "chapter[images][]",
+              multiple: true,
+              accept:   "image/jpeg,image/png,image/webp,application/pdf",
+              class:    "sr-only",
+              id:       "chapter_images",
+              data:     {
+                "photo-upload-target": "input",
+                action: "change->photo-upload#onFilesChanged"
+              } %>
+
+        <label for="chapter_images" class="upload-zone__label">
+          <span class="upload-zone__icon-wrap" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
+            </svg>
+          </span>
+          <span class="upload-zone__heading">Drag and drop photos or a PDF here</span>
+          <span class="upload-zone__sub">or <strong>click to browse</strong> your computer</span>
+          <span class="upload-zone__hint">Accepts JPEG, PNG, WebP, or a single PDF</span>
+        </label>
+      </div>
+
+      <p class="upload-zone__batch-error" data-photo-upload-target="batchError" data-testid="photo-upload-batch-error" hidden></p>
+
+      <ol class="photo-upload-list" data-photo-upload-target="thumbList" data-testid="photo-upload-list" hidden>
+        <%# Rows are rendered here by photo_upload_controller.ts %>
+      </ol>
+
+      <div class="form-actions">
+        <%= f.submit "Upload",
+              class:    "btn btn--primary",
+              disabled: true,
+              data:     { "photo-upload-target": "submitButton", testid: "photo-upload-submit" } %>
+        <%= link_to "Cancel", novel_path(@novel), class: "btn btn--ghost" %>
+      </div>
+
+    <% end %>
+  </div>
+</div>

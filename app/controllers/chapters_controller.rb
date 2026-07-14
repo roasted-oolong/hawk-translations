@@ -4,6 +4,10 @@ class ChaptersController < ApplicationController
                                       :download_korean_source, :download_translated_output,
                                       :approve ]
 
+  PHOTO_ALLOWED_CONTENT_TYPES = %w[image/jpeg image/png image/webp].freeze
+  PDF_CONTENT_TYPE            = "application/pdf"
+  PDF_MAX_BYTES               = 25.megabytes
+
   def index
     redirect_to novel_path(@novel) and return unless turbo_frame_request?
     @chapters         = @novel.chapters.order(number: :desc)
@@ -81,6 +85,40 @@ class ChaptersController < ApplicationController
       redirect_to rails_blob_path(@chapter.translated_output, disposition: "attachment")
     else
       redirect_to novel_chapter_path(@novel, @chapter), alert: "No translated output file attached."
+    end
+  end
+
+  # Photo scan (OCR) upload: either N ordered photos, or a single PDF, become
+  # one chapter's Korean source, via OcrChapterJob. Kept separate from
+  # create/create_single/create_bulk — one batch always maps to exactly one
+  # chapter, so the single/bulk discriminator used there doesn't apply here.
+  #
+  # A PDF's pages don't need separate rasterization: PaddleOCR (via PaddleX's
+  # PDFReader) reads a multi-page PDF path directly and yields one result per
+  # page, the same shape ocr_chapter.py already expects from a list of image
+  # paths — so a validated PDF is staged and handed to OcrChapterJob exactly
+  # like a batch of photos would be.
+  def create_from_photos
+    images = Array(params.dig(:chapter, :images)).compact_blank
+
+    return render_photo_error("No images provided.") if images.empty?
+
+    batch_error = validate_photo_batch(images)
+    return render_photo_error(batch_error) if batch_error
+
+    @chapter = @novel.chapters.build(
+      number: params.dig(:chapter, :number).presence&.to_i,
+      title:  params.dig(:chapter, :title).presence
+    )
+
+    if @chapter.save
+      image_paths = stage_images_for_ocr(images)
+      source_label = images.size == 1 && images.first.content_type == PDF_CONTENT_TYPE ? "PDF" : "#{images.size} photo(s)"
+      OcrChapterJob.perform_later(@chapter.id, image_paths)
+      redirect_to novel_chapter_path(@novel, @chapter),
+        notice: "Chapter created. Extracting text from #{source_label}…"
+    else
+      render :new, status: :unprocessable_entity
     end
   end
 
@@ -239,6 +277,53 @@ class ChaptersController < ApplicationController
     @chapter = @novel.chapters.build
     flash.now[:alert] = message
     render :new, status: :unprocessable_entity
+  end
+
+  def render_photo_error(message)
+    @chapter = @novel.chapters.build
+    flash.now[:alert] = message
+    render :new, status: :unprocessable_entity
+  end
+
+  # A batch is either: a single PDF, or one-or-more photos (JPEG/PNG/WebP).
+  # Mixing a PDF with anything else — or submitting more than one PDF — is
+  # rejected outright rather than guessing which the user meant; they can
+  # resubmit as separate uploads. Returns an error message, or nil if valid.
+  def validate_photo_batch(images)
+    pdf_count = images.count { |image| image.content_type == PDF_CONTENT_TYPE }
+
+    if pdf_count.positive? && images.size > 1
+      return "Upload a single PDF, or one or more photos — not both in the same upload."
+    end
+
+    if pdf_count == 1
+      pdf = images.first
+      if pdf.size > PDF_MAX_BYTES
+        return "#{pdf.original_filename} is too large (max #{PDF_MAX_BYTES / 1.megabyte}MB) — this box runs on limited memory."
+      end
+      return nil
+    end
+
+    bad_image = images.find { |image| !PHOTO_ALLOWED_CONTENT_TYPES.include?(image.content_type) }
+    return "#{bad_image.original_filename} is not a supported file type (JPEG, PNG, WebP, or PDF)." if bad_image
+
+    nil
+  end
+
+  # Copies each uploaded image's bytes to a scratch directory under tmp/ so
+  # OcrChapterJob can receive plain path strings (ActiveJob arguments must be
+  # serializable, and the request's tempfiles are deleted once it ends).
+  # OcrChapterJob deletes this directory once OCR finishes, regardless of
+  # outcome — originals are never persisted to Active Storage.
+  def stage_images_for_ocr(images)
+    dir = Dir.mktmpdir("chapter_#{@chapter.id}_photos", Rails.root.join("tmp"))
+
+    images.each_with_index.map do |image, index|
+      ext  = File.extname(image.original_filename.to_s)
+      path = File.join(dir, format("%03d%s", index, ext))
+      File.binwrite(path, image.read)
+      path
+    end
   end
 
   def bulk_chapter_ids
