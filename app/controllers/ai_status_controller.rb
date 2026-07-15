@@ -11,19 +11,19 @@ class AiStatusController < ApplicationController
     uri = URI(health_url)
     Net::HTTP.start(uri.host, uri.port, open_timeout: 3, read_timeout: 3) do |http|
       response = http.get(uri.path.presence || "/")
-      return "unavailable" unless response.is_a?(Net::HTTPSuccess)
-
-      body = JSON.parse(response.body)
-      body["status"] == "ok" ? "ok" : "loading"
+      response.is_a?(Net::HTTPSuccess) ? "ok" : "unavailable"
     end
   rescue
     "unavailable"
   end
 
-  # Strip the /v1 path suffix from LLM_BASE_URL to reach the server root,
-  # then append /health. llama-server serves /health at the root, not under /v1.
+  # Ollama has no dedicated /health route — its root endpoint is a
+  # lightweight liveness check (200, plain text "Ollama is running", not
+  # JSON). Reachability of the server is what matters here, not whether a
+  # model happens to be loaded: models load on demand and unload after
+  # OLLAMA_KEEP_ALIVE idle, so "no model resident" is the expected steady
+  # state, not something to report as unavailable.
   def health_url
-    base = ENV.fetch("LLM_BASE_URL", "http://localhost:11434/v1")
-    base.sub(%r{/v1/?$}, "") + "/health"
+    ENV.fetch("LLM_BASE_URL", "http://localhost:11434/v1").sub(%r{/v1/?$}, "")
   end
 end
