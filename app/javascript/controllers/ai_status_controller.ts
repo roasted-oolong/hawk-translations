@@ -35,7 +35,6 @@ export default class AiStatusController extends Controller {
     this.element.setAttribute("data-status", status)
     const labels: Record<string, string> = {
       ok:          "AI ready",
-      loading:     "AI loading",
       unavailable: "AI offline",
     }
     this.labelTarget.textContent = labels[status] ?? "AI unknown"
