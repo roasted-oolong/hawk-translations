@@ -147,7 +147,7 @@ RSpec.describe "M16 Chapter List & Translation Jobs", type: :system do
 
       before do
         # Attach a file whose content is Hangul-majority → Korean
-        file_path = file_fixture_path("korean_source.txt", korean_content)
+        file_path = write_upload_fixture("korean_source.txt", korean_content)
         attach_file("chapter[files][]", file_path, make_visible: true)
       end
 
@@ -168,7 +168,7 @@ RSpec.describe "M16 Chapter List & Translation Jobs", type: :system do
       let(:english_content) { "The manager stepped into the boardroom. " * 40 }
 
       before do
-        file_path = file_fixture_path("english_output.txt", english_content)
+        file_path = write_upload_fixture("english_output.txt", english_content)
         attach_file("chapter[files][]", file_path, make_visible: true)
       end
 
@@ -181,13 +181,13 @@ RSpec.describe "M16 Chapter List & Translation Jobs", type: :system do
       let(:korean_content) { "가나다라마바사아자차" * 40 }
 
       it "pre-fills the number input when the filename matches a known pattern" do
-        file_path = file_fixture_path("3화.txt", korean_content)
+        file_path = write_upload_fixture("3화.txt", korean_content)
         attach_file("chapter[files][]", file_path, make_visible: true)
         expect(page).to have_field("chapter[numbers][3화.txt]", with: "3")
       end
 
       it "leaves the number input blank when the filename does not match" do
-        file_path = file_fixture_path("notes.txt", korean_content)
+        file_path = write_upload_fixture("notes.txt", korean_content)
         attach_file("chapter[files][]", file_path, make_visible: true)
         expect(page).to have_field("chapter[numbers][notes.txt]", with: "")
       end
@@ -196,24 +196,37 @@ RSpec.describe "M16 Chapter List & Translation Jobs", type: :system do
     context "submit button validation" do
       let(:korean_content) { "가나다라마바사아자차" * 40 }
 
+      # The submit button's label/disabled state is updated via JS after an
+      # async FileReader read (see upload_review_controller.ts#addFiles).
+      # have_selector reliably polls for this; have_button's combined
+      # disabled+text filter does not reliably re-check an existing node's
+      # value/disabled properties as they change in place, so these assert
+      # via a plain CSS attribute selector on the same submit input instead.
+      def submit_button_selector(value:, disabled:)
+        "[data-testid='upload-submit'][value='#{value}']" + (disabled ? "[disabled]" : ":not([disabled])")
+      end
+
       it "remains disabled while any row has no chapter number" do
-        file_path = file_fixture_path("notes.txt", korean_content)
+        file_path = write_upload_fixture("notes.txt", korean_content)
         attach_file("chapter[files][]", file_path, make_visible: true)
-        expect(page).to have_button(disabled: true, text: /Upload/)
+
+        expect(page).to have_selector(submit_button_selector(value: "Upload 1 file", disabled: true))
       end
 
       it "enables once all rows have a valid number" do
-        file_path = file_fixture_path("3화.txt", korean_content)
+        file_path = write_upload_fixture("3화.txt", korean_content)
         attach_file("chapter[files][]", file_path, make_visible: true)
-        expect(page).to have_button(disabled: false, text: "Upload 1 file")
+
+        expect(page).to have_selector(submit_button_selector(value: "Upload 1 file", disabled: false))
       end
 
       it "updates the button label to reflect the file count" do
         attach_file("chapter[files][]", [
-          file_fixture_path("3화.txt", korean_content),
-          file_fixture_path("4화.txt", korean_content)
+          write_upload_fixture("3화.txt", korean_content),
+          write_upload_fixture("4화.txt", korean_content)
         ], make_visible: true)
-        expect(page).to have_button(text: "Upload 2 files")
+
+        expect(page).to have_selector(submit_button_selector(value: "Upload 2 files", disabled: false))
       end
     end
 
@@ -221,7 +234,7 @@ RSpec.describe "M16 Chapter List & Translation Jobs", type: :system do
       let(:korean_content) { "가나다라마바사아자차" * 40 }
 
       it "removes the row from the review table" do
-        file_path = file_fixture_path("3화.txt", korean_content)
+        file_path = write_upload_fixture("3화.txt", korean_content)
         attach_file("chapter[files][]", file_path, make_visible: true)
         expect(page).to have_selector("[data-testid='upload-review-row']")
 
@@ -230,7 +243,7 @@ RSpec.describe "M16 Chapter List & Translation Jobs", type: :system do
       end
 
       it "hides the review table after the last row is removed" do
-        file_path = file_fixture_path("3화.txt", korean_content)
+        file_path = write_upload_fixture("3화.txt", korean_content)
         attach_file("chapter[files][]", file_path, make_visible: true)
 
         click_button "Remove"
@@ -238,7 +251,7 @@ RSpec.describe "M16 Chapter List & Translation Jobs", type: :system do
       end
 
       it "disables the submit button after all rows are removed" do
-        file_path = file_fixture_path("3화.txt", korean_content)
+        file_path = write_upload_fixture("3화.txt", korean_content)
         attach_file("chapter[files][]", file_path, make_visible: true)
 
         click_button "Remove"
@@ -302,8 +315,8 @@ RSpec.describe "M16 Chapter List & Translation Jobs", type: :system do
         end
       end
 
-      it "shows a Cancel button only for the queued job" do
-        expect(page).to have_button("Cancel", count: 1)
+      it "shows a Cancel button for queued and running jobs (TranslationJob#cancellable?)" do
+        expect(page).to have_button("Cancel", count: 2)
       end
 
       it "renders the breadcrumb" do
@@ -341,16 +354,21 @@ RSpec.describe "M16 Chapter List & Translation Jobs", type: :system do
     context "cancelling a queued job" do
       let!(:job) { create(:translation_job, novel: novel, user: user, status: "queued", chapter_start: 1, chapter_end: 1) }
 
-      it "removes the job and shows a notice after cancellation" do
+      it "marks the job cancelled instead of removing it" do
         visit novel_translation_jobs_path(novel)
 
-        # Cancel button now opens the shared confirmation modal.
-        # Complete the modal flow before asserting the flash.
+        # Cancel button opens the shared confirmation modal; complete the
+        # modal flow before asserting the outcome. destroy redirects back to
+        # this same index (redirect_back), so the row's status badge — not a
+        # flash message, which doesn't reliably survive the modal's
+        # Turbo-driven submission — is the durable signal cancellation
+        # actually happened.
         click_button "Cancel"
         expect(page).to have_selector("[data-testid='modal-dialog'][open]")
         find("[data-testid='modal-dialog'] [data-modal-confirm]").click
 
-        expect(page).to have_text("Job cancelled.")
+        expect(job.reload.status).to eq("cancelled")
+        expect(page).to have_selector(".status-badge--cancelled")
       end
     end
   end

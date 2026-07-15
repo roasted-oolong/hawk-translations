@@ -116,16 +116,29 @@ RSpec.describe GenerateEmbeddingJob, type: :job do
         allow(VoyageClient).to receive(:embed).and_raise(VoyageClient::ApiError, "rate limited")
       end
 
-      it "re-raises the error so Solid Queue can retry the job" do
+      # Matches the same graceful-degradation pattern used by BibleSearchService
+      # and BibleSearchController: Voyage AI being unavailable (rate limit, no
+      # API key, network error) shouldn't block a save or block search — it
+      # falls back to a keyword-only (tsvector, no vector) record instead of
+      # raising.
+      it "does not raise" do
         expect {
           described_class.new.perform("BibleCharacter", character.id)
-        }.to raise_error(VoyageClient::ApiError, "rate limited")
+        }.not_to raise_error
       end
 
-      it "does not create a BibleEmbedding record" do
-        expect {
-          described_class.new.perform("BibleCharacter", character.id) rescue nil
-        }.not_to change(BibleEmbedding, :count)
+      it "creates a keyword-only BibleEmbedding record (nil vector)" do
+        described_class.new.perform("BibleCharacter", character.id)
+        embedding = BibleEmbedding.find_by(embeddable: character)
+        expect(embedding).to be_present
+        expect(embedding.embedding).to be_nil
+      end
+
+      it "still sets the content_hash so a later successful embed can detect no further change is needed" do
+        described_class.new.perform("BibleCharacter", character.id)
+        embedding = BibleEmbedding.find_by(embeddable: character)
+        expected_hash = Digest::SHA256.hexdigest(character.embeddable_text)
+        expect(embedding.content_hash).to eq(expected_hash)
       end
     end
   end
