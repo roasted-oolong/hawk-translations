@@ -38,12 +38,15 @@ def make_ocr() -> PaddleOCR:
     use_doc_unwarping=False: page-curvature correction is unneeded overhead
     for flat photos. use_doc_orientation_classify/use_textline_orientation
     stay on since phone photos are sometimes rotated 90/180 degrees.
-    text_detection_model_name="PP-OCRv5_mobile_det": this runs on a
-    memory-constrained box that also hosts a local LLM server, and the
-    default "server" detection model has been observed to die with no
-    traceback (consistent with an OOM-kill) under that memory pressure. The
-    mobile detection model is ~20x smaller on disk and trades a modest amount
-    of detection accuracy for a much smaller memory footprint.
+
+    Uses the default "server" text detection model, not the lighter "mobile"
+    variant: mobile detection produced unusable, near-garbage transcriptions
+    on real chapter photos (confirmed 2026-07-15 — see chapter 75/id 79's
+    korean_source). It was tried as a memory-saving measure for a box that
+    also hosted a permanently-resident local LLM server; that LLM now runs
+    on-demand and unloads when idle instead, which removes the standing
+    memory pressure this was working around, so the smaller/less-accurate
+    model is no longer worth the accuracy cost.
     """
     return PaddleOCR(
         lang="korean",
@@ -51,7 +54,6 @@ def make_ocr() -> PaddleOCR:
         use_doc_orientation_classify=True,
         use_doc_unwarping=False,
         use_textline_orientation=True,
-        text_detection_model_name="PP-OCRv5_mobile_det",
     )
 
 
