@@ -1,6 +1,15 @@
 require "open3"
 
-CLEANER_TIMEOUT_SECONDS = 300
+# 300s was far too short for a real chapter on this CPU-only box: the local
+# LLM generates at ~9 tokens/sec, and a full chapter's cleaned output is
+# roughly 1:1 in length with its (thousands-of-tokens) input, plus the
+# model's own internal reasoning on top. A real 9-photo chapter measured at
+# 4714 input tokens still hadn't finished generating at the 300s mark
+# (confirmed 2026-07-16 — chapter 82 timed out mid-generation, silently
+# leaving raw unformatted OCR text as the "final" korean_source with no
+# visible error). 1800s gives realistic headroom for CPU-only generation
+# speeds without leaving a job to run forever.
+CLEANER_TIMEOUT_SECONDS = 1800
 
 class FormatKoreanChapterJob < ApplicationJob
   queue_as :default
