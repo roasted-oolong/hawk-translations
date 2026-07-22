@@ -10,7 +10,7 @@ LLM_API_KEY  = os.environ.get("LLM_API_KEY", "local")
 # Set these to whatever model names your local server exposes.
 HAIKU_MODEL  = os.environ.get("HAIKU_MODEL",  "qwen2.5:7b")    # Mechanical: format, file naming
 SONNET_MODEL = os.environ.get("SONNET_MODEL", "qwen2.5:32b")   # Core: extraction, Phase 1, review
-OPUS_MODEL   = os.environ.get("OPUS_MODEL",   "qwen2.5:72b")   # Quality-critical: Phase 2, voice review
+OPUS_MODEL   = os.environ.get("OPUS_MODEL",   "qwen2.5:72b")   # Quality-critical: Phase 2 (only reached by voice review when CALIBRATION_BACKEND=local)
 
 # ── Project root ──────────────────────────────────────────────────────────────
 PROJECT_ROOT = os.environ["HAWK_PROJECT_ROOT"]
@@ -56,3 +56,12 @@ TRANSLATION_MODEL   = os.environ.get("TRANSLATION_MODEL", "opus")
 # with terminal_reason "budget_exhausted" if exceeded). $3.00 is a starting
 # placeholder; tune after observing a real chapter's total_cost_usd.
 TRANSLATION_MAX_BUDGET_USD = float(os.environ.get("TRANSLATION_MAX_BUDGET_USD", "3.00"))
+
+# ── Calibration backend ───────────────────────────────────────────────────────
+# Used only by calibrate-voice.py, selected independently of TRANSLATION_BACKEND
+# via the same src/translation_backend.get_backend() seam (its two backend
+# implementations are domain-agnostic — see that module's docstring). Reverses
+# the 2026-07-20 "stays local" decision (docs/DECISIONS.md) after local-model
+# review quality proved a recurring blocker, not a one-off. Set
+# CALIBRATION_BACKEND=local to fall back to the Ollama path unchanged.
+CALIBRATION_BACKEND = os.environ.get("CALIBRATION_BACKEND", "claude_code")

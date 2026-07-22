@@ -986,4 +986,35 @@ wait for the connection before the model's first turn — verified directly (opu
 consistently failed to see the bridge's tool; haiku happened to win the race).
 `MCP_CONNECTION_NONBLOCKING=false` in the subprocess env fixes it; see the code
 comment in `src/claude_code_agent.py`.
+
+---
+
+## 2026-07-21 · Voice calibration reverses the "stays local" decision, moves to Claude Code CLI
+
+Reverses the 2026-07-20 entry above. That entry treated the quality drop as an
+accepted one-off, to revisit "if local-model output quality becomes a recurring
+blocker." It did: the chapter 73 run failed outright (`httpx.ConnectError:
+Connection refused` — the standalone `~/local-llm` Ollama server, which only
+starts on demand and does not survive a reboot, was not running), and the tab UI
+made the failure invisible by continuing to show the last *completed* run
+(chapter 72) instead of surfacing the more recent failed one. Independent of that
+outage, the recurring generic/placeholder output quality issue from 2026-07-20
+was the deciding factor to move off the local model rather than just restart it.
+
+Reuses the seam `73d6a1a` built for chapter translation rather than adding a new
+one: `src/translation_backend.py`'s two backend implementations
+(`_local_backend`, `_claude_code_backend`) are domain-agnostic (system prompt in,
+text out), so `calibrate-voice.py` now calls
+`get_backend(CALIBRATION_BACKEND)` the same way `translate.py` calls
+`get_backend(TRANSLATION_BACKEND)` — a new, independent config var so the two
+call sites can pick different backends. `CALIBRATION_BACKEND` defaults to
+`"claude_code"`; `"local"` is the rollback path back to Ollama, unchanged.
+`src/agent.py` itself is untouched — still used, on the local model, by the
+remaining 7 pipeline scripts (`preread.py`, `review.py`, `format_chapters.py`,
+`clean_chapter.py`, `run_bible_build.py`, `run_preread.py`, `run_review.py`).
+
+The tab-UI bug that hid the chapter 73 failure (`app/views/voice_calibration/
+tab.html.erb`'s last-run panel prefers `@last_completed_job` over a more recent
+`@last_failed_job` regardless of which actually happened last) was not fixed
+here — flagged separately, not blocking on this change.
 org membership. See ROADMAP.md.

@@ -1,6 +1,18 @@
 # Hawk Translations — Changelog
 
 ---
+## 2026-07-21 (2)
+Changed:
+- `calibrate-voice.py` — now calls `src.translation_backend.get_backend(CALIBRATION_BACKEND)` instead of `src.agent` directly; defaults to the Claude Code CLI backend instead of local Ollama
+- `config.py` — added `CALIBRATION_BACKEND` (independent of `TRANSLATION_BACKEND`, default `"claude_code"`, `"local"` is the rollback)
+- `src/translation_backend.py` — docstring/error message generalized now that it's shared by two call sites (translation, calibration) instead of translation-only
+- `tests/test_translation_backend.py` — updated error-message assertion for the generalized wording
+
+Note: Committed. See `docs/DECISIONS.md` (2026-07-21, "Voice calibration
+reverses the 'stays local' decision") for why — reverses the 2026-07-20 "stays
+local" decision after the local Ollama server (`~/local-llm`) being down caused
+a silent-looking failure on chapter 73.
+
 ## 2026-07-21
 Added:
 - `src/translation_backend.py` — selects the active translation backend (`TRANSLATION_BACKEND`, default `"claude_code"`); `"local"` wraps the existing `src/agent.py`/Ollama path unchanged, `"claude_code"` is new

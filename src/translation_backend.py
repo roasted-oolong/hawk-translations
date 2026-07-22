@@ -1,9 +1,13 @@
 """
 src/translation_backend.py
 ---------------------------
-Selects which LLM backend the translation call sites (translate.py,
-translate_batch.py, src/translator/batch_runner.py) use, without those call
-sites needing to know or care which one is active.
+Selects which LLM backend a call site uses, without that call site needing to
+know or care which one is active. Originally built for translate.py/
+translate_batch.py/src/translator/batch_runner.py (selected via
+config.TRANSLATION_BACKEND); calibrate-voice.py reuses the same seam
+(selected independently via config.CALIBRATION_BACKEND) since both backend
+implementations below are domain-agnostic — neither knows or cares whether
+the text it's sent is a chapter to translate or a chapter to review.
 
 Two backends exist today:
   - "local": the existing Ollama-backed path (src/agent.py), unchanged.
@@ -22,9 +26,10 @@ get that backend's own sensible default — this is what lets
 TRANSLATION_BACKEND be flipped without touching translate.py/
 translate_batch.py at all.
 
-Selected via config.TRANSLATION_BACKEND (env var TRANSLATION_BACKEND). This
-is the only place that decision is made — adding a third backend later means
-adding one branch here, not touching any call site.
+Selected via get_backend(config.TRANSLATION_BACKEND) or
+get_backend(config.CALIBRATION_BACKEND) depending on the caller. This is the
+only place the backend registry is defined — adding a third backend later
+means adding one branch here, not touching any call site.
 """
 
 from typing import TYPE_CHECKING, Protocol
@@ -124,17 +129,17 @@ _BACKENDS: dict[str, TranslationBackend] = {
 
 def get_backend(name: str | None = None) -> TranslationBackend:
     """
-    Return the translation backend selected by name, or by
-    config.TRANSLATION_BACKEND if name is not given.
+    Return the backend selected by name, or by config.TRANSLATION_BACKEND if
+    name is not given. Callers with their own config var (e.g.
+    calibrate-voice.py's CALIBRATION_BACKEND) always pass name explicitly.
 
-    Raises ValueError for an unrecognized backend name so a typo in
-    TRANSLATION_BACKEND fails loudly instead of silently picking a default.
+    Raises ValueError for an unrecognized backend name so a typo in either
+    config var fails loudly instead of silently picking a default.
     """
     selected = name or TRANSLATION_BACKEND
     try:
         return _BACKENDS[selected]
     except KeyError:
         raise ValueError(
-            f"Unknown TRANSLATION_BACKEND {selected!r}. "
-            f"Valid options: {sorted(_BACKENDS)}"
+            f"Unknown backend {selected!r}. Valid options: {sorted(_BACKENDS)}"
         ) from None

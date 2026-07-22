@@ -20,7 +20,7 @@ import src.translation_backend as translation_backend
 
 
 def test_get_backend_unknown_name_raises():
-    with pytest.raises(ValueError, match="Unknown TRANSLATION_BACKEND"):
+    with pytest.raises(ValueError, match="Unknown backend"):
         translation_backend.get_backend("bogus")
 
 
