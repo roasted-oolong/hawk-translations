@@ -21,7 +21,9 @@ This script is responsible for orchestration only:
 All diagnostic output goes to stderr. Stdout contains only the final JSON.
 
 Domain logic lives in src/voice_calibration/.
-API logic lives in src/agent.py.
+API logic lives in src/translation_backend.py (backend selected by
+config.CALIBRATION_BACKEND; defaults to the Claude Code CLI backend,
+src/claude_code_agent.py — see docs/DECISIONS.md, 2026-07-21).
 Configuration lives in config.py.
 This file does not make decisions about voice -- it connects the pieces.
 """
@@ -37,8 +39,8 @@ load_dotenv()
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config import PROJECT_ROOT, OPUS_MODEL, MAX_TOKENS
-from src.agent import call, make_client
+from config import PROJECT_ROOT, CALIBRATION_BACKEND
+from src.translation_backend import get_backend
 from src.novel_resolver import resolve_novel
 from src.voice_calibration.chapter_reader import (
     find_latest_translated_chapter,
@@ -170,7 +172,7 @@ def run() -> None:
 
     # -- Step 4: Call review agent
     print("\n  Reviewing -- this will take a moment...", file=sys.stderr)
-    client        = make_client()
+    backend       = get_backend(CALIBRATION_BACKEND)
     system_prompt = build_system_prompt()
     context       = ReviewContext(
         voice_calibration=voice_calibration,
@@ -179,12 +181,9 @@ def run() -> None:
     )
     user_message = build_user_message(context)
 
-    raw_response = call(
+    raw_response = backend(
         system_prompt=system_prompt,
         user_message=user_message,
-        model=OPUS_MODEL,
-        max_tokens=MAX_TOKENS,
-        client=client,
     )
     print("  Done.", file=sys.stderr)
 
