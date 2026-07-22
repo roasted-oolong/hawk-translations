@@ -48,23 +48,23 @@
                   confirm_label: "Cancel job",
                   button_class:  "btn btn--danger btn--xs" %>
           </div>
-        <% elsif @last_completed_job %>
+        <% elsif @last_finished_job&.completed? %>
           <div class="vc-tab__last-run" data-testid="vc-last-run">
             <span class="vc-tab__last-run-label">
-              Last run: <%= @last_completed_job.chapter_range_label.presence || "Job ##{@last_completed_job.id}" %> &middot; Completed
+              Last run: <%= @last_finished_job.chapter_range_label.presence || "Job ##{@last_finished_job.id}" %> &middot; Completed
             </span>
             <%= link_to "Review Results →",
                   novel_voice_calibration_review_path(@novel),
                   class: "vc-tab__last-run-link",
                   data: { turbo_frame: "_top", testid: "link-review-results" } %>
           </div>
-        <% elsif @last_failed_job %>
+        <% elsif @last_finished_job&.failed? %>
           <div class="vc-tab__last-run vc-tab__last-run--failed" data-testid="vc-last-run-failed">
             <span class="vc-tab__last-run-label">
-              Last run: <%= @last_failed_job.chapter_range_label.presence || "Job ##{@last_failed_job.id}" %> &middot; Failed
+              Last run: <%= @last_finished_job.chapter_range_label.presence || "Job ##{@last_finished_job.id}" %> &middot; Failed
             </span>
             <%= link_to "View Error →",
-                  novel_translation_job_path(@novel, @last_failed_job),
+                  novel_translation_job_path(@novel, @last_finished_job),
                   class: "vc-tab__last-run-link vc-tab__last-run-link--error",
                   data: { turbo_frame: "_top", testid: "link-view-error" } %>
           </div>
