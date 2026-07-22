@@ -921,3 +921,69 @@ target team. This is correct for a solo translator with one team. When multi-tea
 users exist (a translator who is a member of several teams), the assignment target
 will need to be explicit — either chosen during novel creation or derived from
 org membership. See ROADMAP.md.
+
+---
+
+## 2026-07-20 · Voice calibration review model stays local (`gpt-oss-20b`), quality ceiling accepted
+
+Since the `ec35668` refactor moved `calibrate-voice.py` off the Anthropic SDK onto a
+generic OpenAI-compatible client (`src/agent.py`, pointed at local Ollama), review
+output quality has visibly dropped: the original 11 curated passages are rich,
+character-specific observations, while fresh local-model runs trend toward generic
+mechanical notes (tense/POV consistency) and have occasionally emitted unfilled
+template placeholders (e.g. a heading literally reading `Passage [New1]`) instead of
+real content.
+
+Considered routing this one call back to a cloud model (Anthropic or otherwise) while
+keeping the rest of the pipeline local. Decided against it for now: no API key is
+configured, and the cost/access tradeoff isn't worth it yet. Accepted as a known
+quality ceiling rather than worked around. Revisit if local-model output quality
+becomes a recurring blocker rather than a one-off frustration.
+
+This is unrelated to the feedback-loop bug fixed the same day: accepted/retired
+calibration cards previously never made it back into `voice_calibration.md` (the
+file `calibrate-voice.py` reads as context on every run), so every run re-discovered
+the same "next" passage slots regardless of model quality. `VoiceCalibrationDocWriter`
+(`app/services/voice_calibration_doc_writer.rb`) now keeps that file in sync on
+commit, for both accepted new patterns and retirements.
+
+---
+
+## 2026-07-21 · Chapter translation gets a second backend: Claude Code CLI via subscription, not the API
+
+Same quality ceiling as the 2026-07-20 entry above, but for chapter translation
+specifically — and the "revisit if it becomes a recurring blocker" condition was
+met. Rather than paying per-token API rates (rejected then for the same reason:
+no API key configured, cost/access tradeoff), `translate.py`/`translate_batch.py`
+now shell out to the Claude Code CLI's headless mode (`claude -p`), authenticated
+via the user's existing Claude Pro subscription (`claude auth login`) instead of
+`ANTHROPIC_API_KEY` — usage draws from the subscription's included quota rather
+than metered billing.
+
+Considered rewriting `src/agent.py` in place to call Claude Code directly. Rejected:
+grep showed `src/agent.py` and `OPUS_MODEL`/`SONNET_MODEL`/`HAIKU_MODEL` are shared
+by 8 other pipeline scripts (`preread.py`, `review.py`, `calibrate-voice.py`,
+`format_chapters.py`, `clean_chapter.py`, `run_bible_build.py`, `run_preread.py`,
+`run_review.py`) that should keep running against the local model unchanged — and
+the user separately wants the option to switch models/backends again later without
+re-deciding this each time.
+
+Landed instead as a `TranslationBackend` seam (`src/translation_backend.py`,
+selected via `TRANSLATION_BACKEND`, default `"claude_code"`) with two
+implementations: `"local"` (a thin wrapper around the existing, untouched
+`src/agent.py`) and `"claude_code"` (`src/claude_code_agent.py`, new). Both accept
+the exact same `Skill` instances (`BibleLookupSkill`, `WebSearchSkill`) via a new
+generic MCP bridge (`src/mcp_servers/skill_bridge.py`) that dynamically exposes
+any `Skill` as an MCP tool through a new `Skill.bridge_spec()` method — so neither
+backend, nor any future third one, needs per-skill wiring. `TRANSLATION_BACKEND=local`
+is the immediate rollback path if subscription quota becomes a problem, especially
+on `translate_batch.py`'s sequential multi-chapter runs (a real, accepted risk —
+no rate limiter was built for it).
+
+One undocumented but load-bearing finding from getting this working: the Claude
+Code CLI connects to `--mcp-config` servers asynchronously and does not reliably
+wait for the connection before the model's first turn — verified directly (opus
+consistently failed to see the bridge's tool; haiku happened to win the race).
+`MCP_CONNECTION_NONBLOCKING=false` in the subprocess env fixes it; see the code
+comment in `src/claude_code_agent.py`.
+org membership. See ROADMAP.md.

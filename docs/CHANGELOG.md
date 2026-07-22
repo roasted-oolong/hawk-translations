@@ -1,6 +1,22 @@
 # Hawk Translations — Changelog
 
 ---
+## 2026-07-21
+Added:
+- `src/translation_backend.py` — selects the active translation backend (`TRANSLATION_BACKEND`, default `"claude_code"`); `"local"` wraps the existing `src/agent.py`/Ollama path unchanged, `"claude_code"` is new
+- `src/claude_code_agent.py` — translation backend that shells out to the Claude Code CLI (`claude -p`), authenticated via the user's Claude subscription rather than a metered API key
+- `src/mcp_servers/skill_bridge.py` — generic MCP stdio server that dynamically exposes any `Skill` instance as an MCP tool, via a new `Skill.bridge_spec()` method (`src/skills/base.py`) — lets both translation backends share the same `BibleLookupSkill`/`WebSearchSkill` instances with no per-skill server code
+- `tests/test_translation_backend.py`, `tests/test_claude_code_agent.py`, `tests/test_skill_bridge.py`, `tests/test_batch_runner.py`
+- `mcp` added to `requirements.txt`
+
+Changed:
+- `translate.py`, `translate_batch.py`, `src/translator/batch_runner.py` — now call through `src.translation_backend.get_backend()` instead of `src.agent` directly; `src/agent.py` itself is untouched (still used by the other 8 pipeline scripts against the local model)
+- `config.py` — added `TRANSLATION_BACKEND`, `TRANSLATION_MODEL`, `TRANSLATION_MAX_BUDGET_USD`
+- `translate_batch.py`'s per-chapter request no longer hardcodes `model`/`max_tokens` — the active backend supplies its own default
+
+Note: Committed. See `docs/DECISIONS.md` (2026-07-21) for why, including an
+undocumented-but-required `MCP_CONNECTION_NONBLOCKING=false` env var fix.
+
 ## 2026-03-31
 Added:
 - `app/javascript/controllers/tabs_controller.ts` — tab strip controller; manages active tab class, lazy-loads Turbo Frame panels on first activation, persists selection to `sessionStorage` keyed by novel id
