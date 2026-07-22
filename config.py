@@ -30,6 +30,29 @@ NOVEL_FILES = {
     "terminology":            ("terminology.md",            "bible"),
 }
 
+# ── Rails app URL ─────────────────────────────────────────────────────────────
+# Used by BibleLookupSkill to reach the bible search API.
+HAWK_RAILS_URL = os.environ.get("HAWK_RAILS_URL", "http://localhost:3000")
+
 # ── API settings ──────────────────────────────────────────────────────────────
 MAX_TOKENS          = 16000
 FORMAT_MAX_TOKENS   = 64000   # Formatting output is ~1:1 with input; needs headroom for large batches
+
+# ── Translation backend ──────────────────────────────────────────────────────
+# Used only by translate.py / translate_batch.py (src/translation_backend.py).
+# Independent of LLM_BASE_URL/OPUS_MODEL/etc. above, which remain Ollama
+# config for the other pipeline scripts (preread, review, formatting, ...).
+#
+# "claude_code": shells out to the Claude Code CLI, authenticated via the
+#   user's Claude subscription (subscription-metered, not per-token API
+#   billing). Set TRANSLATION_BACKEND=local to fall back to the Ollama path
+#   with no code change.
+# "local": the existing Ollama-backed path (src/agent.py), unchanged.
+TRANSLATION_BACKEND = os.environ.get("TRANSLATION_BACKEND", "claude_code")
+TRANSLATION_MODEL   = os.environ.get("TRANSLATION_MODEL", "opus")
+
+# Dollar ceiling passed to `claude -p --max-budget-usd` — a real spend guard
+# even under subscription auth (verified: the CLI enforces it and aborts
+# with terminal_reason "budget_exhausted" if exceeded). $3.00 is a starting
+# placeholder; tune after observing a real chapter's total_cost_usd.
+TRANSLATION_MAX_BUDGET_USD = float(os.environ.get("TRANSLATION_MAX_BUDGET_USD", "3.00"))
