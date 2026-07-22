@@ -69,7 +69,7 @@ RSpec.describe "VoiceCalibration tab", type: :request do
         create(:chapter, novel: novel, number: 70, status: "reviewed")
       end
 
-      it "shows completed, not the failed state" do
+      it "shows the more recent one when the completed job is newer" do
         create(:translation_job, :voice_calibration, :failed, novel: novel, user: user,
                chapter_start: 69, chapter_end: 69, created_at: 1.hour.ago)
         create(:translation_job, :voice_calibration, :completed, novel: novel, user: user,
@@ -79,6 +79,19 @@ RSpec.describe "VoiceCalibration tab", type: :request do
 
         expect(response.body).to include("Completed")
         expect(response.body).not_to include("vc-tab__last-run--failed")
+      end
+
+      it "shows the more recent one when the failed job is newer" do
+        create(:translation_job, :voice_calibration, :completed, novel: novel, user: user,
+               chapter_start: 69, chapter_end: 69, created_at: 1.hour.ago)
+        job = create(:translation_job, :voice_calibration, :failed, novel: novel, user: user,
+                     chapter_start: 70, chapter_end: 70)
+
+        get novel_voice_calibration_tab_path(novel)
+
+        expect(response.body).to include("vc-tab__last-run--failed")
+        expect(response.body).to include(novel_translation_job_path(novel, job))
+        expect(response.body).not_to include("Last run: Chapter 69")
       end
     end
   end

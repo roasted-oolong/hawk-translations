@@ -11,6 +11,10 @@ class VoiceCalibrationController < ApplicationController
                                 .order(created_at: :desc).first
     @last_failed_job    = @novel.translation_jobs.voice_calibration.failed
                                 .order(created_at: :desc).first
+    # Whichever of the two actually happened most recently — not always the
+    # completed one. A newer failure must not be hidden behind an older
+    # success (see docs/DECISIONS.md, 2026-07-21).
+    @last_finished_job  = [ @last_completed_job, @last_failed_job ].compact.max_by(&:created_at)
     @pending_cards      = pending_card_count(@last_completed_job)
     @reviewed_chapters  = @novel.chapters.reviewed.by_number
   end

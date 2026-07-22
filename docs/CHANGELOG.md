@@ -13,6 +13,15 @@ reverses the 'stays local' decision") for why — reverses the 2026-07-20 "stays
 local" decision after the local Ollama server (`~/local-llm`) being down caused
 a silent-looking failure on chapter 73.
 
+## 2026-07-21 (3)
+Fixed:
+- `app/controllers/voice_calibration_controller.rb` — the "Last Run" panel on the Voice Calibration tab always preferred a completed job over a failed one, even when the failed job was more recent; a newer failure (e.g. chapter 73) was hidden behind an older success (e.g. chapter 72). Now picks whichever job actually finished last via a new `@last_finished_job` (`max_by(&:created_at)` over the last completed and last failed job)
+- `app/views/voice_calibration/tab.html.erb` — branches on `@last_finished_job`'s status instead of a fixed completed-then-failed `elsif` chain
+- `spec/requests/voice_calibration_spec.rb` — added coverage for a failed job being more recent than a completed one
+
+Note: Committed. See `docs/DECISIONS.md` (2026-07-21, "Voice calibration
+reverses the 'stays local' decision") — this closes the loop flagged there.
+
 ## 2026-07-21
 Added:
 - `src/translation_backend.py` — selects the active translation backend (`TRANSLATION_BACKEND`, default `"claude_code"`); `"local"` wraps the existing `src/agent.py`/Ollama path unchanged, `"claude_code"` is new

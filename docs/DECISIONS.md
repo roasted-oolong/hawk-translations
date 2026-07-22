@@ -1015,6 +1015,9 @@ remaining 7 pipeline scripts (`preread.py`, `review.py`, `format_chapters.py`,
 
 The tab-UI bug that hid the chapter 73 failure (`app/views/voice_calibration/
 tab.html.erb`'s last-run panel prefers `@last_completed_job` over a more recent
-`@last_failed_job` regardless of which actually happened last) was not fixed
-here — flagged separately, not blocking on this change.
+`@last_failed_job` regardless of which actually happened last) was flagged
+separately here and fixed in a follow-up pass the same day — see the
+`VoiceCalibrationController#tab` / tab view changes: a new `@last_finished_job`
+picks whichever of the two is actually most recent by `created_at`, and the
+view branches on its status instead of a fixed completed-then-failed priority.
 org membership. See ROADMAP.md.
