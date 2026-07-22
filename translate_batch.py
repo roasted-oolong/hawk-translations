@@ -2,12 +2,14 @@
 """
 translate_batch.py
 ------------------
-Entry point for batch translation of multiple chapters via the Anthropic
-Batch API.
+Entry point for batch translation of multiple chapters.
 
-Each chapter is submitted as an independent request in a single batch job.
-Reference files are loaded once and reused across all chapters. Results are
-written to disk as they are retrieved.
+Each chapter is translated as an independent, sequential call through the
+active translation backend (src/translation_backend.py — Claude Code by
+default, Ollama via TRANSLATION_BACKEND=local). There is no true parallel
+batch API here — requests are submitted one at a time via
+src/translator/batch_runner.py. Reference files are loaded once and reused
+across all chapters. Results are written to disk as they are retrieved.
 
 This script does not replace translate.py — it is an alternative for when
 you want to translate multiple chapters at once and do not need to review
@@ -33,8 +35,9 @@ load_dotenv()
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config import PROJECT_ROOT, OPUS_MODEL, MAX_TOKENS
-from src.agent import make_client
+from config import PROJECT_ROOT, HAWK_RAILS_URL, TRANSLATION_BACKEND
+from src.skills.bible_lookup import BibleLookupSkill
+from src.skills.web_search import WebSearchSkill
 from src.novel_resolver import resolve_novel, find_untranslated_chapters
 from src.preread.chapter_resolver import parse_chapter_selection
 from src.translator.chapter_loader import (
@@ -110,8 +113,7 @@ def _prompt_confirm(novel_name: str, selected: list[int]) -> bool:
   ── Plan ──────────────────────────────────────────────────
   Novel    : {novel_name}
   Chapters : {ch_range} ({len(selected)} chapter(s))
-  Model    : Opus
-  Method   : Local LLM (sequential)
+  Backend  : {TRANSLATION_BACKEND} (sequential, one call per chapter)
   Output   : chapters/Chapter_N.txt per chapter
   ──────────────────────────────────────────────────────────""")
 
@@ -184,8 +186,9 @@ def main() -> None:
         requests.append({
             "custom_id": f"chapter-{num}",
             "params": {
-                "model": OPUS_MODEL,
-                "max_tokens": MAX_TOKENS,
+                # No model/max_tokens here — the active backend
+                # (src/translation_backend.py) supplies its own appropriate
+                # default for whichever model naming scheme it uses.
                 "system": system_prompt,
                 "messages": [{"role": "user", "content": korean_text}],
             },
@@ -211,11 +214,13 @@ def main() -> None:
 
     # ── Submit and retrieve ────────────────────────────────────────────────
     report_progress(1)
-    client = make_client()
     run_translation_batch(
         requests=requests,
-        client=client,
         on_result=on_result,
+        skills=[
+            BibleLookupSkill(novel_dir.name, HAWK_RAILS_URL),
+            WebSearchSkill(),
+        ],
     )
 
     # ── Summary ───────────────────────────────────────────────────────────

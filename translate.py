@@ -19,7 +19,9 @@ This script is responsible for orchestration only:
   6. Present the output for review and write it to disk on confirmation
 
 Domain logic lives in src/prompt_builder.py.
-API logic lives in src/agent.py.
+Backend selection (which LLM actually gets called) lives in
+src/translation_backend.py — see that module for the "local" vs
+"claude_code" backends.
 Novel and chapter resolution lives in src/novel_resolver.py.
 Configuration lives in config.py.
 This file does not make decisions about translation — it connects the pieces.
@@ -36,10 +38,11 @@ load_dotenv()
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config import PROJECT_ROOT, NOVEL_FILES
-from src.agent import call, make_client
+from config import PROJECT_ROOT, NOVEL_FILES, HAWK_RAILS_URL
+from src.translation_backend import get_backend
 from src.novel_resolver import resolve_novel, find_next_chapter, extract_chapter_number
 from src.prompt_builder import TranslationContext, build_translation_prompt
+from src.skills.bible_lookup import BibleLookupSkill
 from src.skills.web_search import WebSearchSkill
 
 
@@ -210,12 +213,14 @@ def run() -> None:
 
     # ── Step 5: Translate ─────────────────────────────────────────
     print("\n  Translating — this will take a few minutes...")
-    client = make_client()
-    translated_text = call(
+    backend = get_backend()
+    translated_text = backend(
         system_prompt=system_prompt,
         user_message=korean_text,
-        client=client,
-        skills=[WebSearchSkill()],
+        skills=[
+            BibleLookupSkill(novel_dir.name, HAWK_RAILS_URL),
+            WebSearchSkill(),
+        ],
     )
     print("  ✓ Translation complete.")
 
