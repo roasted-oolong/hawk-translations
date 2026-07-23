@@ -17,6 +17,11 @@
 }
 
 /* Chapter statuses */
+.status-badge--ocr_processing {
+  color: var(--color-status-running-text);
+  background-color: var(--color-status-running-bg);
+}
+
 .status-badge--untranslated {
   color: var(--color-status-untranslated-text);
   background-color: var(--color-status-untranslated-bg);

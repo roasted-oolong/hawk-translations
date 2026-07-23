@@ -160,6 +160,14 @@ RSpec.describe "Chapters", type: :request do
 
         expect(response).to have_http_status(:unprocessable_entity)
       end
+
+      it "surfaces the validation error in the flash instead of failing silently" do
+        post novel_chapters_path(novel), params: {
+          chapter: { files: [file], number: 1 }
+        }
+
+        expect(flash[:alert]).to match(/number.*taken/i)
+      end
     end
   end
 
@@ -285,7 +293,7 @@ RSpec.describe "Chapters", type: :request do
 
         ch = Chapter.last
         expect(ch.number).to eq(4)
-        expect(ch.status).to eq("untranslated")
+        expect(ch.status).to eq("ocr_processing")
         job = enqueued_jobs.find { |j| j["job_class"] == "OcrChapterJob" }
         expect(job["arguments"][0]).to eq(ch.id)
         expect(job["arguments"][1].size).to eq(2)
@@ -321,6 +329,14 @@ RSpec.describe "Chapters", type: :request do
         }.not_to change(Chapter, :count)
 
         expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it "surfaces the validation error in the flash instead of failing silently" do
+        post create_from_photos_novel_chapters_path(novel), params: {
+          chapter: { number: 1, images: [ image_fixture ] }
+        }
+
+        expect(flash[:alert]).to match(/number.*taken/i)
       end
     end
 

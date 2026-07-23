@@ -34,33 +34,8 @@
   </div>
 </div>
 
-<div class="card chapter-show__files">
-  <h2 class="chapter-show__files-title">Files</h2>
-  <div class="chapter-show__file-row">
-    <span class="chapter-show__file-label">Korean Source</span>
-    <span class="chapter-show__file-value">
-      <% if @chapter.korean_source.attached? %>
-        <%= link_to "Download",
-              download_korean_source_novel_chapter_path(@novel, @chapter),
-              class: "btn btn--secondary btn--sm" %>
-      <% else %>
-        <span class="text-muted">Not uploaded</span>
-      <% end %>
-    </span>
-  </div>
-  <div class="chapter-show__file-row">
-    <span class="chapter-show__file-label">Translated Output</span>
-    <span class="chapter-show__file-value">
-      <% if @chapter.translated_output.attached? %>
-        <%= link_to "Download",
-              download_translated_output_novel_chapter_path(@novel, @chapter),
-              class: "btn btn--secondary btn--sm" %>
-      <% else %>
-        <span class="text-muted">Not available yet</span>
-      <% end %>
-    </span>
-  </div>
-</div>
+<%= turbo_stream_from "chapter_#{@chapter.id}" %>
+<%= render "files_card", chapter: @chapter %>
 
 <%# ------------------------------------------------------------------ %>
 <%# Chapter content editor                                              %>

@@ -247,6 +247,33 @@
   font-size: var(--text-sm);
 }
 
+.chapter-show__ocr-processing {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+}
+
+.chapter-show__ocr-processing-text {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.chapter-show__spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-text-muted);
+  border-radius: 50%;
+  animation: chapter-show-spin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes chapter-show-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* --- Chapter viewer (chapter show page content editor) --- */
 .chapter-viewer {
   margin-top: var(--space-6);
