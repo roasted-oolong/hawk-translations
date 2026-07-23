@@ -106,9 +106,9 @@
   <div data-bible-tabs-target="panel" data-bible-tabs-panel="photos" hidden>
     <p class="page-subtitle">
       Drop photos of a single chapter's pages, in reading order — or add them
-      in any order and reorder with the arrows below. A single PDF works too
-      (one PDF per chapter — don't mix a PDF with photos). Text is extracted
-      via OCR, then cleaned up automatically.
+      in any order and drag, sort by filename, or use the arrows to fix the
+      order below. A single PDF works too (one PDF per chapter — don't mix a
+      PDF with photos). Text is extracted via OCR, then cleaned up automatically.
     </p>
 
     <%= form_with url: create_from_photos_novel_chapters_path(@novel),
@@ -155,6 +155,15 @@
       </div>
 
       <p class="upload-zone__batch-error" data-photo-upload-target="batchError" data-testid="photo-upload-batch-error" hidden></p>
+
+      <div class="photo-upload-toolbar" data-photo-upload-target="toolbar" data-testid="photo-upload-toolbar" hidden>
+        <button type="button" class="btn btn--ghost btn--sm" data-testid="photo-sort-filename-btn"
+                data-action="click->photo-upload#onSortByFilename">Sort by filename</button>
+        <button type="button" class="btn btn--ghost btn--sm" data-testid="photo-reverse-order-btn"
+                data-action="click->photo-upload#onReverseOrder">Reverse order</button>
+        <span class="photo-upload-toolbar__selection" data-photo-upload-target="selectionSummary"
+              data-testid="photo-selection-summary" hidden></span>
+      </div>
 
       <ol class="photo-upload-list" data-photo-upload-target="thumbList" data-testid="photo-upload-list" hidden>
         <%# Rows are rendered here by photo_upload_controller.ts %>

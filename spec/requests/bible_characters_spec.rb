@@ -26,6 +26,12 @@ RSpec.describe "BibleCharacters", type: :request do
       get new_novel_bible_character_path(novel)
       expect(response).to have_http_status(:ok)
     end
+
+    it "prefills name from prefill_name param" do
+      get new_novel_bible_character_path(novel), params: { prefill_name: "Park Jihoon" }
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Park Jihoon")
+    end
   end
 
   describe "POST /novels/:novel_id/bible_characters" do
@@ -70,11 +76,27 @@ RSpec.describe "BibleCharacters", type: :request do
       expect(character.reload.role).to eq("Antagonist")
     end
 
+    it "returns JSON on successful update when requested" do
+      patch novel_bible_character_path(novel, character),
+            params: { bible_character: { role: "Antagonist" } },
+            as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body).to include("display_name" => character.name)
+    end
+
     it "re-renders edit on invalid params" do
       patch novel_bible_character_path(novel, character), params: {
         bible_character: { name: "" }
       }
       expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "returns JSON errors on invalid params when requested" do
+      patch novel_bible_character_path(novel, character),
+            params: { bible_character: { name: "" } },
+            as: :json
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body).to have_key("errors")
     end
   end
 

@@ -29,6 +29,12 @@ class ChapterReviewController < ApplicationController
   def update_text
     chapter = @novel.chapters.find(params[:id])
     text = params.require(:text)
+
+    # Disk write goes first: if it fails, the request fails before the DB
+    # attachment is touched, so a save either lands in both places or
+    # neither — never disk-stale-but-DB-current.
+    ChapterDiskWriter.new(@novel).write(chapter, text)
+
     chapter.translated_output.attach(
       io: StringIO.new(text),
       filename: "chapter_#{chapter.number}.txt",

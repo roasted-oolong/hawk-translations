@@ -134,6 +134,19 @@ RSpec.describe "Novels", type: :request do
     end
   end
 
+  describe "GET /novels/find_by_directory" do
+    it "returns the novel id when the directory_name matches" do
+      get find_by_directory_novels_path, params: { directory_name: novel.directory_name }
+      expect(response).to have_http_status(:ok)
+      expect(JSON.parse(response.body)).to eq({ "id" => novel.id })
+    end
+
+    it "returns 404 when no novel has that directory_name" do
+      get find_by_directory_novels_path, params: { directory_name: "does-not-exist" }
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
   describe "authentication" do
     it "redirects unauthenticated requests to login" do
       # Clear session by not signing in

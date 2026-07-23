@@ -67,7 +67,14 @@ export default class ChapterSelectController extends Controller {
   declare cancelJobsFormTarget:         HTMLFormElement
 
   private anchorIndex: number | null = null
-  private syncAfterFrame = (): void => { this.sync() }
+  private persistedIds: Set<number> = new Set()
+
+  private syncAfterFrame = (): void => {
+    this.checkboxTargets.forEach(cb => {
+      cb.checked = this.persistedIds.has(Number(cb.value))
+    })
+    this.sync()
+  }
 
   connect(): void {
     this.element.addEventListener("turbo:frame-load", this.syncAfterFrame)
@@ -118,6 +125,7 @@ export default class ChapterSelectController extends Controller {
 
   private sync(): void {
     const ids   = this.selectedIds()
+    this.persistedIds = new Set(ids)
     const count = ids.length
     const total = this.checkboxTargets.length
 

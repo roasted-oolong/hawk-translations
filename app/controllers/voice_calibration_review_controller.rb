@@ -76,23 +76,29 @@ class VoiceCalibrationReviewController < ApplicationController
     when "new_pattern"
       rule_text = params[:rule].presence || card["rule"]
       existing  = @novel.voice_calibration_passages.find_by(heading: card["heading"])
-      if existing
-        existing.update!(rule: rule_text)
-      else
-        max_pos = @novel.voice_calibration_passages.maximum(:position) || -1
-        @novel.voice_calibration_passages.create!(
-          heading:               card["heading"],
-          chapter_ref:           card["chapter_ref"],
-          quote:                 card["quote"],
-          what_it_demonstrates:  card["what_it_demonstrates"],
-          wrong_version:         card["wrong_version"],
-          rule:                  rule_text,
-          position:              max_pos + 1
-        )
-      end
+      passage =
+        if existing
+          existing.update!(rule: rule_text)
+          existing
+        else
+          max_pos = @novel.voice_calibration_passages.maximum(:position) || -1
+          @novel.voice_calibration_passages.create!(
+            heading:               card["heading"],
+            chapter_ref:           card["chapter_ref"],
+            quote:                 card["quote"],
+            what_it_demonstrates:  card["what_it_demonstrates"],
+            wrong_version:         card["wrong_version"],
+            rule:                  rule_text,
+            position:              max_pos + 1
+          )
+        end
+      VoiceCalibrationDocWriter.new(@novel).upsert(passage)
     when "retirement"
-      passage_id = card["passage_id"]
-      @novel.voice_calibration_passages.find_by(id: passage_id)&.destroy
+      passage = @novel.voice_calibration_passages.find_by(id: card["passage_id"])
+      if passage
+        VoiceCalibrationDocWriter.new(@novel).remove(passage.heading)
+        passage.destroy
+      end
     end
   end
 end

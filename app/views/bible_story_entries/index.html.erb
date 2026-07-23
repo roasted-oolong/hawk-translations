@@ -27,47 +27,80 @@
   any_entries = @entries_by_category.values.any?(&:any?)
 %>
 
-<% if any_entries %>
-  <% category_labels.each do |cat_key, cat_label| %>
-    <% entries = @entries_by_category[cat_key] %>
-    <% next if entries.none? %>
-
-    <div class="bible-story__category-section">
-      <h2 class="bible-story__category-heading"><%= cat_label %></h2>
-      <div class="data-table-wrapper">
-        <table class="data-table" data-testid="story-entries-table">
-          <thead>
-            <tr>
-              <th class="data-table__th">Title</th>
-              <th class="data-table__th">First Appears</th>
-              <th class="data-table__th data-table__th--actions"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <% entries.each do |entry| %>
-              <tr class="data-table__row">
-                <td class="data-table__td data-table__td--title">
-                  <%= link_to entry.title, novel_bible_story_entry_path(@novel, entry), class: "data-table__link" %>
-                </td>
-                <td class="data-table__td"><%= entry.first_appearance_chapter ? "Ch. #{entry.first_appearance_chapter}" : "—" %></td>
-                <td class="data-table__td data-table__td--actions">
-                  <%= link_to "Edit", edit_novel_bible_story_entry_path(@novel, entry), class: "btn btn--ghost btn--sm" %>
-                  <%= modal_button_to "Remove", novel_bible_story_entry_path(@novel, entry),
-                        method:        :delete,
-                        message:       "Remove \"#{entry.title}\"?",
-                        confirm_label: "Remove",
-                        button_class:  "btn btn--danger btn--sm" %>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  <% end %>
-<% else %>
-  <div class="empty-state" data-testid="story-entries-empty">
-    <p class="empty-state__message">No story entries yet.</p>
-    <%= link_to "Add the first story entry \u2192", new_novel_bible_story_entry_path(@novel) %>
+<div data-controller="bible-tabs">
+  <div class="bible-tabs__bar">
+    <button class="bible-tabs__btn bible-tabs__btn--active" type="button"
+            data-bible-tabs-target="btn"
+            data-action="click->bible-tabs#show"
+            data-bible-tabs-panel-param="main">
+      Story Entries
+    </button>
+    <button class="bible-tabs__btn" type="button"
+            data-bible-tabs-target="btn"
+            data-action="click->bible-tabs#show"
+            data-bible-tabs-panel-param="dismissed">
+      Dismissed preread
+      <% if @dismissed_preread_entries.any? %>
+        <span class="bible-tabs__count"><%= @dismissed_preread_entries.size %></span>
+      <% end %>
+    </button>
   </div>
-<% end %>
+
+  <div data-bible-tabs-target="panel" data-bible-tabs-panel="main">
+    <% if any_entries %>
+      <% category_labels.each do |cat_key, cat_label| %>
+        <% entries = @entries_by_category[cat_key] %>
+        <% next if entries.none? %>
+
+        <div class="bible-story__category-section">
+          <h2 class="bible-story__category-heading"><%= cat_label %></h2>
+          <div class="data-table-wrapper">
+            <table class="data-table" data-testid="story-entries-table">
+              <thead>
+                <tr>
+                  <th class="data-table__th">Title</th>
+                  <th class="data-table__th">First Appears</th>
+                  <th class="data-table__th data-table__th--actions"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% entries.each do |entry| %>
+                  <tr class="data-table__row">
+                    <td class="data-table__td data-table__td--title">
+                      <%= link_to entry.title, novel_bible_story_entry_path(@novel, entry), class: "data-table__link" %>
+                    </td>
+                    <td class="data-table__td"><%= entry.first_appearance_chapter ? "Ch. #{entry.first_appearance_chapter}" : "—" %></td>
+                    <td class="data-table__td data-table__td--actions">
+                      <%= link_to "Edit", edit_novel_bible_story_entry_path(@novel, entry), class: "btn btn--ghost btn--sm" %>
+                      <%= modal_button_to "Remove", novel_bible_story_entry_path(@novel, entry),
+                            method:        :delete,
+                            message:       "Remove \"#{entry.title}\"?",
+                            confirm_label: "Remove",
+                            button_class:  "btn btn--danger btn--sm" %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="empty-state" data-testid="story-entries-empty">
+        <p class="empty-state__message">No story entries yet.</p>
+        <%= link_to "Add the first story entry →", new_novel_bible_story_entry_path(@novel) %>
+      </div>
+    <% end %>
+  </div>
+
+  <div data-bible-tabs-target="panel" data-bible-tabs-panel="dismissed" hidden>
+    <% if @dismissed_preread_entries.any? %>
+      <%= render "components/preread_dismissed_entries",
+            entries: @dismissed_preread_entries, novel: @novel, category: :story %>
+    <% else %>
+      <div class="empty-state" data-testid="dismissed-empty">
+        <p class="empty-state__message">No dismissed preread entries.</p>
+      </div>
+    <% end %>
+  </div>
+</div>

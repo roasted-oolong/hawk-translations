@@ -26,6 +26,12 @@ RSpec.describe "BibleCulturalPhrases", type: :request do
       get new_novel_bible_cultural_phrase_path(novel)
       expect(response).to have_http_status(:ok)
     end
+
+    it "prefills phrase from prefill_name param" do
+      get new_novel_bible_cultural_phrase_path(novel), params: { prefill_name: "sunbae-nim" }
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("sunbae-nim")
+    end
   end
 
   describe "POST /novels/:novel_id/bible_cultural_phrases" do
@@ -73,11 +79,27 @@ RSpec.describe "BibleCulturalPhrases", type: :request do
       expect(phrase.reload.established_translation).to eq("Junior colleague")
     end
 
+    it "returns JSON on successful update when requested" do
+      patch novel_bible_cultural_phrase_path(novel, phrase),
+            params: { bible_cultural_phrase: { established_translation: "Junior colleague" } },
+            as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body).to include("display_name" => phrase.phrase)
+    end
+
     it "re-renders edit on invalid params" do
       patch novel_bible_cultural_phrase_path(novel, phrase), params: {
         bible_cultural_phrase: { phrase: "" }
       }
       expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "returns JSON errors on invalid params when requested" do
+      patch novel_bible_cultural_phrase_path(novel, phrase),
+            params: { bible_cultural_phrase: { phrase: "" } },
+            as: :json
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body).to have_key("errors")
     end
   end
 

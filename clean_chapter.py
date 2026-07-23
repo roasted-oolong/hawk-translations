@@ -8,6 +8,14 @@ stdout.
 
 Called by FormatKoreanChapterJob whenever a Korean chapter is uploaded.
 
+Requests reasoning_effort="low": this is the mechanical/HAIKU-tier task
+(fix line breaks, preserve content exactly, no judgment calls), not
+something that benefits from the model's default (medium) reasoning
+budget. Measured 2026-07-16 on the same prompt: low produced ~half the
+completion tokens of the default (303 vs 583) — meaningful on a CPU-only
+box generating at ~9-12 tokens/sec, where a full chapter's default-effort
+cleanup was taking 20-40+ minutes.
+
 Exit code 0 on success, 1 on failure.
 """
 
@@ -42,6 +50,7 @@ def main() -> None:
         response = client.chat.completions.create(
             model=HAIKU_MODEL,
             max_tokens=FORMAT_MAX_TOKENS,
+            reasoning_effort="low",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message},

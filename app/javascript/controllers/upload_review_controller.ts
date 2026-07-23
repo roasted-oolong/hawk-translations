@@ -56,7 +56,7 @@ export default class UploadReviewController extends Controller {
   declare readonly dropZoneTarget: HTMLElement
   declare readonly reviewTableTarget: HTMLElement
   declare readonly reviewBodyTarget: HTMLElement
-  declare readonly submitButtonTarget: HTMLButtonElement
+  declare readonly submitButtonTarget: HTMLInputElement
 
   // Internal list of files and their classifications.
   private rows: FileRow[] = []
@@ -210,15 +210,17 @@ export default class UploadReviewController extends Controller {
 
   private updateSubmitButton(): void {
     const count = this.rows.length
+    // submitButtonTarget is an <input type="submit"> — its label comes from
+    // `value`, not `textContent` (a void element has no rendered children).
     if (count === 0) {
       this.submitButtonTarget.disabled = true
-      this.submitButtonTarget.textContent = "Upload"
+      this.submitButtonTarget.value = "Upload"
       return
     }
 
     const allHaveNumbers = this.rows.every((r) => r.chapterNumber !== null)
     this.submitButtonTarget.disabled = !allHaveNumbers
-    this.submitButtonTarget.textContent = `Upload ${count} file${count === 1 ? "" : "s"}`
+    this.submitButtonTarget.value = `Upload ${count} file${count === 1 ? "" : "s"}`
   }
 
   // Rebuilds the input's FileList from the current `rows` array.

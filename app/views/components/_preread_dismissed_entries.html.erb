@@ -1,0 +1,32 @@
+<%# locals: (entries:, novel:, category:) %>
+<%
+  name_key   = { characters: :name, locations: :name, terminology: :term,
+                 cultural_phrases: :phrase, story: :title }[category]
+  korean_key = { characters: :korean_name, locations: :korean_name,
+                 terminology: :korean_term, cultural_phrases: :korean_phrase,
+                 story: nil }[category]
+%>
+<section class="preread-dismissed" data-testid="preread-dismissed-section">
+  <h2 class="preread-dismissed__heading">Dismissed preread entries</h2>
+  <p class="preread-dismissed__hint">
+    These entries were skipped during preread review. Restore any to add them back to the pending queue.
+  </p>
+
+  <div class="preread-dismissed__list">
+    <% entries.each do |entry| %>
+      <div class="preread-dismissed__entry" data-testid="dismissed-entry">
+        <div class="preread-dismissed__entry-info">
+          <span class="preread-dismissed__entry-name"><%= entry[name_key] %></span>
+          <% if korean_key && entry[korean_key].present? %>
+            <span class="preread-dismissed__entry-korean"><%= entry[korean_key] %></span>
+          <% end %>
+        </div>
+        <%= form_with url: novel_preread_dismiss_path(novel), method: :delete, data: { turbo: false } do |f| %>
+          <%= f.hidden_field :key, value: "#{category}:#{entry[:korean_key]}" %>
+          <%= f.submit "Restore", class: "btn btn--sm btn--ghost",
+                data: { testid: "btn-restore-#{entry[:korean_key]}" } %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</section>

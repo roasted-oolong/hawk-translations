@@ -5,6 +5,19 @@ RSpec.describe "Chapters", type: :request do
   let(:novel)    { create(:novel) }
   let!(:chapter) { create(:chapter, novel: novel, number: 1, status: "untranslated") }
 
+  # A Korean-content upload now also writes a disk copy via
+  # KoreanSourceDiskWriter, which requires HAWK_PROJECT_ROOT — scoped to a
+  # throwaway tmpdir so the write lands outside the repo and gets cleaned up.
+  around do |example|
+    hawk_root = Dir.mktmpdir("chapters_spec_root")
+    orig = ENV["HAWK_PROJECT_ROOT"]
+    ENV["HAWK_PROJECT_ROOT"] = hawk_root
+    example.run
+  ensure
+    ENV["HAWK_PROJECT_ROOT"] = orig
+    FileUtils.rm_rf(hawk_root) if hawk_root
+  end
+
   # ---------------------------------------------------------------------------
   # Helpers — build uploaded files whose *content* drives language detection
   # ---------------------------------------------------------------------------

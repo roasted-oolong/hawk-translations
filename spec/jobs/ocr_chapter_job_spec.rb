@@ -1,8 +1,9 @@
 require "rails_helper"
 
 RSpec.describe OcrChapterJob, type: :job do
-  let(:novel)   { create(:novel) }
-  let(:chapter) { create(:chapter, novel: novel, number: 3, status: "untranslated") }
+  let(:novel_dir) { Dir.mktmpdir("ocr_job_spec") }
+  let(:novel)     { create(:novel, directory_name: File.basename(novel_dir)) }
+  let(:chapter)   { create(:chapter, novel: novel, number: 3, status: "untranslated") }
 
   let(:scratch_dir) { Dir.mktmpdir("chapter_photos_spec") }
   let(:image_paths) do
@@ -15,12 +16,19 @@ RSpec.describe OcrChapterJob, type: :job do
 
   let(:transcribed_text) { "안녕하세요\n\n반갑습니다" }
 
+  # HAWK_PROJECT_ROOT is scoped to a throwaway tmpdir (not Rails.root) since
+  # the job now also writes a "Chapter <N> (Korean).txt" disk copy via
+  # KoreanSourceDiskWriter — pointing it at Rails.root would litter the repo
+  # with a real "novel-N/chapters/" directory on every test run. The OCR
+  # script path built from this root is never actually exercised: Open3 is
+  # stubbed in every example.
   around do |example|
     orig = ENV["HAWK_PROJECT_ROOT"]
-    ENV["HAWK_PROJECT_ROOT"] = Rails.root.to_s
+    ENV["HAWK_PROJECT_ROOT"] = File.dirname(novel_dir)
     example.run
   ensure
     ENV["HAWK_PROJECT_ROOT"] = orig
+    FileUtils.rm_rf(novel_dir)
   end
 
   def stub_ocr(output:, success: true, signaled: false, termsig: nil)

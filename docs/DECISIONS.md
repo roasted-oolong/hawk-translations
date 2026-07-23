@@ -1021,3 +1021,71 @@ separately here and fixed in a follow-up pass the same day — see the
 picks whichever of the two is actually most recent by `created_at`, and the
 view branches on its status instead of a fixed completed-then-failed priority.
 org membership. See ROADMAP.md.
+
+---
+
+## 2026-07-23 · Chapter OCR moves from Tesseract (Docker) to Claude vision via the `claude_code` CLI
+
+Reverses the 2026-07-15 PaddleOCR → Tesseract switch (see `ocr_chapter.py`'s own
+docstring history) a second time, for a different reason. Tesseract's failure
+mode on this project's real source images — clean e-reader screenshots, not
+degraded physical-book photos — was ordinary per-character Hangul jamo
+confusion (e.g. `콩개홀` for `공개홀`), not the PaddleOCR-era fabrication problem.
+Tested directly against a real page whether image preprocessing could close the
+gap: autocontrast, hard thresholding, and 2x upscaling were each tried against
+the same source image and none reduced the error count — they only shifted
+which characters came out wrong. That result pointed at the engine, not the
+input.
+
+Reuses the same subscription-authenticated `claude -p` headless CLI pattern as
+`TRANSLATION_BACKEND=claude_code` (`src/claude_code_agent.py`), rather than a
+metered `ANTHROPIC_API_KEY`, via a new, separate invocation in
+`ocr_chapter.py` — not routed through `claude_code_agent.call()`, since that
+function only accepts plain-text stdin and OCR needs an image content block
+(`--input-format stream-json` / `--output-format stream-json`, both required
+together). Verified end-to-end against two real chapter pages with zero
+character-level errors, versus several per page under Tesseract.
+
+Carries a real, different risk than Tesseract's: a generative model's failure
+mode is confident-looking fabrication (the exact problem PaddleOCR had), not
+Tesseract's more legible pixel-level noise. Mitigated by an explicit prompt
+instruction to mark genuinely illegible characters with a literal `[?]`
+rather than guess a plausible substitute — untested at scale, revisit if
+real chapters start showing silently-wrong text instead of visible `[?]`
+markers.
+
+Removed as part of this change: the `Pillow` dependency (`requirements.txt`)
+and the page-spread-splitting logic in `ocr_chapter.py`
+(`is_page_spread`/`split_spread`) — Claude reads a full two-page spread
+directly in correct reading order and rejoins sentences split across the
+page boundary on its own, which was the entire reason Tesseract needed
+spreads pre-split. `docker/tesseract/` is no longer called but left in place
+rather than deleted, in case of rollback.
+
+---
+
+## 2026-06-07 · Google OAuth removed for solo local development (backfilled 2026-07-23)
+
+Retroactive entry — this decision was made in commit `25cac42` without a
+corresponding log entry at the time; added now after a design review surfaced
+the gap between this commit and stale references to `SessionsController` in
+`CLAUDE.md` and elsewhere.
+
+The product is intended to be multi-team, multi-translator from the PRD
+onward (see the `Organization`/`Team`/`Membership`/`NovelTeamAssignment`
+schema and M6's permission-level enum, still present and unchanged). But
+while it's solo-developed and not ready for other users, requiring a real
+Google OAuth round-trip on every local session was pure friction with no
+offsetting benefit, and running a live OAuth flow against local/dev
+infrastructure was itself a posture the developer preferred to avoid.
+`SessionsController` and OmniAuth were removed; `ApplicationController#current_user`
+was reduced to `User.first` with no session check and no `before_action`
+login gate anywhere in the app.
+
+This is intentionally **not** scoped as a bug to fix opportunistically. It
+should be restored — real session auth, plus actually enforcing the
+`NovelTeamAssignment#permission_level` enum, which has never been enforced
+even when OAuth was active — as its own deliberate milestone at the point
+the developer is ready to onboard other translators or teams, not before.
+Until then, the multi-tenant schema stays in place unused rather than ripped
+out, since it's the correct foundation for that future milestone.

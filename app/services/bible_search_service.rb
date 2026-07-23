@@ -42,6 +42,16 @@ class BibleSearchService
   # filtering truly irrelevant results.
   SIMILARITY_THRESHOLD = 0.7
 
+  # Per-type config for the name-match supplemental query: which table to JOIN
+  # and which columns hold the primary name (English + Korean where applicable).
+  NAME_ENTRY_CONFIG = {
+    "BibleCharacter"      => { table: "bible_characters",       name_cols: %w[name korean_name]    },
+    "BibleLocation"       => { table: "bible_locations",        name_cols: %w[name korean_name]    },
+    "BibleTerminology"    => { table: "bible_terminologies",    name_cols: %w[term korean_term]    },
+    "BibleCulturalPhrase" => { table: "bible_cultural_phrases", name_cols: %w[phrase korean_phrase] },
+    "BibleStoryEntry"     => { table: "bible_story_entries",    name_cols: %w[title]               },
+  }.freeze
+
   def initialize(scope:, query:, categories: nil, limit: DEFAULT_LIMIT)
     @scope      = scope
     @query      = query.to_s.strip
@@ -52,13 +62,18 @@ class BibleSearchService
   def call
     return [] if @query.blank?
 
-    query_vector = VoyageClient.embed(@query)
+    begin
+      query_vector     = VoyageClient.embed(@query)
+      semantic_results = run_semantic_search(query_vector)
+      keyword_results  = run_keyword_search
+      merged           = merge_results(semantic_results, keyword_results)
+    rescue VoyageClient::ApiError, VoyageClient::ConfigurationError
+      # Voyage AI unavailable — fall back to keyword-only search so the
+      # feature still works in environments without the API key configured.
+      merged = run_keyword_results_only
+    end
 
-    semantic_results = run_semantic_search(query_vector)
-    keyword_results  = run_keyword_search
-
-    merged = merge_results(semantic_results, keyword_results)
-    load_records(merged)
+    prioritize_name_matches(load_records(merged))
   end
 
   private
@@ -105,6 +120,12 @@ class BibleSearchService
         { embedding_id: id, embeddable_type: type, embeddable_id: emb_id,
           novel_id: novel_id, score: rank.to_f, source: :keyword }
       }
+  end
+
+  # Keyword-only path used when Voyage AI is unavailable.
+  # Returns results in the same shape as merge_results so load_records works.
+  def run_keyword_results_only
+    run_keyword_search
   end
 
   # ---------------------------------------------------------------------------
@@ -165,6 +186,101 @@ class BibleSearchService
       record = record_lookup["#{r[:embeddable_type]}:#{r[:embeddable_id]}"]
       next if record.nil?
       r.merge(record: record).except(:source)
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Name-match prioritisation
+  #
+  # Two-stage process:
+  #
+  # 1. Supplemental fetch — runs a LIKE query against each bible entry table to
+  #    find records whose primary name/term/phrase contains the query string.
+  #    Any such records not already in the result pool are loaded and added.
+  #    This is necessary because long profiles have low ts_rank even when the
+  #    query matches the entry's own name exactly.
+  #
+  # 2. Word-aware boost — re-scores the combined set using whitespace-tokenised
+  #    name matching so that an entry NAMED "Yumi" ranks above one whose title
+  #    merely starts with "Yumi" (e.g. "Yumi's F.M.P.").
+  #
+  # Boost tiers (applied on top of existing score):
+  #   +3.0  all query words are exact whitespace tokens in the name AND the full
+  #          query phrase appears as a substring — strongest signal
+  #   +2.5  all query words are exact tokens (word-order variant, e.g. Korean)
+  #   +1.5  any query word is an exact token in the name
+  #   +1.0  any query word is a prefix of a name token ("Yumi" → "Yumi's …")
+  #   +0.5  any query word appears anywhere as a substring (fallback)
+  # ---------------------------------------------------------------------------
+  def prioritize_name_matches(results)
+    query_lower = @query.downcase
+    query_words = query_lower.split.select { |w| w.length >= 2 }
+    return results if query_words.empty?
+
+    # Stage 1 — add any name-matching entries missing from the pool
+    existing_ids = results.map { |r| r[:embedding_id] }.to_set
+    extras       = load_records(
+      fetch_name_match_embeddings.reject { |r| existing_ids.include?(r[:embedding_id]) }
+    )
+
+    # Stage 2 — apply word-aware boost to the full combined set and re-rank
+    (results + extras)
+      .map { |r|
+        boost = name_boost(entry_name(r[:record], r[:embeddable_type]).downcase,
+                           query_lower, query_words)
+        boost > 0 ? r.merge(score: r[:score] + boost) : r
+      }
+      .sort_by { |r| -r[:score] }
+      .first(@limit)
+  end
+
+  def name_boost(name, query_lower, query_words)
+    name_tokens = name.split
+    if query_words.all? { |w| name_tokens.include?(w) }
+      name.include?(query_lower) ? 3.0 : 2.5
+    elsif query_words.any? { |w| name_tokens.include?(w) }
+      1.5
+    elsif query_words.any? { |w| name_tokens.any? { |t| t.start_with?(w) } }
+      1.0
+    elsif query_words.any? { |w| name.include?(w) }
+      0.5
+    else
+      0.0
+    end
+  end
+
+  # Runs a LIKE query against each bible entry table for the current query.
+  # Returns embedding-shaped hashes (score 0.0) ready for load_records.
+  def fetch_name_match_embeddings
+    pattern = "%#{@query.downcase.gsub(/[%_\\]/) { |c| "\\#{c}" }}%"
+
+    NAME_ENTRY_CONFIG.flat_map do |type, cfg|
+      next [] if @categories.present? && !@categories.include?(type)
+
+      table = cfg[:table]
+      cond  = cfg[:name_cols].map { |c| "LOWER(#{table}.#{c}) LIKE ?" }.join(" OR ")
+
+      base_scope
+        .where(embeddable_type: type)
+        .joins("INNER JOIN #{table} ON #{table}.id = bible_embeddings.embeddable_id")
+        .where(cond, *Array.new(cfg[:name_cols].size, pattern))
+        .limit(@limit)
+        .pluck("bible_embeddings.id", "bible_embeddings.embeddable_type",
+               "bible_embeddings.embeddable_id", "bible_embeddings.novel_id")
+        .map { |id, t, emb_id, nid|
+          { embedding_id: id, embeddable_type: t, embeddable_id: emb_id,
+            novel_id: nid, score: 0.0, source: :name_match }
+        }
+    end
+  end
+
+  def entry_name(record, type)
+    case type
+    when "BibleCharacter", "BibleLocation" then "#{record.name} #{record.korean_name}"
+    when "BibleTerminology"                then "#{record.term} #{record.korean_term}"
+    when "BibleCulturalPhrase"             then "#{record.phrase} #{record.korean_phrase}"
+    when "BibleStoryEntry"                 then record.title.to_s
+    else ""
     end
   end
 

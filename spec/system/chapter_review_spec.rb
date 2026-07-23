@@ -18,10 +18,13 @@ RSpec.describe "Chapter Review compare mode", type: :system do
     visit "/auth/google_oauth2/callback"
   end
 
-  let(:org)   { create(:organization) }
-  let(:team)  { create(:team, organization: org) }
-  let(:user)  { create(:user) }
-  let(:novel) { create(:novel, organization: org, title: "Test Novel") }
+  let(:org)       { create(:organization) }
+  let(:team)      { create(:team, organization: org) }
+  let(:user)      { create(:user) }
+  let(:novel_dir) { Dir.mktmpdir }
+  let(:novel) do
+    create(:novel, organization: org, title: "Test Novel", directory_name: File.basename(novel_dir))
+  end
 
   let(:korean_text) do
     "첫 번째 단락입니다.\n\n두 번째 단락입니다.\n\n세 번째 단락입니다."
@@ -47,10 +50,19 @@ RSpec.describe "Chapter Review compare mode", type: :system do
   end
 
   before do
+    @orig_root = ENV["HAWK_PROJECT_ROOT"]
+    ENV["HAWK_PROJECT_ROOT"] = File.dirname(novel_dir)
+    FileUtils.mkdir_p(File.join(novel_dir, "chapters"))
+
     create(:membership, user: user, team: team)
     create(:novel_team_assignment, novel: novel, team: team)
     sign_in_as(user)
     visit novel_chapter_review_path(novel)
+  end
+
+  after do
+    ENV["HAWK_PROJECT_ROOT"] = @orig_root
+    FileUtils.rm_rf(novel_dir)
   end
 
   # ---------------------------------------------------------------------------
@@ -118,5 +130,8 @@ RSpec.describe "Chapter Review compare mode", type: :system do
 
     saved = chapter.reload.translated_output.download.force_encoding("UTF-8")
     expect(saved).to eq("Updated translation content.")
+
+    on_disk = File.read(File.join(novel_dir, "chapters", "Chapter 1.txt"), encoding: "UTF-8")
+    expect(on_disk).to eq("Updated translation content.")
   end
 end

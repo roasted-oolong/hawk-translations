@@ -4,7 +4,6 @@ interface CalibrationCard {
   id: string
   card_type: "new_pattern" | "retirement"
   heading?: string
-  passage_heading?: string
   rule?: string
   decision?: string | null
 }
@@ -27,9 +26,6 @@ export default class VoiceCalibrationReviewController extends Controller<HTMLEle
     "topbarTitle",
     "savedIndicator",
     "summaryDecision",
-    "ruleDisplay",
-    "ruleEdit",
-    "editBtn",
   ]
 
   declare updateUrlValue: string
@@ -47,9 +43,6 @@ export default class VoiceCalibrationReviewController extends Controller<HTMLEle
   declare topbarTitleTarget: HTMLElement
   declare savedIndicatorTarget: HTMLElement
   declare summaryDecisionTargets: HTMLElement[]
-  declare ruleDisplayTargets: HTMLElement[]
-  declare ruleEditTargets: HTMLTextAreaElement[]
-  declare editBtnTargets: HTMLButtonElement[]
 
   private index = 0
   private decisions = new Map<string, string>()
@@ -100,8 +93,8 @@ export default class VoiceCalibrationReviewController extends Controller<HTMLEle
     const cardType = card.dataset.cardType!
 
     // Determine if rule was edited (for new_pattern cards)
-    const ruleEdit    = this.ruleEditTargets[this.index]
-    const ruleDisplay = this.ruleDisplayTargets[this.index]
+    const ruleEdit    = this.ruleEditFor(card)
+    const ruleDisplay = this.ruleDisplayFor(card)
     const isEditing   = ruleEdit && !ruleEdit.hidden
     const editedRule  = isEditing ? ruleEdit.value : ruleEdit?.value
     const originalRule = this.cards.find(c => c.id === cardId)?.rule ?? ""
@@ -149,9 +142,11 @@ export default class VoiceCalibrationReviewController extends Controller<HTMLEle
   }
 
   toggleEdit(): void {
-    const ruleDisplay = this.ruleDisplayTargets[this.index]
-    const ruleEdit    = this.ruleEditTargets[this.index]
-    const editBtn     = this.editBtnTargets[this.index]
+    const card = this.cardTargets[this.index]
+    if (!card) return
+    const ruleDisplay = this.ruleDisplayFor(card)
+    const ruleEdit    = this.ruleEditFor(card)
+    const editBtn     = this.editBtnFor(card)
     if (!ruleDisplay || !ruleEdit || !editBtn) return
 
     const isEditing = !ruleEdit.hidden
@@ -244,13 +239,31 @@ export default class VoiceCalibrationReviewController extends Controller<HTMLEle
   }
 
   private cancelEdit(): void {
-    const ruleDisplay = this.ruleDisplayTargets[this.index]
-    const ruleEdit    = this.ruleEditTargets[this.index]
-    const editBtn     = this.editBtnTargets[this.index]
+    const card = this.cardTargets[this.index]
+    if (!card) return
+    const ruleDisplay = this.ruleDisplayFor(card)
+    const ruleEdit    = this.ruleEditFor(card)
+    const editBtn     = this.editBtnFor(card)
     if (!ruleEdit) return
     ruleEdit.hidden = true
     if (ruleDisplay) ruleDisplay.hidden = false
     if (editBtn) editBtn.textContent = "Edit"
+  }
+
+  // Rule-editing elements only exist inside new_pattern cards (retirement
+  // cards have no rule to edit), so they're queried scoped to the current
+  // card rather than via flat Stimulus target arrays — a flat array would
+  // misalign against cardTargets as soon as a retirement card is mixed in.
+  private ruleDisplayFor(card: HTMLElement): HTMLElement | null {
+    return card.querySelector<HTMLElement>('[data-voice-calibration-review-target="ruleDisplay"]')
+  }
+
+  private ruleEditFor(card: HTMLElement): HTMLTextAreaElement | null {
+    return card.querySelector<HTMLTextAreaElement>('[data-voice-calibration-review-target="ruleEdit"]')
+  }
+
+  private editBtnFor(card: HTMLElement): HTMLButtonElement | null {
+    return card.querySelector<HTMLButtonElement>('[data-voice-calibration-review-target="editBtn"]')
   }
 
   private async sendDecision(cardId: string, decision: string, rule?: string): Promise<void> {

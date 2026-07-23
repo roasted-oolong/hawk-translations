@@ -59,7 +59,7 @@
           </span>
           <div class="vc-review__nav-text">
             <p class="vc-review__nav-title">
-              <%= card["card_type"] == "new_pattern" ? card["heading"] : "Retire: #{card["passage_heading"]}" %>
+              <%= card["card_type"] == "new_pattern" ? card["heading"] : "Retire: #{card["heading"]}" %>
             </p>
             <p class="vc-review__nav-status"
                data-voice-calibration-review-target="navStatus"></p>
@@ -158,10 +158,10 @@
               </div>
 
               <h2 class="vc-review__heading" data-testid="retirement-heading">
-                Retire: <%= card["passage_heading"] %>
+                Retire: <%= card["heading"] %>
               </h2>
 
-              <blockquote class="vc-review__quote vc-review__quote--struck"><%= card["passage_quote"] %></blockquote>
+              <blockquote class="vc-review__quote vc-review__quote--struck"><%= card["quote"] %></blockquote>
 
               <div class="vc-review__field">
                 <p class="vc-review__field-label">Reason</p>
@@ -191,7 +191,7 @@
                   <%= card["card_type"] == "new_pattern" ? "Pattern" : "Retire" %>
                 </span>
                 <span class="vc-review__summary-name">
-                  <%= card["card_type"] == "new_pattern" ? card["heading"] : card["passage_heading"] %>
+                  <%= card["heading"] %>
                 </span>
               </div>
               <span class="vc-review__summary-decision"

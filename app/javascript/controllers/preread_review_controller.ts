@@ -24,6 +24,10 @@ export default class PrereadReviewController extends Controller<HTMLElement> {
     "editPanel",
   ]
 
+  static values = {
+    importUrl: String,
+  }
+
   declare entryCardTargets: HTMLElement[]
   declare navItemTargets: HTMLElement[]
   declare navStatusTargets: HTMLElement[]

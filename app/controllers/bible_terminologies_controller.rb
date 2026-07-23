@@ -1,6 +1,9 @@
 class BibleTerminologiesController < ApplicationController
+  PREREAD_CATEGORY = :terminology
+
   before_action :set_novel
   before_action :set_entry, only: [ :show, :edit, :update, :destroy ]
+  include BiblePrereadDismissed
 
   def index
     @entries = @novel.bible_terminologies.by_term
@@ -10,24 +13,33 @@ class BibleTerminologiesController < ApplicationController
 
   def new
     @entry = @novel.bible_terminologies.build
+    @entry.term = params[:prefill_name] if params[:prefill_name].present?
   end
 
   def create
     @entry = @novel.bible_terminologies.build(entry_params)
-    if @entry.save
-      redirect_to novel_bible_terminology_path(@novel, @entry), notice: "Term added."
-    else
-      render :new, status: :unprocessable_entity
+    respond_to do |format|
+      if @entry.save
+        format.html { redirect_to edit_novel_bible_terminology_path(@novel, @entry), notice: "Term added. Fill in the details below." }
+        format.json { render json: { id: @entry.id, display_name: @entry.term, edit_url: edit_novel_bible_terminology_path(@novel, @entry) }, status: :created }
+      else
+        format.html { render :new, status: :unprocessable_entity }
+        format.json { render json: { errors: @entry.errors.full_messages }, status: :unprocessable_entity }
+      end
     end
   end
 
   def edit; end
 
   def update
-    if @entry.update(entry_params)
-      redirect_to novel_bible_terminology_path(@novel, @entry), notice: "Term updated."
-    else
-      render :edit, status: :unprocessable_entity
+    respond_to do |format|
+      if @entry.update(entry_params)
+        format.html { redirect_to novel_bible_terminology_path(@novel, @entry), notice: "Term updated." }
+        format.json { render json: { id: @entry.id, display_name: @entry.term }, status: :ok }
+      else
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: { errors: @entry.errors.full_messages }, status: :unprocessable_entity }
+      end
     end
   end
 

@@ -1,6 +1,23 @@
 class PipelineJob < ApplicationJob
   queue_as :default
 
+  # Mirrors src/agent.py _is_local_endpoint: loopback and private-network hosts
+  # run on the user's own hardware, so jobs are serialised globally to avoid
+  # GPU contention. Remote/paid endpoints keep the default concurrent behaviour.
+  def self.local_llm_endpoint?
+    require "uri"
+    require "ipaddr"
+    host = URI.parse(ENV.fetch("LLM_BASE_URL", "http://localhost:11434/v1")).host.to_s
+    return true if %w[localhost ::1].include?(host)
+    addr = IPAddr.new(host)
+    addr.loopback? || addr.private?
+  rescue IPAddr::InvalidAddressError
+    false
+  end
+  private_class_method :local_llm_endpoint?
+
+  limits_concurrency to: 1, key: "pipeline_job", duration: 4.hours if local_llm_endpoint?
+
   # ---------------------------------------------------------------------------
   # Perform
   #
@@ -18,23 +35,24 @@ class PipelineJob < ApplicationJob
   # ---------------------------------------------------------------------------
   def perform(translation_job_id)
     translation_job = TranslationJob.find(translation_job_id)
+    return if translation_job.cancelled?
 
     update_chapters(translation_job, :start)
     translation_job.update!(status: "running", progress_pct: 0)
 
     stop_polling = false
     progress_thread = Thread.new do
-      ActiveRecord::Base.connection_pool.with_connection do
-        progress_file = "/tmp/hawk_job_#{translation_job.id}.progress"
-        until stop_polling
-          if File.exist?(progress_file)
-            pct = File.read(progress_file).strip.to_i.clamp(0, 100)
+      progress_file = "/tmp/hawk_job_#{translation_job.id}.progress"
+      until stop_polling
+        if File.exist?(progress_file)
+          pct = File.read(progress_file).strip.to_i.clamp(0, 100)
+          ActiveRecord::Base.connection_pool.with_connection do
             TranslationJob.where(id: translation_job.id).update_all(progress_pct: pct)
           end
-          sleep 2
         end
-        File.delete(progress_file) if File.exist?(progress_file)
+        sleep 2
       end
+      File.delete(progress_file) if File.exist?(progress_file)
     end
 
     stdout, stderr, success = PipelineDispatcher.call(translation_job)
@@ -95,16 +113,27 @@ class PipelineJob < ApplicationJob
   def build_result_payload(job, stdout)
     return stdout.presence || "(no output)" unless job.voice_calibration?
 
-    data  = JSON.parse(stdout)
-    cards = data["cards"] || []
+    data     = JSON.parse(stdout)
+    cards    = data["cards"] || []
+    passages = job.novel.voice_calibration_passages.to_a
     cards.each do |card|
       next unless card["card_type"] == "retirement"
-      passage = job.novel.voice_calibration_passages.find_by(heading: card["heading"])
+      passage = passages.find { |p| normalize_heading(p.heading) == normalize_heading(card["heading"]) }
       card["passage_id"] = passage&.id
+      card["quote"]      = passage&.quote
     end
     data.to_json
   rescue JSON::ParserError
     stdout.presence || "(no output)"
+  end
+
+  # The review model always cites a passage heading as it appears in
+  # voice_calibration.md (which includes a "Passage N — " prefix), but some
+  # passages were backfilled into the DB with just the descriptive title.
+  # Matching on the description only keeps retirement lookups working
+  # regardless of which format a given passage's heading is stored in.
+  def normalize_heading(text)
+    text.to_s.sub(/\APassage\s+\S+\s*[—-]\s*/, "").strip.downcase
   end
 
   def update_chapters(job, phase)

@@ -1,6 +1,9 @@
 class BibleStoryEntriesController < ApplicationController
+  PREREAD_CATEGORY = :story
+
   before_action :set_novel
   before_action :set_entry, only: [ :show, :edit, :update, :destroy ]
+  include BiblePrereadDismissed
 
   def index
     # Group by category for display; within each group, order by title
@@ -13,24 +16,33 @@ class BibleStoryEntriesController < ApplicationController
 
   def new
     @entry = @novel.bible_story_entries.build
+    @entry.title = params[:prefill_name] if params[:prefill_name].present?
   end
 
   def create
     @entry = @novel.bible_story_entries.build(entry_params)
-    if @entry.save
-      redirect_to novel_bible_story_entry_path(@novel, @entry), notice: "Story entry added."
-    else
-      render :new, status: :unprocessable_entity
+    respond_to do |format|
+      if @entry.save
+        format.html { redirect_to edit_novel_bible_story_entry_path(@novel, @entry), notice: "Story entry added. Fill in the details below." }
+        format.json { render json: { id: @entry.id, display_name: @entry.title, edit_url: edit_novel_bible_story_entry_path(@novel, @entry) }, status: :created }
+      else
+        format.html { render :new, status: :unprocessable_entity }
+        format.json { render json: { errors: @entry.errors.full_messages }, status: :unprocessable_entity }
+      end
     end
   end
 
   def edit; end
 
   def update
-    if @entry.update(entry_params)
-      redirect_to novel_bible_story_entry_path(@novel, @entry), notice: "Story entry updated."
-    else
-      render :edit, status: :unprocessable_entity
+    respond_to do |format|
+      if @entry.update(entry_params)
+        format.html { redirect_to novel_bible_story_entry_path(@novel, @entry), notice: "Story entry updated." }
+        format.json { render json: { id: @entry.id, display_name: @entry.title }, status: :ok }
+      else
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: { errors: @entry.errors.full_messages }, status: :unprocessable_entity }
+      end
     end
   end
 
