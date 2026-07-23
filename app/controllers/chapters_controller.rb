@@ -108,7 +108,8 @@ class ChaptersController < ApplicationController
 
     @chapter = @novel.chapters.build(
       number: params.dig(:chapter, :number).presence&.to_i,
-      title:  params.dig(:chapter, :title).presence
+      title:  params.dig(:chapter, :title).presence,
+      status: "ocr_processing"
     )
 
     if @chapter.save
@@ -118,6 +119,7 @@ class ChaptersController < ApplicationController
       redirect_to novel_chapter_path(@novel, @chapter),
         notice: "Chapter created. Extracting text from #{source_label}…"
     else
+      flash.now[:alert] = @chapter.errors.full_messages.to_sentence
       render :new, status: :unprocessable_entity
     end
   end
@@ -223,6 +225,7 @@ class ChaptersController < ApplicationController
       FormatKoreanChapterJob.perform_later(@chapter.id) if classification[:language] == :korean
       redirect_to novel_chapter_path(@novel, @chapter), notice: "Chapter created."
     else
+      flash.now[:alert] = @chapter.errors.full_messages.to_sentence
       render :new, status: :unprocessable_entity
     end
   end

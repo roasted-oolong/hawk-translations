@@ -64,6 +64,16 @@ RSpec.describe OcrChapterJob, type: :job do
 
         expect(Dir.exist?(scratch_dir)).to be false
       end
+
+      context "when the chapter started as ocr_processing" do
+        let(:chapter) { create(:chapter, novel: novel, number: 3, status: "ocr_processing") }
+
+        it "marks the chapter as untranslated once OCR completes, so the page stops showing the processing banner" do
+          described_class.perform_now(chapter.id, image_paths)
+
+          expect(chapter.reload.status).to eq("untranslated")
+        end
+      end
     end
 
     context "when the OCR script fails" do

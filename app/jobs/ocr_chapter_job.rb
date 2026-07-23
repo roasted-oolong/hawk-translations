@@ -21,6 +21,7 @@ class OcrChapterJob < ApplicationJob
       filename:     "ch#{chapter.number.to_s.rjust(3, '0')}_korean.txt",
       content_type: "text/plain"
     )
+    chapter.update!(status: "untranslated")
     FormatKoreanChapterJob.perform_later(chapter.id)
   ensure
     cleanup_tempfiles(image_paths)
