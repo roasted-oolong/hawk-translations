@@ -169,8 +169,11 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
 
   autoResize(event: Event) {
     const textarea = event.target as HTMLTextAreaElement
+    const screen = this.slideshowScreenTarget
+    const scrollTop = screen.scrollTop
     textarea.style.height = "auto"
     textarea.style.height = `${textarea.scrollHeight}px`
+    screen.scrollTop = scrollTop
   }
 
   toggleKorean() {
@@ -203,8 +206,11 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
 
   autoResizePane(event: Event) {
     const textarea = event.target as HTMLTextAreaElement
+    const screen = this.slideshowScreenTarget
+    const scrollTop = screen.scrollTop
     textarea.style.height = "auto"
     textarea.style.height = `${textarea.scrollHeight}px`
+    screen.scrollTop = scrollTop
   }
 
   private attachScrollSync() {
@@ -232,7 +238,13 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
   }
 
   private resizeCurrentTextarea() {
-    if (this.compareActive) return
+    if (this.compareActive) {
+      const paneText = this.paneTextTargets[this.index]
+      if (!paneText) return
+      paneText.style.height = "auto"
+      paneText.style.height = `${paneText.scrollHeight}px`
+      return
+    }
     const textarea = this.editableTextTargets[this.index]
     if (!textarea) return
     textarea.style.height = "auto"

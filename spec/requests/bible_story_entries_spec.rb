@@ -26,6 +26,12 @@ RSpec.describe "BibleStoryEntries", type: :request do
       get new_novel_bible_story_entry_path(novel)
       expect(response).to have_http_status(:ok)
     end
+
+    it "prefills title from prefill_name param" do
+      get new_novel_bible_story_entry_path(novel), params: { prefill_name: "The Regression Arc" }
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("The Regression Arc")
+    end
   end
 
   describe "POST /novels/:novel_id/bible_story_entries" do
@@ -86,11 +92,27 @@ RSpec.describe "BibleStoryEntries", type: :request do
       expect(entry.reload.content).to eq("Updated content.")
     end
 
+    it "returns JSON on successful update when requested" do
+      patch novel_bible_story_entry_path(novel, entry),
+            params: { bible_story_entry: { content: "Updated content." } },
+            as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body).to include("display_name" => entry.title)
+    end
+
     it "re-renders edit on invalid params" do
       patch novel_bible_story_entry_path(novel, entry), params: {
         bible_story_entry: { title: "" }
       }
       expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "returns JSON errors on invalid params when requested" do
+      patch novel_bible_story_entry_path(novel, entry),
+            params: { bible_story_entry: { title: "" } },
+            as: :json
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body).to have_key("errors")
     end
   end
 

@@ -47,18 +47,19 @@ class GenerateEmbeddingJob < ApplicationJob
     # Skip API call if content has not changed since last embedding.
     return unless BibleEmbedding.stale_for?(record, content_hash)
 
-    vector = VoyageClient.embed(text)
-
-    upsert_embedding(record, vector, content_hash, text)
+    begin
+      vector = VoyageClient.embed(text)
+      upsert_embedding(record, vector, content_hash, text)
+    rescue VoyageClient::ApiError, VoyageClient::ConfigurationError
+      # Voyage AI unavailable (e.g. no API key in dev). Write a keyword-only
+      # embedding so tsvector search still works without a real vector.
+      upsert_keyword_only_embedding(record, content_hash, text)
+    end
   end
 
   private
 
   def upsert_embedding(record, vector, content_hash, text)
-    # Use upsert_all for atomic insert-or-update on the unique index
-    # (embeddable_type, embeddable_id). The search_text tsvector is computed
-    # by PostgreSQL from the same text string so it stays in sync with the
-    # embedding without a second query.
     now = Time.current
 
     BibleEmbedding.upsert(
@@ -69,6 +70,26 @@ class GenerateEmbeddingJob < ApplicationJob
         organization_id: record.novel.organization_id,
         content_hash:    content_hash,
         embedding:       "[#{vector.join(",")}]",
+        search_text:     Arel.sql("to_tsvector('simple', #{ActiveRecord::Base.connection.quote(text)})"),
+        created_at:      now,
+        updated_at:      now
+      },
+      unique_by: %i[embeddable_type embeddable_id],
+      update_only: %i[content_hash embedding search_text]
+    )
+  end
+
+  def upsert_keyword_only_embedding(record, content_hash, text)
+    now = Time.current
+
+    BibleEmbedding.upsert(
+      {
+        embeddable_type: record.class.name,
+        embeddable_id:   record.id,
+        novel_id:        record.novel_id,
+        organization_id: record.novel.organization_id,
+        content_hash:    content_hash,
+        embedding:       nil,
         search_text:     Arel.sql("to_tsvector('simple', #{ActiveRecord::Base.connection.quote(text)})"),
         created_at:      now,
         updated_at:      now

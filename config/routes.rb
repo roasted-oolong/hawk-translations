@@ -7,6 +7,11 @@ Rails.application.routes.draw do
 
   # Novels + nested resources
   resources :novels, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
+    collection do
+      # GET /novels/find_by_directory?directory_name=idols-rewind
+      # Used by the Python pipeline to resolve a directory name to a novel ID.
+      get :find_by_directory
+    end
     member do
       # Cover art — purge the attachment for a novel
       delete "cover_art", action: :destroy_cover_art, as: :cover_art
@@ -27,6 +32,7 @@ Rails.application.routes.draw do
         post   :bulk_download
         patch  :bulk_update
         patch  :approve_all
+        post   :create_from_photos
       end
     end
 
@@ -60,11 +66,13 @@ Rails.application.routes.draw do
     get   "chapter_review",                         to: "chapter_review#show",        as: :chapter_review
     patch "chapter_review/chapters/:id/text",       to: "chapter_review#update_text", as: :update_chapter_review_text
 
-    # Preread results review + bible import
-    # GET  /novels/:novel_id/preread_review  → novel_preread_review_path
-    # POST /novels/:novel_id/bible_import    → novel_bible_import_path
-    get  "preread_review", to: "preread_review#show", as: :preread_review
-    post "bible_import",   to: "bible_import#create", as: :bible_import
+    # Preread results review + bible import + dismiss restore
+    # GET    /novels/:novel_id/preread_review   → novel_preread_review_path
+    # POST   /novels/:novel_id/bible_import     → novel_bible_import_path
+    # DELETE /novels/:novel_id/preread_dismiss  → novel_preread_dismiss_path
+    get    "preread_review", to: "preread_review#show",    as: :preread_review
+    post   "bible_import",   to: "bible_import#create",   as: :bible_import
+    delete "preread_dismiss", to: "preread_dismiss#destroy", as: :preread_dismiss
 
     # Voice calibration tab (Turbo Frame) + full-page review
     # GET   /novels/:novel_id/voice_calibration               → novel_voice_calibration_tab_path

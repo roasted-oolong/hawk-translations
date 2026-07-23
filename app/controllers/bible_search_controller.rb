@@ -4,7 +4,8 @@
 # BibleSearchController
 #
 # API-first search endpoint. Returns JSON only — no HTML views.
-# Authentication is enforced via ApplicationController's before_action.
+# No authentication is currently enforced — see the 2026-06-07 DECISIONS.md
+# entry on removing Google OAuth for solo local development.
 #
 # Routes:
 #   GET /novels/:novel_id/bible/search

@@ -17,8 +17,6 @@ class ChaptersController < ApplicationController
   def show
     @chapter_text = @chapter.translated_output.attached? ?
       @chapter.translated_output.download.force_encoding("UTF-8") : ""
-    @korean_text = @chapter.korean_source.attached? ?
-      @chapter.korean_source.download.force_encoding("UTF-8") : nil
   end
 
   def new
@@ -222,7 +220,10 @@ class ChaptersController < ApplicationController
     attach_file(@chapter, file, classification[:language])
 
     if @chapter.save
-      FormatKoreanChapterJob.perform_later(@chapter.id) if classification[:language] == :korean
+      if classification[:language] == :korean
+        KoreanSourceDiskWriter.new(@novel).write(@chapter)
+        FormatKoreanChapterJob.perform_later(@chapter.id)
+      end
       redirect_to novel_chapter_path(@novel, @chapter), notice: "Chapter created."
     else
       flash.now[:alert] = @chapter.errors.full_messages.to_sentence
@@ -251,7 +252,10 @@ class ChaptersController < ApplicationController
 
       if chapter.save
         created << chapter
-        FormatKoreanChapterJob.perform_later(chapter.id) if classification[:language] == :korean
+        if classification[:language] == :korean
+          KoreanSourceDiskWriter.new(@novel).write(chapter)
+          FormatKoreanChapterJob.perform_later(chapter.id)
+        end
       else
         failures << "#{file.original_filename} — #{chapter.errors.full_messages.to_sentence}"
       end

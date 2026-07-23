@@ -271,6 +271,13 @@
   padding: var(--space-10) var(--space-8);
 }
 
+/* The --compare class sets display:flex (specificity 0,1,0) which would override
+   [hidden]'s display:none (0,0,1) from modern-normalize, making all non-current
+   chapter cards visible when compare mode is active. Force-hide them. */
+.chapter-review__chapter-card[hidden] {
+  display: none !important;
+}
+
 .chapter-review__chapter-header {
   margin-bottom: var(--space-8);
 }

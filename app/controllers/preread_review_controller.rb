@@ -3,10 +3,12 @@ class PrereadReviewController < ApplicationController
 
   def show
     @pending_entries = BibleMarkdownParser.new(@novel).pending_entries
+
     if @pending_entries.values.all?(&:empty?)
-      redirect_to novel_path(@novel), notice: "No pending preread entries to review."
+      redirect_to novel_path(@novel), notice: "No pending preread entries. Dismissed entries can be restored from each bible category page."
       return
     end
+
     render layout: "review"
   end
 

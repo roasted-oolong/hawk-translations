@@ -15,41 +15,74 @@
   </div>
 </div>
 
-<% if @entries.none? %>
-  <div class="empty-state" data-testid="terminology-empty">
-    <p class="empty-state__message">No terminology entries yet.</p>
-    <%= link_to "Add the first term \u2192", new_novel_bible_terminology_path(@novel) %>
+<div data-controller="bible-tabs">
+  <div class="bible-tabs__bar">
+    <button class="bible-tabs__btn bible-tabs__btn--active" type="button"
+            data-bible-tabs-target="btn"
+            data-action="click->bible-tabs#show"
+            data-bible-tabs-panel-param="main">
+      Terminology
+    </button>
+    <button class="bible-tabs__btn" type="button"
+            data-bible-tabs-target="btn"
+            data-action="click->bible-tabs#show"
+            data-bible-tabs-panel-param="dismissed">
+      Dismissed preread
+      <% if @dismissed_preread_entries.any? %>
+        <span class="bible-tabs__count"><%= @dismissed_preread_entries.size %></span>
+      <% end %>
+    </button>
   </div>
-<% else %>
-  <div class="data-table-wrapper">
-    <table class="data-table" data-testid="terminology-table">
-      <thead>
-        <tr>
-          <th class="data-table__th">Term</th>
-          <th class="data-table__th">Korean Term</th>
-          <th class="data-table__th">First Appears</th>
-          <th class="data-table__th data-table__th--actions"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @entries.each do |entry| %>
-          <tr class="data-table__row">
-            <td class="data-table__td data-table__td--title">
-              <%= link_to entry.term, novel_bible_terminology_path(@novel, entry), class: "data-table__link" %>
-            </td>
-            <td class="data-table__td bible-td--korean"><%= entry.korean_term.presence || "—" %></td>
-            <td class="data-table__td"><%= entry.first_appearance_chapter ? "Ch. #{entry.first_appearance_chapter}" : "—" %></td>
-            <td class="data-table__td data-table__td--actions">
-              <%= link_to "Edit", edit_novel_bible_terminology_path(@novel, entry), class: "btn btn--ghost btn--sm" %>
-              <%= modal_button_to "Remove", novel_bible_terminology_path(@novel, entry),
-                    method:        :delete,
-                    message:       "Remove \"#{entry.term}\"?",
-                    confirm_label: "Remove",
-                    button_class:  "btn btn--danger btn--sm" %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+
+  <div data-bible-tabs-target="panel" data-bible-tabs-panel="main">
+    <% if @entries.none? %>
+      <div class="empty-state" data-testid="terminology-empty">
+        <p class="empty-state__message">No terminology entries yet.</p>
+        <%= link_to "Add the first term →", new_novel_bible_terminology_path(@novel) %>
+      </div>
+    <% else %>
+      <div class="data-table-wrapper">
+        <table class="data-table" data-testid="terminology-table">
+          <thead>
+            <tr>
+              <th class="data-table__th">Term</th>
+              <th class="data-table__th">Korean Term</th>
+              <th class="data-table__th">First Appears</th>
+              <th class="data-table__th data-table__th--actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @entries.each do |entry| %>
+              <tr class="data-table__row">
+                <td class="data-table__td data-table__td--title">
+                  <%= link_to entry.term, novel_bible_terminology_path(@novel, entry), class: "data-table__link" %>
+                </td>
+                <td class="data-table__td bible-td--korean"><%= entry.korean_term.presence || "—" %></td>
+                <td class="data-table__td"><%= entry.first_appearance_chapter ? "Ch. #{entry.first_appearance_chapter}" : "—" %></td>
+                <td class="data-table__td data-table__td--actions">
+                  <%= link_to "Edit", edit_novel_bible_terminology_path(@novel, entry), class: "btn btn--ghost btn--sm" %>
+                  <%= modal_button_to "Remove", novel_bible_terminology_path(@novel, entry),
+                        method:        :delete,
+                        message:       "Remove \"#{entry.term}\"?",
+                        confirm_label: "Remove",
+                        button_class:  "btn btn--danger btn--sm" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
   </div>
-<% end %>
+
+  <div data-bible-tabs-target="panel" data-bible-tabs-panel="dismissed" hidden>
+    <% if @dismissed_preread_entries.any? %>
+      <%= render "components/preread_dismissed_entries",
+            entries: @dismissed_preread_entries, novel: @novel, category: :terminology %>
+    <% else %>
+      <div class="empty-state" data-testid="dismissed-empty">
+        <p class="empty-state__message">No dismissed preread entries.</p>
+      </div>
+    <% end %>
+  </div>
+</div>

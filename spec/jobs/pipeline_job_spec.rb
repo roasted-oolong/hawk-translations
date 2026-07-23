@@ -26,7 +26,7 @@ RSpec.describe PipelineJob, type: :job do
               "quote"                => "He said nothing.",
               "what_it_demonstrates" => "Restraint.",
               "wrong_version"        => "He stayed silent, unable to speak.",
-              "rule"                 => "The narrator does not explain what silence means.",
+              "rule"                 => "The narrator does not explain what silence means."
             }
           ]
         }
@@ -59,18 +59,19 @@ RSpec.describe PipelineJob, type: :job do
               "id"        => "retirement_0",
               "card_type" => "retirement",
               "heading"   => "Passage 3 — Old pattern",
-              "reason"    => "Superseded by new pattern above.",
+              "reason"    => "Superseded by new pattern above."
             }
           ]
         }
       end
 
-      it "resolves passage_id on the retirement card" do
+      it "resolves passage_id and quote on the retirement card" do
         dispatch_with(stdout: payload.to_json)
 
         stored = JSON.parse(job.result_payload)
         card   = stored["cards"].first
         expect(card["passage_id"]).to eq(passage.id)
+        expect(card["quote"]).to eq("Some quote")
       end
     end
 
@@ -82,17 +83,52 @@ RSpec.describe PipelineJob, type: :job do
               "id"        => "retirement_0",
               "card_type" => "retirement",
               "heading"   => "Passage 99 — Does not exist",
-              "reason"    => "Redundant.",
+              "reason"    => "Redundant."
             }
           ]
         }
       end
 
-      it "stores nil for passage_id rather than raising" do
+      it "stores nil for passage_id and quote rather than raising" do
         dispatch_with(stdout: payload.to_json)
 
         stored = JSON.parse(job.result_payload)
         expect(stored["cards"].first["passage_id"]).to be_nil
+        expect(stored["cards"].first["quote"]).to be_nil
+      end
+    end
+
+    context "when the DB passage heading lacks the 'Passage N — ' prefix the model cites" do
+      # Passages seeded before the review flow existed were backfilled with just the
+      # descriptive title (no "Passage N — " prefix), but the model always cites the
+      # heading as it appears in voice_calibration.md, which does include the prefix.
+      let!(:passage) do
+        novel.voice_calibration_passages.create!(
+          heading:  "Old pattern without a prefix",
+          quote:    "Some quote",
+          rule:     "Some rule",
+          position: 0
+        )
+      end
+
+      let(:payload) do
+        {
+          "cards" => [
+            {
+              "id"        => "retirement_0",
+              "card_type" => "retirement",
+              "heading"   => "Passage 3 — Old pattern without a prefix",
+              "reason"    => "Superseded by new pattern above."
+            }
+          ]
+        }
+      end
+
+      it "still resolves passage_id by matching on the description, ignoring the prefix" do
+        dispatch_with(stdout: payload.to_json)
+
+        stored = JSON.parse(job.result_payload)
+        expect(stored["cards"].first["passage_id"]).to eq(passage.id)
       end
     end
 

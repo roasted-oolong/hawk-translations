@@ -2,9 +2,11 @@
 <% content_for :title, "Review — #{@novel.title} — Hawk" %>
 
 <div class="chapter-review"
-     data-controller="chapter-review"
+     data-controller="chapter-review bible-lookup"
      data-chapter-review-approve-url-value="<%= approve_novel_chapter_path(@novel, ":id") %>"
      data-chapter-review-save-url-value="<%= novel_update_chapter_review_text_path(@novel, id: ":id") %>"
+     data-bible-lookup-search-url-value="<%= novel_bible_search_path(@novel) %>"
+     data-bible-lookup-novel-id-value="<%= @novel.id %>"
      data-testid="chapter-review-shell">
 
   <%# ------------------------------------------------------------------ %>

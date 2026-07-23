@@ -26,6 +26,12 @@ RSpec.describe "BibleLocations", type: :request do
       get new_novel_bible_location_path(novel)
       expect(response).to have_http_status(:ok)
     end
+
+    it "prefills name from prefill_name param" do
+      get new_novel_bible_location_path(novel), params: { prefill_name: "Hangang Bridge" }
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Hangang Bridge")
+    end
   end
 
   describe "POST /novels/:novel_id/bible_locations" do
@@ -70,11 +76,27 @@ RSpec.describe "BibleLocations", type: :request do
       expect(location.reload.location_type).to eq("Stadium")
     end
 
+    it "returns JSON on successful update when requested" do
+      patch novel_bible_location_path(novel, location),
+            params: { bible_location: { location_type: "Stadium" } },
+            as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body).to include("display_name" => location.name)
+    end
+
     it "re-renders edit on invalid params" do
       patch novel_bible_location_path(novel, location), params: {
         bible_location: { name: "" }
       }
       expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "returns JSON errors on invalid params when requested" do
+      patch novel_bible_location_path(novel, location),
+            params: { bible_location: { name: "" } },
+            as: :json
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body).to have_key("errors")
     end
   end
 

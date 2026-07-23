@@ -68,6 +68,9 @@ group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
 
+  # Entity-relationship diagrams generated from the schema, as Mermaid [https://github.com/voormedia/rails-erd]
+  gem "rails-erd"
+
   # Run web + JS build processes together in development
   gem "foreman"
 

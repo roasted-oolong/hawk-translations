@@ -1,18 +1,24 @@
 require "rails_helper"
 
 RSpec.describe FormatKoreanChapterJob, type: :job do
-  let(:novel)   { create(:novel) }
-  let(:chapter) { create(:chapter, novel: novel, number: 3, status: "untranslated") }
+  let(:novel_dir) { Dir.mktmpdir("format_korean_job_spec") }
+  let(:novel)     { create(:novel, directory_name: File.basename(novel_dir)) }
+  let(:chapter)   { create(:chapter, novel: novel, number: 3, status: "untranslated") }
 
   let(:original_text) { "안녕\n하세요" }
   let(:cleaned_text)  { "안녕하세요" }
 
+  # HAWK_PROJECT_ROOT is scoped to a throwaway tmpdir (not Rails.root) since
+  # the job now also writes a "Chapter <N> (Korean).txt" disk copy via
+  # KoreanSourceDiskWriter — pointing it at Rails.root would litter the repo
+  # with a real "novel-N/chapters/" directory on every test run.
   around do |example|
     orig = ENV["HAWK_PROJECT_ROOT"]
-    ENV["HAWK_PROJECT_ROOT"] = Rails.root.to_s
+    ENV["HAWK_PROJECT_ROOT"] = File.dirname(novel_dir)
     example.run
   ensure
     ENV["HAWK_PROJECT_ROOT"] = orig
+    FileUtils.rm_rf(novel_dir)
   end
 
   before do

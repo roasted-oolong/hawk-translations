@@ -513,6 +513,30 @@
   color: var(--color-status-translated-text, #065f46);
 }
 
+/* --- Photo scan (OCR) upload: toolbar (sort / reverse / selection) --- */
+.photo-upload-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.photo-upload-toolbar__selection {
+  margin-left: auto;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.photo-upload-toolbar__clear-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: inherit;
+  text-decoration: underline;
+}
+
 /* --- Photo scan (OCR) upload: ordered thumbnail list --- */
 .photo-upload-list {
   list-style: none;
@@ -531,6 +555,34 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background-color: var(--color-bg);
+}
+
+.photo-upload-row--selected {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-subtle);
+}
+
+.photo-upload-row--dragging {
+  opacity: 0.4;
+}
+
+.photo-upload-row--drop-before {
+  box-shadow: 0 -2px 0 0 var(--color-primary);
+}
+
+.photo-upload-row--drop-after {
+  box-shadow: 0 2px 0 0 var(--color-primary);
+}
+
+.photo-upload-row__handle {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  cursor: grab;
+  line-height: 1;
+}
+
+.photo-upload-row__checkbox {
+  flex-shrink: 0;
 }
 
 .photo-upload-row__thumb {

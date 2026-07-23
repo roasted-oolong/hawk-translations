@@ -95,6 +95,14 @@ application.register("voice-calibration-review", VoiceCalibrationReviewControlle
 import AiStatusController from "./ai_status_controller"
 application.register("ai-status", AiStatusController)
 
+// bible-lookup: TAB-to-lookup shortcut for chapter editing.
+//   Intercepts TAB on any textarea inside the mounted element when text is
+//   selected, searches the bible API, and shows a positioned popover with
+//   matches or "Create as" options.
+//   Values: searchUrl, novelId
+import BibleLookupController from "./bible_lookup_controller"
+application.register("bible-lookup", BibleLookupController)
+
 // photo-upload: "Photo scan (OCR)" chapter upload form.
 //   Ordered thumbnail list (add via drop/select order, move up/down, remove),
 //   keeps the file input's FileList in sync with on-screen order.

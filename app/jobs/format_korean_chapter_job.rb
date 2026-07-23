@@ -29,6 +29,8 @@ class FormatKoreanChapterJob < ApplicationJob
       filename:     chapter.korean_source.filename.to_s,
       content_type: chapter.korean_source.content_type
     )
+    KoreanSourceDiskWriter.new(chapter.novel).write(chapter)
+    chapter.broadcast_korean_pane
   end
 
   private

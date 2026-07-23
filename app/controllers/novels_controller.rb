@@ -2,6 +2,18 @@ class NovelsController < ApplicationController
   before_action :set_novel,            only: [ :show, :edit, :update, :destroy, :destroy_cover_art ]
   before_action :set_form_collections, only: [ :new, :create, :edit, :update ]
 
+  # GET /novels/find_by_directory?directory_name=idols-rewind
+  # Returns { id: N } for use by the Python pipeline skill that needs to resolve
+  # a filesystem directory name to a Rails novel ID before querying the bible.
+  def find_by_directory
+    novel = Novel.find_by(directory_name: params[:directory_name].to_s.strip)
+    if novel
+      render json: { id: novel.id }
+    else
+      render json: { error: "Novel not found" }, status: :not_found
+    end
+  end
+
   def index
     @novels = Novel
       .includes(:series, chapters: [], translation_jobs: [])

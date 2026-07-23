@@ -129,6 +129,43 @@ RSpec.describe BibleSearchService do
       end
     end
 
+    context "name-match prioritisation" do
+      let!(:character) { create(:bible_character, novel: novel, name: "Yumi Cho", role: "Lead vocalist") }
+      let!(:other)     { create(:bible_character, novel: novel, name: "Hyuk Kang", role: "Yumi Cho's senior") }
+      let!(:term)      { create(:bible_terminology, novel: novel, term: "Yumi's First Solo Single", definition: "Her debut single") }
+
+      before do
+        embed!(character)
+        embed!(other)
+        embed!(term)
+      end
+
+      it "ranks the entry whose name matches the full query above entries that only mention it in a description" do
+        results = described_class.new(scope: novel, query: "Yumi Cho").call
+        names   = results.map { |r| r[:record].respond_to?(:name) ? r[:record].name : r[:record].term }
+        expect(names.first).to eq("Yumi Cho")
+      end
+
+      it "pulls in name matches not in the keyword pool and ranks them first" do
+        # Simulate a long profile where ts_rank for a single word is low by
+        # checking that the character appears first even when the term title
+        # starts with the same word.
+        results   = described_class.new(scope: novel, query: "Yumi").call
+        top_names = results.map { |r| r[:record].respond_to?(:name) ? r[:record].name : r[:record].term }
+        expect(top_names.first).to eq("Yumi Cho")
+      end
+
+      it "ranks an exact-word name match above a prefix-only name match" do
+        # "Yumi Cho" has "yumi" as an exact whitespace token.
+        # "Yumi's First Solo Single" has "yumi's" — prefix but not exact token.
+        results   = described_class.new(scope: novel, query: "Yumi").call
+        yumi_char = results.find { |r| r[:record].respond_to?(:name) && r[:record].name == "Yumi Cho" }
+        yumi_term = results.find { |r| r[:record].respond_to?(:term) && r[:record].term == "Yumi's First Solo Single" }
+        expect(yumi_char).not_to be_nil
+        expect(yumi_char[:score]).to be > yumi_term[:score]
+      end
+    end
+
     context "empty query" do
       it "returns an empty array" do
         results = described_class.new(scope: novel, query: "").call
@@ -142,11 +179,26 @@ RSpec.describe BibleSearchService do
     end
 
     context "when VoyageClient raises" do
-      it "propagates the error" do
+      let!(:character) { create(:bible_character, novel: novel, name: "Hyuk Kang", role: "Protagonist") }
+      before { embed!(character) }
+
+      it "falls back to keyword search on ApiError" do
         allow(VoyageClient).to receive(:embed).and_raise(VoyageClient::ApiError, "rate limited")
-        expect {
-          described_class.new(scope: novel, query: "anything").call
-        }.to raise_error(VoyageClient::ApiError)
+        results = described_class.new(scope: novel, query: "Hyuk Kang").call
+        expect(results).not_to be_empty
+        expect(results.first[:embeddable_type]).to eq("BibleCharacter")
+      end
+
+      it "falls back to keyword search on ConfigurationError" do
+        allow(VoyageClient).to receive(:embed).and_raise(VoyageClient::ConfigurationError, "no key")
+        results = described_class.new(scope: novel, query: "Hyuk Kang").call
+        expect(results).not_to be_empty
+      end
+
+      it "returns empty array when keyword search also finds nothing" do
+        allow(VoyageClient).to receive(:embed).and_raise(VoyageClient::ApiError, "rate limited")
+        results = described_class.new(scope: novel, query: "zzznomatch").call
+        expect(results).to eq([])
       end
     end
   end

@@ -26,6 +26,29 @@ RSpec.describe "Chapter photo upload", type: :system do
     path
   end
 
+  # Capybara's `drag_to` synthesizes raw mouse events, which Chrome does not
+  # translate into native HTML5 drag events for a `draggable="true"` element
+  # in headless/CDP-driven runs — dragstart never fires, so the row never
+  # actually moves. Dispatching DragEvents directly is the reliable way to
+  # exercise dragstart/dragover/drop in a system spec.
+  def drag_row(from_index, to_index, position: :after)
+    client_y_expr = position == :after ? "rect.bottom - 1" : "rect.top + 1"
+
+    page.execute_script(<<~JS)
+      const rows = document.querySelectorAll('[data-testid="photo-upload-row"]')
+      const source = rows[#{from_index}]
+      const target = rows[#{to_index}]
+      const dt = new DataTransfer()
+      const rect = target.getBoundingClientRect()
+      const clientY = #{client_y_expr}
+
+      source.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: dt }))
+      target.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt, clientY }))
+      target.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt, clientY }))
+      source.dispatchEvent(new DragEvent('dragend', { bubbles: true, cancelable: true, dataTransfer: dt }))
+    JS
+  end
+
   def pdf_fixture_path(filename)
     dir = Rails.root.join("tmp", "photo_upload_fixtures")
     FileUtils.mkdir_p(dir)
@@ -102,6 +125,21 @@ RSpec.describe "Chapter photo upload", type: :system do
       end
     end
 
+    context "selecting a row" do
+      before do
+        page.all("[data-testid='photo-select-checkbox']").first.check
+      end
+
+      it "shows a selection count and a clear link" do
+        expect(page).to have_selector("[data-testid='photo-selection-summary']", text: "1 selected")
+      end
+
+      it "clears the selection" do
+        click_button "Clear"
+        expect(page).to have_no_selector("[data-testid='photo-selection-summary']", visible: true)
+      end
+    end
+
     context "with a valid chapter number" do
       before { fill_in "Chapter #", with: 4 }
 
@@ -115,6 +153,61 @@ RSpec.describe "Chapter photo upload", type: :system do
         expect(page).to have_current_path(novel_chapter_path(novel, Chapter.last))
         expect(page).to have_text("Chapter created.")
       end
+    end
+  end
+
+  context "reordering three photos" do
+    before do
+      attach_file "chapter[images][]", [
+        photo_fixture_path("page_1.jpg"),
+        photo_fixture_path("page_2.jpg"),
+        photo_fixture_path("page_3.jpg")
+      ], make_visible: true
+    end
+
+    it "sorts rows back into filename order after being scrambled" do
+      within all("[data-testid='photo-upload-row']").first do
+        click_button "↓"
+      end
+
+      click_button "Sort by filename"
+
+      names = page.all("[data-testid='photo-upload-row']").map(&:text)
+      expect(names[0]).to include("page_1.jpg")
+      expect(names[1]).to include("page_2.jpg")
+      expect(names[2]).to include("page_3.jpg")
+    end
+
+    it "reverses the order" do
+      click_button "Reverse order"
+
+      names = page.all("[data-testid='photo-upload-row']").map(&:text)
+      expect(names[0]).to include("page_3.jpg")
+      expect(names[1]).to include("page_2.jpg")
+      expect(names[2]).to include("page_1.jpg")
+    end
+
+    it "moves a single row via drag and drop" do
+      drag_row(0, 2, position: :after)
+
+      names = page.all("[data-testid='photo-upload-row']").map(&:text)
+      expect(names[0]).to include("page_2.jpg")
+      expect(names[1]).to include("page_3.jpg")
+      expect(names[2]).to include("page_1.jpg")
+    end
+
+    it "drags a multi-selected group together, preserving their relative order" do
+      # Checking a box re-renders the whole row list, so re-query fresh
+      # between clicks rather than reusing a stale `all(...)` snapshot.
+      page.all("[data-testid='photo-select-checkbox']")[0].check
+      page.all("[data-testid='photo-select-checkbox']")[1].check
+
+      drag_row(0, 2, position: :after)
+
+      names = page.all("[data-testid='photo-upload-row']").map(&:text)
+      expect(names[0]).to include("page_3.jpg")
+      expect(names[1]).to include("page_1.jpg")
+      expect(names[2]).to include("page_2.jpg")
     end
   end
 

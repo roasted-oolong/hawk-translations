@@ -26,6 +26,12 @@ RSpec.describe "BibleTerminologies", type: :request do
       get new_novel_bible_terminology_path(novel)
       expect(response).to have_http_status(:ok)
     end
+
+    it "prefills term from prefill_name param" do
+      get new_novel_bible_terminology_path(novel), params: { prefill_name: "Gate Dungeon" }
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Gate Dungeon")
+    end
   end
 
   describe "POST /novels/:novel_id/bible_terminologies" do
@@ -70,11 +76,27 @@ RSpec.describe "BibleTerminologies", type: :request do
       expect(term.reload.definition).to eq("Updated definition.")
     end
 
+    it "returns JSON on successful update when requested" do
+      patch novel_bible_terminology_path(novel, term),
+            params: { bible_terminology: { definition: "Updated definition." } },
+            as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body).to include("display_name" => term.term)
+    end
+
     it "re-renders edit on invalid params" do
       patch novel_bible_terminology_path(novel, term), params: {
         bible_terminology: { term: "" }
       }
       expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "returns JSON errors on invalid params when requested" do
+      patch novel_bible_terminology_path(novel, term),
+            params: { bible_terminology: { term: "" } },
+            as: :json
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body).to have_key("errors")
     end
   end
 

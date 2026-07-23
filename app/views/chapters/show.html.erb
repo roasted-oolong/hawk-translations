@@ -107,17 +107,7 @@
 
       <div class="chapter-review__pane-divider" aria-hidden="true"></div>
 
-      <div class="chapter-review__korean-pane chapter-viewer__korean-pane"
-           data-chapter-viewer-target="koreanPane">
-        <% ko_paras = (@korean_text || "").split(/\n\n+/).map(&:strip).reject(&:empty?) %>
-        <% if ko_paras.any? %>
-          <% ko_paras.each do |para| %>
-            <p class="chapter-review__korean-para" lang="ko"><%= para %></p>
-          <% end %>
-        <% else %>
-          <p class="chapter-review__korean-empty">—</p>
-        <% end %>
-      </div>
+      <%= render "korean_pane", chapter: @chapter %>
     </div>
   </div>
 </div>

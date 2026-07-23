@@ -13,11 +13,12 @@ Ruby 3.4.2 · PostgreSQL · Hotwire (Turbo + Stimulus) · Solid Queue · Active 
 | Bible entries (characters, locations, etc.) | `app/controllers/bible_*_controller.rb`, `app/views/bible*/` | `docs/SCHEMA.md` |
 | Bible landing page + search | `app/controllers/bible_controller.rb`, `app/controllers/bible_search_controller.rb` | |
 | Dashboard | `app/controllers/dashboard_controller.rb`, `app/views/dashboard/` | |
-| Auth (Google OAuth) | `app/controllers/sessions_controller.rb` | `docs/CONVENTIONS.md` |
+| Auth (currently disabled — solo dev) | `app/controllers/application_controller.rb#current_user` | `docs/DECISIONS.md` (2026-06-07) |
 | Background job execution | `app/jobs/pipeline_job.rb` | `docs/CONVENTIONS.md` |
 | Python pipeline dispatch | `app/services/pipeline_dispatcher.rb` | |
 | Bible semantic search | `app/services/bible_search_service.rb` | |
 | Embedding generation | `app/jobs/generate_embedding_job.rb`, `app/services/voyage_client.rb` | |
+| Voice calibration review, commit | `app/controllers/voice_calibration_review_controller.rb`, `app/services/voice_calibration_doc_writer.rb` | |
 | Stimulus controllers | `app/javascript/controllers/` | `docs/UI.md` |
 | Model validations, scopes, enums | `app/models/` | `docs/SCHEMA.md` |
 | Request specs | `spec/requests/` | |
@@ -28,6 +29,7 @@ Ruby 3.4.2 · PostgreSQL · Hotwire (Turbo + Stimulus) · Solid Queue · Active 
 | Deployment config | `config/deploy.yml`, `.kamal/` | `docs/CONVENTIONS.md` |
 | Architecture decisions | `docs/DECISIONS.md` | |
 | Product context, personas | `docs/PRODUCT.md` | |
+| Full-Rails refactor plan (Python pipeline → Ruby) | `docs/RAILS_REFACTOR_PLAN.md` | |
 
 ## Naming conventions
 

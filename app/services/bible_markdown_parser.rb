@@ -39,6 +39,61 @@ class BibleMarkdownParser
     end
   end
 
+  def dismissed_entries
+    return empty_result if bible_dir.nil?
+
+    dismissed = dismissed_keys.to_set
+
+    CATEGORIES.each_with_object({}) do |cat, h|
+      h[cat] = parse_file(cat).select { |e| dismissed.include?("#{cat}:#{e[:korean_key]}") }
+    end
+  end
+
+  def dismissed_entries_for(cat)
+    return [] if bible_dir.nil?
+
+    dismissed = dismissed_keys.to_set
+
+    case cat
+    when :characters
+      by_korean = @novel.bible_characters.index_by(&:korean_name)
+      by_name   = @novel.bible_characters.index_by(&:name)
+      parse_file(cat).select { |e|
+        dismissed.include?("#{cat}:#{e[:korean_key]}") &&
+          (by_korean[e[:korean_key]] || by_name[e[:name]]).nil?
+      }
+    when :locations
+      by_korean = @novel.bible_locations.index_by(&:korean_name)
+      by_name   = @novel.bible_locations.index_by(&:name)
+      parse_file(cat).select { |e|
+        dismissed.include?("#{cat}:#{e[:korean_key]}") &&
+          (by_korean[e[:korean_key]] || by_name[e[:name]]).nil?
+      }
+    when :terminology
+      by_korean = @novel.bible_terminologies.index_by(&:korean_term)
+      by_name   = @novel.bible_terminologies.index_by(&:term)
+      parse_file(cat).select { |e|
+        dismissed.include?("#{cat}:#{e[:korean_key]}") &&
+          (by_korean[e[:korean_key]] || by_name[e[:term]]).nil?
+      }
+    when :cultural_phrases
+      by_korean = @novel.bible_cultural_phrases.index_by(&:korean_phrase)
+      by_name   = @novel.bible_cultural_phrases.index_by(&:phrase)
+      parse_file(cat).select { |e|
+        dismissed.include?("#{cat}:#{e[:korean_key]}") &&
+          (by_korean[e[:korean_key]] || by_name[e[:phrase]]).nil?
+      }
+    when :story
+      by_title = @novel.bible_story_entries.index_by(&:title)
+      parse_file(cat).select { |e|
+        dismissed.include?("#{cat}:#{e[:korean_key]}") &&
+          by_title[e[:title]].nil?
+      }
+    else
+      []
+    end
+  end
+
   private
 
   def empty_result
@@ -56,12 +111,15 @@ class BibleMarkdownParser
   # ---------------------------------------------------------------------------
 
   def parse_file(cat)
-    path = File.join(bible_dir, FILE_MAP[cat])
-    content = File.read(path, encoding: "UTF-8")
-    content.encode!("UTF-8", invalid: :replace, undef: :replace, replace: "")
-    parse_entries(cat, content)
-  rescue Errno::ENOENT, Errno::EACCES
-    []
+    @parsed_files ||= {}
+    @parsed_files[cat] ||= begin
+      path = File.join(bible_dir, FILE_MAP[cat])
+      content = File.read(path, encoding: "UTF-8")
+      content.encode!("UTF-8", invalid: :replace, undef: :replace, replace: "")
+      parse_entries(cat, content)
+    rescue Errno::ENOENT, Errno::EACCES
+      []
+    end
   end
 
   # ---------------------------------------------------------------------------
