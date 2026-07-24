@@ -5,20 +5,26 @@ in favor of an all-Ruby stack. Not a roadmap item — discretionary architecture
 work.
 
 **Status as of 2026-07-24: R0.5, R0.1, and R0.4 done. R0.2's config is
-written but not deployed. R0.3 is the only remaining open item, and it's
-blocked on VM access.**
+written but not deployed. R0.3 is explicitly skipped — see below.**
 All five R0 milestones below have reviewed Goal/Design/Acceptance-criteria
 sections. R1–R7 are still at the summary level in the artifact linked below;
 they have not been given the same detailed treatment.
 
-**To resume:** R0.3 (memory baseline & trigger rule) needs someone with
-actual access to the production Oracle VM to run its measurement
-procedure — nothing else in R0 is blocked on that. R0.2's
-`config/deploy.yml` change also still needs an actual `kamal deploy` run
-against production to confirm the `jobs` role boots there — a deliberately
-separate, deploy-triggering step from writing the config itself. Once R0.3
-either gets its VM measurement or is explicitly deferred, R0 is fully
-closed and R1 (backend seam) is next.
+**R0.3 skipped, not just blocked:** R0.3's whole premise is measuring real
+peak container memory on the production Oracle VM under real workloads.
+That presupposes hawk-translations is actually deployed and running
+there. It isn't — confirmed 2026-07-24, hawk-translations currently runs
+only locally via systemd (`install-service.sh`), not on Oracle. "Needs VM
+access" was the wrong framing; there is no production instance to measure
+yet. R0.3 is skipped by user decision rather than deferred pending access —
+revisit it only once R0.2's `kamal deploy` actually happens and a real
+production instance exists to measure.
+
+**To resume:** R0.2's `config/deploy.yml` change still needs an actual
+`kamal deploy` run against production to confirm the `jobs` role boots
+there — a deliberately separate, deploy-triggering step from writing the
+config itself. With R0.3 skipped, R0 is otherwise closed and R1 (backend
+seam) is next.
 
 **Full original plan, diagrams, and pros/cons (R1–R7, superseded for R0
 specifics by the detailed sections below):**
@@ -253,10 +259,12 @@ changes until that deploy happens.
 
 ### R0.3 — Memory baseline & trigger rule
 
-**Status: design finalized, ready to build. Measurement itself is a
-follow-up execution step — it requires access to the actual Oracle VM,
-which this design process didn't have; what's finalized here is the
-procedure, not the resulting numbers.**
+**Status: skipped (2026-07-24), design kept below for when it's picked
+back up.** Not blocked-pending-access — the design presupposes
+hawk-translations is already deployed and running on the production
+Oracle VM, which it isn't (it runs locally via systemd today; the R0.2
+Kamal role has never actually been deployed). There's no production
+instance yet to measure. Revisit only once a real `kamal deploy` happens.
 
 - **Goal:** Measure representative worst-case workloads, not synthetic
   stress tests — turn "watch memory" into an actual decision procedure by
