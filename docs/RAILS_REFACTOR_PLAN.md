@@ -7,11 +7,13 @@ work.
 **Status as of 2026-07-24: R0.5, R0.1, and R0.4 done. R0.2's config is
 written but not deployed. R0.3 is explicitly skipped — see below. R1's
 infra (env var contract, subprocess secrets policy, credential/network
-reachability) is fully designed, with no Ruby implementation code written
-yet — see R1 section below.**
-All five R0 milestones, plus R1's infra, have reviewed Goal/Design/
-Acceptance-criteria sections. R2–R7 are still at the summary level in the
-artifact linked below; they have not been given the same detailed treatment.
+reachability) and R2's `bible_lookup` in-process design are both fully
+designed, with no Ruby implementation code written for either yet — see
+the R1 and R2 sections below.**
+All five R0 milestones, plus R1's and R2's design sections, have reviewed
+Goal/Design/Acceptance-criteria sections. R3–R7 are still at the summary
+level in the artifact linked below; they have not been given the same
+detailed treatment.
 
 **R0.3 skipped, not just blocked:** R0.3's whole premise is measuring real
 peak container memory on the production Oracle VM under real workloads.
@@ -636,9 +638,126 @@ internals get written. That build step is separate, later work.
   - No Ruby implementation code is written as part of this section — that's
     a separate, later pass.
 
+## R2 — `bible_lookup` in-process design
+
+**Status: designed (2026-07-24), no Ruby code written yet.** Same
+design-only treatment as R1, at the user's request. This section also
+corrects a real gap in the original roadmap's framing of R2 — see the
+dependency note below before treating R2 as buildable in isolation.
+
+- **Goal:** Design the Ruby shape of the `bible_lookup` skill so it calls
+  `BibleSearchService` directly (in-process) instead of the current
+  Python-side loopback HTTP round trip, without designing the general
+  skill-invocation mechanism that will call it — that belongs to R1 (the
+  "local" backend's tool-calling loop) and R3 (the MCP bridge), not here.
+- **Dependency finding — the original roadmap's "worth doing even
+  standalone" claim needs a caveat.** Today, both Python backends already
+  reach `bible_lookup.py#execute()` in-process — `src/agent.py`'s own
+  agentic loop (the "local" backend) calls `skill.execute(tool_args)`
+  directly (`src/agent.py:195-198`), and the "claude_code" backend reaches
+  it via the MCP bridge subprocess. `execute()` itself is what does the
+  HTTP round trip, in both cases. So the HTTP hop this section removes is
+  inside the skill's own implementation, not something bolted on
+  separately per backend — good news for scoping, since porting the skill
+  fixes it for both backends at once. The caveat: nothing today can call
+  the *ported Ruby* skill class until either R1 ports `src/agent.py`'s tool
+  loop (for `"local"`) or R3 ports the MCP bridge (for `"claude_code"`).
+  R2's skill class can be **built and spec'd in isolation** right now
+  (call `.execute` directly in RSpec, no LLM involved) — that much of
+  "standalone" holds. It cannot be **exercised end-to-end by either
+  backend** until R1 or R3 also lands. Both should be true in this
+  document rather than only the first.
+- **Design:**
+  - **Shared `Skill` interface — a joint dependency of R1, R2, and R3, not
+    invented separately by whichever phase gets built first.** Python's
+    `src/skills/base.py::Skill` defines the contract every skill satisfies:
+    a `tool_definition` (OpenAI-format schema), `execute(tool_args) ->
+    String`, and a `name` convenience accessor. Ruby needs the equivalent
+    shape so R1's "local" tool loop and R3's MCP bridge can both call any
+    skill identically. This interface is small and stable enough that R2
+    can assume its rough shape (a class exposing a tool schema + an
+    `execute`-equivalent method returning a string) without waiting for R1
+    to formally settle it — but whoever builds R1's tool loop first should
+    treat that as the moment this interface actually gets fixed, and this
+    section's design should be revisited if it lands differently.
+  - **`bridge_spec()`-equivalent — explicitly not R2's problem.** Python's
+    `bridge_spec()` exists to reconstruct a skill instance inside a fresh
+    subprocess (the MCP bridge) that doesn't share memory with the caller.
+    Ruby's MCP bridge (R3) is very likely still a separate OS process too —
+    forked by the `claude` CLI itself, per the proposed architecture
+    diagram earlier in this doc — so the same reconstruction problem
+    (how does a freshly-spawned bridge process get a `BibleLookup` instance
+    scoped to the right novel, and does that process even have the Rails
+    environment loaded to reach `BibleSearchService`?) still needs solving.
+    That's named here as an R3 dependency to watch for, not solved in this
+    section — R2 only designs the skill class itself, assuming it runs
+    somewhere the Rails environment is already loaded.
+  - **Two HTTP hops removed, not one.** Today's Python skill makes two
+    separate round trips: `GET /novels/find_by_directory?directory_name=`
+    to resolve a novel ID (`bible_lookup.py:115-132`, memoized after first
+    call), then `GET /novels/:id/bible/search?q=&categories[]=&limit=`
+    (`bible_lookup.py:94-105`, calling `BibleSearchController#show` →
+    `BibleSearchService`). In Ruby, novel resolution becomes a single
+    `Novel.find_by!(directory_name:)` — no HTTP, not even to Rails' own
+    routes — memoized the same way (once per job, not once per query). The
+    search call becomes `BibleSearchService.new(scope: novel, query:,
+    categories:, limit: 5).call` directly, skipping
+    `BibleSearchController` entirely (that controller stays — it's still
+    the UI's own bible-search endpoint, untouched by this).
+  - **Result formatting ports verbatim, and belongs to R2, not R4.** The
+    five per-category formatters (`_format_record`'s branches for
+    `BibleCharacter`/`BibleLocation`/`BibleTerminology`/
+    `BibleCulturalPhrase`/`BibleStoryEntry`, `bible_lookup.py:149-204`) are
+    this skill's own output shaping, not the prompt-construction/
+    response-parsing logic R4–R6 are scoped around. They're mechanical
+    field-to-line mappings with no LLM-facing prompt text, so they carry
+    the same low-risk "mechanical port" character as R0's work — worth
+    doing here rather than waiting for R4's higher-risk pass, and small
+    enough that R4's own scope shouldn't have to account for them.
+  - **Error contract preserved: never raise, always return a string.**
+    Python's `execute()` catches broadly and returns
+    `"[bible_lookup error: ...]"`-shaped strings rather than raising — a
+    tool result the model can read and react to, not an application
+    exception. The Ruby port keeps this: a resolution failure (novel not
+    found) or a search failure becomes a returned error string, not a
+    raised error that would abort the surrounding job/call.
+  - **Category enum stays exactly the five existing types.** No new
+    category, no renaming — `BibleCharacter`, `BibleLocation`,
+    `BibleTerminology`, `BibleCulturalPhrase`, `BibleStoryEntry`, matching
+    both `_CATEGORY_LABELS` (Python) and `NAME_ENTRY_CONFIG`
+    (`BibleSearchService`, Ruby) today.
+  - **`HAWK_RAILS_URL` becomes dead code for this skill, not deleted
+    project-wide.** It's still referenced by `config.py` today for this one
+    purpose; once `bible_lookup` no longer needs it, whether the var itself
+    gets removed is a Python-cleanup decision for R7 (deleting the Python
+    layer entirely), not something to touch now.
+- **Acceptance criteria:**
+  - The Ruby `bible_lookup` skill's design (tool schema, `execute`-shaped
+    method) is specified against the shared `Skill` interface R1/R3 will
+    also use — not a bespoke shape invented only for this skill.
+  - Both HTTP hops (`find_by_directory`, `bible/search`) are replaced by
+    direct Ruby calls (`Novel.find_by!`, `BibleSearchService.new(...).call`)
+    — zero HTTP requests, including to the app's own routes.
+  - The five category formatters are ported as part of this skill, not
+    deferred to R4.
+  - The error contract (return a string, never raise) is preserved.
+  - This document states plainly that R2's skill class is buildable and
+    testable standalone, but not usable end-to-end by either backend until
+    R1 (`"local"` tool loop) or R3 (MCP bridge) also exists — correcting
+    the original roadmap's unqualified "worth doing even standalone" claim.
+  - The MCP-bridge subprocess's ability to reach `BibleSearchService` at
+    all (Rails environment loaded in a forked bridge process) is named as
+    an open R3 dependency, not assumed solved by this section.
+  - No Ruby implementation code is written as part of this section — that's
+    a separate, later pass.
+
 ---
 
-**R0 is fully built (R0.3 skipped by decision) and R1's infra is fully
-designed.** R1's actual Ruby code (the `Pipeline::Ruby::TranslateBatch`
-backend-seam implementation itself) is the next build step when picked up.
-R2–R7 remain at summary level in the linked artifact.
+**R0 is fully built (R0.3 skipped by decision). R1's infra and R2's
+`bible_lookup` design are both fully designed, with no Ruby implementation
+code written for either yet.** The next build step, whenever picked up, is
+writing actual Ruby code — R1's backend-seam adapters and/or R2's
+`bible_lookup` skill class, in whichever order suits actually landing R3's
+MCP bridge (both R2's end-to-end usability and its `bridge_spec()`-
+equivalent question depend on it). R3–R7 remain at summary level in the
+linked artifact.
