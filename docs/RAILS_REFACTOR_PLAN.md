@@ -4,20 +4,21 @@ Retiring the Python translation pipeline (`src/` + 9 root scripts, ~5,600 LOC)
 in favor of an all-Ruby stack. Not a roadmap item — discretionary architecture
 work.
 
-**Status as of 2026-07-24: R0.5 and R0.1 done. R0.2's config is written but
-not deployed. R0.3–R0.4 still to build.**
+**Status as of 2026-07-24: R0.5, R0.1, and R0.4 done. R0.2's config is
+written but not deployed. R0.3 is the only remaining open item, and it's
+blocked on VM access.**
 All five R0 milestones below have reviewed Goal/Design/Acceptance-criteria
 sections. R1–R7 are still at the summary level in the artifact linked below;
 they have not been given the same detailed treatment.
 
-**To resume with implementation, start here:** R0.3 (memory baseline &
-trigger rule) is next in build order, though its acceptance criteria need
-someone with actual access to the production Oracle VM to run the
-measurement procedure — everything else (R0.4) can be implemented and
-reviewed without that. R0.2's `config/deploy.yml` change still needs an
-actual `kamal deploy` run against production to confirm the `jobs` role
-boots there — a deliberately separate, deploy-triggering step from writing
-the config itself.
+**To resume:** R0.3 (memory baseline & trigger rule) needs someone with
+actual access to the production Oracle VM to run its measurement
+procedure — nothing else in R0 is blocked on that. R0.2's
+`config/deploy.yml` change also still needs an actual `kamal deploy` run
+against production to confirm the `jobs` role boots there — a deliberately
+separate, deploy-triggering step from writing the config itself. Once R0.3
+either gets its VM measurement or is explicitly deferred, R0 is fully
+closed and R1 (backend seam) is next.
 
 **Full original plan, diagrams, and pros/cons (R1–R7, superseded for R0
 specifics by the detailed sections below):**
@@ -324,7 +325,13 @@ procedure, not the resulting numbers.**
 
 ### R0.4 — `PIPELINE_IMPL` toggle
 
-**Status: design finalized, ready to build.**
+**Status: done** (`app/services/pipeline_implementation.rb`,
+`app/services/pipeline/ruby/*.rb`, `PipelineDispatcher#call` now resolves
+`PipelineImplementation.for(@job.job_type)` and routes through
+`dispatch_python`/`dispatch_ruby`). All five `PIPELINE_IMPL_<TYPE>` vars
+default to `"python"`; a stub `Pipeline::Ruby::*` class exists for every
+job type, each raising `NotImplementedError` internally. R1-R6 change only
+those stubs' internals from here on.
 
 - **Goal:** Make each job type's pipeline implementation (legacy Python
   script vs. new in-process Ruby service, once R1–R6 land one) independently

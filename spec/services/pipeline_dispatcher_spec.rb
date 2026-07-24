@@ -72,14 +72,27 @@ RSpec.describe PipelineDispatcher do
       expect(stderr).to include("Dispatch error")
     end
 
-    it "returns a failure triple for an unknown job_type without touching Subprocess" do
+    it "raises for a job_type PipelineImplementation doesn't recognize, without touching Subprocess" do
       job.update_column(:job_type, "not_a_real_type")
 
       expect(Pipeline::Subprocess).not_to receive(:run)
-      stdout, stderr, success = described_class.call(job)
+      expect { described_class.call(job) }.to raise_error(ArgumentError)
+    end
+  end
 
-      expect(success).to eq(false)
-      expect(stderr).to include("Unknown job_type")
+  describe "#call with PIPELINE_IMPL_PREREAD=ruby" do
+    around do |example|
+      original = ENV["PIPELINE_IMPL_PREREAD"]
+      ENV["PIPELINE_IMPL_PREREAD"] = "ruby"
+      example.run
+      ENV["PIPELINE_IMPL_PREREAD"] = original
+    end
+
+    it "routes to Pipeline::Ruby::Preread instead of Pipeline::Subprocess" do
+      expect(Pipeline::Subprocess).not_to receive(:run)
+      expect(Pipeline::Ruby::Preread).to receive(:call).with(job).and_return([ "ok", "", true ])
+
+      expect(described_class.call(job)).to eq([ "ok", "", true ])
     end
   end
 end

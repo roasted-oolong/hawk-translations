@@ -38,6 +38,18 @@ class PipelineDispatcher
   end
 
   def call
+    case PipelineImplementation.for(@job.job_type)
+    when :python then dispatch_python
+    when :ruby   then dispatch_ruby
+    end
+  end
+
+  private
+
+  # Two flat per-job-type dispatch tables, not one interleaved structure —
+  # configuration lookup (above) and routing (here) are different
+  # responsibilities and stay legible as separate ones.
+  def dispatch_python
     case @job.job_type
     when "preread"                 then run_preread
     when "translate_batch"         then run_translate_batch
@@ -49,7 +61,20 @@ class PipelineDispatcher
     end
   end
 
-  private
+  # Ruby implementations are stubs today (each raises NotImplementedError
+  # internally) — this dispatch structure is not expected to change again as
+  # R1-R6 land; only the stubs' internals do.
+  def dispatch_ruby
+    case @job.job_type
+    when "preread"                 then Pipeline::Ruby::Preread.call(@job)
+    when "translate_batch"         then Pipeline::Ruby::TranslateBatch.call(@job)
+    when "bible_build"             then Pipeline::Ruby::BibleBuild.call(@job)
+    when "post_translation_review" then Pipeline::Ruby::PostTranslationReview.call(@job)
+    when "voice_calibration"       then Pipeline::Ruby::VoiceCalibration.call(@job)
+    else
+      [ "", "Unknown job_type: #{@job.job_type}", false ]
+    end
+  end
 
   # ---------------------------------------------------------------------------
   # Preread — invokes run_preread.py with novel dir and chapter range.
