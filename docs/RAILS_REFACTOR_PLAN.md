@@ -640,10 +640,11 @@ internals get written. That build step is separate, later work.
 
 ## R2 — `bible_lookup` in-process design
 
-**Status: designed (2026-07-24), no Ruby code written yet.** Same
-design-only treatment as R1, at the user's request. This section also
-corrects a real gap in the original roadmap's framing of R2 — see the
-dependency note below before treating R2 as buildable in isolation.
+**Status: designed (2026-07-24), revised same day after review. No Ruby
+code written yet.** Same design-only treatment as R1, at the user's
+request. This section also corrects a real gap in the original roadmap's
+framing of R2 — see the dependency note below before treating R2 as
+buildable in isolation.
 
 - **Goal:** Design the Ruby shape of the `bible_lookup` skill so it calls
   `BibleSearchService` directly (in-process) instead of the current
@@ -671,15 +672,25 @@ dependency note below before treating R2 as buildable in isolation.
   - **Shared `Skill` interface — a joint dependency of R1, R2, and R3, not
     invented separately by whichever phase gets built first.** Python's
     `src/skills/base.py::Skill` defines the contract every skill satisfies:
-    a `tool_definition` (OpenAI-format schema), `execute(tool_args) ->
-    String`, and a `name` convenience accessor. Ruby needs the equivalent
-    shape so R1's "local" tool loop and R3's MCP bridge can both call any
-    skill identically. This interface is small and stable enough that R2
-    can assume its rough shape (a class exposing a tool schema + an
-    `execute`-equivalent method returning a string) without waiting for R1
-    to formally settle it — but whoever builds R1's tool loop first should
-    treat that as the moment this interface actually gets fixed, and this
-    section's design should be revisited if it lands differently.
+    a `tool_definition`, `execute(tool_args) -> String`, and a `name`
+    convenience accessor. Ruby needs the equivalent shape so R1's "local"
+    tool loop and R3's MCP bridge can both call any skill identically.
+    **The schema belongs to no single provider — described generically as
+    a tool schema (name + description + JSON-schema parameters), adapted
+    per provider, not owned by one.** Checked against
+    `skill_bridge.py:52-61`: the bridge doesn't forward `tool_definition`
+    to MCP verbatim today — it already extracts
+    `tool_definition["function"]["description"]` and `["parameters"]` to
+    build an MCP `types.Tool(inputSchema=...)`. So the bridge already
+    treats the schema as an intermediate format it adapts, not a
+    provider-owned pass-through; this section's wording now matches that
+    rather than calling it "OpenAI-format," which implied the interface
+    belonged to one provider when the code already disagrees. This
+    interface is small and stable enough that R2 can assume its rough
+    shape without waiting for R1 to formally settle it — but whoever
+    builds R1's tool loop first should treat that as the moment this
+    interface actually gets fixed, and this section's design should be
+    revisited if it lands differently.
   - **`bridge_spec()`-equivalent — explicitly not R2's problem.** Python's
     `bridge_spec()` exists to reconstruct a skill instance inside a fresh
     subprocess (the MCP bridge) that doesn't share memory with the caller.
@@ -699,28 +710,66 @@ dependency note below before treating R2 as buildable in isolation.
     (`bible_lookup.py:94-105`, calling `BibleSearchController#show` →
     `BibleSearchService`). In Ruby, novel resolution becomes a single
     `Novel.find_by!(directory_name:)` — no HTTP, not even to Rails' own
-    routes — memoized the same way (once per job, not once per query). The
-    search call becomes `BibleSearchService.new(scope: novel, query:,
-    categories:, limit: 5).call` directly, skipping
+    routes. The search call becomes `BibleSearchService.new(scope: novel,
+    query:, categories:, limit: 5).call` directly, skipping
     `BibleSearchController` entirely (that controller stays — it's still
-    the UI's own bible-search endpoint, untouched by this).
-  - **Result formatting ports verbatim, and belongs to R2, not R4.** The
-    five per-category formatters (`_format_record`'s branches for
+    the UI's own bible-search endpoint, untouched by this). **The skill
+    depends only on `BibleSearchService`'s public API** (`.new(...).call`)
+    — never its private scoring/merge/formatting internals — so
+    `BibleSearchService` stays free to refactor those without touching R2.
+  - **Instance lifetime, thread safety, and the `find_by!` contract.**
+    Checked against `translate.py:221`/`translate_batch.py:221`: today's
+    skill is instantiated fresh per call site
+    (`BibleLookupSkill(novel_dir.name, HAWK_RAILS_URL)`), never a shared
+    singleton — the Ruby port keeps this shape. Novel resolution is
+    memoized on **that instance** (an `@novel` ivar, mirroring today's
+    `@novel_id`), not a class variable or any form of global/process-wide
+    cache; the instance is discarded once its job finishes, so nothing
+    persists or leaks across jobs. Because each job/call site owns its own
+    instance, the skill is never shared between concurrent jobs — stated
+    explicitly here rather than left to infer, since a future reader
+    reaching for `Rails.cache` or a class-level `@@novel` to "avoid
+    re-resolving" would silently reintroduce cross-job leakage. `Novel.find_by!`
+    raising `ActiveRecord::RecordNotFound` on a missing novel must be
+    rescued **at the skill's call site**, converting it into a
+    `"[bible_lookup error: ...]"`-shaped return — otherwise the bang
+    finder contradicts the "never raise" contract below. This isn't a new
+    pattern: `BibleSearchController#set_novel` already does exactly this
+    (`Novel.find` + `rescue ActiveRecord::RecordNotFound`) for the same
+    reason, just returning a string instead of a 404.
+  - **Result formatting ports verbatim, and belongs to R2, not R4.** One
+    formatter per category (`_format_record`'s branches for
     `BibleCharacter`/`BibleLocation`/`BibleTerminology`/
-    `BibleCulturalPhrase`/`BibleStoryEntry`, `bible_lookup.py:149-204`) are
-    this skill's own output shaping, not the prompt-construction/
-    response-parsing logic R4–R6 are scoped around. They're mechanical
-    field-to-line mappings with no LLM-facing prompt text, so they carry
-    the same low-risk "mechanical port" character as R0's work — worth
-    doing here rather than waiting for R4's higher-risk pass, and small
-    enough that R4's own scope shouldn't have to account for them.
-  - **Error contract preserved: never raise, always return a string.**
-    Python's `execute()` catches broadly and returns
+    `BibleCulturalPhrase`/`BibleStoryEntry`, `bible_lookup.py:149-204`,
+    five today) is this skill's own output shaping, not the
+    prompt-construction/response-parsing logic R4–R6 are scoped around.
+    Framed as "one formatter per category" rather than "five branches" so
+    a future extraction into one class per category (a
+    `CharacterFormatter`/`LocationFormatter`/... registry, should the
+    branch ever get unwieldy) stays available without this document having
+    described the current behavior as an inherent five-way `case`. Not
+    proposed now — the current single method with five branches is
+    perfectly reasonable at this size. **Formatter output is part of the
+    model-facing interface, not incidental presentation** — it's the exact
+    text the translation prompt sees when the model calls this tool, so a
+    future formatting "cleanup" is a translation-quality-affecting change
+    and should be reviewed with the same care as R4–R6's prompt changes,
+    not treated as free-standing refactoring.
+  - **Error contract preserved: never raise, always return a string — and
+    the string is the compatibility layer, not an implementation
+    afterthought.** Python's `execute()` catches broadly and returns
     `"[bible_lookup error: ...]"`-shaped strings rather than raising — a
     tool result the model can read and react to, not an application
     exception. The Ruby port keeps this: a resolution failure (novel not
-    found) or a search failure becomes a returned error string, not a
-    raised error that would abort the surrounding job/call.
+    found, via the rescued `ActiveRecord::RecordNotFound` above) or a
+    search failure becomes a returned error string, not a raised error
+    that would abort the surrounding job/call. Internal Ruby data (e.g. an
+    intermediate struct built while formatting) may exist freely as
+    implementation detail, but `execute`'s public return type stays a
+    formatted `String` — not a `Hash` — for compatibility with whatever
+    calls it (R1's tool loop, R3's bridge). Stated explicitly so "Ruby
+    should return structured data" doesn't quietly break that contract
+    later.
   - **Category enum stays exactly the five existing types.** No new
     category, no renaming — `BibleCharacter`, `BibleLocation`,
     `BibleTerminology`, `BibleCulturalPhrase`, `BibleStoryEntry`, matching
@@ -731,16 +780,40 @@ dependency note below before treating R2 as buildable in isolation.
     purpose; once `bible_lookup` no longer needs it, whether the var itself
     gets removed is a Python-cleanup decision for R7 (deleting the Python
     layer entirely), not something to touch now.
+  - **Testing strategy — three layers, matching this section's own
+    dependency graph.** Not written now (no code this pass), but named so
+    R2's eventual spec suite has a shape to aim for rather than one flat
+    pile of specs: **unit** (`BibleSearchService` mocked/stubbed — tests
+    the skill's own argument-building, novel resolution, error handling,
+    and formatting in isolation); **integration** (real database, real
+    `BibleSearchService` call, real formatter output — no LLM involved,
+    same as the "buildable and spec'd in isolation" claim above);
+    **end-to-end** (an actual tool invocation through R1's `"local"` loop
+    or R3's bridge, reaching a real LLM) — only possible once one of those
+    two lands, same dependency this section already names.
 - **Acceptance criteria:**
   - The Ruby `bible_lookup` skill's design (tool schema, `execute`-shaped
     method) is specified against the shared `Skill` interface R1/R3 will
-    also use — not a bespoke shape invented only for this skill.
+    also use — described as a provider-neutral tool schema, not an
+    OpenAI-owned one — not a bespoke shape invented only for this skill.
   - Both HTTP hops (`find_by_directory`, `bible/search`) are replaced by
     direct Ruby calls (`Novel.find_by!`, `BibleSearchService.new(...).call`)
-    — zero HTTP requests, including to the app's own routes.
+    — zero HTTP requests, including to the app's own routes — touching only
+    `BibleSearchService`'s public API.
+  - Novel-resolution memoization is instance-scoped (`@novel`), never a
+    class variable or global cache; the skill instance is constructed fresh
+    per job/call site and is never shared across concurrent jobs.
+  - `Novel.find_by!`'s `ActiveRecord::RecordNotFound` is rescued at the
+    skill's call site and converted into the same error-string contract as
+    every other failure mode — never left to propagate and abort the job.
   - The five category formatters are ported as part of this skill, not
-    deferred to R4.
-  - The error contract (return a string, never raise) is preserved.
+    deferred to R4; their output is documented as part of the model-facing
+    interface, not free-standing presentation.
+  - The error contract (return a string, never raise) is preserved, and
+    `execute`'s public return type is a `String`, not a `Hash`, regardless
+    of what internal Ruby data structures exist behind it.
+  - A three-layer test strategy (unit / integration / end-to-end) is named
+    for whoever writes R2's spec suite.
   - This document states plainly that R2's skill class is buildable and
     testable standalone, but not usable end-to-end by either backend until
     R1 (`"local"` tool loop) or R3 (MCP bridge) also exists — correcting
