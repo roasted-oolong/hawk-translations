@@ -40,16 +40,17 @@ module Pipeline
       end
     end
 
-    def self.run(cmd, env:, timeout:, name:, cancel_token: nil)
-      new(cmd, env: env, timeout: timeout, name: name, cancel_token: cancel_token).run
+    def self.run(cmd, env:, timeout:, name:, cancel_token: nil, stdin: nil)
+      new(cmd, env: env, timeout: timeout, name: name, cancel_token: cancel_token, stdin: stdin).run
     end
 
-    def initialize(cmd, env:, timeout:, name:, cancel_token: nil)
+    def initialize(cmd, env:, timeout:, name:, cancel_token: nil, stdin: nil)
       @cmd          = cmd
       @env          = env
       @timeout      = timeout
       @name         = name
       @cancel_token = cancel_token
+      @stdin        = stdin
     end
 
     def run
@@ -59,12 +60,26 @@ module Pipeline
       out_r.binmode
       err_r.binmode
 
-      pid = ::Process.spawn(@env, *@cmd, pgroup: true, out: out_w, err: err_w, in: File::NULL)
+      in_r, in_w = IO.pipe if @stdin
+      in_r&.binmode
+      in_w&.binmode
+
+      # unsetenv_others: true is required here — Process.spawn otherwise
+      # merges @env into a copy of the *parent's full environment* rather
+      # than replacing it, silently defeating any caller (e.g.
+      # Pipeline::ClaudeCode) that builds @env as a deliberate allowlist.
+      # Existing callers that want full inheritance (e.g.
+      # PipelineDispatcher#execute) already pass ENV.to_h.merge(...)
+      # explicitly, so this is behavior-neutral for them.
+      pid = ::Process.spawn(@env, *@cmd, pgroup: true, out: out_w, err: err_w,
+                             in: in_r || File::NULL, unsetenv_others: true)
       out_w.close
       err_w.close
+      in_r&.close
 
       out_thread = Thread.new { out_r.read }
       err_thread = Thread.new { err_r.read }
+      in_thread  = Thread.new { write_stdin(in_w) } if in_w
 
       outcome = wait_for(pid, started_at)
 
@@ -75,6 +90,7 @@ module Pipeline
       log(result)
       result
     ensure
+      in_thread&.join
       out_thread&.join
       err_thread&.join
       out_r.close unless out_r.closed?
@@ -82,6 +98,19 @@ module Pipeline
     end
 
     private
+
+    # Symmetric to the out_r/err_r reader threads: writing on a thread (not
+    # inline) avoids deadlocking against a child that starts producing
+    # output before it has finished reading stdin. A child that exits
+    # without reading all of it (e.g. it errors out early) makes the write
+    # raise EPIPE/EIO — not a failure of this primitive, just the child
+    # closing its end first, so it's swallowed rather than propagated.
+    def write_stdin(in_w)
+      in_w.write(@stdin)
+      in_w.close
+    rescue Errno::EPIPE, Errno::EIO
+      in_w.close unless in_w.closed?
+    end
 
     # Polls at a fixed interval until the process exits naturally, the
     # timeout elapses, or the cancel_token flips — killing the whole process

@@ -1,8 +1,8 @@
 require "rails_helper"
 
 RSpec.describe Pipeline::Subprocess do
-  def run(cmd, timeout: 5, env: {}, cancel_token: nil, name: "test")
-    described_class.run(cmd, env: env, timeout: timeout, name: name, cancel_token: cancel_token)
+  def run(cmd, timeout: 5, env: {}, cancel_token: nil, name: "test", stdin: nil)
+    described_class.run(cmd, env: env, timeout: timeout, name: name, cancel_token: cancel_token, stdin: stdin)
   end
 
   describe "a command that exits successfully" do
@@ -100,6 +100,55 @@ RSpec.describe Pipeline::Subprocess do
 
       expect(result.bytes_stdout).to eq(size)
       expect(result.stdout.bytesize).to eq(size)
+    end
+  end
+
+  describe "env isolation" do
+    it "does not leak the parent process's env into the child beyond what env: explicitly lists" do
+      begin
+        ENV["HAWK_SUBPROCESS_SPEC_MARKER"] = "should-not-leak"
+        result = run([ "ruby", "-e", "print ENV['HAWK_SUBPROCESS_SPEC_MARKER'].inspect" ], env: { "FOO" => "bar" })
+
+        expect(result.stdout).to eq("nil")
+      ensure
+        ENV.delete("HAWK_SUBPROCESS_SPEC_MARKER")
+      end
+    end
+
+    it "still provides every key explicitly listed in env:" do
+      result = run([ "ruby", "-e", "print ENV['FOO']" ], env: { "FOO" => "bar" })
+
+      expect(result.stdout).to eq("bar")
+    end
+  end
+
+  describe "stdin:" do
+    it "pipes the given content to the child's stdin" do
+      result = run([ "ruby", "-e", "print STDIN.read" ], stdin: "hello from parent")
+
+      expect(result.stdout).to eq("hello from parent")
+    end
+
+    it "closes stdin so the child sees EOF rather than hanging" do
+      result = run([ "ruby", "-e", "STDIN.read; STDOUT.print 'saw eof'" ], stdin: "x", timeout: 2)
+
+      expect(result.status).to eq(:completed)
+      expect(result.stdout).to eq("saw eof")
+    end
+
+    it "writes stdin larger than the OS pipe buffer without deadlocking" do
+      size = 2 * 1024 * 1024 # 2MB, comfortably above the ~64KB pipe buffer
+      payload = "b" * size
+
+      result = run([ "ruby", "-e", "STDOUT.write(STDIN.read.bytesize.to_s)" ], stdin: payload, timeout: 10)
+
+      expect(result.stdout).to eq(size.to_s)
+    end
+
+    it "gives the child an immediately-closed stdin when omitted, same as before this option existed" do
+      result = run([ "ruby", "-e", "STDOUT.print STDIN.read.inspect" ])
+
+      expect(result.stdout).to eq("\"\"".dup)
     end
   end
 
