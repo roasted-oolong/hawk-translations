@@ -5,16 +5,18 @@ in favor of an all-Ruby stack. Not a roadmap item — discretionary architecture
 work.
 
 **Status as of 2026-07-24: R0.5, R0.1, and R0.4 done. R0.2's config is
-written but not deployed. R0.3 is explicitly skipped — see below. R1's
-infra (env var contract, subprocess secrets policy, credential/network
-reachability), R2's `bible_lookup` in-process design, and R3's skill-bridge
-design (onto the official `mcp` gem) are all fully designed, with no Ruby
-implementation code written for any of them yet — see the R1, R2, and R3
-sections below.**
-All five R0 milestones, plus R1's, R2's, and R3's design sections, have
-reviewed Goal/Design/Acceptance-criteria sections. R4–R7 are still at the
-summary level in the artifact linked below; they have not been given the
-same detailed treatment.
+written but not deployed. R0.3 is explicitly skipped — see below. R1
+(backend-seam infra: `TranslationConfig`, `Pipeline::ClaudeCode`), R2
+(`Pipeline::Skills::BibleLookup`, in-process), and R3 (the skill bridge
+onto the official `mcp` gem: `Pipeline::Mcp::ServerContext`,
+`Pipeline::Mcp::BibleLookupTool`, `bin/mcp_skill_bridge`) are all built,
+tested, and committed to `main` — see the R1, R2, and R3 sections below
+for what exists and what's still open (mainly: nothing yet calls this
+bridge end-to-end, since that orchestration is R4+ work).**
+All five R0 milestones, plus R1, R2, and R3, have reviewed
+Goal/Design/Acceptance-criteria sections and real Ruby implementations
+with passing specs. R4–R7 are still at the summary level in the artifact
+linked below; they have not been given the same detailed treatment.
 
 **R0.3 skipped, not just blocked:** R0.3's whole premise is measuring real
 peak container memory on the production Oracle VM under real workloads.
@@ -29,10 +31,12 @@ production instance exists to measure.
 **To resume:** R0.2's `config/deploy.yml` change still needs an actual
 `kamal deploy` run against production to confirm the `jobs` role boots
 there — a deliberately separate, deploy-triggering step from writing the
-config itself. With R0.3 skipped, R0 is otherwise closed. R1's infra, R2's
-`bible_lookup` design, and R3's skill-bridge design are all now designed
-(see the R1, R2, and R3 sections below); writing the actual Ruby code for
-any of them is the next build step.
+config itself. With R0.3 skipped, R0 is otherwise closed. R1, R2, and R3
+are built (see the R1, R2, and R3 sections below for what exists). The
+next build step is R4+: the prompt builders and response parsers that
+actually orchestrate `Pipeline::ClaudeCode` and drive the skill bridge
+end-to-end — nothing calls either one yet outside of specs and the manual
+stdio smoke test noted in R3.
 
 **Full original plan, diagrams, and pros/cons (R1–R7, superseded for R0
 specifics by the detailed sections below):**
@@ -453,11 +457,25 @@ of this document) rather than pending measurement access.
 
 ## R1 — Backend seam infra
 
-**Status: designed (2026-07-24), revised same day after review. No Ruby
-code written yet.** This section is deliberately infra-only — env var
+**Status: built 2026-07-24 — `TranslationConfig` (`app/services/translation_config.rb`)
+and `Pipeline::ClaudeCode` (`app/services/pipeline/claude_code.rb`), both
+with passing specs.** Building this surfaced one real gap in R0.1's
+`Pipeline::Subprocess` beyond what the design pass anticipated:
+`Process.spawn` merges the given `env:` hash into a copy of the *parent's*
+full environment by default rather than replacing it, which would have
+silently defeated the whole point of this section's allowlist. Fixed by
+adding `unsetenv_others: true` to `Pipeline::Subprocess`'s spawn call —
+behavior-neutral for the one existing caller (`PipelineDispatcher#execute`,
+which already passes a full `ENV.to_h` copy explicitly) and required for
+this section's allowlist to mean what it says. `Pipeline::Subprocess` also
+gained `stdin:` support (a writer thread symmetric to the existing
+stdout/stderr readers) since this section's design requires the prompt to
+travel over stdin. This section is deliberately infra-only — env var
 contract, subprocess secrets policy, credential/network reachability —
-settled before `Pipeline::Ruby::TranslateBatch` or any other stub's
-internals get written. That build step is separate, later work.
+settled before `Pipeline::Ruby::TranslateBatch` or any other job-type
+stub's internals get written; `Pipeline::ClaudeCode` is the backend-seam
+primitive (the direct analog of `claude_code_agent.py`'s `call()`), not
+prompt/orchestration logic — building that is R4+'s job, still open.
 
 - **Goal:** Settle every infra-level decision the backend seam (Ollama vs.
   `claude_code`, in Ruby) depends on before any Ruby implementation exists,
@@ -642,11 +660,16 @@ internals get written. That build step is separate, later work.
 
 ## R2 — `bible_lookup` in-process design
 
-**Status: designed (2026-07-24), revised same day after review. No Ruby
-code written yet.** Same design-only treatment as R1, at the user's
-request. This section also corrects a real gap in the original roadmap's
-framing of R2 — see the dependency note below before treating R2 as
-buildable in isolation.
+**Status: built 2026-07-24 — `Pipeline::Skill` (the shared interface,
+`app/services/pipeline/skill.rb`) and `Pipeline::Skills::BibleLookup`
+(`app/services/pipeline/skills/bible_lookup.rb`), with unit specs
+(`BibleSearchService` stubbed) and integration specs (real DB, real
+`BibleSearchService`, only `VoyageClient` stubbed).** Built as designed,
+with no deviations from the shape below. The end-to-end layer named in
+this section's testing strategy still isn't meaningful — R1 exists now,
+but nothing yet builds the "local" tool loop that would call this skill
+instance directly, and R3's bridge (below) has no caller wiring it to a
+real translation call either.
 
 - **Goal:** Design the Ruby shape of the `bible_lookup` skill so it calls
   `BibleSearchService` directly (in-process) instead of the current
@@ -828,12 +851,28 @@ buildable in isolation.
 
 ## R3 — Skill bridge onto the `mcp` gem
 
-**Status: designed (2026-07-24), no Ruby code written yet.** Design only, at
-the user's request (confirmed via clarifying question, same as R2). This
-section required more real-code verification than R1 or R2 got right on
-first pass — the actual installed `mcp` gem's API doesn't match either this
-document's own prior assumptions or the original artifact's, on two separate
-points. Both are corrected below against the gem's real source, not guessed.
+**Status: built 2026-07-24 — `mcp` (0.8.0) moved to the Gemfile's main
+group; `Pipeline::Mcp::ServerContext` (`Data.define`), `Pipeline::Mcp::BibleLookupTool`
+(the adapter), and `bin/mcp_skill_bridge` (the subprocess entrypoint), all
+with passing specs.** One real, deliberate deviation from the design below:
+`server_context` carries `novel_directory_name` (a String), not "a novel
+id" as this section's illustrative language suggested — because R2's
+actually-built `Pipeline::Skills::BibleLookup` takes `novel_directory_name:`
+in its constructor (matching Python's exact interface), and there's no
+reason to plumb an id through only to look up the same directory-keyed
+record a different way. Also new since the design pass: the adapter
+redirects `$stdout` to `$stderr` for the duration of each `#execute` call
+(restored in an `ensure`), matching this section's own stdin/stdout-
+discipline requirement — the design named the requirement but didn't
+pick where it lives; it lives in the adapter, since that's the Ruby
+equivalent of where `skill_bridge.py` does the same redirect.
+`bin/mcp_skill_bridge` was smoke-tested directly over stdin/stdout
+(`tools/list` and a real `tools/call` against a real Rails boot) to
+confirm the full chain works, not just under mocks — everything else
+below was verified against the actual installed `mcp` gem's API, not
+guessed. The actual installed `mcp` gem's API doesn't match either this
+document's own prior assumptions or the original artifact's, on two
+separate points, both corrected below against the gem's real source.
 
 - **Goal:** Design how the Ruby port of the MCP skill bridge — the subprocess
   the `claude` CLI itself spawns per translation call to expose skills as MCP
@@ -1119,12 +1158,18 @@ points. Both are corrected below against the gem's real source, not guessed.
 
 ---
 
-**R0 is fully built (R0.3 skipped by decision). R1's infra, R2's
-`bible_lookup` design, and R3's skill-bridge design are all fully designed,
-with no Ruby implementation code written for any of them yet.** The next
-build step, whenever picked up, is writing actual Ruby code — R1's
-backend-seam adapters, R2's `bible_lookup` skill class, and R3's `MCP::Tool`
-adapter + bridge script, most naturally in that order since R3's adapter
-depends on R2's skill class existing and R1's backend needs to exist before
-either skill can be exercised end-to-end. R4–R7 remain at summary level in
-the linked artifact.
+**R0 is fully built (R0.3 skipped by decision). R1, R2, and R3 are fully
+built and tested, in that order (R2's skill class was a prerequisite for
+R3's adapter; R1's backend-seam code has no runtime dependency on either
+but was built first per the original sequencing).** What exists now:
+`TranslationConfig` + `Pipeline::ClaudeCode` (R1), `Pipeline::Skill` +
+`Pipeline::Skills::BibleLookup` (R2), and `Pipeline::Mcp::ServerContext` +
+`Pipeline::Mcp::BibleLookupTool` + `bin/mcp_skill_bridge` (R3) — plus an
+`unsetenv_others: true` fix and `stdin:` support added to R0.1's
+`Pipeline::Subprocess` along the way (see R1's section above). None of
+this is wired to an actual translation call yet: nothing in this app
+today builds a `Pipeline::ClaudeCode` call with a real `--mcp-config`
+pointing at `bin/mcp_skill_bridge`, and no job type's
+`Pipeline::Ruby::*` stub has been touched — that orchestration, plus the
+prompt-building and response-parsing logic it depends on, is R4–R7,
+which remain at summary level in the linked artifact.
