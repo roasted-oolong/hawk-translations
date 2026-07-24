@@ -449,15 +449,19 @@ of this document) rather than pending measurement access.
 
 ## R1 — Backend seam infra
 
-**Status: designed (2026-07-24), no Ruby code written yet.** This section is
-deliberately infra-only — env var contract, subprocess secrets policy,
-credential/network reachability — settled before `Pipeline::Ruby::TranslateBatch`
-or any other stub's internals get written. That build step is separate,
-later work.
+**Status: designed (2026-07-24), revised same day after review. No Ruby
+code written yet.** This section is deliberately infra-only — env var
+contract, subprocess secrets policy, credential/network reachability —
+settled before `Pipeline::Ruby::TranslateBatch` or any other stub's
+internals get written. That build step is separate, later work.
 
 - **Goal:** Settle every infra-level decision the backend seam (Ollama vs.
   `claude_code`, in Ruby) depends on before any Ruby implementation exists,
   so that later build step has nothing left to decide except the code itself.
+- **Layering, stated explicitly:** Infra (this section, R1) → backend
+  adapter (R1's actual code, later) → translation pipeline (R4+). R1 owns
+  none of the translation/prompt logic — only how a backend gets invoked
+  safely. Written down so R1's scope doesn't quietly grow into R4's.
 - **Design:**
   - **Env var contract: reuse Python's names verbatim, invent nothing new.**
     `TRANSLATION_BACKEND` (`"local"` | `"claude_code"`, default
@@ -471,40 +475,93 @@ later work.
     Python already share this var's name and default. R1 extends that same
     contract to the rest of the list rather than introducing Ruby-prefixed
     duplicates (no `HAWK_TRANSLATION_BACKEND`).
+    - **Requirement for R1's build (not code here, a constraint on the
+      code):** one validated read point, not scattered `ENV.fetch` calls.
+      `TRANSLATION_BACKEND`/`CALIBRATION_BACKEND` checked against
+      `%w[local claude_code]`, raising on anything else — same discipline
+      R0.4 already promised for `PIPELINE_IMPL_*`, extended here.
+      `TRANSLATION_MAX_BUDGET_USD` parsed as a non-negative decimal, not
+      used as a raw string. Whether this lives in one `TranslationConfig`-
+      style object or elsewhere is a code decision for R1's build, not
+      settled in this doc.
     - Naming clash to flag, not fix here: `PipelineDispatcher::PYTHON`
       already exists as an unrelated Ruby constant (`ENV.fetch("PYTHON",
       "python3")`, the interpreter binary — an R0.4-era leftover, itself a
       candidate for deletion once `dispatch_python` has no callers left).
       Noted so it isn't confused with `TRANSLATION_BACKEND`/
       `CALIBRATION_BACKEND` when R1 is actually built.
-  - **Subprocess env allowlist for the `claude` CLI fork — narrow it, per
-    the original design memo's own security finding.** Today
-    `PipelineDispatcher#execute` forwards the entire parent `ENV`
-    (`RAILS_MASTER_KEY`, `DATABASE_URL`, etc.) into every subprocess. R1's
-    `claude_code` backend call goes through `Pipeline::Subprocess.run`,
-    whose `env:` is fully caller-built (R0.1's design) — that's the seam
-    where an allowlist actually gets enforced, not a new mechanism. The
-    `claude` CLI call needs only: `PATH`, `HOME` (`claude`'s own
-    config/session dir), `CLAUDE_BIN`'s resolved path if set, and
-    `MCP_CONNECTION_NONBLOCKING=false` (the same undocumented startup-race
-    workaround `claude_code_agent.py:114` sets today — carries over
-    unchanged). It must **not** receive `ANTHROPIC_API_KEY` (same reasoning
-    as `claude_code_agent.py:99-103`: a stray key would silently shadow
-    subscription OAuth and switch to metered billing) or any Rails secret.
-    R1's bare backend seam doesn't need the MCP bridge's env
-    (`HAWK_SKILLS_SPEC`) at all yet — that's R3's concern once skills exist
-    in Ruby; R1 calls `claude -p` with no MCP server configured, same as
-    what the seam needs standalone before R2/R3 add tool access.
+  - **`claude` CLI invocation — no shell, argv array only.** Matches
+    `Pipeline::Subprocess.run`'s existing design (R0.1) and
+    `PipelineDispatcher`'s existing array-based `Open3` calls — stated
+    explicitly here so it can't quietly regress into a shell-interpolated
+    string later. No `system("claude #{prompt}")`-shaped code, ever.
+  - **`CLAUDE_BIN` resolution — resolved once, to an absolute path, before
+    any subprocess spawn.** If unset, the default `"claude"` is resolved via
+    a `PATH` lookup performed by the Rails process's own controlled
+    environment — once, not per-request, and not delegated to the child.
+    The resolved value is always an absolute path, used directly as
+    `argv[0]`. If `CLAUDE_BIN` is set, it must already be an absolute,
+    executable path — no further `PATH` search on top of it. Because
+    `Process.spawn` given an absolute-path executable does not re-search
+    `PATH` to find it, **`PATH` is dropped from the child's env entirely** —
+    correcting the original draft of this section, which listed `PATH` as
+    something forwarded to the subprocess. Without this, anything able to
+    modify the parent process's `PATH` could redirect a bare `"claude"`
+    lookup to an attacker-controlled binary; resolving to an absolute path
+    up front removes that dependency completely.
+  - **Subprocess env allowlist for the `claude` CLI fork, revised: `HOME`
+    and `MCP_CONNECTION_NONBLOCKING=false` only.** (`CLAUDE_BIN` is
+    consumed by Ruby to choose `argv[0]` — it is not itself forwarded as a
+    child env var.) `MCP_CONNECTION_NONBLOCKING=false` is the same
+    undocumented startup-race workaround `claude_code_agent.py:114` sets
+    today — carries over unchanged. `HOME`'s inclusion is documented here
+    rather than left implicit: it exists **solely** because the `claude`
+    CLI stores its OAuth/session state under the user's home directory.
+    Named tradeoff, not hidden: `HOME` also reaches `~/.ssh`, `~/.aws`,
+    `~/.gitconfig`, and anything else namespaced under it — accepted for
+    now because the CLI doesn't expose a narrower, credential-only
+    directory to point `HOME` at instead. Today `PipelineDispatcher#execute`
+    (R0.1, already shipped) instead calls `Pipeline::Subprocess.run` with
+    `env: ENV.to_h.merge(...)` — full-`ENV` forwarding, the opposite of this
+    allowlist. **Flagged as required cleanup for R1's actual build, not
+    silently changed here** — R1's implementation should replace that
+    call's env construction with this allowlist, built additively from
+    `{}` rather than deleting keys from a full copy of `ENV` (a deny-list
+    is one missed key away from a leak; an allow-list built from empty
+    can't leak what it never included).
+  - **Stdin carries the prompt — not closed.** Checked against
+    `claude_code_agent.py:117-125`: the CLI call already pipes
+    `user_message` via `stdin` (`subprocess.run(cmd, input=user_message,
+    ...)`), while the system prompt goes through `--system-prompt-file`
+    specifically to avoid `ARG_MAX`/shell-escaping issues on large prompts.
+    R1's Ruby call keeps this shape — stdin is the message-delivery
+    channel, not something to close.
+  - **Secrets inventory — explicit list, not "everything except one key."**
+    Must never reach the `claude` CLI subprocess env: `RAILS_MASTER_KEY`,
+    `DATABASE_URL`, `ANTHROPIC_API_KEY`, and anything matching
+    `*_SECRET`/`*_KEY`/`*_TOKEN`. Written down so a future secret added to
+    `.env` doesn't silently become reachable through a carelessly widened
+    allowlist later.
+  - **Failure taxonomy — categories, not implementation.** Binary not
+    found or not executable; OAuth session missing or expired; timeout
+    (R0.1's existing `:timed_out` status); nonzero exit; unparseable JSON
+    output; killed by OOM. Listed here so whoever writes R1's error
+    handling has a fixed set of buckets to map onto, rather than
+    discovering them ad hoc.
   - **`claude` CLI OAuth credential availability — out of scope for R1,
     same reasoning as R0.3.** The CLI authenticates via a subscription
     OAuth session (`claude auth login`) already present on this local dev
-    machine. R1 targets the same locally-run systemd process every other
-    job type already runs under (see [[hawk_translations_shared_oracle_vm]])
-    — there's no deployed instance to authenticate on yet. If
-    hawk-translations is ever actually `kamal deploy`'d, the container
-    would need its own authenticated session (a credential volume mount, or
-    an unattended `claude auth login --no-browser`) — the same open
-    question already parked for forex_backtester's Console-billing fix (see
+    machine. Local OAuth credentials are a developer-machine concern today,
+    not part of the application's own configuration surface — Rails does
+    not authenticate Claude, it only inherits whatever session already
+    exists on the host it runs on. R1 targets the same locally-run systemd
+    process every other job type already runs under (see
+    [[hawk_translations_shared_oracle_vm]]) — there's no deployed instance
+    to authenticate on yet. If hawk-translations is ever actually `kamal
+    deploy`'d, the container would need its own authenticated session (a
+    credential volume mount, or an unattended `claude auth login
+    --no-browser`) — the same open question already parked for
+    forex_backtester's Console-billing fix (see
     [[hawk_translations_claude_code_headless_backend]]). Not solved here;
     flag it if a real deploy is ever scheduled.
   - **Ollama reachability — no new infra.** `LLM_BASE_URL` already resolves
@@ -513,28 +570,64 @@ later work.
     (see [[hawk_translations_local_llm_memory_limit]] — one `gpt-oss-20b`
     load at a time or WSL OOMs). R1's Ruby `"local"` backend reuses this
     existing constraint rather than needing a new concurrency mechanism.
+    This is a **local-hardware** constraint (one GPU/box) — it doesn't
+    generalize to the `claude_code` path (see below).
+  - **`claude_code` concurrency — explicitly left open, not guessed at.**
+    Unlike Ollama, the `claude` CLI's compute runs on Anthropic's
+    infrastructure, not this box — there's no equivalent hardware reason to
+    serialise it to 1. The real limiting factor, if any, would be Claude
+    subscription rate/usage limits, which haven't been measured. No cap is
+    set here; picking one now without evidence would repeat exactly the
+    mistake R0.3 was written to avoid ("watch memory" → an actual number,
+    not a guess).
   - **Network egress — no change.** Loopback traffic to Ollama needs
     nothing. Outbound HTTPS to Anthropic (for the `claude` CLI) already
     works from this exact machine today, since the Python pipeline makes
     that same call right now. No firewall/security-group work, because
     nothing is deployed.
-  - **Timeout ownership stays with R0.1, not a second mechanism.** Python's
-    `claude_code_agent.py` enforces its own 1200s
-    `subprocess.run(timeout=...)`, independent of anything else. In Ruby,
-    the backend seam's `claude` CLI fork is exactly the kind of call
-    `Pipeline::Subprocess.run` (R0.1) exists for — pick one timeout value at
-    the call site, don't build a second timeout primitive. Left as an
-    explicit open number for whoever writes R1's code (likely 1200s, to
-    match today's behavior) — picking the number is a code decision, not an
-    infra one, so it's not settled here.
+  - **Timeout, signal handling, and output draining — inherited from R0.1,
+    not re-solved here.** Process-group SIGTERM→grace→SIGKILL and full
+    stdout/stderr draining are already `Pipeline::Subprocess.run`'s job
+    (R0.1, already shipped); R1's `claude` CLI call is just another caller
+    of that primitive. Python's `claude_code_agent.py` enforces its own
+    1200s `subprocess.run(timeout=...)` today — in Ruby, pick one timeout
+    value at the call site (likely 1200s, to match current behavior)
+    rather than building a second timeout mechanism. Picking the exact
+    number is a code decision for R1's build, not settled here.
+  - **Known gap in R0.1, surfaced by this review — not fixed here.**
+    `Pipeline::Subprocess.run`'s reader threads buffer the entire
+    stdout/stderr stream in memory with no size cap. An unexpectedly large
+    translation response could grow that buffer without bound. This is a
+    follow-up to R0.1's primitive itself (affects every caller, not just
+    R1), filed here rather than fixed as a side effect of R1's design pass.
+  - **Observability — structured fields, explicit error buckets.** A
+    backend-seam call should log backend name (`local`/`claude_code`),
+    model, budget ceiling, and R0.1's existing `Result` fields
+    (`command_name`, `duration`, `exit_code`/`status`) — never raw
+    `system_prompt`/`user_message`/stdout content, matching R0.1's existing
+    logging constraint. Errors should be classified into the same three
+    buckets as the failure taxonomy above (infra / usage / content) so logs
+    are triageable by category rather than a flat pile of stderr strings.
 - **Acceptance criteria:**
   - Every env var R1's eventual Ruby code reads is named identically to its
     Python counterpart — no new Ruby-only var invented for a concept Python
-    already names.
-  - The `claude` CLI subprocess's env is a documented allowlist (`PATH`,
-    `HOME`, `CLAUDE_BIN`, `MCP_CONNECTION_NONBLOCKING`), explicitly
-    excluding `ANTHROPIC_API_KEY` and all Rails secrets — written down
-    before any code forwards `ENV.to_h` into this particular subprocess.
+    already names — and read through one validated point, not scattered
+    `ENV.fetch` calls.
+  - `CLAUDE_BIN` resolves to an absolute path before spawn; the child's env
+    never includes `PATH`.
+  - The `claude` CLI subprocess's env is a documented allowlist (`HOME`,
+    `MCP_CONNECTION_NONBLOCKING`) built additively from `{}`, explicitly
+    excluding `RAILS_MASTER_KEY`, `DATABASE_URL`, `ANTHROPIC_API_KEY`, and
+    any `*_SECRET`/`*_KEY`/`*_TOKEN` — written down before any code forwards
+    `ENV.to_h` into this particular subprocess, and R0.1's existing
+    full-`ENV`-forwarding call site is named as required cleanup.
+  - The `claude` CLI is invoked via argv array, never a shell string.
+  - stdin's role (prompt delivery, not closed) is stated correctly, matched
+    against the actual Python implementation rather than assumed.
+  - A failure taxonomy (6 categories) exists for later error-handling code
+    to map onto.
+  - `claude_code` concurrency has no invented cap — stated as an open,
+    unmeasured question, distinct from Ollama's local-hardware constraint.
   - OAuth credential provisioning for a deployed `claude` CLI is named as an
     explicitly open, unscheduled question — not silently assumed solved,
     not solved prematurely either.
