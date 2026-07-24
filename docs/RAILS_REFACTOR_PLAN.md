@@ -4,17 +4,20 @@ Retiring the Python translation pipeline (`src/` + 9 root scripts, ~5,600 LOC)
 in favor of an all-Ruby stack. Not a roadmap item — discretionary architecture
 work.
 
-**Status as of 2026-07-24: R0.5 and R0.1 done, R0.2–R0.4 still to build.**
+**Status as of 2026-07-24: R0.5 and R0.1 done. R0.2's config is written but
+not deployed. R0.3–R0.4 still to build.**
 All five R0 milestones below have reviewed Goal/Design/Acceptance-criteria
 sections. R1–R7 are still at the summary level in the artifact linked below;
 they have not been given the same detailed treatment.
 
-**To resume with implementation, start here:** R0.2 (second Kamal role for
-Solid Queue) is next in build order. Go in order R0.2 → R0.3 → R0.4; each
-section is self-contained. The one non-code step is R0.3, which needs
-someone with actual access to the production Oracle VM to run its
-measurement procedure — everything else can be implemented and reviewed
-without that.
+**To resume with implementation, start here:** R0.3 (memory baseline &
+trigger rule) is next in build order, though its acceptance criteria need
+someone with actual access to the production Oracle VM to run the
+measurement procedure — everything else (R0.4) can be implemented and
+reviewed without that. R0.2's `config/deploy.yml` change still needs an
+actual `kamal deploy` run against production to confirm the `jobs` role
+boots there — a deliberately separate, deploy-triggering step from writing
+the config itself.
 
 **Full original plan, diagrams, and pros/cons (R1–R7, superseded for R0
 specifics by the detailed sections below):**
@@ -184,7 +187,13 @@ only. Migrating those two is a candidate follow-up, not part of R0.1.
 
 ### R0.2 — Second Kamal role for Solid Queue
 
-**Status: design finalized, ready to build.**
+**Status: config written (`config/deploy.yml`), not deployed.**
+`bin/kamal config` resolves both `web` and `jobs` roles correctly (verified
+locally, no VM access needed for this check). Actually running
+`kamal deploy` against the production Oracle VM to confirm the role boots
+there is a deliberately separate, deploy-triggering step — not run as part
+of this pass. `SOLID_QUEUE_IN_PUMA` stays `true`; no production behavior
+changes until that deploy happens.
 
 - **Goal:** Add a `jobs` role to `config/deploy.yml` that is **deployable
   and operationally isolated today** — it boots, it can be monitored, it
