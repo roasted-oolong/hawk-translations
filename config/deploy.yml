@@ -16,8 +16,19 @@
 service: hawk
 image: ghcr.io/roasted-oolong/hawk
 
+# `jobs` is a dormant, non-proxied Solid Queue role — proven deployable now
+# rather than discovered broken the day memory pressure forces the switch.
+# SOLID_QUEUE_IN_PUMA stays true below, so `web`'s embedded Puma plugin
+# remains the only thing actually processing jobs; running both
+# simultaneously is additional worker capacity pulling from the same
+# database-coordinated queues, not duplicate execution, but is not yet an
+# enabled/supported topology — that flip is a later milestone's decision.
 servers:
   web: <%= File.readlines(".kamal/servers").map(&:strip).reject(&:empty?) %>
+  jobs:
+    hosts: <%= File.readlines(".kamal/servers").map(&:strip).reject(&:empty?) %>
+    cmd: bin/jobs
+    proxy: false
 
 proxy:
   host: hawk-translations.com
