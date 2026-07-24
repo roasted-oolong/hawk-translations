@@ -4,18 +4,17 @@ Retiring the Python translation pipeline (`src/` + 9 root scripts, ~5,600 LOC)
 in favor of an all-Ruby stack. Not a roadmap item — discretionary architecture
 work.
 
-**Status as of 2026-07-23: R0 design is complete, zero code written yet.**
+**Status as of 2026-07-24: R0.5 and R0.1 done, R0.2–R0.4 still to build.**
 All five R0 milestones below have reviewed Goal/Design/Acceptance-criteria
-sections and are ready to implement — no further design discussion is needed
-to start. R1–R7 are still at the summary level in the artifact linked below;
+sections. R1–R7 are still at the summary level in the artifact linked below;
 they have not been given the same detailed treatment.
 
-**To resume with implementation, start here:** R0.5 (RSpec enforced in CI) is
-first in build order — see its section below, touches
-`.github/workflows/ci.yml` only. Go in order R0.5 → R0.1 → R0.2 → R0.3 → R0.4;
-each section is self-contained. The one non-code step is R0.3, which needs
-someone with actual access to the production Oracle VM to run its measurement
-procedure — everything else can be implemented and reviewed without that.
+**To resume with implementation, start here:** R0.2 (second Kamal role for
+Solid Queue) is next in build order. Go in order R0.2 → R0.3 → R0.4; each
+section is self-contained. The one non-code step is R0.3, which needs
+someone with actual access to the production Oracle VM to run its
+measurement procedure — everything else can be implemented and reviewed
+without that.
 
 **Full original plan, diagrams, and pros/cons (R1–R7, superseded for R0
 specifics by the detailed sections below):**
@@ -51,7 +50,12 @@ benefit from the same discipline being fresh.
 
 ### R0.5 — RSpec enforced in CI
 
-**Status: design finalized, ready to build.**
+**Status: done (`.github/workflows/ci.yml`, commit e6f3244).** CI is
+currently red: the suite has 58 pre-existing failures (stale auth specs
+that assume a login/OAuth flow which doesn't exist since auth is
+disabled, plus a handful of real bugs like `bible_locations` redirecting
+to `edit` instead of `show`) unrelated to this milestone. Fixing those is
+separate follow-up work, not part of R0.
 
 - **Goal:** Make RSpec a required, enforced gate in CI — not just runnable.
   Neither RSpec nor the Python `tests/` suite runs in CI today; `ci.yml` only
@@ -81,7 +85,16 @@ benefit from the same discipline being fresh.
 
 ### R0.1 — `Pipeline::Subprocess.run`
 
-**Status: design finalized, ready to build.**
+**Status: done** (`app/services/pipeline/subprocess.rb`,
+`app/services/pipeline_dispatcher.rb`). `PipelineDispatcher#execute` now
+calls `Pipeline::Subprocess.run` with a 4-hour timeout (matching
+`PipelineJob`'s own local-LLM concurrency-limiter window) and no
+`cancel_token` — wiring actual cancellation into Solid Queue is the "small
+adapter" work explicitly deferred to a later milestone, not required here.
+`format_korean_chapter_job.rb` and `ocr_chapter_job.rb` still have their own
+hand-rolled top-pid-only `Open3.popen3` timeout logic — deliberately
+untouched, since the design's scope boundary is `PipelineDispatcher#execute`
+only. Migrating those two is a candidate follow-up, not part of R0.1.
 
 - **Goal:** Replace direct, timeout-less `Open3.capture3` usage in
   `PipelineDispatcher#execute` with a robust subprocess execution primitive
