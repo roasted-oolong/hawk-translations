@@ -5,10 +5,13 @@ in favor of an all-Ruby stack. Not a roadmap item — discretionary architecture
 work.
 
 **Status as of 2026-07-24: R0.5, R0.1, and R0.4 done. R0.2's config is
-written but not deployed. R0.3 is explicitly skipped — see below.**
-All five R0 milestones below have reviewed Goal/Design/Acceptance-criteria
-sections. R1–R7 are still at the summary level in the artifact linked below;
-they have not been given the same detailed treatment.
+written but not deployed. R0.3 is explicitly skipped — see below. R1's
+infra (env var contract, subprocess secrets policy, credential/network
+reachability) is fully designed, with no Ruby implementation code written
+yet — see R1 section below.**
+All five R0 milestones, plus R1's infra, have reviewed Goal/Design/
+Acceptance-criteria sections. R2–R7 are still at the summary level in the
+artifact linked below; they have not been given the same detailed treatment.
 
 **R0.3 skipped, not just blocked:** R0.3's whole premise is measuring real
 peak container memory on the production Oracle VM under real workloads.
@@ -23,8 +26,9 @@ production instance exists to measure.
 **To resume:** R0.2's `config/deploy.yml` change still needs an actual
 `kamal deploy` run against production to confirm the `jobs` role boots
 there — a deliberately separate, deploy-triggering step from writing the
-config itself. With R0.3 skipped, R0 is otherwise closed and R1 (backend
-seam) is next.
+config itself. With R0.3 skipped, R0 is otherwise closed. R1's infra is
+now designed (see R1 section below); writing `Pipeline::Ruby::TranslateBatch`'s
+actual backend-seam implementation is the next build step.
 
 **Full original plan, diagrams, and pros/cons (R1–R7, superseded for R0
 specifics by the detailed sections below):**
@@ -440,6 +444,108 @@ those stubs' internals from here on.
 
 **R0 is now fully designed (R0.1–R0.5), in build order R0.5 → R0.1 → R0.2 →
 R0.3 → R0.4.** Each has a Goal/Design/Acceptance-criteria section above
-ready to implement. R0.3's acceptance criteria depend on measurement access
-to the production VM, which wasn't available during this design pass — that
-execution step remains open. Next up, when picked up: R1 (backend seam).
+ready to implement. R0.3 is explicitly skipped (see status note at the top
+of this document) rather than pending measurement access.
+
+## R1 — Backend seam infra
+
+**Status: designed (2026-07-24), no Ruby code written yet.** This section is
+deliberately infra-only — env var contract, subprocess secrets policy,
+credential/network reachability — settled before `Pipeline::Ruby::TranslateBatch`
+or any other stub's internals get written. That build step is separate,
+later work.
+
+- **Goal:** Settle every infra-level decision the backend seam (Ollama vs.
+  `claude_code`, in Ruby) depends on before any Ruby implementation exists,
+  so that later build step has nothing left to decide except the code itself.
+- **Design:**
+  - **Env var contract: reuse Python's names verbatim, invent nothing new.**
+    `TRANSLATION_BACKEND` (`"local"` | `"claude_code"`, default
+    `"claude_code"`), `CALIBRATION_BACKEND` (same two values, independent
+    axis), `LLM_BASE_URL` (default `http://localhost:11434/v1`),
+    `LLM_API_KEY` (default `"local"`), `TRANSLATION_MODEL`,
+    `TRANSLATION_MAX_BUDGET_USD`, `CLAUDE_BIN` (default `"claude"`).
+    Precedent already exists: `PipelineJob.local_llm_endpoint?`
+    (`app/jobs/pipeline_job.rb:7-17`) already reads `LLM_BASE_URL` from ENV
+    today, on the Ruby side, to decide Solid Queue concurrency — Ruby and
+    Python already share this var's name and default. R1 extends that same
+    contract to the rest of the list rather than introducing Ruby-prefixed
+    duplicates (no `HAWK_TRANSLATION_BACKEND`).
+    - Naming clash to flag, not fix here: `PipelineDispatcher::PYTHON`
+      already exists as an unrelated Ruby constant (`ENV.fetch("PYTHON",
+      "python3")`, the interpreter binary — an R0.4-era leftover, itself a
+      candidate for deletion once `dispatch_python` has no callers left).
+      Noted so it isn't confused with `TRANSLATION_BACKEND`/
+      `CALIBRATION_BACKEND` when R1 is actually built.
+  - **Subprocess env allowlist for the `claude` CLI fork — narrow it, per
+    the original design memo's own security finding.** Today
+    `PipelineDispatcher#execute` forwards the entire parent `ENV`
+    (`RAILS_MASTER_KEY`, `DATABASE_URL`, etc.) into every subprocess. R1's
+    `claude_code` backend call goes through `Pipeline::Subprocess.run`,
+    whose `env:` is fully caller-built (R0.1's design) — that's the seam
+    where an allowlist actually gets enforced, not a new mechanism. The
+    `claude` CLI call needs only: `PATH`, `HOME` (`claude`'s own
+    config/session dir), `CLAUDE_BIN`'s resolved path if set, and
+    `MCP_CONNECTION_NONBLOCKING=false` (the same undocumented startup-race
+    workaround `claude_code_agent.py:114` sets today — carries over
+    unchanged). It must **not** receive `ANTHROPIC_API_KEY` (same reasoning
+    as `claude_code_agent.py:99-103`: a stray key would silently shadow
+    subscription OAuth and switch to metered billing) or any Rails secret.
+    R1's bare backend seam doesn't need the MCP bridge's env
+    (`HAWK_SKILLS_SPEC`) at all yet — that's R3's concern once skills exist
+    in Ruby; R1 calls `claude -p` with no MCP server configured, same as
+    what the seam needs standalone before R2/R3 add tool access.
+  - **`claude` CLI OAuth credential availability — out of scope for R1,
+    same reasoning as R0.3.** The CLI authenticates via a subscription
+    OAuth session (`claude auth login`) already present on this local dev
+    machine. R1 targets the same locally-run systemd process every other
+    job type already runs under (see [[hawk_translations_shared_oracle_vm]])
+    — there's no deployed instance to authenticate on yet. If
+    hawk-translations is ever actually `kamal deploy`'d, the container
+    would need its own authenticated session (a credential volume mount, or
+    an unattended `claude auth login --no-browser`) — the same open
+    question already parked for forex_backtester's Console-billing fix (see
+    [[hawk_translations_claude_code_headless_backend]]). Not solved here;
+    flag it if a real deploy is ever scheduled.
+  - **Ollama reachability — no new infra.** `LLM_BASE_URL` already resolves
+    to a loopback/private address today, and `PipelineJob.local_llm_endpoint?`
+    already serialises Solid Queue jobs to 1 concurrent
+    (see [[hawk_translations_local_llm_memory_limit]] — one `gpt-oss-20b`
+    load at a time or WSL OOMs). R1's Ruby `"local"` backend reuses this
+    existing constraint rather than needing a new concurrency mechanism.
+  - **Network egress — no change.** Loopback traffic to Ollama needs
+    nothing. Outbound HTTPS to Anthropic (for the `claude` CLI) already
+    works from this exact machine today, since the Python pipeline makes
+    that same call right now. No firewall/security-group work, because
+    nothing is deployed.
+  - **Timeout ownership stays with R0.1, not a second mechanism.** Python's
+    `claude_code_agent.py` enforces its own 1200s
+    `subprocess.run(timeout=...)`, independent of anything else. In Ruby,
+    the backend seam's `claude` CLI fork is exactly the kind of call
+    `Pipeline::Subprocess.run` (R0.1) exists for — pick one timeout value at
+    the call site, don't build a second timeout primitive. Left as an
+    explicit open number for whoever writes R1's code (likely 1200s, to
+    match today's behavior) — picking the number is a code decision, not an
+    infra one, so it's not settled here.
+- **Acceptance criteria:**
+  - Every env var R1's eventual Ruby code reads is named identically to its
+    Python counterpart — no new Ruby-only var invented for a concept Python
+    already names.
+  - The `claude` CLI subprocess's env is a documented allowlist (`PATH`,
+    `HOME`, `CLAUDE_BIN`, `MCP_CONNECTION_NONBLOCKING`), explicitly
+    excluding `ANTHROPIC_API_KEY` and all Rails secrets — written down
+    before any code forwards `ENV.to_h` into this particular subprocess.
+  - OAuth credential provisioning for a deployed `claude` CLI is named as an
+    explicitly open, unscheduled question — not silently assumed solved,
+    not solved prematurely either.
+  - No firewall, Kamal, or deploy-config changes are made — R1 runs against
+    the existing local systemd process, same as every other job type today.
+  - No Ruby implementation code is written as part of this section — that's
+    a separate, later pass.
+
+---
+
+**R0 is fully built (R0.3 skipped by decision) and R1's infra is fully
+designed.** R1's actual Ruby code (the `Pipeline::Ruby::TranslateBatch`
+backend-seam implementation itself) is the next build step when picked up.
+R2–R7 remain at summary level in the linked artifact.
