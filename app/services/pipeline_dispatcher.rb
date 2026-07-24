@@ -1,10 +1,8 @@
-require "open3"
-
 # ---------------------------------------------------------------------------
 # PipelineDispatcher
 #
 # Responsible for one thing: translating a TranslationJob record into a
-# shell command and executing it safely via Open3.capture3.
+# shell command and executing it safely via Pipeline::Subprocess.run.
 #
 # Returns [stdout, stderr, success?] — the job class decides what to do
 # with the result. This class knows nothing about job status lifecycle.
@@ -23,6 +21,13 @@ require "open3"
 # ---------------------------------------------------------------------------
 class PipelineDispatcher
   PYTHON = ENV.fetch("PYTHON", "python3")
+
+  # Matches PipelineJob's own 4-hour concurrency-limiter window for local-LLM
+  # endpoints — a single job is already expected to legitimately take close
+  # to that long on local hardware. This preserves today's de facto
+  # unbounded runtime for realistic workloads while still bounding a
+  # genuinely hung process instead of letting it run forever.
+  EXECUTE_TIMEOUT = 4.hours
 
   def self.call(translation_job)
     new(translation_job).call
@@ -123,13 +128,14 @@ class PipelineDispatcher
     end
   end
 
-  # Executes a command array via Open3.capture3, returning [stdout, stderr, success?].
-  # Passes the current process environment through so the Python pipeline picks
-  # up ANTHROPIC_API_KEY and HAWK_PROJECT_ROOT from ENV.
+  # Executes a command array via Pipeline::Subprocess.run, returning
+  # [stdout, stderr, success?]. Passes the current process environment
+  # through so the Python pipeline picks up ANTHROPIC_API_KEY and
+  # HAWK_PROJECT_ROOT from ENV.
   def execute(cmd)
     env = ENV.to_h.merge("HAWK_JOB_ID" => @job.id.to_s)
-    stdout, stderr, status = Open3.capture3(env, *cmd)
-    [ stdout, stderr, status.success? ]
+    result = Pipeline::Subprocess.run(cmd, env: env, timeout: EXECUTE_TIMEOUT, name: @job.job_type)
+    [ result.stdout, result.stderr, result.success? ]
   rescue => e
     [ "", "Dispatch error: #{e.class}: #{e.message}", false ]
   end
