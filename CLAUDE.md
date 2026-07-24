@@ -16,6 +16,9 @@ Ruby 3.4.2 · PostgreSQL · Hotwire (Turbo + Stimulus) · Solid Queue · Active 
 | Auth (currently disabled — solo dev) | `app/controllers/application_controller.rb#current_user` | `docs/DECISIONS.md` (2026-06-07) |
 | Background job execution | `app/jobs/pipeline_job.rb` | `docs/CONVENTIONS.md` |
 | Python pipeline dispatch | `app/services/pipeline_dispatcher.rb` | |
+| `claude` CLI backend seam (R1) | `app/services/translation_config.rb`, `app/services/pipeline/claude_code.rb` | `docs/RAILS_REFACTOR_PLAN.md` |
+| Agent skills (R2) — `bible_lookup` in-process | `app/services/pipeline/skill.rb`, `app/services/pipeline/skills/` | `docs/RAILS_REFACTOR_PLAN.md` |
+| MCP skill bridge (R3) | `app/services/pipeline/mcp/`, `bin/mcp_skill_bridge` | `docs/RAILS_REFACTOR_PLAN.md` |
 | Bible semantic search | `app/services/bible_search_service.rb` | |
 | Embedding generation | `app/jobs/generate_embedding_job.rb`, `app/services/voyage_client.rb` | |
 | Voice calibration review, commit | `app/controllers/voice_calibration_review_controller.rb`, `app/services/voice_calibration_doc_writer.rb` | |
