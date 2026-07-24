@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+# ---------------------------------------------------------------------------
+# bin/mcp_skill_bridge
+#
+# MCP stdio server exposing Pipeline::Skills as MCP tools, per R3 in
+# docs/RAILS_REFACTOR_PLAN.md. Spawned fresh by the `claude` CLI once per
+# translation call — this process's entire lifetime is one call, and
+# everything built at startup (server_context included) is scoped to that
+# one call and then discarded (see the bridge lifecycle diagram in the
+# design doc). The caller is responsible for invoking this script via an
+# absolute path to both the Ruby interpreter and this file — same
+# no-bare-PATH-lookup discipline as Pipeline::ClaudeCode's CLAUDE_BIN
+# resolution, one invariant shared by every subprocess this migration
+# introduces, not re-solved here.
+#
+# Configured via HAWK_BRIDGE_NOVEL_DIRECTORY_NAME — the one piece of
+# per-call context bible_lookup needs today. Only bible_lookup is wired;
+# web_search and any future skill are out of scope for this pass, same as
+# R3's design.
+# ---------------------------------------------------------------------------
+
+require_relative "../config/environment"
+
+novel_directory_name = ENV.fetch("HAWK_BRIDGE_NOVEL_DIRECTORY_NAME") do
+  abort "HAWK_BRIDGE_NOVEL_DIRECTORY_NAME is required to start the skill bridge."
+end
+
+server_context = Pipeline::Mcp::ServerContext.new(novel_directory_name: novel_directory_name)
+
+server = MCP::Server.new(
+  name: "hawk-skills",
+  tools: [ Pipeline::Mcp::BibleLookupTool ],
+  server_context: server_context
+)
+
+MCP::Server::Transports::StdioTransport.new(server).open

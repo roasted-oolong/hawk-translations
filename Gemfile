@@ -36,6 +36,14 @@ gem "thruster", require: false
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 1.2"
 
+# Official Ruby SDK for Model Context Protocol servers — the R3 skill
+# bridge subprocess uses this to expose Pipeline::Skills as MCP tools.
+# Already resolved transitively (rubocop's own editor-integration MCP
+# server, dev/test only) at 0.8.0; pinned here to keep it compatible with
+# rubocop's `~> 0.6` constraint and to make it reachable in production,
+# since the bridge script is production code, not a dev tool.
+gem "mcp", "~> 0.8"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
