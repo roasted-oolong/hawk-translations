@@ -900,6 +900,86 @@ points. Both are corrected below against the gem's real source, not guessed.
     object per job, never shared or reused — the same "never shared across
     concurrent jobs" property R2 stated for its `@novel` ivar falls out of
     this for free, rather than needing separate enforcement.
+  - **`server_context`'s shape, stated explicitly rather than left
+    conceptual:** an immutable value object, built once per bridge-process
+    spawn, containing only the minimal per-call context a tool actually
+    needs (a novel id, for `bible_lookup` — nothing else today) — no mutable
+    caches, no `attr_writer`s, nothing appended to it over the process's
+    lifetime. `Data.define` (available since Ruby 3.2, this app targets
+    3.4.2) is the natural shape — a frozen value object rather than a
+    plain mutable `Hash`, matching R0.1's existing precedent of using a
+    proper struct (`Pipeline::Subprocess::Result`) for exactly this kind of
+    "small, fixed, done-once" data rather than a hash. Stated as a
+    constraint now specifically so a later "just add one more field to
+    server_context" doesn't quietly turn it into an unbounded dumping
+    ground.
+  - **The adapter carries no business logic — stated as a constraint, not
+    just a description of today's code.** `call` does exactly four things:
+    read `server_context`, construct a `BibleLookup` instance from it,
+    delegate to `.execute`, wrap the string result in a
+    `Tool::Response`. No formatting, no argument validation, no
+    error-message shaping belongs in the adapter — that's what R2's skill
+    class already owns (formatting) and what the gem's own `call_tool`
+    already does before the adapter ever runs (argument validation against
+    `input_schema`, on by default —
+    `MCP::Configuration#validate_tool_call_arguments` defaults to `true`,
+    checked in `configuration.rb:13`). Written down now because "just add a
+    little validation/formatting here, it's convenient" is exactly the kind
+    of thing that accretes into an adapter unnoticed over time, six months
+    from now, by someone who wasn't in this design conversation.
+  - **Why the adapter exists at all, so a future reader doesn't have to
+    reverse-engineer it:** the adapter exists solely because the `mcp` gem
+    models tools as class-level objects, while this app's skill classes
+    stay instance-based on purpose — for consistency with R1's `"local"`
+    tool loop (which calls skill instances directly, no adapter involved)
+    and for easier testing (a skill instance can be built and exercised in
+    isolation without any MCP machinery at all, as R2 already established).
+    `BibleLookup` does not, and should not, inherit from `MCP::Tool`.
+  - **Anti-pattern, named explicitly:** no memoizing a skill instance across
+    calls in the adapter — no class-level `@@instance`, no
+    memoized `@cached_lookup`. The bridge process's whole lifecycle is one
+    translation call; a `BibleLookup` instance built fresh inside `call`
+    and discarded when `call` returns is the entire point, not an
+    inefficiency to optimize away. The lifecycle diagram below exists
+    partly to make this concrete.
+  - **Bridge process lifecycle, drawn once so "why nothing needs caching
+    beyond one job" doesn't have to be inferred from prose:**
+    ```mermaid
+    flowchart TB
+        A["claude CLI spawns bridge subprocess\n(per translation call)"]
+        B["bridge script boots enough Rails\nto reach ActiveRecord/BibleSearchService"]
+        C["server_context built once\n(e.g. novel id)"]
+        D["MCP::Server.new(tools:, server_context:)\nStdioTransport#open"]
+        E["tool call arrives over stdio"]
+        F["adapter: BibleLookup.new(...) → execute → Tool::Response"]
+        G["response written to stdout"]
+        H["claude CLI call finishes → bridge process exits"]
+        A --> B --> C --> D --> E --> F --> G --> E
+        G --> H
+    ```
+    `E → F → G` can repeat any number of times within one bridge process
+    (one `claude` call can invoke a tool more than once) — what never
+    repeats is `A`–`C`: the process, and everything built at its start, is
+    scoped to exactly one translation call and then discarded.
+- **Finding — unregistered tool names fail before any adapter code runs;
+  verified against the gem, not assumed.** Checked `server.rb`'s
+  `call_tool`: `tool = tools[tool_name]; unless tool ... raise
+  RequestHandlerError.new(..., error_type: :invalid_params)`. That exception
+  propagates to `process_request` in `json_rpc_handler.rb`, which converts
+  it into a genuine JSON-RPC error response (`code: -32602`, `INVALID_PARAMS`)
+  — a protocol-level failure, not a tool result at all. This is a real
+  behavior difference from Python's bridge, not just a stylistic one:
+  `skill_bridge.py:65-67` handles an unknown tool name itself, inside
+  `call_tool()`, returning an ordinary
+  `[TextContent(text: f"[error: unknown tool {name!r}]")]` — a
+  successful-looking tool response with the error embedded as text, the
+  same shape as every other error in that file. The Ruby `mcp` gem instead
+  enforces this at its own dispatch layer, before any registered tool code
+  (including this design's adapter) ever executes — the trust boundary
+  ("only these exact tool classes can run") is the SDK's own guarantee, not
+  something R3 needs to build or test for itself. Only the tool classes
+  actually passed to `MCP::Server.new(tools: [...])` are ever reachable;
+  nothing else needs a written check.
 - **Finding — Python's dynamic skill-loading mechanism doesn't need a Ruby
   equivalent, and this removes a security concern the original artifact
   flagged rather than just porting it.** `skill_bridge.py`'s `_load_skills()`
@@ -957,13 +1037,16 @@ points. Both are corrected below against the gem's real source, not guessed.
   else is a real engineering question for R3's actual build — flagged here,
   not guessed at, same discipline as R1's declined concurrency-cap and R0.3's
   "measure before deciding."
-- **Bridge command path — reuse R1's `CLAUDE_BIN` discipline, don't
-  reinvent it.** Whatever spawns the Ruby bridge script (the `command`/`args`
-  values built into `--mcp-config`, replacing `_mcp_config_json`) should
-  resolve to an absolute path the same way R1 resolves `CLAUDE_BIN` — no bare
-  `ruby`/PATH-searched command handed to a subprocess spawn. One resolution
-  discipline for every subprocess this refactor introduces, not a
-  per-phase-specific one.
+- **Bridge command path — one resolution policy for every subprocess this
+  migration introduces, not a per-phase rule that happens to look similar
+  twice.** Stated as an invariant rather than "R3 matches R1": all
+  subprocesses this refactor introduces — R1's `claude` CLI invocation, R3's
+  bridge script invocation — resolve their executable to an absolute path
+  once, before spawn, and never hand a bare/PATH-searched command to
+  `Process.spawn`. Whatever spawns the Ruby bridge script (the
+  `command`/`args` values built into `--mcp-config`, replacing
+  `_mcp_config_json`) follows that same policy — it isn't R3 borrowing a
+  detail from R1, it's one architectural rule the whole migration shares.
 - **Testing strategy — adapted from R2's three layers, not reinvented.**
   **Unit**: the `MCP::Tool` adapter's `call` tested directly as a class
   method, `server_context:` stubbed, no real `MCP::Server`/transport
@@ -980,6 +1063,15 @@ points. Both are corrected below against the gem's real source, not guessed.
   designed skill) through it; porting `web_search`'s own Tavily-calling logic
   is separate, later work, same way R2 scoped out everything but
   `bible_lookup`.
+- **Why this shape scales without redesign, worth naming as a sanity check
+  on the design rather than assuming it:** every future skill (`web_search`,
+  or novel ones like a glossary or character lookup) becomes one instance-
+  based skill class (R2's shape) plus one thin `MCP::Tool` adapter (R3's
+  shape) — the bridge script itself, `MCP::Server`, and `server_context`'s
+  contract don't change per skill added. That each new skill is
+  "skill class + adapter," not "another special case inside the bridge," is
+  a sign this design is sitting at the right level rather than one that'll
+  need revisiting at the second or third skill.
 - **Acceptance criteria:**
   - `mcp` (0.8.0, verified against the actual `Gemfile.lock`, not the
     original artifact's stale "v0.25.0") is added to the Gemfile's main
@@ -992,6 +1084,20 @@ points. Both are corrected below against the gem's real source, not guessed.
   - Per-invocation state (e.g. which novel) flows through `MCP::Server`'s
     single `server_context` object, built fresh per bridge-subprocess spawn
     — never a class-level/global mutable value shared across calls.
+  - `server_context` is an immutable value object (e.g. `Data.define`)
+    containing only the minimal per-call fields a tool needs, never a
+    mutable cache or a dumping ground that grows opportunistically as new
+    fields seem convenient.
+  - The adapter contains no business logic — no formatting, no argument
+    validation, no error-message shaping — beyond reading `server_context`,
+    constructing a skill instance, delegating to `execute`, and wrapping the
+    result. No skill instance is memoized across calls (no `@@instance`, no
+    memoized ivar) — a fresh instance per call is the design, not something
+    to optimize away later.
+  - Requests naming a tool outside the exact set passed to
+    `MCP::Server.new(tools: [...])` fail at the SDK's own dispatch layer (a
+    JSON-RPC `INVALID_PARAMS` error) before any adapter code runs — verified
+    against `server.rb`/`json_rpc_handler.rb`, not assumed.
   - No dynamic string-to-class resolution (`Object.const_get` on
     caller-influenced input) is introduced — tool classes are `require`d and
     referenced directly, since Ruby's tools carry no per-instance
