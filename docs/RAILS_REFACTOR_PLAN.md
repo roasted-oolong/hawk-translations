@@ -7,13 +7,14 @@ work.
 **Status as of 2026-07-24: R0.5, R0.1, and R0.4 done. R0.2's config is
 written but not deployed. R0.3 is explicitly skipped — see below. R1's
 infra (env var contract, subprocess secrets policy, credential/network
-reachability) and R2's `bible_lookup` in-process design are both fully
-designed, with no Ruby implementation code written for either yet — see
-the R1 and R2 sections below.**
-All five R0 milestones, plus R1's and R2's design sections, have reviewed
-Goal/Design/Acceptance-criteria sections. R3–R7 are still at the summary
-level in the artifact linked below; they have not been given the same
-detailed treatment.
+reachability), R2's `bible_lookup` in-process design, and R3's skill-bridge
+design (onto the official `mcp` gem) are all fully designed, with no Ruby
+implementation code written for any of them yet — see the R1, R2, and R3
+sections below.**
+All five R0 milestones, plus R1's, R2's, and R3's design sections, have
+reviewed Goal/Design/Acceptance-criteria sections. R4–R7 are still at the
+summary level in the artifact linked below; they have not been given the
+same detailed treatment.
 
 **R0.3 skipped, not just blocked:** R0.3's whole premise is measuring real
 peak container memory on the production Oracle VM under real workloads.
@@ -28,9 +29,10 @@ production instance exists to measure.
 **To resume:** R0.2's `config/deploy.yml` change still needs an actual
 `kamal deploy` run against production to confirm the `jobs` role boots
 there — a deliberately separate, deploy-triggering step from writing the
-config itself. With R0.3 skipped, R0 is otherwise closed. R1's infra is
-now designed (see R1 section below); writing `Pipeline::Ruby::TranslateBatch`'s
-actual backend-seam implementation is the next build step.
+config itself. With R0.3 skipped, R0 is otherwise closed. R1's infra, R2's
+`bible_lookup` design, and R3's skill-bridge design are all now designed
+(see the R1, R2, and R3 sections below); writing the actual Ruby code for
+any of them is the next build step.
 
 **Full original plan, diagrams, and pros/cons (R1–R7, superseded for R0
 specifics by the detailed sections below):**
@@ -824,13 +826,199 @@ buildable in isolation.
   - No Ruby implementation code is written as part of this section — that's
     a separate, later pass.
 
+## R3 — Skill bridge onto the `mcp` gem
+
+**Status: designed (2026-07-24), no Ruby code written yet.** Design only, at
+the user's request (confirmed via clarifying question, same as R2). This
+section required more real-code verification than R1 or R2 got right on
+first pass — the actual installed `mcp` gem's API doesn't match either this
+document's own prior assumptions or the original artifact's, on two separate
+points. Both are corrected below against the gem's real source, not guessed.
+
+- **Goal:** Design how the Ruby port of the MCP skill bridge — the subprocess
+  the `claude` CLI itself spawns per translation call to expose skills as MCP
+  tools — is structured on top of the official `mcp` gem, so that R2's
+  `bible_lookup` design has a concrete calling convention to plug into. Only
+  `bible_lookup` is wired here; `web_search` (also named in the original
+  roadmap's R3 scope) is out of scope for this pass, same reasoning as R2
+  scoping out everything but `bible_lookup` — port it separately later.
+- **Finding — the `mcp` gem is already in this app, just not for this
+  reason.** `Gemfile.lock` already resolves `mcp (0.8.0)` — checked via
+  `gem specification mcp -v 0.8.0`, confirmed genuinely
+  `https://github.com/modelcontextprotocol/ruby-sdk`, "The official Ruby SDK
+  for Model Context Protocol servers and clients." It's pulled in
+  transitively by `rubocop (~> 0.6)`, in the `:development, :test` group
+  (`Gemfile:39`) — Rubocop 1.85 ships its own MCP server for editor
+  integration, unrelated to this refactor. Two concrete consequences for
+  R3's build, not just trivia:
+  - **The version this document should target is 0.8.0, not the "v0.25.0"
+    the original artifact cited.** That number was wrong (or stale) the
+    moment it was written — corrected here against the actual lockfile
+    rather than repeated.
+  - **R3 needs `gem "mcp"` added to the main Gemfile group**, since the
+    bridge is production code, not a dev tool — the current transitive
+    inclusion doesn't reach a production boot. Whatever version gets pinned
+    must stay compatible with rubocop's `~> 0.6` constraint (0.8.0 already
+    satisfies both `~> 0.6` and a hypothetical direct `~> 0.8`) unless
+    rubocop's own pin is bumped at the same time — a real Bundler-resolution
+    constraint to check at build time, not assumed away.
+- **Finding — `MCP::Tool` is class-based; R2's `Skill` design is
+  instance-based. These don't map onto each other directly.** Read
+  `lib/mcp/tool.rb`, `lib/mcp/server.rb`, and
+  `lib/mcp/server/transports/stdio_transport.rb` directly (installed gem,
+  not docs) to check this rather than assume the SDK mirrors Python's shape:
+  - `MCP::Tool` subclasses declare `tool_name`, `description`, `input_schema`
+    as **class-level** DSL calls, and `def self.call(*args, server_context:
+    nil)` is a **class method** — there is no per-tool instance at all.
+  - Per-invocation state doesn't live on the tool. `MCP::Server.new(tools:,
+    server_context:, ...)` takes **one** `server_context` object for the
+    server's whole lifetime; `call_tool_with_args` (`server.rb:491-499`)
+    calls `tool.call(**args, server_context: server_context)` for every tool,
+    every call — the same object, every time.
+  - Python's `Skill` is the opposite: an instantiated object
+    (`BibleLookupSkill.new(novel_dir_name, rails_url)`), with `bridge_spec()`
+    existing specifically to reconstruct that per-instance state in a fresh
+    process. R2's design (instance-scoped `@novel` memoization, "fresh
+    instance per call site") was written correctly for Python's model — but
+    a literal line-for-line port of that shape onto `MCP::Tool` doesn't work,
+    because `MCP::Tool.call` has no instance to memoize onto.
+  - **Resolution, proposed here rather than left as a contradiction:** keep
+    R2's skill class exactly as designed (instance-based, `BibleLookup.new(
+    novel:).execute(tool_args)`-shaped, callable directly by R1's `"local"`
+    tool loop) and add a **thin `MCP::Tool` adapter subclass** whose
+    `self.call(**args, server_context:)` reads the novel from
+    `server_context`, constructs a `BibleLookup` instance from it, and calls
+    `.execute`. The adapter is R3's code, not a change to R2's design — R2's
+    skill class stays the single source of truth for the actual lookup
+    logic; the adapter only translates between the gem's class-based calling
+    convention and R2's instance-based one.
+  - This resolves R2's flagged open question — "does a freshly-spawned
+    bridge process have what it needs to reach `BibleSearchService`" — more
+    simply than Python's model needed: since the bridge subprocess is
+    spawned fresh per translation call (see below) and `server_context` is
+    built fresh at that same spawn, there is exactly one `server_context`
+    object per job, never shared or reused — the same "never shared across
+    concurrent jobs" property R2 stated for its `@novel` ivar falls out of
+    this for free, rather than needing separate enforcement.
+- **Finding — Python's dynamic skill-loading mechanism doesn't need a Ruby
+  equivalent, and this removes a security concern the original artifact
+  flagged rather than just porting it.** `skill_bridge.py`'s `_load_skills()`
+  (`importlib.import_module(spec["module"])` + `getattr` + `skill_cls(**spec
+  ["kwargs"])`) exists because Python needs to reconstruct arbitrary skill
+  *instances* from a JSON spec passed via `HAWK_SKILLS_SPEC`, since the
+  bridge subprocess shares no memory with its caller. The original artifact's
+  design-review section flagged this as a "sharp edge" that "same shape of
+  risk applies to Ruby's `Object.const_get` if R3 ports this literally."
+  Verified against the finding above: it doesn't need to be ported literally,
+  because Ruby's tools carry no constructor state to reconstruct — the
+  bridge script can `require` and reference actual `MCP::Tool` subclasses
+  directly (e.g. `Pipeline::Skills::BibleLookupTool`), with no runtime
+  string-to-class resolution at all. What still needs to cross the
+  subprocess-spawn boundary is much smaller than Python's `{module, class,
+  kwargs}` spec: which known tool classes to register (a short list of
+  names, matched against a small, statically-known set the bridge script
+  already requires) and whatever minimal per-call context builds
+  `server_context` (e.g. a novel id). No dynamic `const_get` on
+  caller-influenced input is needed — the risk the artifact flagged doesn't
+  carry over, rather than being mitigated.
+- **stdin/stdout discipline — same constraint as Python, verified against
+  the actual transport.** `StdioTransport#open` (`stdio_transport.rb`) loops
+  `$stdin.gets`, and `send_response` writes JSON straight to `$stdout`.
+  Exactly like `skill_bridge.py:74-79`, nothing inside a tool's `call` may
+  write to `$stdout` — a stray `puts` would corrupt the JSON-RPC stream the
+  same way it would in Python. Python's bridge redirects `sys.stdout` to
+  `sys.stderr` around `skill.execute()` for exactly this reason; the Ruby
+  bridge script needs the equivalent redirect (`$stdout = $stderr`, restored
+  after) around every tool call, stated here as a requirement for R3's build.
+- **Finding — MCP has a native error channel Python's bridge never uses;
+  decide this deliberately, don't drift into it.** `MCP::Tool::Response`
+  (`tool/response.rb`) supports `error: true`, surfaced to the client as
+  `isError` — a real protocol-level failure signal. Checked
+  `skill_bridge.py:63-81` directly: it never sets this. Every call —
+  including the unknown-tool case and whatever `"[bible_lookup error: ...]"`
+  string `execute()` returns — comes back as ordinary
+  `[TextContent(text: result)]`, `isError` absent. **Recommendation: preserve
+  this exactly** — the adapter's `call` should always return
+  `MCP::Tool::Response.new([{type: "text", text: result}])` with `error:`
+  left at its `false` default, keeping R2's "never raise, return a string"
+  contract intact all the way through the protocol rather than starting to
+  use a channel the current system doesn't. Named explicitly so a future
+  "hey, shouldn't failures set `isError`?" isn't a silent, undiscussed
+  behavior change against existing (working) semantics.
+- **Bridge process spawn cost — a real open question, not solved here.**
+  Checked `claude_code_agent.py:161-177` (`_mcp_config_json`): the bridge is
+  spawned fresh **per translation call**, `command: sys.executable, args:
+  [skill_bridge.py]` — a bare Python interpreter loading one small script,
+  cheap. A Ruby bridge process spawned the same way needs enough of Rails
+  loaded to reach `ActiveRecord`/`BibleSearchService` — a `config/
+  environment.rb` boot (DB connection pool, full app initialization) is a
+  meaningfully heavier per-call cost than Python's bare interpreter start.
+  Whether that's a full Rails boot, a narrower partial load, or something
+  else is a real engineering question for R3's actual build — flagged here,
+  not guessed at, same discipline as R1's declined concurrency-cap and R0.3's
+  "measure before deciding."
+- **Bridge command path — reuse R1's `CLAUDE_BIN` discipline, don't
+  reinvent it.** Whatever spawns the Ruby bridge script (the `command`/`args`
+  values built into `--mcp-config`, replacing `_mcp_config_json`) should
+  resolve to an absolute path the same way R1 resolves `CLAUDE_BIN` — no bare
+  `ruby`/PATH-searched command handed to a subprocess spawn. One resolution
+  discipline for every subprocess this refactor introduces, not a
+  per-phase-specific one.
+- **Testing strategy — adapted from R2's three layers, not reinvented.**
+  **Unit**: the `MCP::Tool` adapter's `call` tested directly as a class
+  method, `server_context:` stubbed, no real `MCP::Server`/transport
+  involved. **Integration**: a real `MCP::Server` wired to the real adapter
+  and a real `StdioTransport` (or the server's `handle`/`handle_json` called
+  directly, bypassing stdio) against a real database — proves the JSON-RPC
+  shape and `BibleSearchService` call both work, no LLM involved.
+  **End-to-end**: an actual `claude` CLI call, via R1's backend, actually
+  spawning the bridge subprocess and reaching a real LLM — only meaningful
+  once R1's Ruby backend-seam code exists to make that call at all.
+- **`web_search` — explicitly not designed here.** The original roadmap
+  scoped `web_search` into R3 alongside the bridge mechanism itself. This
+  section designs the bridge mechanism and wires `bible_lookup` (R2's only
+  designed skill) through it; porting `web_search`'s own Tavily-calling logic
+  is separate, later work, same way R2 scoped out everything but
+  `bible_lookup`.
+- **Acceptance criteria:**
+  - `mcp` (0.8.0, verified against the actual `Gemfile.lock`, not the
+    original artifact's stale "v0.25.0") is added to the Gemfile's main
+    group, with its version kept compatible with rubocop's existing
+    `~> 0.6` constraint rather than causing a Bundler resolution conflict.
+  - The bridge's tool classes are `MCP::Tool` subclasses (class-level
+    `call(*args, server_context:)`), not a literal port of Python's
+    instance-based `Skill` — R2's skill class is reused via a thin adapter,
+    not duplicated or redesigned.
+  - Per-invocation state (e.g. which novel) flows through `MCP::Server`'s
+    single `server_context` object, built fresh per bridge-subprocess spawn
+    — never a class-level/global mutable value shared across calls.
+  - No dynamic string-to-class resolution (`Object.const_get` on
+    caller-influenced input) is introduced — tool classes are `require`d and
+    referenced directly, since Ruby's tools carry no per-instance
+    constructor state to reconstruct the way Python's `bridge_spec()` needs.
+  - The bridge script never writes to `$stdout` from within a tool call —
+    stated as a requirement, mirroring Python's existing
+    stdout-to-stderr redirect.
+  - Tool-execution failures continue to be reported as text content (the
+    existing `"[bible_lookup error: ...]"`-shaped string), not MCP's native
+    `isError` flag — a deliberate parity decision, stated rather than
+    silently drifted into.
+  - The bridge subprocess's Rails-boot cost is named as an open engineering
+    question for R3's build, not assumed solved or guessed at with a number.
+  - Whatever spawns the bridge process resolves its command to an absolute
+    path, matching R1's `CLAUDE_BIN` resolution discipline.
+  - `web_search` is explicitly out of scope for this section.
+  - No Ruby implementation code is written as part of this section — that's
+    a separate, later pass.
+
 ---
 
-**R0 is fully built (R0.3 skipped by decision). R1's infra and R2's
-`bible_lookup` design are both fully designed, with no Ruby implementation
-code written for either yet.** The next build step, whenever picked up, is
-writing actual Ruby code — R1's backend-seam adapters and/or R2's
-`bible_lookup` skill class, in whichever order suits actually landing R3's
-MCP bridge (both R2's end-to-end usability and its `bridge_spec()`-
-equivalent question depend on it). R3–R7 remain at summary level in the
-linked artifact.
+**R0 is fully built (R0.3 skipped by decision). R1's infra, R2's
+`bible_lookup` design, and R3's skill-bridge design are all fully designed,
+with no Ruby implementation code written for any of them yet.** The next
+build step, whenever picked up, is writing actual Ruby code — R1's
+backend-seam adapters, R2's `bible_lookup` skill class, and R3's `MCP::Tool`
+adapter + bridge script, most naturally in that order since R3's adapter
+depends on R2's skill class existing and R1's backend needs to exist before
+either skill can be exercised end-to-end. R4–R7 remain at summary level in
+the linked artifact.
