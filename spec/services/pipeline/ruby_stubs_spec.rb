@@ -1,10 +1,10 @@
 require "rails_helper"
 
 RSpec.describe "Pipeline::Ruby stub implementations" do
+  # Preread and BibleBuild are built (R6) — see
+  # spec/services/pipeline/ruby/preread_runner_spec.rb — and excluded here.
   {
-    "preread"                 => Pipeline::Ruby::Preread,
     "translate_batch"         => Pipeline::Ruby::TranslateBatch,
-    "bible_build"             => Pipeline::Ruby::BibleBuild,
     "post_translation_review" => Pipeline::Ruby::PostTranslationReview,
     "voice_calibration"       => Pipeline::Ruby::VoiceCalibration
   }.each do |job_type, klass|
