@@ -1,0 +1,73 @@
+<%# app/views/post_translation_review/show.html.erb — plain server-rendered card review, review layout %>
+<% content_for :title, "Bible Review — #{@novel.title} — Hawk" %>
+
+<div class="ptr-review" data-testid="ptr-review-shell">
+  <div class="ptr-review__header">
+    <p><%= link_to "← Back to novel", novel_path(@novel), data: { testid: "link-back-novel" } %></p>
+    <h1>Post-Translation Bible Review — <%= @novel.title %></h1>
+    <% if @job.chapter_range_label %>
+      <p class="ptr-review__chapter-label"><%= @job.chapter_range_label %></p>
+    <% end %>
+  </div>
+
+  <% if @stale_sections.any? %>
+    <div class="ptr-review__staleness-banner" data-testid="staleness-banner">
+      The bible has changed since these proposals were generated
+      (<%= @stale_sections.join(", ") %>). Accepted changes are re-validated
+      against the current file when you commit — anything no longer
+      applicable will be skipped rather than applied incorrectly.
+    </div>
+  <% end %>
+
+  <div class="ptr-review__cards">
+    <% @cards.each do |card| %>
+      <div class="ptr-review__card"
+           data-testid="ptr-card-<%= card['id'] %>"
+           data-card-type="<%= card['card_type'] %>">
+        <div class="ptr-review__card-meta">
+          <span class="ptr-review__type-badge"><%= card["card_type"].humanize %></span>
+          <span class="ptr-review__decision" data-testid="decision-<%= card['id'] %>">
+            <%= card["decision"] || "pending" %>
+          </span>
+          <% if card["outcome"] %>
+            <span class="ptr-review__outcome" data-testid="outcome-<%= card['id'] %>">
+              <%= card["outcome"].humanize %>
+            </span>
+          <% end %>
+        </div>
+
+        <% case card["card_type"] %>
+        <% when "new_entry" %>
+          <p class="ptr-review__label">New entry — <%= card["section_key"].humanize %></p>
+          <h3><%= card["heading"] %></h3>
+          <pre class="ptr-review__content"><%= card["content"] %></pre>
+        <% when "proposed_edit" %>
+          <p class="ptr-review__label">Proposed edit — <%= card["section_key"].humanize %></p>
+          <h3><%= card["entry"] %></h3>
+          <p><strong>Current:</strong> <%= card["current"] %></p>
+          <p><strong>Proposed:</strong> <%= card["proposed"] %></p>
+          <p><strong>Reason:</strong> <%= card["reason"] %></p>
+        <% when "story_update" %>
+          <p class="ptr-review__label">Story update — <%= card["type"] %></p>
+          <p><%= card["update"] %></p>
+        <% end %>
+
+        <div class="ptr-review__actions">
+          <%= button_to "Accept", novel_post_translation_review_card_path(@novel, card_id: card["id"]),
+                method: :patch, params: { decision: "accepted" },
+                class: "btn btn--primary", data: { testid: "button-accept-#{card['id']}" } %>
+          <%= button_to "Skip", novel_post_translation_review_card_path(@novel, card_id: card["id"]),
+                method: :patch, params: { decision: "skipped" },
+                class: "btn btn--ghost", data: { testid: "button-skip-#{card['id']}" } %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="ptr-review__commit">
+    <%= form_with url: novel_post_translation_review_commit_path(@novel), method: :post do %>
+      <%= submit_tag "Commit accepted changes", class: "btn btn--primary", data: { testid: "button-commit-changes" } %>
+    <% end %>
+    <%= link_to "Back without committing", novel_path(@novel), class: "btn btn--ghost", data: { testid: "link-back-novel-2" } %>
+  </div>
+</div>

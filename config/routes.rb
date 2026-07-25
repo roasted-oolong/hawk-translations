@@ -83,6 +83,14 @@ Rails.application.routes.draw do
     get   "voice_calibration/review",                to: "voice_calibration_review#show",   as: :voice_calibration_review
     patch "voice_calibration/review/cards/:card_id", to: "voice_calibration_review#update", as: :voice_calibration_review_card
     post  "voice_calibration/review/commit",         to: "voice_calibration_review#commit", as: :voice_calibration_review_commit
+
+    # Post-translation bible review — full-page card review + commit
+    # GET   /novels/:novel_id/post_translation_review               → novel_post_translation_review_path
+    # PATCH /novels/:novel_id/post_translation_review/cards/:card_id → novel_post_translation_review_card_path
+    # POST  /novels/:novel_id/post_translation_review/commit         → novel_post_translation_review_commit_path
+    get   "post_translation_review",                to: "post_translation_review#show",   as: :post_translation_review
+    patch "post_translation_review/cards/:card_id",  to: "post_translation_review#update", as: :post_translation_review_card
+    post  "post_translation_review/commit",          to: "post_translation_review#commit", as: :post_translation_review_commit
   end
 
   # Top-level jobs index — cross-novel view
