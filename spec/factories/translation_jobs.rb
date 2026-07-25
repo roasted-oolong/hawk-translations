@@ -10,6 +10,12 @@ FactoryBot.define do
     result_payload { nil }
     solid_queue_job_id { nil }
 
+    trait :translate_batch do
+      job_type      { "translate_batch" }
+      chapter_start { 1 }
+      chapter_end   { 1 }
+    end
+
     trait :bible_build do
       job_type      { "bible_build" }
       chapter_start { 1 }

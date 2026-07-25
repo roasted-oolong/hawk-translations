@@ -31,7 +31,10 @@ class PipelineJob < ApplicationJob
   #   preread start   → chapters in range: untranslated/preread_failed → prereading
   #   preread success → chapters in range: prereading → preread
   #   preread failure → chapters in range: prereading → preread_failed
-  #   translate_batch success → chapters in range: preread → translated
+  #   translate_batch (success or failure) → each chapter in range with a
+  #     written output file on disk: preread → translated. Per-chapter, not
+  #     all-or-nothing: a partial-failure translate_batch job (R4) still
+  #     attaches and marks every chapter that succeeded before the failure.
   # ---------------------------------------------------------------------------
   def perform(translation_job_id)
     translation_job = TranslationJob.find(translation_job_id)
@@ -90,6 +93,15 @@ class PipelineJob < ApplicationJob
 
   private
 
+  # Per-chapter, not all-or-nothing: a translate_batch job that fails
+  # partway through (R4's recoverable/fatal error-category split, see
+  # docs/RAILS_REFACTOR_PLAN.md) still writes every chapter that succeeded
+  # before the failure. Attaching and marking "translated" is keyed off
+  # whether that chapter's own output file actually exists on disk, not off
+  # the job's overall success/failure status — so those chapters aren't
+  # silently left un-attached and stuck at their pre-job status just because
+  # a later chapter in the same range failed. Called from both the
+  # "success" and "failure" branches of update_chapters below.
   def attach_translated_outputs(job, chapters)
     novel_dir = File.join(
       ENV.fetch("HAWK_PROJECT_ROOT"),
@@ -107,6 +119,7 @@ class PipelineJob < ApplicationJob
           content_type: "text/plain"
         )
       end
+      chapter.update!(status: "translated")
     end
   end
 
@@ -144,9 +157,8 @@ class PipelineJob < ApplicationJob
     in [ "preread", "start" ]            then chapters.update_all(status: "prereading")
     in [ "preread", "success" ]          then chapters.update_all(status: "preread")
     in [ "preread", "failure" ]          then chapters.update_all(status: "preread_failed")
-    in [ "translate_batch", "success" ]
+    in [ "translate_batch", "success" ] | [ "translate_batch", "failure" ]
       attach_translated_outputs(job, chapters)
-      chapters.update_all(status: "translated")
     else # no chapter status change for other job types / phases
     end
   end

@@ -164,4 +164,75 @@ RSpec.describe PipelineJob, type: :job do
       end
     end
   end
+
+  describe "#perform — translate_batch" do
+    let(:novel)     { create(:novel) }
+    let(:user)      { create(:user) }
+    let!(:chapter1) { create(:chapter, novel: novel, number: 1, status: "preread") }
+    let!(:chapter2) { create(:chapter, novel: novel, number: 2, status: "preread") }
+    let(:job)       { create(:translation_job, :translate_batch, novel: novel, user: user,
+                             chapter_start: 1, chapter_end: 2) }
+
+    def with_project_root(root)
+      original = ENV["HAWK_PROJECT_ROOT"]
+      ENV["HAWK_PROJECT_ROOT"] = root
+      yield
+    ensure
+      ENV["HAWK_PROJECT_ROOT"] = original
+    end
+
+    def write_output(root, chapter_num, text)
+      dir = File.join(root, novel.directory_name, "chapters")
+      FileUtils.mkdir_p(dir)
+      File.write(File.join(dir, "Chapter #{chapter_num}.txt"), text)
+    end
+
+    context "when the batch fails partway through (one chapter written, one not)" do
+      it "attaches and marks translated only the chapter whose output file exists, per-chapter rather than all-or-nothing" do
+        Dir.mktmpdir do |root|
+          with_project_root(root) do
+            write_output(root, 1, "Chapter one translated.")
+            # No output file written for chapter 2 — it failed.
+
+            allow(PipelineDispatcher).to receive(:call)
+              .and_return([ "1 chapter(s) translated.", "Chapter 2: cli_failure — boom", false ])
+
+            described_class.new.perform(job.id)
+            job.reload
+            chapter1.reload
+            chapter2.reload
+
+            expect(job.status).to eq("failed")
+            expect(chapter1.status).to eq("translated")
+            expect(chapter1.translated_output).to be_attached
+            expect(chapter2.status).to eq("preread")
+            expect(chapter2.translated_output).not_to be_attached
+          end
+        end
+      end
+    end
+
+    context "when the whole batch succeeds" do
+      it "attaches and marks every chapter translated" do
+        Dir.mktmpdir do |root|
+          with_project_root(root) do
+            write_output(root, 1, "Chapter one translated.")
+            write_output(root, 2, "Chapter two translated.")
+
+            allow(PipelineDispatcher).to receive(:call)
+              .and_return([ "2 chapter(s) translated.", "", true ])
+
+            described_class.new.perform(job.id)
+            job.reload
+            chapter1.reload
+            chapter2.reload
+
+            expect(job.status).to eq("completed")
+            expect(chapter1.status).to eq("translated")
+            expect(chapter2.status).to eq("translated")
+          end
+        end
+      end
+    end
+  end
 end
