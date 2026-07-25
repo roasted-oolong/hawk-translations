@@ -10,23 +10,23 @@ written but not deployed. R0.3 is explicitly skipped — see below. R1
 (`Pipeline::Skills::BibleLookup`, in-process), R3 (the skill bridge
 onto the official `mcp` gem: `Pipeline::Mcp::ServerContext`,
 `Pipeline::Mcp::BibleLookupTool`, `bin/mcp_skill_bridge`), R6
-(`preread`/`bible_build` orchestration), and now R5 (`post_translation_review` +
-`voice_calibration` orchestration, plus the new human-review commit layer —
+(`preread`/`bible_build` orchestration), R5 (`post_translation_review` +
+`voice_calibration` orchestration, plus the human-review commit layer —
 `Pipeline::Ruby::PostTranslationReview`, `Pipeline::Ruby::VoiceCalibration`,
-`Pipeline::BibleReviewWriter`, `PostTranslationReviewController`) are all
-built, tested, and (R1–R3) committed to `main` — R5 and R6's commits are
-still pending, see below. R4 (`translate_batch` orchestration — the first
-phase that actually wires R1–R3 together end-to-end) remains designed only,
-with no Ruby code written yet — see the R4 section below for what's
-designed and what's still open (R4's design surfaced a real open question
-about the `claude` CLI's own MCP-server-spawn env behavior, needing a smoke
-test before its build starts).**
-All five R0 milestones, plus R1, R2, R3, R5, and R6, have reviewed
-Goal/Design/Acceptance-criteria sections and real Ruby implementations
-with passing specs. R4 has the same Goal/Design/Acceptance-criteria
-treatment but no implementation yet. The formatter/OCR slice of the original
-R6 summary and R7 are still at the summary level in the artifact linked
-below; they have not been given the same detailed treatment.
+`Pipeline::BibleReviewWriter`, `PostTranslationReviewController`), and now
+R4 (`translate_batch` orchestration — `Pipeline::Ruby::TranslateBatch`,
+`Pipeline::Ruby::TranslateBatch::PromptBuilder`,
+`Pipeline::Ruby::TranslateBatch::BridgeConfig`) are all built, tested, and
+(R1–R3) committed to `main` — R4, R5, and R6's commits are still pending,
+see below. R4 was the first phase to actually wire R1–R3 together
+end-to-end; its build started with the real `claude -p` + `--mcp-config`
+smoke test the design flagged (see the R4 section below) before any
+orchestration code was written.
+All five R0 milestones, plus R1–R6, have reviewed Goal/Design/Acceptance-
+criteria sections and real Ruby implementations with passing specs. The
+formatter/OCR slice of the original R6 summary and R7 are still at the
+summary level in the artifact linked below; they have not been given the
+same detailed treatment.
 
 **R5 build, 2026-07-25, same session as this doc's earlier R4/R5/R6 design
 passes and the R6 build:** `Pipeline::Ruby::PostTranslationReview` and
@@ -1276,11 +1276,57 @@ separate points, both corrected below against the gem's real source.
 
 ## R4 — `translate_batch` orchestration
 
-**Status: designed 2026-07-24, same session as R0–R3's build — no Ruby
-code written.** This is the first phase whose design actually exercises
-R1's `Pipeline::ClaudeCode`, R2's `Pipeline::Skills::BibleLookup`, and R3's
-bridge together, end-to-end — everything before this point was
-infra/plumbing with no real caller.
+**Status: built 2026-07-25.** This was the first phase whose implementation
+actually exercises R1's `Pipeline::ClaudeCode`, R2's
+`Pipeline::Skills::BibleLookup`, and R3's bridge together, end-to-end —
+everything before this point was infra/plumbing with no real caller. Build
+started with the design's own flagged smoke test, not orchestration code:
+a real `claude -p` call with a real `--strict-mcp-config`/`--mcp-config`
+pointing at the actual `bin/mcp_skill_bridge`, using exactly the env
+allowlists this design recommends (the `claude` CLI's own R1 allowlist —
+`HOME` + `MCP_CONNECTION_NONBLOCKING` only — and the bridge's own
+`RAILS_ENV`/`HOME`/`BUNDLE_GEMFILE`/`HAWK_BRIDGE_NOVEL_DIRECTORY_NAME`
+allowlist below), asking the model to call `bible_lookup` for a real
+character in `idols-rewind`. It returned real `BibleSearchService` results
+— confirming the bridge boots Rails and reaches Postgres under the
+recommended allowlists without needing to reverse-engineer `claude`'s
+internal env-merge behavior (the open question below): since
+`Pipeline::ClaudeCode` already gives `claude` itself a minimal, explicit
+env with nothing larger for it to fall back to, "stripped copy of claude's
+own env" and "claude's full inherited env" are the same set here either
+way. Built, in dependency order:
+`Pipeline::Ruby::TranslateBatch::PromptBuilder` (reference-file loading —
+`NOVEL_FILES`, the narrator-note regex, byte-verified against a live
+`python3` invocation of `src/prompt_builder.py`, same discipline as R5/R6 —
+see `spec/fixtures/translate_batch/`; the web_search sentence is stripped
+per this section's recommendation (a), verified absent by its own spec),
+`Pipeline::Ruby::TranslateBatch::BridgeConfig` (the `mcp_config`
+command/args/env triple — `RbConfig.ruby` resolves the bridge's interpreter
+path directly, simpler than the design's illustrative `rbenv which ruby`
+shell-out below: since this Rails process is already running under the
+real interpreter, not a shim, `RbConfig.ruby` is guaranteed correct with no
+extra subprocess needed), and `Pipeline::Ruby::TranslateBatch` itself (the
+orchestrator — sequential per-chapter `Pipeline::ClaudeCode` calls,
+`.tmp`-then-`rename` atomic writes, file-based progress reporting, and the
+recoverable/fatal error-category split this section calls for). **One
+error-taxonomy call the design named but didn't resolve, decided during the
+build:** `:unparseable_output` is bucketed as recoverable (continue to the
+next chapter), not fatal — a single response failing to parse as JSON is a
+property of that one call, the same reasoning the design already applied
+to `:cli_failure`. **The `update_chapters`/`attach_translated_outputs`
+all-or-nothing gap this section flagged for R4's build to resolve was
+resolved, not just re-flagged:** `PipelineJob#attach_translated_outputs` now
+attaches and marks `"translated"` per-chapter, keyed off whether that
+chapter's own output file exists on disk, and runs on both the `"success"`
+and `"failure"` phases of `update_chapters` for `translate_batch` — so a
+partial-failure job still leaves its successfully-translated chapters
+attached and marked, rather than stuck at their pre-job status. The
+downstream retry/re-attachment-before-retry UX questions this section named
+remain open, unresolved by this change — they're controller/UI-layer
+decisions, not orchestration ones. Full spec suite run after: no
+regressions beyond the pre-existing known-red baseline (see
+[[hawk_translations_auth_deferred]]). Not yet committed — check
+`git status`/`git log` before assuming this has landed on `main`.
 
 - **Goal:** Port `translate_batch.py`'s orchestration into
   `Pipeline::Ruby::TranslateBatch` — the first Ruby code to build a real
