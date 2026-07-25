@@ -107,6 +107,18 @@
     </dl>
   </div>
 
+  <% if @translation_job.post_translation_review? && @translation_job.completed? %>
+    <% ptr_payload = JSON.parse(@translation_job.result_payload.to_s) rescue {} %>
+    <% ptr_cards = ptr_payload["cards"] || [] %>
+    <% if ptr_cards.any? %>
+      <div class="job-detail__card">
+        <%= link_to "Review #{ptr_cards.size} bible change(s)",
+              novel_post_translation_review_path(@novel),
+              class: "btn btn--primary", data: { testid: "link-review-bible-changes" } %>
+      </div>
+    <% end %>
+  <% end %>
+
   <%# ── Output terminal panel ──────────────────────────────────────── %>
   <div class="job-terminal" data-testid="job-output">
     <div class="job-terminal__header <%= 'job-terminal__header--failed' if @translation_job.failed? %>">
