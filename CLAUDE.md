@@ -19,6 +19,7 @@ Ruby 3.4.2 · PostgreSQL · Hotwire (Turbo + Stimulus) · Solid Queue · Active 
 | `claude` CLI backend seam (R1) | `app/services/translation_config.rb`, `app/services/pipeline/claude_code.rb` | `docs/RAILS_REFACTOR_PLAN.md` |
 | Agent skills (R2) — `bible_lookup` in-process | `app/services/pipeline/skill.rb`, `app/services/pipeline/skills/` | `docs/RAILS_REFACTOR_PLAN.md` |
 | MCP skill bridge (R3) | `app/services/pipeline/mcp/`, `bin/mcp_skill_bridge` | `docs/RAILS_REFACTOR_PLAN.md` |
+| Preread / bible_build orchestration (R6) | `app/services/pipeline/ruby/preread_runner/`, `app/services/pipeline/{prompt_utils,bible_utils,bible_file_editor,preread_bible_writer}.rb` | `docs/RAILS_REFACTOR_PLAN.md` |
 | Bible semantic search | `app/services/bible_search_service.rb` | |
 | Embedding generation | `app/jobs/generate_embedding_job.rb`, `app/services/voyage_client.rb` | |
 | Voice calibration review, commit | `app/controllers/voice_calibration_review_controller.rb`, `app/services/voice_calibration_doc_writer.rb` | |
