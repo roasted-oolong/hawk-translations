@@ -40,8 +40,8 @@ load_dotenv()
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config import SONNET_MODEL, MAX_TOKENS
-from src.agent import call, make_client
+from config import REVIEW_BACKEND
+from src.translation_backend import get_backend
 from src.bible_review.bible_reader import (
     read_novel_info,
     read_bible_files,
@@ -121,16 +121,10 @@ def main() -> None:
     system_prompt = build_system_prompt(today, chapter_num)
     user_message = build_user_message(context)
 
-    client = make_client()
+    backend = get_backend(REVIEW_BACKEND)
 
     def api_call_fn(system_prompt: str, user_message: str) -> str:
-        return call(
-            system_prompt=system_prompt,
-            user_message=user_message,
-            model=SONNET_MODEL,
-            max_tokens=MAX_TOKENS,
-            client=client,
-        )
+        return backend(system_prompt=system_prompt, user_message=user_message)
 
     report_progress(50)
     print("Running review API call...")

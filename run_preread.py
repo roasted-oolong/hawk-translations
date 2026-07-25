@@ -34,8 +34,8 @@ load_dotenv()
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config import SONNET_MODEL, MAX_TOKENS
-from src.agent import call, make_client
+from config import PREREAD_BACKEND
+from src.translation_backend import get_backend
 from src.novel_resolver import find_all_korean_chapters
 from src.preread.chapter_resolver import parse_chapter_selection
 from src.preread.runner import run_preread
@@ -102,16 +102,10 @@ def main() -> None:
         )
         sys.exit(1)
 
-    client = make_client()
+    backend = get_backend(PREREAD_BACKEND)
 
     def api_call_fn(system_prompt: str, user_message: str) -> str:
-        return call(
-            system_prompt=system_prompt,
-            user_message=user_message,
-            model=SONNET_MODEL,
-            max_tokens=MAX_TOKENS,
-            client=client,
-        )
+        return backend(system_prompt=system_prompt, user_message=user_message)
 
     run_preread(
         novel_dir=novel_dir,
