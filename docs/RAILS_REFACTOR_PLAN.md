@@ -24,9 +24,10 @@ smoke test the design flagged (see the R4 section below) before any
 orchestration code was written.
 All five R0 milestones, plus R1–R6, have reviewed Goal/Design/Acceptance-
 criteria sections and real Ruby implementations with passing specs. The
-formatter/OCR slice of the original R6 summary and R7 are still at the
-summary level in the artifact linked below; they have not been given the
-same detailed treatment.
+formatter/OCR slice of the original R6 summary now has its own
+Goal/Design/Acceptance-criteria section too — see **R6.5** below, designed
+2026-07-25, not yet built. R7 is still at the summary level in the artifact
+linked below; it has not been given the same detailed treatment.
 
 **R5 build, 2026-07-25, same session as this doc's earlier R4/R5/R6 design
 passes and the R6 build:** `Pipeline::Ruby::PostTranslationReview` and
@@ -135,11 +136,12 @@ not built — its build has no R4-shaped smoke-test blocker (neither of its
 two job types uses an `--mcp-config`/bridge at all) so it can be built
 independently of, and in either order relative to, R4. R6 (see the R6
 section below — `preread`/`bible_build` only; the formatter/OCR slice of
-the original summary remains unscheduled) is also designed but not built;
-its orchestrator half is independent of R4/R5 too, but its writer half
-shares a new primitive, `Pipeline::BibleFileEditor`, with R5's amended
+the original summary is now R6.5) is also designed but not built; its
+orchestrator half is independent of R4/R5 too, but its writer half shares a
+new primitive, `Pipeline::BibleFileEditor`, with R5's amended
 `BibleReviewWriter` — whichever of R5/R6 is built first builds that
-primitive once. The formatter/OCR slice and R7 remain unscheduled.
+primitive once. R6.5 (formatter/OCR — see the R6.5 section below) is
+designed but not built. R7 remains unscheduled.
 
 **Full original plan, diagrams, and pros/cons (R1–R7, superseded for R0
 specifics by the detailed sections below):**
@@ -166,19 +168,25 @@ https://claude.ai/code/artifact/31286d3b-7c57-4c47-a3d2-c2675944ed11
   (`src/preread/*`) — the slice of the original "R6" summary (which also
   named the formatter and OCR) that fits directly into the existing
   `PipelineDispatcher`/`PIPELINE_IMPL_*` machinery. Designed (see the R6
-  section below); not yet built. The formatter (`clean_chapter.py`) and OCR
-  (`ocr_chapter.py`) remain unscheduled and summary-level — both are
-  triggered outside `PipelineDispatcher` entirely (plain `ActiveJob`s on
-  chapter upload, no `PIPELINE_IMPL_*` toggle today), a structurally
-  different migration than R6's.
+  section below); not yet built.
+- **R6.5** — port the formatter (`clean_chapter.py`/`FormatKoreanChapterJob`)
+  and OCR (`ocr_chapter.py`/`OcrChapterJob`) — the two pieces of the
+  original "R6" summary that don't fit the `PipelineDispatcher`/
+  `PIPELINE_IMPL_*` pattern (both are triggered outside it entirely, by
+  plain `ActiveJob`s on chapter upload) and call different backends than
+  `Pipeline::ClaudeCode` (a local OpenAI-compatible HTTP endpoint for the
+  formatter; the `claude` CLI with image/stream-json input, which
+  `Pipeline::ClaudeCode` can't send, for OCR). Designed (see the R6.5
+  section below); not yet built.
 - **R7** — delete the Python layer (`venv/`, `requirements.txt`, Dockerfile
   stage), revisit the now-obsolete "`ANTHROPIC_API_KEY` stays in `.env`"
   decision.
 
 Current recommendation: land R0 → R1–R3 now (done); R4, R5, and R6 are
 designed and ready to build, in any order (R5's and R6's writers share
-`Pipeline::BibleFileEditor`, so whichever lands first builds it); the
-formatter/OCR slice of the original R6 and R7 remain unscheduled.
+`Pipeline::BibleFileEditor`, so whichever lands first builds it); R6.5 is
+also designed and ready to build, independent of R4/R5/R6; R7 remains
+unscheduled.
 
 Each milestone below is written as **Goal / Design / Acceptance criteria** so
 the roadmap doubles as an implementation checklist. Build order for R0 is
@@ -2515,7 +2523,8 @@ picked `preread`/`bible_build` specifically because, unlike the formatter
 already built. The formatter and OCR are structurally different — both are
 triggered by chapter upload via plain `ActiveJob` classes, not
 `TranslationJob`s, with no `PipelineDispatcher` routing and no
-`PIPELINE_IMPL_*` toggle today — and remain unscheduled, summary-level only.
+`PIPELINE_IMPL_*` toggle today — and are designed separately, as R6.5,
+below.
 This section was reviewed and revised once before being written up here, same
 process R4/R5 went through: the review escalated from a narrower writer-
 hardening critique into the architectural finding that R6's writer and R5's
@@ -2830,6 +2839,179 @@ been amended to use.
 
 ---
 
+## R6.5 — formatter and OCR port
+
+**Status: designed 2026-07-25.** Carves out the two pieces R6 explicitly
+deferred — `clean_chapter.py`/`FormatKoreanChapterJob` (formatter) and
+`ocr_chapter.py`/`OcrChapterJob` (OCR) — into their own numbered milestone,
+rather than leaving them permanently "unscheduled, summary-level." Given its
+own number specifically because it is **not** a smaller version of R1–R6's
+pattern: both scripts call a different backend than `Pipeline::ClaudeCode`
+(R1), so this section designs two new backend primitives, not two more
+callers of existing ones.
+
+- **Goal:** Replace `FormatKoreanChapterJob#run_cleaner` and
+  `OcrChapterJob#run_ocr`'s Python-subprocess calls with in-process Ruby,
+  each gated by its own `PIPELINE_IMPL_*` toggle (new — neither job goes
+  through `PipelineDispatcher`/`TranslationJob` today, so there is no
+  existing toggle to reuse), defaulting to `"python"` until flipped, same
+  rollout-safety pattern as R4–R6.
+
+- **Why this isn't "R1 again": two different backends, verified by reading
+  both scripts, not assumed from their both being LLM calls.**
+  - `clean_chapter.py` calls `src/agent.py#make_client()` — an
+    OpenAI-compatible HTTP client (`openai` gem's Python equivalent) against
+    `LLM_BASE_URL` (default `http://localhost:11434/v1`, i.e. Ollama) with
+    `LLM_API_KEY`, model `HAIKU_MODEL` (default `qwen2.5:7b`), and
+    `reasoning_effort: "low"`. No `claude` CLI involved anywhere in this
+    path.
+  - `ocr_chapter.py` **does** call the `claude` CLI (`claude -p`), but with
+    `--input-format stream-json` and an image content block
+    (`{"type": "image", "source": {"type": "base64", ...}}`) — a shape
+    `Pipeline::ClaudeCode` (R1) cannot send. `Pipeline::ClaudeCode#call`
+    only ever pipes plain-text stdin and reads `--output-format json`
+    (`app/services/pipeline/claude_code.rb:56-104`); it has no stream-json
+    or content-block path. `ocr_chapter.py`'s own docstring names this
+    exact gap as the reason it doesn't share the Python module
+    `clean_chapter.py`'s sibling backend (`claude_code_agent.py`) uses
+    either. **Widening `Pipeline::ClaudeCode`'s contract to accept
+    image/stream-json input is rejected** — composition over inheritance
+    (per this repo's coding rules): a second small primitive with its own
+    argv/stdin shape is one option; the other, below, is smaller still.
+  - Note for whoever builds this: `ocr_chapter.py`'s docstring dates the
+    Tesseract→Claude-vision switch to 2026-07-23 — two days before this
+    section was written. [[hawk_translations_pdf_ocr_broken]] (this
+    session's memory, describing PDF uploads as broken "post Tesseract
+    switch") predates that switch and should be re-verified against the
+    *current* Claude-vision path before being treated as still accurate —
+    it may already be stale, or the break may persist for a different
+    reason under the new backend. Not answered here; flagged for whoever
+    picks up R6.5's build.
+
+- **New backend primitive 1 — `Pipeline::LocalLlmChat`** (name illustrative,
+  not required as written), for the formatter only:
+  - Wraps a single OpenAI-compatible chat-completions HTTP call: `POST
+    #{LLM_BASE_URL}/chat/completions` with `Authorization: Bearer
+    #{LLM_API_KEY}`, JSON body `{model:, messages:, max_tokens:,
+    reasoning_effort:}`. Ruby's `Net::HTTP` (already a Rails dependency, no
+    new gem) is sufficient — no streaming, no tool use, no MCP, a strictly
+    smaller surface than `Pipeline::ClaudeCode`.
+  - Returns a `Result` following the same shape convention as
+    `Pipeline::ClaudeCode::Result` (`output`, `error_category`,
+    `error_message`, `success?`) so callers and specs share one mental
+    model across every backend primitive in this app — but this is a
+    *different* class with a *different* error taxonomy, not a shared
+    superclass or a second `case` branch bolted onto `ClaudeCode`. Distinct
+    failure modes to name explicitly (checked against what
+    `clean_chapter.py`'s bare `except Exception as exc` currently collapses
+    into one bucket — Ruby should do better, not just match it):
+    connection refused/timeout (Ollama not running — a real, frequent local
+    failure mode per [[hawk_translations_local_llm_memory_limit]]'s 15GB-box
+    note), non-2xx HTTP status, and unparseable JSON body.
+  - Owns none of the retry/timeout-tuning policy question — `Net::HTTP`'s
+    read timeout should be configurable and generous (the Python side has
+    no explicit timeout at all; the CPU-only generation speed noted in
+    `format_korean_chapter_job.rb`'s own `CLEANER_TIMEOUT_SECONDS = 1800`
+    comment is the real constraint to inherit, at the *caller* level, not
+    inside this primitive).
+
+- **New backend primitive 2 — `Pipeline::ClaudeVision`** (name illustrative),
+  for OCR only:
+  - A second, separate class from `Pipeline::ClaudeCode`, not a shared
+    parent — the two have almost nothing in common beyond "shell out to the
+    `claude` binary": different `--input-format`, a base64 image block
+    instead of plain-text stdin, no MCP config ever, its own budget/model
+    env vars (`OCR_MODEL`, `OCR_MAX_BUDGET_USD`, distinct from
+    `TranslationConfig`'s translation-tier equivalents), and
+    `--output-format stream-json` (one JSON object per line, final `type:
+    "result"` line is authoritative) rather than `ClaudeCode`'s single
+    `--output-format json` blob.
+  - Takes one image path per call (matches `ocr_chapter.py`'s
+    `transcribe_image`, called once per page/spread) — batching multiple
+    images into one call is out of scope, matching current behavior exactly.
+  - Same env-allowlist discipline as `Pipeline::ClaudeCode`
+    (`ANTHROPIC_API_KEY` must never leak through to shadow subscription
+    OAuth — `ocr_chapter.py` pops it explicitly today; the Ruby port must
+    keep doing so, built additively from `{}` like R1's primitive, never a
+    deny-list).
+  - Error taxonomy mirrors `ocr_chapter.py`'s own three `RuntimeError`
+    sites, not `Pipeline::ClaudeCode`'s six-bucket taxonomy verbatim: binary
+    not found, timeout (120s, distinct from `ClaudeCode`'s 1200s default —
+    a single page is a much smaller call than a full-chapter translation),
+    and CLI/`is_error` failure. No `:killed`/exit-137 special case is named
+    in the Python source, but Ruby should add one anyway for consistency
+    with every other subprocess primitive in this app, since the same OOM
+    risk applies.
+
+- **Orchestrators (one per job, both trivial — the primitives above hold
+  all the real complexity):**
+  - `Pipeline::Ruby::FormatKoreanChapter` — port of `run_cleaner` plus the
+    prompt/parse steps it currently calls into:
+    - `Pipeline::Ruby::FormatterPromptBuilder` — direct port of
+      `src/formatter/prompt_builder.py`: `SYSTEM_PROMPT` is a static string
+      constant (verify byte-for-byte, same discipline as every prior
+      section's prompt parity check), `build_user_message(chapters)` wraps
+      each chapter in `=== CHAPTER N === … === END CHAPTER N ===`
+      delimiters. Single-chapter call today (`FormatKoreanChapterJob`
+      formats one chapter at a time) but the Python function is
+      batch-shaped (`dict[int, str]`) — port the same signature so a future
+      batch caller costs nothing extra.
+    - `Pipeline::Ruby::FormatterResponseParser` — direct port of
+      `src/formatter/response_parser.py`: one regex
+      (`===\s*CHAPTER\s+(\d+)\s*===\s*(.*?)\s*===\s*END CHAPTER\s+\1\s*===`,
+      multiline), returns a `{chapter_num => text}` hash, logs (doesn't
+      raise) on chapters missing from the response — verify this "missing
+      is a warning, not a hard failure" behavior is preserved, since it
+      differs from R6's `ResponseParser`'s fail-closed-on-zero-markers rule
+      (that rule is about a *response with no markers at all*; a response
+      with some chapters present and others missing is a different, softer
+      case in both the Python original and this port).
+    - Reuses `KoreanSourceDiskWriter` unchanged for the disk-mirror write —
+      no changes to that class or its call sites in this section.
+  - `Pipeline::Ruby::OcrChapter` — port of `run_ocr` plus
+    `_extract_result_text`: calls `Pipeline::ClaudeVision` once per image
+    path in argv order (never re-sorted — page order is the caller's sole
+    authority, per `ocr_chapter.py`'s own docstring), joins successful
+    transcriptions with `"\n\n"`, and — matching "exits immediately without
+    writing partial output" — returns a single failure result on the first
+    per-image error rather than a partial-success list. This is a real,
+    deliberate divergence from R4's `translate_batch` continue-on-recoverable-
+    failure policy: OCR's unit of atomicity is the whole multi-page chapter,
+    not one chapter's worth of independent per-image work, because a chapter
+    missing its middle page is worse than a chapter that fails outright and
+    can be re-run.
+
+- **Job wiring:** `FormatKoreanChapterJob#run_cleaner` and
+  `OcrChapterJob#run_ocr` each gain a `PipelineImplementation.for(...)`
+  branch (new keys, e.g. `:formatter`/`:ocr`, added to whatever registry
+  backs `PipelineImplementation` today) selecting between the existing
+  Python `Open3.popen3` call and the new Ruby orchestrator above — every
+  other line in both jobs (attach, `KoreanSourceDiskWriter.write`, status
+  update, `broadcast_korean_pane`, `FormatKoreanChapterJob.perform_later`
+  chaining) is unchanged, since none of it is backend-specific.
+
+- **Acceptance criteria:**
+  - `FormatterPromptBuilder`'s system prompt matches
+    `src/formatter/prompt_builder.py`'s `_SYSTEM_PROMPT` byte-for-byte;
+    `build_user_message` output matches for a representative multi-chapter
+    fixture (fixture-based parity test, same technique as R6's
+    `PromptBuilder` spec).
+  - `FormatterResponseParser` matches `response_parser.py`'s regex
+    behavior on: full match, missing chapter (warns, doesn't raise),
+    malformed/unclosed delimiter (no match, chapter absent from result).
+  - `Pipeline::LocalLlmChat` and `Pipeline::ClaudeVision` each have
+    primitive-level specs independent of formatter/OCR domain logic (fake
+    HTTP server or `WebMock`-equivalent for the former; fake `claude`
+    binary emitting real stream-json output, same technique R4's spec
+    suite already established, for the latter).
+  - `PIPELINE_IMPL_FORMATTER=python` (or unset) and `PIPELINE_IMPL_OCR=python`
+    (or unset) reproduce byte-identical behavior to today — this section
+    changes nothing observable until explicitly flipped.
+  - No Ruby implementation code is written as part of this section — a
+    separate, later pass, same discipline as every prior R-section.
+
+---
+
 **R0 is fully built (R0.3 skipped by decision). R1, R2, and R3 are fully
 built and tested, in that order (R2's skill class was a prerequisite for
 R3's adapter; R1's backend-seam code has no runtime dependency on either
@@ -2891,12 +3073,15 @@ R6's writer halves now share `BibleFileEditor`, so whichever of the two
 lands first builds that primitive. The formatter (`clean_chapter.py`/
 `FormatKoreanChapterJob`) and OCR (`ocr_chapter.py`/`OcrChapterJob`) —
 originally bundled into "R6" in the summary-level artifact linked above —
-remain unscheduled and summary-level only: both are triggered by chapter
-upload via plain `ActiveJob` classes outside `PipelineDispatcher` entirely,
-with no `PIPELINE_IMPL_*` toggle today, so porting either needs a new
-migration mechanism invented from scratch rather than filling in an existing
-stub. R7 (deleting the Python layer) also remains at summary level, not yet
-given the same detailed treatment.
+are now designed as their own milestone, R6.5 (see below): both are
+triggered by chapter upload via plain `ActiveJob` classes outside
+`PipelineDispatcher` entirely, with no `PIPELINE_IMPL_*` toggle today, and
+each calls a different backend than `Pipeline::ClaudeCode` (a local
+OpenAI-compatible HTTP endpoint for the formatter; the `claude` CLI with
+image/stream-json input for OCR), so R6.5 designs two new backend
+primitives alongside the two thin orchestrators that call them. R7
+(deleting the Python layer) remains at summary level, not yet given the
+same detailed treatment.
 
 **Update 2026-07-25 (same day, later session): R6 built and spec-tested —
 `Pipeline::Ruby::Preread`/`BibleBuild` are no longer stubs.** Built in
