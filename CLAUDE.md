@@ -19,6 +19,7 @@ Ruby 3.4.2 · PostgreSQL · Hotwire (Turbo + Stimulus) · Solid Queue · Active 
 | `claude` CLI backend seam (R1) | `app/services/translation_config.rb`, `app/services/pipeline/claude_code.rb` | `docs/RAILS_REFACTOR_PLAN.md` |
 | Agent skills (R2) — `bible_lookup` in-process | `app/services/pipeline/skill.rb`, `app/services/pipeline/skills/` | `docs/RAILS_REFACTOR_PLAN.md` |
 | MCP skill bridge (R3) | `app/services/pipeline/mcp/`, `bin/mcp_skill_bridge` | `docs/RAILS_REFACTOR_PLAN.md` |
+| translate_batch orchestration (R4) | `app/services/pipeline/ruby/translate_batch.rb`, `app/services/pipeline/ruby/translate_batch/{prompt_builder,bridge_config}.rb` | `docs/RAILS_REFACTOR_PLAN.md` |
 | Preread / bible_build orchestration (R6) | `app/services/pipeline/ruby/preread_runner/`, `app/services/pipeline/{prompt_utils,bible_utils,bible_file_editor,preread_bible_writer}.rb` | `docs/RAILS_REFACTOR_PLAN.md` |
 | Post-translation review / voice calibration orchestration (R5) | `app/services/pipeline/ruby/post_translation_review*`, `app/services/pipeline/ruby/voice_calibration*`, `app/services/pipeline/translated_chapter_reader.rb` | `docs/RAILS_REFACTOR_PLAN.md` |
 | Post-translation bible review, commit (R5) | `app/controllers/post_translation_review_controller.rb`, `app/services/pipeline/bible_review_writer.rb` | `docs/RAILS_REFACTOR_PLAN.md` |
