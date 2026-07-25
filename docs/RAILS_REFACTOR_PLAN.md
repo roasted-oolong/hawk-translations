@@ -9,23 +9,82 @@ written but not deployed. R0.3 is explicitly skipped — see below. R1
 (backend-seam infra: `TranslationConfig`, `Pipeline::ClaudeCode`), R2
 (`Pipeline::Skills::BibleLookup`, in-process), R3 (the skill bridge
 onto the official `mcp` gem: `Pipeline::Mcp::ServerContext`,
-`Pipeline::Mcp::BibleLookupTool`, `bin/mcp_skill_bridge`), and now R6
-(`preread`/`bible_build` orchestration) are all built, tested, and (R1–R3)
-committed to `main` — R6's commit is still pending, see below. R4
-(`translate_batch` orchestration — the first phase that actually wires
-R1–R3 together end-to-end) is designed, with no Ruby code written yet —
-see the R1–R4 sections below for what exists, what's designed-only, and
-what's still open (R4's design surfaced a real open question about the
-`claude` CLI's own MCP-server-spawn env behavior, needing a smoke test
-before its build starts). R5 (`post_translation_review` +
-`voice_calibration` orchestration) is also designed, same discipline as
-R4 — see the R5 section below.**
-All five R0 milestones, plus R1, R2, R3, and now R6, have reviewed
+`Pipeline::Mcp::BibleLookupTool`, `bin/mcp_skill_bridge`), R6
+(`preread`/`bible_build` orchestration), and now R5 (`post_translation_review` +
+`voice_calibration` orchestration, plus the new human-review commit layer —
+`Pipeline::Ruby::PostTranslationReview`, `Pipeline::Ruby::VoiceCalibration`,
+`Pipeline::BibleReviewWriter`, `PostTranslationReviewController`) are all
+built, tested, and (R1–R3) committed to `main` — R5 and R6's commits are
+still pending, see below. R4 (`translate_batch` orchestration — the first
+phase that actually wires R1–R3 together end-to-end) remains designed only,
+with no Ruby code written yet — see the R4 section below for what's
+designed and what's still open (R4's design surfaced a real open question
+about the `claude` CLI's own MCP-server-spawn env behavior, needing a smoke
+test before its build starts).**
+All five R0 milestones, plus R1, R2, R3, R5, and R6, have reviewed
 Goal/Design/Acceptance-criteria sections and real Ruby implementations
-with passing specs. R4 and R5 have the same Goal/Design/Acceptance-criteria
+with passing specs. R4 has the same Goal/Design/Acceptance-criteria
 treatment but no implementation yet. The formatter/OCR slice of the original
 R6 summary and R7 are still at the summary level in the artifact linked
 below; they have not been given the same detailed treatment.
+
+**R5 build, 2026-07-25, same session as this doc's earlier R4/R5/R6 design
+passes and the R6 build:** `Pipeline::Ruby::PostTranslationReview` and
+`Pipeline::Ruby::VoiceCalibration` are no longer `NotImplementedError`
+stubs. Built, in dependency order: `Pipeline::TranslatedChapterReader`
+(the shared translated-chapter-file-selection rule both job types need),
+`Pipeline::Ruby::PostTranslationReview::PromptBuilder` and
+`Pipeline::Ruby::VoiceCalibration::PromptBuilder` (both system prompts
+verified byte-for-byte against live `python3` invocations of the real
+`src/bible_review/prompt_builder.py` and `src/voice_calibration/prompt_builder.py`,
+not hand-transcribed — see `spec/fixtures/post_translation_review/` and
+`spec/fixtures/voice_calibration/`), `Pipeline::Ruby::PostTranslationReview::ResponseParser`
+(ported with every hardening measure the design's two review rounds called
+for: fail-closed on zero section markers, invalid-encoding and response-size
+caps checked before any card is built, per-block field validation, a
+50-card/5,000-char-per-field ceiling, CRLF normalization), `Pipeline::Ruby::VoiceCalibration::ResponseParser`
+(ported faithfully from `calibrate-voice.py`'s own parsing helpers — every
+field name checked directly against the already-shipped
+`VoiceCalibrationReviewController#apply_card!`/`PipelineJob#build_result_payload`
+consumers, not assumed), the two orchestrator classes themselves (both call
+`Pipeline::ClaudeCode` with `mcp_config: nil`, matching the design's verified
+finding that neither prompt instructs tool use), `Pipeline::BibleReviewWriter`
+(the new commit-layer writer, built on the existing `Pipeline::BibleFileEditor`
+primitive from R6 — `replace` for `proposed_edit` cards, `append_block` for
+`new_entry`/`story_update` cards, reusing `Pipeline::BibleUtils` for
+heading-key dedup), and `PostTranslationReviewController` (`show`/`update`/`commit`,
+structurally parallel to `VoiceCalibrationReviewController`, with a
+SHA-256 staleness-warning banner). All three `post_translation_review`
+mutation types (new entries included) require human review before
+anything is written to disk, per the design's round-2 reversal of
+`run_review.py`'s current auto-apply production behavior. **Real
+implementation-level findings, not in the original design doc:** (1) new
+entries are split into one `NewBibleEntry` card per individual `## `
+heading (not one card per file-section blob, as Python's own dict-shaped
+parser produces) so the reviewer can accept/skip them individually —
+matching the design's singular "new_entry" card-type naming and the
+writer's "one write per accepted card" framing. (2) A real bug caught by
+its own request spec, not by inspection: the controller's staleness check
+initially treated a bible file that doesn't exist yet as "no fingerprint"
+(`nil`) rather than "fingerprint of an empty string," which would have
+produced a false-positive staleness warning for every novel whose bible
+files haven't all been created yet — fixed to mirror the orchestrator's own
+missing-file-reads-as-empty-string convention exactly. (3) The controller's
+`update`/`commit` actions are plain redirect-based HTML forms, not
+`voice_calibration_review`'s JSON+Stimulus-slideshow pattern — a
+deliberate scope trade against a polished UI, since the design's own
+acceptance criteria only require the controller's mechanics (decision
+persistence, staleness surfacing, per-card writer delegation) to be
+structurally liftable into the shared reviewable-job layer later, not
+pixel parity with `voice_calibration`'s UI. The two Shared prerequisites
+the design named (`Pipeline::PromptUtils`, `Pipeline::BibleUtils`) already
+existed from R6's build and needed no changes. Full spec suite run to
+confirm no regressions beyond the known-red baseline (see below) — an
+existing `spec/services/pipeline/ruby_stubs_spec.rb` that asserted these
+two classes still raised `NotImplementedError` was updated to only cover
+the one job type (`translate_batch`, R4) still actually a stub. Not yet
+committed — see the project's own git history for whether this has landed
+on `main` by the time you're reading this.
 
 **R6 build, 2026-07-25, same session as this doc's R4/R5/R6 design passes:**
 `Pipeline::Ruby::Preread` and `Pipeline::Ruby::BibleBuild` are no longer
@@ -1695,8 +1754,14 @@ infra/plumbing with no real caller.
 
 ## R5 — `post_translation_review` and `voice_calibration` orchestration
 
-**Status: designed 2026-07-25, no Ruby code written.** Scoped and designed
-together (confirmed via clarifying question before starting) rather than
+**Status: designed 2026-07-25, built and spec-tested 2026-07-25 (same
+session as the design, after two review-revision rounds — see the build
+summary at the top of this document for what was actually built, what
+deviated from the design below, and the one real bug the request specs
+caught). No Ruby code existed when this section below was originally
+written — it's kept as-is since it's still an accurate description of what
+was built; only this status line and the top-of-document summary reflect
+the build.** Scoped and designed
 one job type at a time the way R4 was scoped alone — both are single-call
 prompt-build/parse flows, much smaller than R4's per-chapter loop, and
 share real pieces (a prompt-section helper, `Pipeline::ClaudeCode`'s call
