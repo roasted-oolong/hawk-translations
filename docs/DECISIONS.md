@@ -1064,6 +1064,59 @@ rather than deleted, in case of rollback.
 
 ---
 
+## 2026-07-25 · Preread, bible build, review, and formatting move off local-only, onto the same backend seam as everything else
+
+Same quality-ceiling reasoning as the two entries above, extended to the
+last four LLM call sites that had no backend choice at all:
+`run_preread.py`/`run_bible_build.py` (share `src/preread/runner.py`),
+`run_review.py`, and `clean_chapter.py`. Each was hardcoded to
+`src/agent.py`'s local Ollama path with no rollback-free way to use the
+`claude` CLI instead — unlike `translate.py`/`translate_batch.py`
+(`TRANSLATION_BACKEND`) and `calibrate-voice.py` (`CALIBRATION_BACKEND`),
+both already defaulting to `"claude_code"`.
+
+Immediate trigger: preread failed repeatedly on chapter 75 of `idols-rewind`
+this session — turned out to be an unrelated disk-mirror bug (the Korean
+source file's on-disk copy had gone missing despite the Active Storage
+attachment being intact), not an LLM problem. But diagnosing it surfaced
+that the local Ollama server (`~/local-llm`, standalone, does not survive a
+reboot/WSL restart) was down entirely, which would have failed preread
+regardless — the same class of outage the voice-calibration entry above
+already hit once. Rather than just restarting Ollama and moving on, decided
+to close the gap for good: every pipeline script that talks to an LLM now
+defaults to the subscription-backed `claude` CLI, with `local` as an
+explicit, working rollback (not a removed capability) if subscription quota
+or CLI reliability ever becomes the blocker instead.
+
+Landed via three new config vars reusing the existing
+`src/translation_backend.get_backend()` seam exactly as designed (no seam
+changes needed) — `PREREAD_BACKEND` (shared by `run_preread.py` and
+`run_bible_build.py`, same one-var-covers-two-scripts pattern
+`TRANSLATION_BACKEND` already uses), `REVIEW_BACKEND`, and `FORMAT_BACKEND`
+— all three defaulting to `"claude_code"`. Each call site now builds its
+`api_call_fn`/backend call via `get_backend(<X>_BACKEND)` instead of
+`src.agent.make_client()` + a hardcoded model tier
+(`SONNET_MODEL`/`HAIKU_MODEL`); matches the existing `calibrate-voice.py`
+convention of not passing an explicit `model=` through the seam, letting
+each backend supply its own sensible default, since a local model name
+(`gpt-oss-20b`) means nothing to `claude_code` and vice versa.
+
+One real, accepted capability loss on the `local` rollback path only:
+`clean_chapter.py`'s `reasoning_effort="low"` tuning (halves completion
+tokens on this CPU-only box, per that script's own comment) had no
+equivalent in the seam's `TranslationBackend` protocol and no equivalent
+`claude` CLI flag either, so it's dropped rather than half-wired. If
+`FORMAT_BACKEND=local` is ever used again, formatting will be slower than
+before this change — flagged here rather than silently lost.
+
+`preread.py`/`review.py` (the interactive, terminal-only counterparts,
+explicitly documented as "untouched" by `run_preread.py`/`run_review.py`'s
+own docstrings) were deliberately left calling `src.agent` directly — out
+of scope, matching how they were already excluded from every prior
+backend-migration entry above.
+
+---
+
 ## 2026-06-07 · Google OAuth removed for solo local development (backfilled 2026-07-23)
 
 Retroactive entry — this decision was made in commit `25cac42` without a

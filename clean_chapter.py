@@ -8,13 +8,17 @@ stdout.
 
 Called by FormatKoreanChapterJob whenever a Korean chapter is uploaded.
 
-Requests reasoning_effort="low": this is the mechanical/HAIKU-tier task
-(fix line breaks, preserve content exactly, no judgment calls), not
-something that benefits from the model's default (medium) reasoning
-budget. Measured 2026-07-16 on the same prompt: low produced ~half the
-completion tokens of the default (303 vs 583) — meaningful on a CPU-only
-box generating at ~9-12 tokens/sec, where a full chapter's default-effort
-cleanup was taking 20-40+ minutes.
+Selected via FORMAT_BACKEND (config.py), same get_backend() seam as every
+other pipeline script — defaults to "claude_code". Set FORMAT_BACKEND=local
+to fall back to the Ollama path unchanged. Note: the reasoning_effort="low"
+tuning below (this is the mechanical/HAIKU-tier task — fix line breaks,
+preserve content exactly, no judgment calls) only applies on the "local"
+path; the seam has no reasoning_effort passthrough and claude_code has no
+equivalent flag. Measured 2026-07-16 on the same prompt: low produced ~half
+the completion tokens of the default (303 vs 583) — meaningful on a
+CPU-only box generating at ~9-12 tokens/sec, where a full chapter's
+default-effort cleanup was taking 20-40+ minutes. That measurement no
+longer applies once FORMAT_BACKEND=claude_code.
 
 Exit code 0 on success, 1 on failure.
 """
@@ -28,8 +32,8 @@ load_dotenv()
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config import HAIKU_MODEL, FORMAT_MAX_TOKENS
-from src.agent import make_client
+from config import FORMAT_BACKEND, FORMAT_MAX_TOKENS
+from src.translation_backend import get_backend
 from src.formatter.prompt_builder import build_system_prompt, build_user_message
 from src.formatter.response_parser import parse_response
 
@@ -42,21 +46,16 @@ def main() -> None:
         sys.stderr.write("clean_chapter.py: empty input\n")
         sys.exit(1)
 
-    client = make_client()
+    backend = get_backend(FORMAT_BACKEND)
     system_prompt = build_system_prompt()
     user_message = build_user_message({_CHAPTER_KEY: raw})
 
     try:
-        response = client.chat.completions.create(
-            model=HAIKU_MODEL,
+        raw_response = backend(
+            system_prompt=system_prompt,
+            user_message=user_message,
             max_tokens=FORMAT_MAX_TOKENS,
-            reasoning_effort="low",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message},
-            ],
         )
-        raw_response = response.choices[0].message.content or ""
     except Exception as exc:
         sys.stderr.write(f"clean_chapter.py: LLM error: {exc}\n")
         sys.exit(1)
