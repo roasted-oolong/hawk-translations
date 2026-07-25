@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from config import NOVEL_FILES
-from src.novel_resolver import extract_chapter_number
+from src.novel_resolver import find_korean_file
 from src.prompt_builder import TranslationContext, build_translation_prompt
 
 
@@ -113,14 +113,7 @@ def build_chapter_request(
     """
     chapters_dir = novel_dir / "chapters"
 
-    # Locate Korean source file.
-    korean_path = None
-    for candidate in (f"ch{chapter_num:02d}_korean", f"ch{chapter_num}_korean"):
-        p = chapters_dir / candidate
-        if p.exists():
-            korean_path = p
-            break
-
+    korean_path = find_korean_file(chapters_dir, chapter_num)
     if korean_path is None:
         raise FileNotFoundError(
             f"No Korean source file found for chapter {chapter_num} in {chapters_dir}"

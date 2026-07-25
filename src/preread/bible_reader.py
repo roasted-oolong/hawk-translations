@@ -18,6 +18,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
+from src.novel_resolver import find_korean_file
+
 from config import NOVEL_FILES
 
 # Keys from NOVEL_FILES that preread does not need.
@@ -89,7 +91,7 @@ def read_chapter_file(chapters_dir: Path, chapter_num: int) -> str:
     str
         File contents, or an error marker if the file cannot be read.
     """
-    path = chapters_dir / f"ch{chapter_num}_korean"
-    if not path.exists():
-        return f"[ERROR: ch{chapter_num}_korean not found at {path}]"
+    path = find_korean_file(chapters_dir, chapter_num)
+    if path is None:
+        return f"[ERROR: no Korean source file found for chapter {chapter_num} in {chapters_dir}]"
     return path.read_text(encoding="utf-8")

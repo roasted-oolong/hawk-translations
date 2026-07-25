@@ -171,6 +171,28 @@ def find_untranslated_chapters(chapters_dir: Path) -> list[int]:
     return [n for n in all_korean if n not in translated]
 
 
+def find_korean_file(chapters_dir: Path, chapter_num: int) -> Path | None:
+    """
+    Find the actual Korean source file path for a given chapter number.
+
+    Matches on "korean" appearing anywhere in the filename (case-insensitive)
+    plus the first integer in the filename equaling chapter_num — the same
+    convention find_all_korean_chapters/find_untranslated_chapters already
+    use for discovery. Extracted here so per-chapter lookup (previously
+    duplicated as two different, both-wrong hardcoded "ch{num}_korean"
+    patterns in src/preread/bible_reader.py and
+    src/translator/chapter_loader.py, neither of which ever matched a real
+    file on disk) has one correct implementation instead of more copies.
+
+    Returns None if no matching file exists.
+    """
+    for f in chapters_dir.iterdir():
+        if f.is_file() and "korean" in f.name.lower():
+            if extract_chapter_number(f.name) == chapter_num:
+                return f
+    return None
+
+
 def find_next_chapter(chapters_dir: Path) -> Path | None:
     """
     Find the lowest-numbered Korean source file that has no corresponding
@@ -190,10 +212,4 @@ def find_next_chapter(chapters_dir: Path) -> Path | None:
     if not untranslated:
         return None
 
-    next_num = untranslated[0]
-    # Find the actual file path for this chapter number.
-    for f in chapters_dir.iterdir():
-        if "korean" in f.name.lower() and f.is_file():
-            if extract_chapter_number(f.name) == next_num:
-                return f
-    return None
+    return find_korean_file(chapters_dir, untranslated[0])
