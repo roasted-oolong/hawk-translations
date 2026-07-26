@@ -64,7 +64,15 @@ class PipelineJob < ApplicationJob
     progress_thread.join
 
     translation_job.reload
-    return if translation_job.cancelled?
+    if translation_job.cancelled?
+      # Cancelling only stops the job from being reported completed/failed —
+      # it doesn't retroactively undo work the dispatcher already finished.
+      # Chapters translate_batch already wrote to disk before the cancel
+      # landed still get attached and marked, same as the failure path,
+      # rather than silently discarded.
+      update_chapters(translation_job, :cancelled)
+      return
+    end
 
     if success
       translation_job.update!(
@@ -157,7 +165,7 @@ class PipelineJob < ApplicationJob
     in [ "preread", "start" ]            then chapters.update_all(status: "prereading")
     in [ "preread", "success" ]          then chapters.update_all(status: "preread")
     in [ "preread", "failure" ]          then chapters.update_all(status: "preread_failed")
-    in [ "translate_batch", "success" ] | [ "translate_batch", "failure" ]
+    in [ "translate_batch", "success" ] | [ "translate_batch", "failure" ] | [ "translate_batch", "cancelled" ]
       attach_translated_outputs(job, chapters)
     else # no chapter status change for other job types / phases
     end

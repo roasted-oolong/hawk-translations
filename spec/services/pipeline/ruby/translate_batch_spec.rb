@@ -182,6 +182,43 @@ RSpec.describe Pipeline::Ruby::TranslateBatch do
     end
   end
 
+  it "stops starting further chapters once the job is cancelled mid-batch, keeping what already finished" do
+    with_env("HAWK_PROJECT_ROOT" => @project_root) do
+      novel, novel_dir = build_novel_dir
+      write_korean_source(novel_dir, 1, "챕터 1")
+      write_korean_source(novel_dir, 2, "챕터 2")
+      @job = create(:translation_job, :translate_batch, novel: novel, chapter_start: 1, chapter_end: 2)
+
+      Dir.mktmpdir do |bin_dir|
+        bin = scripted_claude(bin_dir, {
+          "챕터 1" => { is_error: false, result: "chapter one translated" },
+          "챕터 2" => { is_error: false, result: "chapter two translated" }
+        })
+
+        # Cancellation lands (e.g. via the controller, in another process)
+        # after chapter 1's call has already returned successfully.
+        original_call = Pipeline::ClaudeCode.method(:call)
+        call_count = 0
+        allow(Pipeline::ClaudeCode).to receive(:call) do |**kwargs|
+          call_count += 1
+          result = original_call.call(**kwargs)
+          @job.cancel! if call_count == 1
+          result
+        end
+
+        stdout, stderr, success = described_class.call(@job, config: config_for(bin))
+
+        expect(call_count).to eq(1)
+        expect(success).to eq(true)
+        expect(stdout).to include("1 chapter(s) translated.")
+        expect(stdout).to include("Not attempted (job was cancelled): [2]")
+        expect(stderr).to include("job was cancelled")
+        expect(File.read(File.join(novel_dir, "chapters", "Chapter 1.txt"))).to eq("chapter one translated")
+        expect(File.exist?(File.join(novel_dir, "chapters", "Chapter 2.txt"))).to eq(false)
+      end
+    end
+  end
+
   it "stops the batch after a fatal per-chapter failure instead of continuing to guaranteed-identical failures" do
     with_env("HAWK_PROJECT_ROOT" => @project_root) do
       novel, novel_dir = build_novel_dir
