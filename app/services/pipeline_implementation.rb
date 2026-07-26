@@ -21,7 +21,12 @@ class PipelineImplementation
     "translate_batch"         => "PIPELINE_IMPL_TRANSLATE_BATCH",
     "bible_build"             => "PIPELINE_IMPL_BIBLE_BUILD",
     "post_translation_review" => "PIPELINE_IMPL_POST_TRANSLATION_REVIEW",
-    "voice_calibration"       => "PIPELINE_IMPL_VOICE_CALIBRATION"
+    "voice_calibration"       => "PIPELINE_IMPL_VOICE_CALIBRATION",
+    # Unlike the five above, neither "formatter" nor "ocr" is a TranslationJob
+    # job_type or routed through PipelineDispatcher — FormatKoreanChapterJob
+    # and OcrChapterJob call PipelineImplementation.for directly (R6.5).
+    "formatter"               => "PIPELINE_IMPL_FORMATTER",
+    "ocr"                     => "PIPELINE_IMPL_OCR"
   }.freeze
 
   VALID_VALUES = %w[python ruby].freeze

@@ -6,7 +6,9 @@ RSpec.describe PipelineImplementation do
     "translate_batch"         => "PIPELINE_IMPL_TRANSLATE_BATCH",
     "bible_build"             => "PIPELINE_IMPL_BIBLE_BUILD",
     "post_translation_review" => "PIPELINE_IMPL_POST_TRANSLATION_REVIEW",
-    "voice_calibration"       => "PIPELINE_IMPL_VOICE_CALIBRATION"
+    "voice_calibration"       => "PIPELINE_IMPL_VOICE_CALIBRATION",
+    "formatter"               => "PIPELINE_IMPL_FORMATTER",
+    "ocr"                     => "PIPELINE_IMPL_OCR"
   }.freeze
 
   around do |example|

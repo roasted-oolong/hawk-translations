@@ -19,7 +19,7 @@ class TranslationConfig
 
   VALID_BACKENDS = %w[local claude_code].freeze
 
-  attr_reader :translation_backend, :calibration_backend, :llm_base_url, :llm_api_key,
+  attr_reader :translation_backend, :calibration_backend, :format_backend, :llm_base_url, :llm_api_key,
               :translation_model, :translation_max_budget_usd, :claude_bin
 
   def self.from_env(env = ENV)
@@ -29,6 +29,7 @@ class TranslationConfig
   def initialize(env = ENV)
     @translation_backend        = validate_backend(env, "TRANSLATION_BACKEND")
     @calibration_backend        = validate_backend(env, "CALIBRATION_BACKEND")
+    @format_backend              = validate_backend(env, "FORMAT_BACKEND")
     @llm_base_url                = env.fetch("LLM_BASE_URL", "http://localhost:11434/v1")
     @llm_api_key                 = env.fetch("LLM_API_KEY", "local")
     @translation_model           = env.fetch("TRANSLATION_MODEL", "opus")

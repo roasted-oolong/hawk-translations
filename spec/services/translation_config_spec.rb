@@ -13,13 +13,14 @@ RSpec.describe TranslationConfig do
   end
 
   describe "defaults" do
-    it "defaults TRANSLATION_BACKEND and CALIBRATION_BACKEND to claude_code" do
+    it "defaults TRANSLATION_BACKEND, CALIBRATION_BACKEND, and FORMAT_BACKEND to claude_code" do
       Dir.mktmpdir do |dir|
         fake_executable(dir, "claude")
         config = described_class.from_env(env("PATH" => dir))
 
         expect(config.translation_backend).to eq("claude_code")
         expect(config.calibration_backend).to eq("claude_code")
+        expect(config.format_backend).to eq("claude_code")
       end
     end
 
@@ -64,6 +65,25 @@ RSpec.describe TranslationConfig do
         expect {
           described_class.from_env(env("PATH" => dir, "CALIBRATION_BACKEND" => "bogus"))
         }.to raise_error(TranslationConfig::ConfigError, /CALIBRATION_BACKEND/)
+      end
+    end
+
+    it "accepts FORMAT_BACKEND independently of TRANSLATION_BACKEND/CALIBRATION_BACKEND" do
+      Dir.mktmpdir do |dir|
+        fake_executable(dir, "claude")
+        config = described_class.from_env(env("PATH" => dir, "FORMAT_BACKEND" => "local"))
+
+        expect(config.format_backend).to eq("local")
+        expect(config.translation_backend).to eq("claude_code")
+      end
+    end
+
+    it "raises a clear error naming the offending var for an unrecognized FORMAT_BACKEND" do
+      Dir.mktmpdir do |dir|
+        fake_executable(dir, "claude")
+        expect {
+          described_class.from_env(env("PATH" => dir, "FORMAT_BACKEND" => "bogus"))
+        }.to raise_error(TranslationConfig::ConfigError, /FORMAT_BACKEND/)
       end
     end
   end
