@@ -135,4 +135,40 @@ RSpec.describe Chapter, type: :model do
       expect(chapter.translated_output).to be_attached
     end
   end
+
+  describe "on destroy" do
+    let(:novel_dir) { Dir.mktmpdir }
+    let(:novel)     { create(:novel, directory_name: File.basename(novel_dir)) }
+    let(:chapter)   { create(:chapter, novel: novel, number: 5) }
+    let(:korean_path)     { File.join(novel_dir, "chapters", "Chapter 5 (Korean).txt") }
+    let(:translated_path) { File.join(novel_dir, "chapters", "Chapter 5.txt") }
+
+    before do
+      @orig_root = ENV["HAWK_PROJECT_ROOT"]
+      ENV["HAWK_PROJECT_ROOT"] = File.dirname(novel_dir)
+    end
+
+    after do
+      ENV["HAWK_PROJECT_ROOT"] = @orig_root
+      FileUtils.rm_rf(novel_dir)
+    end
+
+    it "deletes the chapter's on-disk Korean source and translated output files" do
+      chapter.korean_source.attach(io: StringIO.new("korean"), filename: "x.txt", content_type: "text/plain")
+      KoreanSourceDiskWriter.new(novel).write(chapter)
+      ChapterDiskWriter.new(novel).write(chapter, "translated")
+
+      expect(File).to exist(korean_path)
+      expect(File).to exist(translated_path)
+
+      chapter.destroy
+
+      expect(File).not_to exist(korean_path)
+      expect(File).not_to exist(translated_path)
+    end
+
+    it "does not raise when no files exist on disk yet" do
+      expect { chapter.destroy }.not_to raise_error
+    end
+  end
 end

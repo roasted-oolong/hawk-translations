@@ -4,8 +4,8 @@ class Chapter < ApplicationRecord
   # ---------------------------------------------------------------------------
   belongs_to :novel
 
-  has_one_attached :korean_source
-  has_one_attached :translated_output
+  has_one_attached :korean_source, dependent: :purge_later
+  has_one_attached :translated_output, dependent: :purge_later
 
   # ---------------------------------------------------------------------------
   # Enums
@@ -46,6 +46,15 @@ class Chapter < ApplicationRecord
   # place that attaches korean_source also updates status in the same beat.
   after_update_commit :broadcast_status_change, if: :saved_change_to_status?
 
+  # The pipeline reads/writes chapter text as flat files keyed only by
+  # number (KoreanSourceDiskWriter, ChapterDiskWriter) — outside any Active
+  # Storage association Rails could clean up on its own. Without this, a
+  # deleted chapter's files stay on disk and a later chapter created at the
+  # same number would silently inherit them (stale source text, or a
+  # translated output file mistaken for "already translated" — see the
+  # comments on each writer's #delete).
+  before_destroy :delete_disk_files
+
   # FormatKoreanChapterJob re-attaches a cleaned korean_source without
   # changing status (it's already "untranslated" from OcrChapterJob), so
   # that update wouldn't trip the after_update_commit above — called
@@ -60,6 +69,11 @@ class Chapter < ApplicationRecord
   end
 
   private
+
+  def delete_disk_files
+    KoreanSourceDiskWriter.new(novel).delete(self)
+    ChapterDiskWriter.new(novel).delete(self)
+  end
 
   def broadcast_status_change
     broadcast_replace_later_to(
