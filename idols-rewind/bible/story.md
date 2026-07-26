@@ -87,3 +87,31 @@ Last Updated: [date]
 ---
 
 **Themes & Motifs** — The lion/hyena metaphor introduced in Ch. 1 as a through-line for Kang's self-understanding. Director Park uses it as a threat; Kang reverses it in the room ("I was the only lion among all those hyenas") and then undercuts it alone on the rooftop ("Turns out I was just another hyena"). His relationship to this metaphor tracks his shifting self-assessment.
+
+---
+
+NOTHING TO ADD
+
+- Preread for Ch. 75 did not run: source file missing. Bible remains current through Ch. 74. Re-run this batch once the chapter file is available.
+
+---
+
+NOTHING TO ADD
+
+[uncertain — excluded because Ch. 75 source text was unavailable. No story intelligence could be extracted for this batch. Recommend re-running preread for Ch. 75 once the source file is present.]
+
+---
+
+Open arcs:
+- Japan expansion: K-Concert Tokyo confirmed as the entry point. Kang refuses to send Blue Sherbet as a group and sends Jin-ah alone (Yoon-jung has no release; Hee-yeon is in early filming; Yumi's music is too quiet for the format and would only lend the event heat without return). Planning meeting now underway to build additional Japan schedules around the K-Concert date, weighted toward performance over talk.
+- Blue Sherbet reunion is being deliberately withheld: Kang states the group must only regroup for a formal comeback with a new song, or the impact will be spent early. Any future scene involving group activity should be read against this stated rule.
+- Hee-yeon's film shoot is ongoing; her fan-facing conduct on set is being built as an asset (coffee truck → all-day waiting → mini fan meet → deepened loyalty). Kang explicitly attributes the fans' conversion to conviction about her character (인성), not her performance.
+
+Watch list:
+- Sung-ah's warning that Hee-yeon is fixating on Kang is the chapter's spine, and Kang laughs it off. Two lines to flag: Sung-ah begins "나는 비즈니스적으로—" and is cut off before she can define her own past attachment; and Kang says "희연이가 너처럼 사고 칠 애야?" — implying Sung-ah once caused a concrete incident in the original timeline that has not yet been narrated. Her reply, "...글쎄, 그럴까?", is deliberately non-committal. Both are likely load-bearing later.
+- The chapter closes on Kang thinking "역시 사고 칠 애는 아니라니까?" immediately after Hee-yeon silently drops her question and stares out the window. The irony is structural — translate the beat so the reader can disagree with him.
+- The K-Concert second song is specifically Jin-ah's 내일의 아이돌 number with Hyun-hee Lee, requested because that footage drove Jin-ah's Japanese traction (Ch. 73). Hyun-hee is now in Eight in You, whom HS is pushing into Japan — the two Japan pushes are on a collision course.
+
+Translation-relevant context:
+- Chapter title 「희연이의 집착」 (Hee-yeon's Fixation) names something the POV character refuses to see. Kang's warm, amused rendering of the whole conversation should not be smoothed into agreement with Sung-ah or into denial — he genuinely reclassifies it as ordinary bonding.
+- The K-Concert writer is described as a person who swaps masks depending on who is on the other end of the line (pressure, refusal, or petty gatekeeping over a two-minute slot). Her pleading tone in this call is performance; render it as such.

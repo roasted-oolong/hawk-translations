@@ -885,3 +885,65 @@ Last Updated: [date]
 - First appearance: 49
 - Last Updated: 2026-03-09
 - Notes: The Ch. 74 beat retroactively adds weight to Sung-ah's original Ch. 49 explanation: she was describing something she had already observed in Hee-yeon, not just herself.
+
+---
+
+## 팔불출 — doting fool
+- Korean phrase: 딸 자랑하듯 팔불출처럼
+- Literal translation: Like an 팔불출 (one of the eight fools) bragging about his daughter
+- Intended meaning: Someone who embarrassingly gushes about their family — spouse, child — with no self-awareness
+- Context: Ch. 75 — the narration's self-description as Kang praises Hee-yeon's character to Sung-ah; she laughs at him for it.
+- Established translation:
+- T/N written: no
+- T/N text:
+- First appearance: 75
+- Last Updated: 2026-07-26
+- Notes: Self-aware and fond. "Like a proud dad," "gushing like a doting parent." Character-relevant — the parental framing is how Kang classifies his own attachment, directly in a scene about attachment.
+
+## 날로 먹다 — to get it for free
+- Korean phrase: 어딜 날로 먹으려고
+- Literal translation: Trying to eat it raw
+- Intended meaning: Trying to get something valuable without paying or working for it; freeloading off someone else's effort
+- Context: Ch. 75 — Kang's internal reaction to K-Concert requesting all of Blue Sherbet.
+- Established translation:
+- T/N written: no
+- T/N text:
+- First appearance: 75
+- Last Updated: 2026-07-26
+- Notes: Blunt and dismissive. "Not a chance you're getting them for free," "nice try." Related in spirit to 도둑놈 심보 (Ch. 28) — consider whether the two should stay distinct in English.
+
+## 어림 반 푼어치도 없다
+- Korean phrase: 어림 반 푼어치도 없는 말
+- Literal translation: Not worth even half a penny of estimation
+- Intended meaning: Utterly out of the question; not remotely worth considering
+- Context: Ch. 75 — Kang cuts off the K-Concert writer mid-plea.
+- Established translation:
+- T/N written: no
+- T/N text:
+- First appearance: 75
+- Last Updated: 2026-07-26
+- Notes: "Not worth a second's thought," "completely out of the question."
+
+## 귓동냥 — overheard scraps
+- Korean phrase: 귓동냥으로 들으면서
+- Literal translation: Begging with the ears
+- Intended meaning: Picking something up by overhearing rather than being told directly
+- Context: Ch. 75 — the fans form their opinion of Hee-yeon partly from crew talk overheard while waiting.
+- Established translation:
+- T/N written: no
+- T/N text:
+- First appearance: 75
+- Last Updated: 2026-07-26
+- Notes: "Catching scraps of crew talk," "from what they overheard."
+
+## 똥 씹은 얼굴 — a face like she'd swallowed something foul
+- Korean phrase: 통씹은 얼굴 (text as written; standard form 똥 씹은 얼굴)
+- Literal translation: A face like she'd chewed shit
+- Intended meaning: A visibly sour, disgusted, thwarted expression
+- Context: Ch. 75 — Sung-ah's manager returning to the van after her side errand failed.
+- Established translation:
+- T/N written: no
+- T/N text:
+- First appearance: 75
+- Last Updated: 2026-07-26
+- Notes: Source spelling appears to be a typo for 똥 씹은. YA register: "a face like she'd bitten into something rotten" / "sour-faced." Coarser renderings available if register allows.

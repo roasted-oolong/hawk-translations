@@ -1006,3 +1006,46 @@ Last Updated: [date]
 - Definition: Kang's framework for understanding "별처럼"'s chart trajectory: rapid rise due to "방송빨" (broadcast momentum from F.M.P.), two weeks of chart dominance, then natural decline as momentum fades — but offset by grassroots cultural embedding (busking, karaoke, commuter playlists). Kang explicitly describes this as the correct shape for this type of song: "차트에서는 멀어져도 생활에서는 가까워지는" (moving away from the charts but closer to daily life).
 - Usage notes: "방송빨" = boost from broadcast exposure. The arc (chart peak → decline → cultural longevity) is distinct from idol chart performance and is a recurring analytical frame for Kang.
 - Notes: Translation-relevant: Kang is not disappointed by the chart drop — he correctly predicted it. The framing should convey professional satisfaction, not concern.
+
+---
+
+## K-Concert
+- Korean term: K-Concert
+- Category: Event / organization
+- First appearance: 75
+- Last Updated: 2026-07-26
+- Definition: A large annual corporate-sponsored K-pop event broadcast on cable, held in a different country each year (this year, Tokyo). Includes merchandise and cosmetics sales, but the core is a multi-artist concert. Backed by the parent company of a broadcaster with major industry influence.
+- Usage notes: Render as "K-Concert" (English in source). Kang frames it as an event rookie groups should normally accept unless they have a serious conflict — the point being that Blue Sherbet is above "normally."
+- Notes: Kang refuses to send the group, judging that Blue Sherbet's reunion must be saved for a formal comeback with a new song, not spent on 'ICE' or cover stages.
+
+## Coffee Truck (커피차)
+- Korean term: 커피차
+- Category: Industry custom
+- First appearance: 75
+- Last Updated: 2026-07-26
+- Definition: A catering/coffee truck sent to a filming set as a gift — here paid for by Hee-yeon's fans. Standard Korean fan-support practice.
+- Usage notes: Render as "coffee truck." Kang cites it as the reason he owes the fans a mini fan meet.
+
+## Gong Sung-jin (공성진 실장)
+- Korean term: 공성진 실장
+- Category: Character name (film role)
+- First appearance: 75
+- Last Updated: 2026-07-26
+- Definition: Park Sung-hyun's role in 「네 운수를 조금만 빌려도 될까?」 — an agency 실장 (manager/director grade). His first scene opposite Hee-yeon's Hyun-ah is filmed in Ch. 75.
+- Usage notes: Render as "Manager Gong" / "Gong Sung-jin." Title 실장 matches the register already used for 강실장, 장실장, 신실장.
+
+## Mina (이미나)
+- Korean term: 이미나
+- Category: Character name (film role)
+- First appearance: 75
+- Last Updated: 2026-07-26
+- Definition: In-film idol trainee character; Hyun-ah's friend. Hyun-ah is accused of having spirited her away before an important schedule.
+- Usage notes: Render as "Mina" / "Lee Mi-na."
+
+## Cover Stage (커버무대)
+- Korean term: 커버무대
+- Category: Idol industry concept
+- First appearance: 75
+- Last Updated: 2026-07-26
+- Definition: Performing another artist's song (or an older release) as a live stage rather than promoting new material. Kang treats it as filler — a reason not to send Blue Sherbet to K-Concert.
+- Usage notes: Render as "cover stage."

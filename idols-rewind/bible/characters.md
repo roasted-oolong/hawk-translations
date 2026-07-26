@@ -921,3 +921,23 @@ Last Updated: 2026-03-08
 - Definition: A supporting character role in Sung Min-woo's upcoming film. Kim Sung-ah has arranged to coach Hee-yeon for this specific role.
 - Usage notes: Render as "Hyun-ah" (the character name, not a person in the story world at this stage).
 - Notes: The audition for this role has been deferred slightly to give Hee-yeon preparation time with Sung-ah. The role is not guaranteed — Hee-yeon must audition.
+
+---
+
+NOTHING TO ADD
+
+[uncertain — excluded because the only chapter in this batch (Ch. 75) could not be read: the source file was not found at `/home/jenna/hawk-translations/idols-rewind/chapters/ch75_korean`. No Korean text was available to extract from.]
+
+---
+
+NOTHING TO ADD
+
+[uncertain — excluded because the only chapter in this batch (Ch. 75) could not be read: the source file was not found at `/home/jenna/hawk-translations/idols-rewind/chapters/ch75_korean`. No Korean text was available to extract from.]
+
+---
+
+## Sung-ah's Manager (성아 실장)
+- First appearance: 75
+- Last Updated: 2026-07-26
+- Role: Unnamed. Kim Sung-ah's current 실장 at HS Entertainment.
+- Notes: Minimal entry. Sends Sung-ah to wait in the van while she stays behind, ostensibly for staff business; Kang and Sung-ah both assume she is hitting on the field PD. Returns with a sour face. Matters only because Sung-ah tolerating this is Kang's evidence that she has changed — she would never have waited for him. [uncertain — included because the beat is the mechanism for Sung-ah's "환경이 바뀐 거지" line]

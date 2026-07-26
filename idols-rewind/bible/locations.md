@@ -306,3 +306,12 @@ Last Updated: 2026-03-08
 - First appearance: 73
 - Last Updated: 2026-03-09
 - Significance: Street busking area in Seoul; Kang observes "별처럼" being covered by buskers while waiting for a scheduled event, confirming the song's grassroots cultural traction.
+
+---
+
+## Tokyo (도쿄)
+- Korean name: 도쿄 / 일본
+- Romanisation: Tokyo
+- First appearance: 75
+- Last Updated: 2026-07-26
+- Significance: Host city for this year's K-Concert; the entry point for Jin-ah's Japanese debut and the start of the Japan expansion arc.
