@@ -3401,6 +3401,22 @@ every root Python script), not from the original summary-level artifact.
     If this inventory turns up a live reference, Stage 2 does not proceed
     until it's resolved — this is the concrete, checkable form of "nothing
     depends on Python," not a restatement of intent.
+
+    **Built 2026-07-25: `bin/r7_negative_inventory` runs exactly this gate**
+    (git-tracked-files scan plus an explicit `.env`/`config/deploy.yml`
+    check for the untracked env case), one pass per category above, exit
+    code 1 if any category still has live references. Not committed yet.
+    Run as of this date with all 7 `PIPELINE_IMPL_*` flags freshly flipped
+    to `ruby` (Stage 0 done, Stage 1 soak just starting): 5 of 6 categories
+    still fail, as expected — the category-1 `.py` files, `src/`, `venv/`,
+    and the Dockerfile's python3/pip/venv layer all still exist (Stage 2/4
+    haven't run), and `PipelineDispatcher`/`FormatKoreanChapterJob`/
+    `OcrChapterJob` still carry their `dispatch_python`/`run_*_python`
+    fallback branches (Stage 3 hasn't run). Only the
+    `PIPELINE_IMPL_*=python` category passes today. Re-run this script once
+    Stage 1's soak is judged complete — it should stay red until Stage 2/3/4
+    actually execute, and turning green is the concrete signal that Stage 2
+    is unblocked.
   - **Stage 2 — delete the category-1 automated-pipeline Python surface:**
     the 8 category-1 root scripts; the `src/` subtree in full (`agent.py`,
     `claude_code_agent.py`, `translation_backend.py`, `prompt_builder.py`,
