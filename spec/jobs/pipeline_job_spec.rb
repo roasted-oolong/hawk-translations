@@ -212,6 +212,34 @@ RSpec.describe PipelineJob, type: :job do
       end
     end
 
+    context "when the job is cancelled mid-run, after one chapter already wrote its output" do
+      it "still attaches and marks the chapter that finished before cancellation, instead of discarding it" do
+        Dir.mktmpdir do |root|
+          with_project_root(root) do
+            allow(PipelineDispatcher).to receive(:call) do
+              # Simulates the real timing: the chapter's output is already on
+              # disk (translate_batch writes atomically per-chapter) by the
+              # time the user's cancel request lands mid-batch.
+              write_output(root, 1, "Chapter one translated.")
+              job.cancel!
+              [ "1 chapter(s) translated.", "", true ]
+            end
+
+            described_class.new.perform(job.id)
+            job.reload
+            chapter1.reload
+            chapter2.reload
+
+            expect(job.status).to eq("cancelled")
+            expect(chapter1.status).to eq("translated")
+            expect(chapter1.translated_output).to be_attached
+            expect(chapter2.status).to eq("preread")
+            expect(chapter2.translated_output).not_to be_attached
+          end
+        end
+      end
+    end
+
     context "when the whole batch succeeds" do
       it "attaches and marks every chapter translated" do
         Dir.mktmpdir do |root|

@@ -69,13 +69,21 @@ module Pipeline
         mcp_config     = BridgeConfig.mcp_config(novel_directory_name: @job.novel.directory_name)
 
         write_progress(1)
-        written, failures, aborted = run_batch(requests, system_prompt, mcp_config)
+        written, failures, aborted, stop_reason = run_batch(requests, system_prompt, mcp_config)
 
-        [ build_stdout(written, missing_source, aborted), build_stderr(failures, aborted), failures.empty? ]
+        [ build_stdout(written, missing_source, aborted, stop_reason),
+          build_stderr(failures, aborted, stop_reason),
+          failures.empty? ]
       end
 
       private
 
+      # Checked between chapters, not during one — this can't interrupt a
+      # chapter's own in-flight `claude` call (Pipeline::ClaudeCode has no
+      # cancel_token wired through Pipeline::Subprocess for that), only stop
+      # the batch from starting further chapters once a cancellation lands.
+      # Whatever this chapter already wrote to disk before the check is kept
+      # by PipelineJob's own cancelled-phase handling, not discarded.
       def run_batch(requests, system_prompt, mcp_config)
         written  = []
         failures = []
@@ -99,12 +107,17 @@ module Pipeline
             failures << { number: num, error_category: result.error_category, error_message: result.error_message }
             if FATAL_CATEGORIES.include?(result.error_category)
               remaining = requests[(index + 1)..].map(&:first)
-              return [ written, failures, remaining ]
+              return [ written, failures, remaining, :fatal_error ]
             end
+          end
+
+          if @job.reload.cancelled?
+            remaining = requests[(index + 1)..].map(&:first)
+            return [ written, failures, remaining, :cancelled ]
           end
         end
 
-        [ written, failures, [] ]
+        [ written, failures, [], nil ]
       end
 
       # Returns [requests, missing_source] where requests is
@@ -142,19 +155,23 @@ module Pipeline
         File.rename(tmp_path, final_path)
       end
 
-      def build_stdout(written, missing_source, aborted)
+      def build_stdout(written, missing_source, aborted, stop_reason)
         lines = [ "#{written.size} chapter(s) translated." ]
         lines << "Skipped (missing source files): #{missing_source.sort.inspect}" if missing_source.any?
-        lines << "Not attempted (batch stopped after a fatal error): #{aborted.sort.inspect}" if aborted.any?
+        lines << "Not attempted (#{stop_description(stop_reason)}): #{aborted.sort.inspect}" if aborted.any?
         lines.join("\n")
       end
 
-      def build_stderr(failures, aborted)
-        return "" if failures.empty?
+      def build_stderr(failures, aborted, stop_reason)
+        return "" if failures.empty? && aborted.empty?
 
         lines = failures.map { |f| "Chapter #{f[:number]}: #{f[:error_category]} — #{f[:error_message]}" }
-        lines << "Batch stopped after a fatal error; chapters #{aborted.sort.inspect} were not attempted." if aborted.any?
+        lines << "Batch stopped (#{stop_description(stop_reason)}); chapters #{aborted.sort.inspect} were not attempted." if aborted.any?
         lines.join("\n")
+      end
+
+      def stop_description(stop_reason)
+        stop_reason == :cancelled ? "job was cancelled" : "batch stopped after a fatal error"
       end
 
       def write_progress(pct)
