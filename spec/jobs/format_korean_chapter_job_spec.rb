@@ -81,4 +81,33 @@ RSpec.describe FormatKoreanChapterJob, type: :job do
       end
     end
   end
+
+  describe "PIPELINE_IMPL_FORMATTER=ruby" do
+    around do |example|
+      orig = ENV["PIPELINE_IMPL_FORMATTER"]
+      ENV["PIPELINE_IMPL_FORMATTER"] = "ruby"
+      example.run
+    ensure
+      ENV["PIPELINE_IMPL_FORMATTER"] = orig
+    end
+
+    it "routes through Pipeline::Ruby::FormatKoreanChapter instead of Open3, on success" do
+      result = Pipeline::Ruby::FormatKoreanChapter::Result.new(output: cleaned_text)
+      expect(Pipeline::Ruby::FormatKoreanChapter).to receive(:call).with(original_text).and_return(result)
+      expect(Open3).not_to receive(:popen3)
+
+      described_class.perform_now(chapter.id)
+
+      expect(chapter.reload.korean_source.download).to eq(cleaned_text)
+    end
+
+    it "leaves the original attachment intact and logs when the Ruby orchestrator fails" do
+      result = Pipeline::Ruby::FormatKoreanChapter::Result.new(error_message: "boom")
+      allow(Pipeline::Ruby::FormatKoreanChapter).to receive(:call).and_return(result)
+      expect(Rails.logger).to receive(:error).with(/boom/)
+
+      expect { described_class.perform_now(chapter.id) }
+        .not_to change { chapter.korean_source.reload.checksum }
+    end
+  end
 end

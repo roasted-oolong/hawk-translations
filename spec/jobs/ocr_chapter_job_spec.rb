@@ -145,4 +145,35 @@ RSpec.describe OcrChapterJob, type: :job do
       end
     end
   end
+
+  describe "PIPELINE_IMPL_OCR=ruby" do
+    around do |example|
+      orig = ENV["PIPELINE_IMPL_OCR"]
+      ENV["PIPELINE_IMPL_OCR"] = "ruby"
+      example.run
+    ensure
+      ENV["PIPELINE_IMPL_OCR"] = orig
+    end
+
+    it "routes through Pipeline::Ruby::OcrChapter instead of Open3, on success" do
+      result = Pipeline::Ruby::OcrChapter::Result.new(output: transcribed_text)
+      expect(Pipeline::Ruby::OcrChapter).to receive(:call).with(image_paths).and_return(result)
+      expect(Open3).not_to receive(:popen3)
+
+      described_class.perform_now(chapter.id, image_paths)
+
+      expect(chapter.reload.korean_source.download).to eq(transcribed_text)
+    end
+
+    it "marks the chapter ocr_failed and logs when the Ruby orchestrator fails" do
+      result = Pipeline::Ruby::OcrChapter::Result.new(error_message: "boom")
+      allow(Pipeline::Ruby::OcrChapter).to receive(:call).and_return(result)
+      expect(Rails.logger).to receive(:error).with(/boom/)
+
+      described_class.perform_now(chapter.id, image_paths)
+
+      expect(chapter.reload.status).to eq("ocr_failed")
+      expect(chapter.korean_source).not_to be_attached
+    end
+  end
 end

@@ -31,6 +31,24 @@ class OcrChapterJob < ApplicationJob
   private
 
   def run_ocr(paths)
+    case PipelineImplementation.for("ocr")
+    when :ruby
+      run_ocr_ruby(paths)
+    else
+      run_ocr_python(paths)
+    end
+  end
+
+  def run_ocr_ruby(paths)
+    result = Pipeline::Ruby::OcrChapter.call(paths)
+    unless result.success?
+      Rails.logger.error("[OcrChapterJob] OCR failed: #{result.error_message}")
+      return nil
+    end
+    result.output
+  end
+
+  def run_ocr_python(paths)
     python = ENV.fetch("PYTHON", "python3")
     script = File.join(project_root, "ocr_chapter.py")
 

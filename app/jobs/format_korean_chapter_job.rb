@@ -36,6 +36,24 @@ class FormatKoreanChapterJob < ApplicationJob
   private
 
   def run_cleaner(text)
+    case PipelineImplementation.for("formatter")
+    when :ruby
+      run_cleaner_ruby(text)
+    else
+      run_cleaner_python(text)
+    end
+  end
+
+  def run_cleaner_ruby(text)
+    result = Pipeline::Ruby::FormatKoreanChapter.call(text)
+    unless result.success?
+      Rails.logger.error("[FormatKoreanChapterJob] cleaner failed: #{result.error_message}")
+      return nil
+    end
+    result.output
+  end
+
+  def run_cleaner_python(text)
     python = ENV.fetch("PYTHON", "python3")
     script = File.join(project_root, "clean_chapter.py")
 

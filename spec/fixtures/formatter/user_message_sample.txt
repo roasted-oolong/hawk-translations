@@ -1,0 +1,10 @@
+Format the following Korean chapter(s) for readability:
+
+=== CHAPTER 1 ===
+First chapter text.
+Second line.
+=== END CHAPTER 1 ===
+
+=== CHAPTER 2 ===
+Second chapter text with leading/trailing space.
+=== END CHAPTER 2 ===
