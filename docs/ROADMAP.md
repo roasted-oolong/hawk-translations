@@ -448,6 +448,66 @@ page deliberately drops the jobs section in M23 — this is the replacement.
 
 ---
 
+## Future — OCR (and formatter) visible in the job queue
+
+`OcrChapterJob`/`FormatKoreanChapterJob` are plain `ActiveJob`, not
+`TranslationJob`-backed, so they don't appear on the Jobs page and have no cancel
+button — status is chapter-level only (the "OCR processing" badge). This was fine
+as an isolated gap, but **confirmed 2026-07-26: OCR genuinely competes for the same
+resource as every other pipeline job.** `Pipeline::ClaudeVision` (OCR) and
+`Pipeline::ClaudeCode` (translate_batch/preread/bible_build/post_translation_review/
+voice_calibration) both shell out to the same subscription-authenticated `claude`
+CLI via `Pipeline::Subprocess` — one account, no separate quota — so a long OCR run
+and a translate_batch run are drawing from the same practical capacity even though
+today's UI shows no relationship between them. This is why OCR can appear "stuck"
+when another job is running: it's not stuck, it's queued behind the same underlying
+resource with no visibility into that queue.
+
+Given that, OCR (and, for the same reason, the formatter) should become visible and
+cancellable the same way `TranslationJob`s are — not necessarily by becoming a
+`TranslationJob` row (chapter-level single-chapter jobs don't obviously fit that
+model's novel+chapter-range shape), but at minimum surfaced on whatever the Jobs
+Page above becomes. Needs its own scoping pass (schema question: extend
+`TranslationJob`'s `job_type` enum vs. a lighter-weight "job status" concept shared
+across both `ActiveJob` and `TranslationJob`-backed work) before building — not
+decided here.
+
+---
+
+## Future — Auto-run Bible Build After Manual Review
+
+User idea (2026-07-26): once a chapter's translation is manually reviewed
+(`reviewed` status), automatically trigger a `bible_build` run for it instead of
+requiring a manual trip to the Jobs page. Distinct from `post_translation_review`,
+which the user asked to confirm isn't the same feature:
+
+- **`bible_build`** re-runs the *preread* extraction (new characters/terms/etc.)
+  over chapters that are **already translated** — same underlying scan as `preread`,
+  just against translated content instead of untranslated, for backfilling bible
+  data in bulk (`run_bible_build.py`'s own docstring: "rebuild bible entries from
+  existing content").
+- **`post_translation_review`** reviews **one** just-translated chapter specifically
+  for consistency against the existing bible (voice drift, naming) and proposes
+  edits to existing entries — a QA pass, not an extraction pass.
+
+They're complementary, not duplicates: bible_build finds *new* entries from content
+review already covers for existing-entry *drift*. Auto-triggering bible_build after
+review is a reasonable idea but needs its own scope before building:
+- Per-chapter (on that one chapter reaching `reviewed`) or batched (periodically,
+  or on some larger unit like "novel has N newly-reviewed chapters")?
+- Cost/frequency tradeoff — bible_build is a full `claude` CLI call per batch; firing
+  it on every single chapter review may be wasteful compared to batching.
+- Should `post_translation_review` also auto-trigger at the same point, or only
+  bible_build? (An initial chapter 65 report of missed characters/bad names turned
+  out to be user error — preread's results weren't reviewed before translating, not
+  a pipeline bug — so no known gap to resolve here beyond the trigger-timing
+  question itself.)
+
+Not scoped further than this note — needs a decision on the questions above before
+a design pass.
+
+---
+
 ## Future — Review Tab
 
 Connected to the post-translation review pipeline step (`run_review.py` /
@@ -504,3 +564,36 @@ Prerequisite: invite flow and multi-team membership are in scope first.
 `novels.poc_user_id` is currently `nil` for all seeded/imported novels.
 Add a one-time task or admin UI to assign the POC user on existing records.
 For new novels, `poc_user_id` should default to `current_user` at creation time.
+
+---
+
+## Future — Find and Replace Across Chapters
+
+User idea (2026-07-26): a word-processor-style find-and-replace, but scoped across
+a novel's chapters rather than one document — likely needed for both Korean source
+and English translated text. Not scoped yet: single-chapter vs. cross-chapter vs.
+whole-novel scope, preview-before-apply, and interaction with already-`reviewed`
+chapters (does a replace reopen review status?).
+
+---
+
+## Future — Add Bible Entry From Korean Text, Auto-Correct Existing Translations
+
+User idea (2026-07-26): let a user select/highlight Korean text directly (e.g. a
+name) and create a bible entry from it on the spot, then have the app find every
+place that term already appears in English translated output and correct it
+in-place to match the new entry — rather than the entry only affecting *future*
+translation calls. Not scoped yet: how "find relevant examples" matches loosely
+(a name can be transliterated multiple ways before an entry pins it down), and
+whether corrections apply automatically or go through a review step first (existing
+precedent leans toward human review — see R5's bible-review gating).
+
+---
+
+## Future — AI-Generated Bible Entry
+
+User idea (2026-07-26): instead of manually filling out a new bible entry's fields,
+let the model draft one (from a name/term + surrounding chapter context) for the
+user to accept/edit rather than write from scratch. Not scoped yet: which fields it
+drafts, what context it's given, and whether this is its own small `claude` call or
+folds into the existing preread/bible_build extraction path.
