@@ -142,8 +142,8 @@ module Pipeline
       end
 
       def read_chapter_file(num)
-        path = File.join(@chapters_dir, "ch#{num}_korean")
-        File.exist?(path) ? File.read(path, encoding: "UTF-8") : "[ERROR: ch#{num}_korean not found at #{path}]"
+        path = File.join(@chapters_dir, "Chapter #{num} (Korean).txt")
+        File.exist?(path) ? File.read(path, encoding: "UTF-8") : "[ERROR: Chapter #{num} (Korean).txt not found at #{path}]"
       end
 
       def read_file(path)

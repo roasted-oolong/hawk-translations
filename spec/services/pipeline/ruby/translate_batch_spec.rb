@@ -46,7 +46,7 @@ RSpec.describe Pipeline::Ruby::TranslateBatch do
   end
 
   def write_korean_source(dir, num, text)
-    File.write(File.join(dir, "chapters", "ch#{format('%02d', num)}_korean"), text)
+    File.write(File.join(dir, "chapters", "Chapter #{num} (Korean).txt"), text)
   end
 
   # Echoes back is_error/result driven by a per-call Ruby lambda keyed on the

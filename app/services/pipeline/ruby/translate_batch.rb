@@ -122,14 +122,12 @@ module Pipeline
         [ requests, missing ]
       end
 
-      # Matches chapter_loader.py's build_chapter_request: tries the
-      # zero-padded name first, then the unpadded one.
+      # Matches KoreanSourceDiskWriter's on-disk convention — the only
+      # writer of Korean source files, so it's the only convention that
+      # matters here.
       def find_korean_source(num)
-        [ format("ch%02d_korean", num), "ch#{num}_korean" ].each do |name|
-          path = File.join(@chapters_dir, name)
-          return path if File.exist?(path)
-        end
-        nil
+        path = File.join(@chapters_dir, "Chapter #{num} (Korean).txt")
+        File.exist?(path) ? path : nil
       end
 
       # .tmp-then-rename: atomic on the same filesystem, so a crash mid-write

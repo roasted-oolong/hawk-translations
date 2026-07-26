@@ -54,7 +54,7 @@ RSpec.describe Pipeline::Ruby::PrereadRunner do
 
   it "runs one batch per chapter, writing parsed findings and advancing the progress file" do
     with_env("HAWK_PROJECT_ROOT" => @project_root) do
-      novel = build_novel_dir(chapter_files: { "ch1_korean" => "one", "ch2_korean" => "two" })
+      novel = build_novel_dir(chapter_files: { "Chapter 1 (Korean).txt" => "one", "Chapter 2 (Korean).txt" => "two" })
       @job = create(:translation_job, novel: novel, job_type: "preread", chapter_start: 1, chapter_end: 2)
 
       Dir.mktmpdir do |bin_dir|
@@ -93,7 +93,7 @@ RSpec.describe Pipeline::Ruby::PrereadRunner do
   it "filters the job's chapter range through the given discovery predicate, skipping unavailable chapters" do
     with_env("HAWK_PROJECT_ROOT" => @project_root) do
       novel = build_novel_dir(chapter_files: {
-        "ch1_korean" => "one", "ch2_korean" => "two", "ch3_korean" => "three", "Chapter 3.txt" => "translated"
+        "Chapter 1 (Korean).txt" => "one", "Chapter 2 (Korean).txt" => "two", "Chapter 3 (Korean).txt" => "three", "Chapter 3.txt" => "translated"
       })
       @job = create(:translation_job, novel: novel, job_type: "preread", chapter_start: 1, chapter_end: 3)
 
@@ -121,7 +121,7 @@ RSpec.describe Pipeline::Ruby::PrereadRunner do
   it "includes an already-translated chapter when given bible_build's discovery predicate instead" do
     with_env("HAWK_PROJECT_ROOT" => @project_root) do
       novel = build_novel_dir(chapter_files: {
-        "ch1_korean" => "one", "ch2_korean" => "two", "ch3_korean" => "three", "Chapter 3.txt" => "translated"
+        "Chapter 1 (Korean).txt" => "one", "Chapter 2 (Korean).txt" => "two", "Chapter 3 (Korean).txt" => "three", "Chapter 3.txt" => "translated"
       })
       @job = create(:translation_job, :bible_build, novel: novel, chapter_start: 1, chapter_end: 3)
 
@@ -148,7 +148,7 @@ RSpec.describe Pipeline::Ruby::PrereadRunner do
 
   it "stops the batch loop and returns failure when a batch's claude call fails, keeping earlier batches' writes" do
     with_env("HAWK_PROJECT_ROOT" => @project_root) do
-      novel = build_novel_dir(chapter_files: { "ch1_korean" => "one", "ch2_korean" => "two" })
+      novel = build_novel_dir(chapter_files: { "Chapter 1 (Korean).txt" => "one", "Chapter 2 (Korean).txt" => "two" })
       @job = create(:translation_job, novel: novel, job_type: "preread", chapter_start: 1, chapter_end: 2)
 
       Dir.mktmpdir do |bin_dir|
@@ -181,7 +181,7 @@ RSpec.describe Pipeline::Ruby::PrereadRunner do
 
   it "fails closed when a response is missing all five section markers" do
     with_env("HAWK_PROJECT_ROOT" => @project_root) do
-      novel = build_novel_dir(chapter_files: { "ch1_korean" => "one" })
+      novel = build_novel_dir(chapter_files: { "Chapter 1 (Korean).txt" => "one" })
       @job = create(:translation_job, novel: novel, job_type: "preread", chapter_start: 1, chapter_end: 1)
 
       Dir.mktmpdir do |bin_dir|
