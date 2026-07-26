@@ -1,0 +1,68 @@
+#!/usr/bin/env ruby
+# ---------------------------------------------------------------------------
+# bin/translation_eval
+#
+# Offline prototype harness for the translation quality pipeline idea in
+# docs/ROADMAP.md — CLI wrapper around Pipeline::Ruby::TranslationEval. Runs
+# both the current single-pass prompt and the candidate structured
+# (intent/literal/localized) prompt over a handful of chapters and writes
+# both outputs to disk for manual side-by-side comparison. Never touches
+# translate_batch.rb, PipelineJob, or the chapters/ files it evaluates.
+#
+# Usage:
+#   bin/translation_eval <novel_dir> <chapter_numbers...> [--out DIR]
+#
+# Example:
+#   bin/translation_eval idols-rewind 68 74 75 --out tmp/translation_eval
+# ---------------------------------------------------------------------------
+
+require_relative "../config/environment"
+
+args = ARGV.dup
+out_index = args.index("--out")
+output_dir = out_index ? args.delete_at(out_index + 1).tap { args.delete_at(out_index) } : "tmp/translation_eval"
+
+if args.size < 2
+  abort "Usage: bin/translation_eval <novel_dir> <chapter_numbers...> [--out DIR]"
+end
+
+novel_dir = File.expand_path(args.shift, Rails.root)
+chapter_numbers = args.map(&:to_i)
+output_dir = File.expand_path(output_dir, Rails.root)
+
+unless Dir.exist?(novel_dir)
+  abort "No such novel directory: #{novel_dir}"
+end
+
+puts "Novel dir:  #{novel_dir}"
+puts "Chapters:   #{chapter_numbers.join(', ')}"
+puts "Output dir: #{output_dir}"
+puts
+
+results = Pipeline::Ruby::TranslationEval.call(
+  novel_dir: novel_dir, chapter_numbers: chapter_numbers, output_dir: output_dir
+)
+
+results.each do |r|
+  if r.missing_source
+    puts "Chapter #{r.number}: SKIPPED (no Korean source)"
+    next
+  end
+
+  single_pass_status = r.single_pass_error ? "FAILED — #{r.single_pass_error}" : "ok"
+  structured_status =
+    if r.structured_error
+      "FAILED — #{r.structured_error}"
+    elsif r.structured_valid_json
+      "ok"
+    else
+      "ok (call succeeded, JSON invalid)"
+    end
+
+  puts "Chapter #{r.number}:"
+  puts "  single_pass: #{single_pass_status}"
+  puts "  structured:  #{structured_status}"
+end
+
+puts
+puts "Compare outputs under #{output_dir}/chapter_<N>/"

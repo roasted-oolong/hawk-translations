@@ -51,6 +51,48 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
     end
   end
 
+  describe ".build_structured_system_prompt" do
+    def context(overrides = {})
+      described_class::TranslationContext.new(
+        **{
+          novel_info: "Genre: romance fantasy", translation_guidelines: "Be faithful.",
+          narrator_note: "Kang narrates dryly.", characters: "## Hyuk Kang\n- Role: protagonist",
+          cultural_phrases: "", locations: "", story: "", terminology: "", voice_calibration: ""
+        }.merge(overrides)
+      )
+    end
+
+    it "instructs the model to return a single JSON object with intent, literal, and localized keys" do
+      prompt = described_class.build_structured_system_prompt(context)
+
+      expect(prompt).to include('"intent"')
+      expect(prompt).to include('"literal_translation"')
+      expect(prompt).to include('"localized_translation"')
+      expect(prompt).to include("Respond with a single JSON object")
+    end
+
+    it "includes the same reference material as the single-pass prompt" do
+      structured = described_class.build_structured_system_prompt(context)
+      single_pass = described_class.build_system_prompt(context)
+
+      expect(structured).to include("Genre: romance fantasy")
+      expect(structured).to include("Hyuk Kang")
+      # Both prompts should agree on which reference sections were non-empty.
+      expect(structured).to include("Character Bible")
+      expect(single_pass).to include("Character Bible")
+    end
+
+    it "omits reference sections that are empty or template-only, same as the single-pass prompt" do
+      prompt = described_class.build_structured_system_prompt(context(characters: "", novel_info: ""))
+
+      expect(prompt).not_to include("Character Bible")
+    end
+
+    it "never emits the web_search sentence" do
+      expect(described_class.build_structured_system_prompt(context)).not_to include("web_search")
+    end
+  end
+
   describe ".extract_narrator_note" do
     it "extracts the Narrator Note section when followed by another section" do
       novel_info = "# Title\n\n## Narrator Note\nSome note text.\nMore text.\n\n## Next Section\nOther stuff"
