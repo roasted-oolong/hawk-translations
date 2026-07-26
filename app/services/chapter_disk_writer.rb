@@ -25,6 +25,16 @@ class ChapterDiskWriter
     raise e
   end
 
+  # Deleting a chapter must not leave its translated output behind: a stale
+  # "Chapter <N>.txt" at the same number is exactly what
+  # Pipeline::Ruby::TranslateBatch#attach_translated_outputs treats as "this
+  # chapter already has a finished translation," so a later re-translate of
+  # that chapter number would silently reattach the deleted chapter's text.
+  def delete(chapter)
+    path = chapter_path(chapter)
+    File.delete(path) if File.exist?(path)
+  end
+
   private
 
   def chapter_path(chapter)

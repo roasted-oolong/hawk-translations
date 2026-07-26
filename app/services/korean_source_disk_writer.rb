@@ -27,6 +27,16 @@ class KoreanSourceDiskWriter
     raise e
   end
 
+  # Deleting a chapter must not leave its source file behind: a stale
+  # "*(Korean)*" file at the same chapter number would still be discoverable
+  # by src/novel_resolver.py and Pipeline::Ruby's own chapter-discovery (see
+  # PrereadRunner::ChapterDiscovery), so a later re-upload of that chapter
+  # number would silently be re-fed the deleted chapter's old text.
+  def delete(chapter)
+    path = chapter_path(chapter)
+    File.delete(path) if File.exist?(path)
+  end
+
   private
 
   def chapter_path(chapter)

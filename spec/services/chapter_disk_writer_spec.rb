@@ -56,4 +56,19 @@ RSpec.describe ChapterDiskWriter do
     expect { described_class.new(novel).write(chapter, "text") }
       .to raise_error(/HAWK_PROJECT_ROOT/)
   end
+
+  describe "#delete" do
+    it "removes the on-disk file for the chapter" do
+      described_class.new(novel).write(chapter, "Revised text.")
+      expect(File).to exist(output_path)
+
+      described_class.new(novel).delete(chapter)
+
+      expect(File).not_to exist(output_path)
+    end
+
+    it "is a no-op when no file exists on disk" do
+      expect { described_class.new(novel).delete(chapter) }.not_to raise_error
+    end
+  end
 end
