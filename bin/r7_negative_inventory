@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# R7 Stage 1.5 gate: docs/RAILS_REFACTOR_PLAN.md's "negative inventory" —
+# a run-it-yourself check for zero remaining references to the category-1
+# Python pipeline surface, so "safe to delete" is measurable rather than
+# remembered. Expected to report live references until R7 Stage 2 actually
+# runs; this script does not modify anything.
+#
+# Scans git-tracked files (git ls-files already keeps out node_modules/venv/
+# builds/public-assets/tmp/log via .gitignore) plus the untracked .env and
+# .kamal/secrets-adjacent config that .gitignore deliberately excludes from
+# tracking but which still matters for this check.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+TRACKED_EXCLUDES=(':!docs/DECISIONS.md' ':!docs/RAILS_REFACTOR_PLAN.md' ':!.claude' ':!bin/r7_negative_inventory')
+
+failures=0
+
+check_tracked() {
+  local label="$1" pattern="$2"
+  local hits
+  hits=$(git grep -nIE "$pattern" -- . "${TRACKED_EXCLUDES[@]}" 2>/dev/null || true)
+  if [[ -n "$hits" ]]; then
+    echo "FAIL  $label"
+    echo "$hits" | sed 's/^/        /'
+    failures=$((failures + 1))
+  else
+    echo "pass  $label"
+  fi
+}
+
+check_untracked_env() {
+  local label="$1" pattern="$2"
+  local hits=""
+  for f in .env config/deploy.yml; do
+    [[ -f "$f" ]] || continue
+    local m
+    m=$(grep -nIE "$pattern" "$f" 2>/dev/null || true)
+    [[ -n "$m" ]] && hits+="$f:$m"$'\n'
+  done
+  if [[ -n "$hits" ]]; then
+    echo "FAIL  $label"
+    echo "$hits" | sed 's/^/        /'
+    failures=$((failures + 1))
+  else
+    echo "pass  $label"
+  fi
+}
+
+echo "== R7 Stage 1.5 negative inventory =="
+echo
+
+check_tracked "python / python3 (Ruby/config/docs surface only — category-1/2/3 .py files themselves don't count, Stage 2 deletes them wholesale)" \
+  "python|python3" ':(exclude,glob)*.py'
+
+check_tracked "venv / requirements.txt" "venv|requirements\.txt"
+
+check_tracked "src/ referenced from outside src/" "src/" ':!src'
+
+check_tracked "clean_chapter.py / ocr_chapter.py referenced from outside themselves" \
+  "clean_chapter\.py|ocr_chapter\.py" ':!clean_chapter.py' ':!ocr_chapter.py'
+
+check_tracked "run_preread.py / run_review.py / run_bible_build.py referenced from outside themselves" \
+  "run_preread\.py|run_review\.py|run_bible_build\.py" ':!run_preread.py' ':!run_review.py' ':!run_bible_build.py'
+
+check_untracked_env "PIPELINE_IMPL_* set to \"python\" (.env, config/deploy.yml)" \
+  "PIPELINE_IMPL_[A-Z_]+\s*=?\s*['\"]?python"
+
+echo
+if [[ "$failures" -eq 0 ]]; then
+  echo "Clear — Stage 2 deletion is unblocked by this gate."
+  exit 0
+else
+  echo "$failures categor$([[ $failures -eq 1 ]] && echo y || echo ies) still reference the Python pipeline — Stage 2 should not proceed yet."
+  exit 1
+fi
