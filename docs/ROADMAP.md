@@ -597,3 +597,74 @@ let the model draft one (from a name/term + surrounding chapter context) for the
 user to accept/edit rather than write from scratch. Not scoped yet: which fields it
 drafts, what context it's given, and whether this is its own small `claude` call or
 folds into the existing preread/bible_build extraction path.
+
+---
+
+## Future — Translation Quality Pipeline (Structured Intent/Literal/Localized)
+
+User proposal (2026-07-26): translate_batch's single-pass prompt was producing
+literal, sometimes unnatural output (Korean metonymy translated word-for-word,
+idiomatic nouns translated as their literal meaning, cultural dynamics like 기 싸움
+flattened into an abstract English label instead of shown through behavior). The
+original ask was a 3-call pipeline (intent extraction → literal reconstruction →
+purpose-preserving localization), each stage a separate `claude` call.
+
+**Decision:** don't split into multiple calls without evidence it's needed. A
+single call can already chain reasoning steps internally — ask for intent, a
+literal pass, and a localized pass as one JSON response, and validate offline
+before touching `translate_batch.rb`/production at all. "Architect for the
+eventual multi-call shape, execute as one call" — mirrors the same discipline
+applied to genre-as-bible-file and bible-as-markdown earlier in this doc.
+
+**Shipped this session, offline/eval-only, not wired into translate_batch:**
+- `bin/translation_eval` + `Pipeline::Ruby::TranslationEval` — runs both the
+  current single-pass prompt and a candidate structured prompt over the same
+  chapters, writes both outputs to disk for side-by-side human comparison.
+- `PromptBuilder.build_structured_system_prompt` — the candidate one-call
+  prompt: JSON response with `intent` (narrative purpose, tone, register,
+  cultural connotations, implied subjects, stylistic devices, plus
+  `cultural_dynamic`/`localization_strategy` — see below), `literal_translation`,
+  `localized_translation`.
+- A per-sentence-naturalness-over-motif-consistency instruction, after Ch. 68
+  testing showed a recurring word (공기 → "air") stayed literal in one
+  unmodified instance ("I like the air...") even though the same motif read
+  fine elsewhere once modified ("tense air").
+- `cultural_dynamic` / `localization_strategy` intent fields — cultural
+  connotations were already being *detected* but step 3 never *acted* on them
+  (the actual cause of 기 싸움 → "status fight"). These fields force the model
+  to name the dynamic and its handling strategy, and step 3's instructions now
+  require localized_translation to carry it out.
+- `idols-rewind/bible/cultural_patterns.md` — new bible category for
+  behavioral/interpersonal patterns that have no single phrase to gloss
+  (status-jockeying, eye-contact-as-confrontation, appearance-based teasing),
+  distinct from the existing phrase-level `cultural_phrases.md`. Markdown,
+  per-entry, matching existing bible file conventions — not JSON; nothing
+  downstream parses bible content, so richer structure doesn't require a
+  schema change. Wired into the structured eval prompt only.
+
+**Open question worth tracking:** how much of the remaining miss rate is a
+one-call *instruction* gap (fixable with more/better fields, same as the two
+above) versus genuine long-generation reasoning decay (the model starts
+following a stated strategy correctly early in a chapter and drifts by
+paragraph 12). Two different tests were designed for this but not yet built:
+- **Test A** — does the model follow its own stated `localization_strategy` at
+  all? (Strategy correct but prose ignores it → execution failure. Strategy
+  itself vague/wrong → still a prompt-refinement problem.)
+- **Test B** — does it follow the strategy *consistently* across a full
+  chapter, or does accuracy degrade by position? This requires promoting
+  `cultural_dynamic`/`localization_strategy` from flat per-chapter fields to a
+  per-instance array (each occurrence gets its own entry plus a short anchor
+  quote to locate it in `localized_translation`), so accuracy can actually be
+  plotted against position instead of eyeballed.
+
+**Decision gate:** only split into a 2-call pipeline (analysis call — intent,
+cultural dynamics, risks, strategy, voice constraints — feeding a translation
+call that treats that analysis as fixed guidance) if Test B specifically shows
+drift: strategy stated correctly throughout, execution degrading by position.
+Not the original spec's 3–5 stages if it does split — 2 calls, scoped to
+what's actually been demonstrated to fail.
+
+**Deliberately deferred, not built today:** per-instance cultural_dynamics
+arrays, anchor extraction, drift plotting, a chapter-wide consistency harness,
+Test A/Test B themselves. This entry exists so that work has a starting point
+next time, not because it's scoped enough to start yet.
