@@ -198,12 +198,14 @@ class ChaptersController < ApplicationController
   end
 
   # Resolves the chapter number for one file in a bulk upload.
-  # Priority: classifier result (from filename) → per-file param → nil.
+  # Priority: explicit per-file param (user override) → classifier result
+  # (from filename) → nil. An explicit override must win — it's how a user
+  # corrects a misparsed or ambiguous filename in the review table.
   def resolve_number(filename:, classified_number:)
-    return classified_number if classified_number
-
     raw = params.dig(:chapter, :numbers, filename).presence
-    raw&.to_i
+    return raw.to_i if raw
+
+    classified_number
   end
 
   def create_single(file)
