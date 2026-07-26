@@ -640,7 +640,9 @@ applied to genre-as-bible-file and bible-as-markdown earlier in this doc.
   distinct from the existing phrase-level `cultural_phrases.md`. Markdown,
   per-entry, matching existing bible file conventions — not JSON; nothing
   downstream parses bible content, so richer structure doesn't require a
-  schema change. Wired into the structured eval prompt only.
+  schema change. Entries include an “American misread risk” field to surface
+  how a literal rendering would be misinterpreted by an American reader. The
+  기 싸움 entry’s broken rendering-strategy line was corrected this session.
 
 **Open question worth tracking:** how much of the remaining miss rate is a
 one-call *instruction* gap (fixable with more/better fields, same as the two
@@ -655,7 +657,9 @@ paragraph 12). Two different tests were designed for this but not yet built:
   `cultural_dynamic`/`localization_strategy` from flat per-chapter fields to a
   per-instance array (each occurrence gets its own entry plus a short anchor
   quote to locate it in `localized_translation`), so accuracy can actually be
-  plotted against position instead of eyeballed.
+  plotted against position instead of eyeballed. This schema change is
+  deferred until Test B is actually implemented, and should not be added to
+  the prompt now.
 
 **Decision gate:** only split into a 2-call pipeline (analysis call — intent,
 cultural dynamics, risks, strategy, voice constraints — feeding a translation
