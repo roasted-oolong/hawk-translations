@@ -60,3 +60,7 @@ __pycache__/
 
 # SQLite development database
 db/development.sqlite3
+
+# BibleFileEditor sidecar flock files — never renamed/replaced, exist only
+# for in-process locking mechanics, no content of their own.
+*/bible/*.md.lock
