@@ -235,6 +235,24 @@ RSpec.describe "Chapters", type: :request do
       end
     end
 
+    context "when a filename is parseable but a per-file number param overrides it" do
+      let(:file) { uploaded_file(content: KOREAN_CONTENT, filename: "68화.txt") }
+
+      it "uses the explicit override, not the filename-classified number" do
+        expect {
+          post novel_chapters_path(novel), params: {
+            chapter: {
+              files: [file],
+              numbers: { "68화.txt" => 30 }
+            }
+          }
+        }.to change(Chapter, :count).by(1)
+
+        expect(Chapter.last.number).to eq(30)
+        expect(Chapter.find_by(number: 68)).to be_nil
+      end
+    end
+
     context "when a filename is unparseable and a per-file number param is provided" do
       let(:file) { uploaded_file(content: KOREAN_CONTENT, filename: "notes.txt") }
 
