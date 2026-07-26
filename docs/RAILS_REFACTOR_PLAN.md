@@ -26,8 +26,72 @@ All five R0 milestones, plus R1–R6, have reviewed Goal/Design/Acceptance-
 criteria sections and real Ruby implementations with passing specs. The
 formatter/OCR slice of the original R6 summary now has its own
 Goal/Design/Acceptance-criteria section too — see **R6.5** below, designed
-2026-07-25, not yet built. R7 is still at the summary level in the artifact
-linked below; it has not been given the same detailed treatment.
+2026-07-25, **built and spec-tested the same day** (see the R6.5 build
+update immediately below this paragraph). **R7** (deleting the Python
+layer) is designed — see the R7 section at the end of this document — but
+remains blocked on every `PIPELINE_IMPL_*` flag (now including the two new
+R6.5 ones) being flipped and soaked in real use, which has not happened yet
+(verified: no `PIPELINE_IMPL_*` var is set anywhere today, so R4/R5/R6's
+and now R6.5's built Ruby orchestrators have never actually run a real
+chapter).
+
+**R6.5 build, 2026-07-25, same day as its own design pass above:**
+`FormatKoreanChapterJob#run_cleaner` and `OcrChapterJob#run_ocr` each gained
+a `PipelineImplementation.for("formatter"/"ocr")` branch (two new keys,
+`PIPELINE_IMPL_FORMATTER`/`PIPELINE_IMPL_OCR`, added to
+`PipelineImplementation::ENV_VAR_BY_JOB_TYPE` — neither job type is a
+`TranslationJob`/`PipelineDispatcher` concept, so each job calls
+`PipelineImplementation.for` directly rather than through the dispatcher).
+Built, in dependency order: `Pipeline::LocalLlmChat` (the formatter's
+OpenAI-compatible HTTP primitive, `Net::HTTP`, no new gem),
+`Pipeline::ClaudeVision` (OCR's `claude`-CLI stream-json primitive, a
+second class from `Pipeline::ClaudeCode`, not a shared parent),
+`Pipeline::Ruby::FormatterPromptBuilder`/`FormatterResponseParser` (byte-
+verified against a live `python3` invocation of
+`src/formatter/prompt_builder.py`, same discipline as every prior
+prompt-parity test — see `spec/fixtures/formatter/`), and the two thin
+orchestrators `Pipeline::Ruby::FormatKoreanChapter`/`OcrChapter`.
+
+**One real deviation from the design, found while building, not assumed —
+resolved with the user via AskUserQuestion before writing any code:** the
+design's "why this isn't R1 again" section states `clean_chapter.py` has
+"no `claude` CLI involved anywhere in this path," true when the design was
+written earlier the same day but stale by build time — a *later* session
+that same day moved `clean_chapter.py` onto `get_backend(FORMAT_BACKEND)`
+(`config.py`), which now defaults to `"claude_code"`, not Ollama. Building
+the orchestrator Ollama-only as literally designed would have meant
+flipping `PIPELINE_IMPL_FORMATTER=ruby` silently downgraded every
+formatting call from claude_code quality to local-Ollama quality, contrary
+to Python's actual current default. Resolved by making
+`Pipeline::Ruby::FormatKoreanChapter` branch on `TranslationConfig#format_backend`
+(a new field, added alongside the existing `translation_backend`/
+`calibration_backend` axes, defaulting to `"claude_code"` via the same
+`validate_backend` helper) exactly like Python's `get_backend` dispatch:
+`Pipeline::ClaudeCode` for `"claude_code"` (the default), `Pipeline::LocalLlmChat`
+for `"local"`. Both primitives already share the same `(output,
+error_category, error_message, success?)` `Result` shape, so the
+orchestrator's call-result handling is backend-agnostic. `Pipeline::Ruby::OcrChapter`
+needed no such branch — `ocr_chapter.py` has no backend toggle of its own,
+it always shells out to `claude`.
+
+Full spec suite run after (`local_llm_chat_spec.rb`, `claude_vision_spec.rb`,
+`formatter_prompt_builder_spec.rb`, `formatter_response_parser_spec.rb`,
+`format_korean_chapter_spec.rb`, `ocr_chapter_spec.rb`, plus updated
+`translation_config_spec.rb`/`pipeline_implementation_spec.rb` and new
+`PIPELINE_IMPL_FORMATTER=ruby`/`PIPELINE_IMPL_OCR=ruby` contexts in the two
+job specs): 1063 examples. One run this session hit 83 failures including a
+live `PG::TRDeadlockDetected` from two concurrent Postgres clients — this
+box runs a real dev Puma server and a Solid Queue worker against the same
+Postgres instance alongside the test run, plus a VS Code file-watcher and
+esbuild watcher, so full-suite runs here are genuinely resource-contended;
+that run's extra ~24 failures didn't reproduce on an immediate rerun, which
+landed at 59 (58 known-red baseline + 1 already-documented timing flake,
+`subprocess_spec.rb`'s "timestamps and duration" test — see the R5 build
+update above). Verified directly, not assumed: neither run's failure list
+contains any file this section touched. Rubocop clean on every new/changed
+file. **Not yet committed** — sits in the working tree alongside whatever
+else was already uncommitted; check `git status`/`git diff` before assuming
+any of it has landed on `main`.
 
 **R5 build, 2026-07-25, same session as this doc's earlier R4/R5/R6 design
 passes and the R6 build:** `Pipeline::Ruby::PostTranslationReview` and
@@ -140,8 +204,13 @@ the original summary is now R6.5) is also designed but not built; its
 orchestrator half is independent of R4/R5 too, but its writer half shares a
 new primitive, `Pipeline::BibleFileEditor`, with R5's amended
 `BibleReviewWriter` — whichever of R5/R6 is built first builds that
-primitive once. R6.5 (formatter/OCR — see the R6.5 section below) is
-designed but not built. R7 remains unscheduled.
+primitive once. R6.5 (formatter/OCR — see the R6.5 section below) is now
+built and spec-tested, not merely designed. R7 (see the R7 section at the
+end of this document) is designed but still blocked — R6.5 shipping clears
+one of its two Stage 0 preconditions, but every `PIPELINE_IMPL_*` flag
+(R6.5's two new ones included) still needs to be flipped and soaked in real
+use, which hasn't happened — not merely "unscheduled" but explicitly
+gated.
 
 **Full original plan, diagrams, and pros/cons (R1–R7, superseded for R0
 specifics by the detailed sections below):**
@@ -176,17 +245,21 @@ https://claude.ai/code/artifact/31286d3b-7c57-4c47-a3d2-c2675944ed11
   plain `ActiveJob`s on chapter upload) and call different backends than
   `Pipeline::ClaudeCode` (a local OpenAI-compatible HTTP endpoint for the
   formatter; the `claude` CLI with image/stream-json input, which
-  `Pipeline::ClaudeCode` can't send, for OCR). Designed (see the R6.5
-  section below); not yet built.
+  `Pipeline::ClaudeCode` can't send, for OCR). Designed and now **built**
+  (see the R6.5 section below).
 - **R7** — delete the Python layer (`venv/`, `requirements.txt`, Dockerfile
-  stage), revisit the now-obsolete "`ANTHROPIC_API_KEY` stays in `.env`"
-  decision.
+  stage), close the now-dead `ANTHROPIC_API_KEY`/`TAVILY_API_KEY` provisioning,
+  collapse the `PIPELINE_IMPL_*` toggle layer. Designed (see the R7 section
+  at the end of this document); blocked on R6.5 being built and every
+  `PIPELINE_IMPL_*` flag being flipped and soaked in real use first — not
+  yet started.
 
 Current recommendation: land R0 → R1–R3 now (done); R4, R5, and R6 are
 designed and ready to build, in any order (R5's and R6's writers share
 `Pipeline::BibleFileEditor`, so whichever lands first builds it); R6.5 is
-also designed and ready to build, independent of R4/R5/R6; R7 remains
-unscheduled.
+now built and spec-tested, independent of R4/R5/R6; R7 is designed but
+structurally blocked until R4–R6.5's Ruby paths have actually soaked in
+real use, not just passed specs.
 
 Each milestone below is written as **Goal / Design / Acceptance criteria** so
 the roadmap doubles as an implementation checklist. Build order for R0 is
@@ -2841,7 +2914,12 @@ been amended to use.
 
 ## R6.5 — formatter and OCR port
 
-**Status: designed 2026-07-25.** Carves out the two pieces R6 explicitly
+**Status: designed 2026-07-25, built and spec-tested the same day** (see the
+R6.5 build update near the top of this document for the full account,
+including one design deviation resolved with the user mid-build: the
+formatter orchestrator branches on backend, defaulting to `claude_code`,
+rather than the Ollama-only shape originally designed below). Carves out the
+two pieces R6 explicitly
 deferred — `clean_chapter.py`/`FormatKoreanChapterJob` (formatter) and
 `ocr_chapter.py`/`OcrChapterJob` (OCR) — into their own numbered milestone,
 rather than leaving them permanently "unscheduled, summary-level." Given its
@@ -3007,8 +3085,15 @@ callers of existing ones.
   - `PIPELINE_IMPL_FORMATTER=python` (or unset) and `PIPELINE_IMPL_OCR=python`
     (or unset) reproduce byte-identical behavior to today — this section
     changes nothing observable until explicitly flipped.
-  - No Ruby implementation code is written as part of this section — a
-    separate, later pass, same discipline as every prior R-section.
+
+  **All of the above built and verified 2026-07-25 — see the R6.5 build
+  update near the top of this document.** One acceptance criterion implicit
+  above needed a build-time amendment, not just an implementation: the
+  formatter's backend selection isn't Ollama-only as originally drafted —
+  `Pipeline::Ruby::FormatKoreanChapter` branches on `TranslationConfig#format_backend`
+  (new field, defaults `"claude_code"`), matching `clean_chapter.py`'s own
+  `get_backend(FORMAT_BACKEND)` dispatch as it exists today, not as it was
+  when this design section was first written.
 
 ---
 
@@ -3080,8 +3165,10 @@ each calls a different backend than `Pipeline::ClaudeCode` (a local
 OpenAI-compatible HTTP endpoint for the formatter; the `claude` CLI with
 image/stream-json input for OCR), so R6.5 designs two new backend
 primitives alongside the two thin orchestrators that call them. R7
-(deleting the Python layer) remains at summary level, not yet given the
-same detailed treatment.
+(deleting the Python layer) is now designed too — see the R7 section at
+the end of this document, added 2026-07-25 — but is explicitly gated on
+R6.5 being built and every `PIPELINE_IMPL_*` flag being flipped and soaked
+in real use first, not just on Ruby code existing.
 
 **Update 2026-07-25 (same day, later session): R6 built and spec-tested —
 `Pipeline::Ruby::Preread`/`BibleBuild` are no longer stubs.** Built in
@@ -3119,3 +3206,268 @@ zero regressions from this build. Not yet committed to `main` — this
 build, plus R4's and R5's still-uncommitted design-doc updates above, are
 all sitting in the working tree together; commit boundaries are for
 whoever's driving that session to decide, not assumed here.
+
+## R7 — remove Python as a production dependency
+
+**Status: designed 2026-07-25, revised same day after user review — no code
+touched.** Unlike R1–R6.5, this section is a removal, not a port, so its
+acceptance criteria are stated as **absences and non-dependencies** ("nothing
+in production still requires Python"), not as "deletion completed" — a
+distinction the user's review called out directly and this revision adopts
+throughout, not just in the acceptance-criteria list. Findings below came
+from reading the current repo directly (Dockerfile, `.kamal/secrets`,
+`config/deploy.yml`, `.env`, `docs/DECISIONS.md`, `PipelineImplementation`,
+every root Python script), not from the original summary-level artifact.
+
+- **Goal, reframed after review:** the goal is not "delete ~5,600 lines of
+  Python" — line count is incidental. The goal is **no production execution
+  path in this Rails app requires Python**. If a deliberate decision is made
+  to keep `preread.py`/`review.py` permanently as developer/interactive
+  tooling (see below), R7 is still a complete success — those scripts were
+  never a production dependency to begin with. Architecture is the target,
+  not a line-count reduction.
+
+- **The umbrella acceptance criterion everything else in this section exists
+  to satisfy:**
+
+  > **No production code path requires Python.**
+
+  Every other acceptance criterion below — the negative inventory, the
+  env-passthrough invariant, the secret removals, the dispatcher collapse —
+  is a way of making that one sentence checkable, not an independent goal of
+  its own.
+
+- **First blocker: cleared 2026-07-25 — R6.5 is now built,** so
+  `FormatKoreanChapterJob`/`OcrChapterJob` go through
+  `PipelineImplementation.for("formatter"/"ocr")` with a real Ruby path
+  behind it, same as R4–R6's job types. This was previously a hard blocker
+  (both jobs still shelled out to `clean_chapter.py`/`ocr_chapter.py`
+  directly via `Open3.popen3`, bypassing `PipelineDispatcher`/
+  `PipelineImplementation` entirely) — R7 is no longer blocked on R6.5
+  existing, only on the soak precondition immediately below, which now
+  applies uniformly to all 7 `PIPELINE_IMPL_*` flags rather than 5.
+
+- **Remaining real blocker, verified against `.env` and `config/deploy.yml`,
+  not assumed from "R4/R5/R6.5 are built": no `PIPELINE_IMPL_*` var is set
+  anywhere today.** `PipelineImplementation.for` defaults every job type to
+  `"python"` — so even though R4/R5/R6/R6.5's Ruby orchestrators are all now
+  built and spec-tested, **zero real chapters have ever run through any of
+  them.**
+
+  **Precondition, strengthened per review — the operative word is
+  "depends," not "succeeded":** it is not enough that a migrated job type
+  *has* processed a representative production workload on Ruby once. The
+  bar is: **every migrated job type has successfully processed
+  representative production workloads with `PIPELINE_IMPL_*` selecting
+  Ruby, and no production execution path still depends on the Python
+  implementation** — no cron, no manual runbook step, no documented
+  fallback procedure, no code path that reaches `dispatch_python` under any
+  realistic condition. "Merely unused in theory" and "nothing actually
+  relies on it" are different claims; only the second licenses deletion.
+
+- **Three categories of Python code exist today — this revision narrows R7's
+  own scope to exactly one of them, per the user's explicit steer not to
+  force one answer across all three:**
+  1. **Automated pipeline entry points with a Ruby replacement (built or
+     designed) — the only category R7 itself covers:**
+     `translate.py`/`translate_batch.py`, `run_preread.py`,
+     `run_bible_build.py`, `run_review.py`, `calibrate-voice.py` (R4–R6,
+     built), `clean_chapter.py`/`ocr_chapter.py` (R6.5, now also built), plus
+     the `src/` package and test suite they depend on. **Verdict: delete**,
+     once the soak precondition above is actually met.
+  2. **Interactive terminal-only tools — explicitly out of R7's scope
+     entirely, not a precondition blocking it:** `preread.py`/`review.py`,
+     both `input()`-driven manual review tools; R6's own design already
+     said to keep using `review.py` for interactive use, and neither is
+     called by any Rails code path — they were never a *production*
+     dependency, so they have no bearing on the umbrella criterion above.
+     **Verdict: a separate, independent decision record** — retain
+     permanently as developer tooling, port later, or retire — made on
+     product/workflow grounds by whoever owns that workflow, on its own
+     timeline, not gating R7's completion in either direction.
+  3. **Standalone manual/diagnostic utilities, never part of the
+     job-triggered pipeline at all:** `check_bible.py` (read-only
+     duplicate-entry checker), `format_chapters.py` (a *third*, separate
+     Batch-API formatting path, superseded in production use but never
+     formally retired). Neither is called by any Rails code; whether either
+     is still run manually is unverified from the repo alone. **Verdict: a
+     separate, explicit maintenance decision** (keep, document, or retire),
+     same reasoning as category 2 — not a production dependency, so not an
+     R7 blocker either way.
+
+  Net effect of this reframing: R7's own Stage 0 precondition list (below)
+  no longer includes "categories 2/3 resolved" — only category 1 and the
+  soak requirement gate Stage 2. Categories 2 and 3 get their own decision
+  records, referenced from here, tracked independently.
+
+- **The secret/env cleanup (Stage 4 below) is more architecturally important
+  than the code deletion (Stage 2), not a peer cleanup item — called out
+  explicitly per review, not left implicit in stage ordering:**
+  - **`ANTHROPIC_API_KEY` is provisioned into production today but nothing
+    consumes it as a credential anymore** — verified by grep: every
+    remaining reader (`src/claude_code_agent.py:103`, `ocr_chapter.py:124`)
+    only pops it from the subprocess env *before* invoking the
+    subscription-authenticated `claude` CLI, specifically so it can't shadow
+    OAuth. It's still listed in `config/deploy.yml`'s `env.secret` and read
+    from `~/.config/hawk/anthropic_api_key` in `.kamal/secrets` — a live API
+    key provisioned for a purpose that no longer exists. Deleting `src/`
+    saves maintenance effort; removing this key removes standing credential
+    exposure — those are not equivalent in kind, and this section treats the
+    latter as the higher-value outcome of R7. Supersede the 2026-03
+    "`ANTHROPIC_API_KEY` stays in `.env`" `docs/DECISIONS.md` entry
+    explicitly when this lands, don't just stop referencing it silently.
+  - **`TAVILY_API_KEY`, same shape, contingent rather than unconditional:**
+    only consumer is `WebSearchSkill` via the Python `"local"`/Ollama
+    backend's tool loop, already scoped out of R1–R6 indefinitely
+    (2026-07-24 decision: `claude_code` is the only backend actually in
+    use). Removable alongside `requirements.txt` unless `local` is revived.
+  - **Env vars that become pure dead weight once Stage 2 lands, each checked
+    for a Ruby reader and found to have none:** `PYTHON` (only read by
+    `PipelineDispatcher`, `format_korean_chapter_job.rb`,
+    `ocr_chapter_job.rb` — all three call sites deleted in Stage 3),
+    `LLM_BASE_URL`, `LLM_API_KEY`, `OPUS_MODEL`, `SONNET_MODEL`,
+    `HAIKU_MODEL` (Ollama-only, `config.py`), `HAWK_RAILS_URL` (already
+    flagged as dead by R2's design).
+
+- **Environment passthrough — elevated to a first-class acceptance
+  criterion per review, not buried as Stage 4 cleanup prose.** The invariant
+  R7 establishes:
+
+  > **No external process launched by the Rails application receives the
+  > Rails process environment by default.**
+
+  Today, `PipelineDispatcher#execute`'s `env: ENV.to_h.merge(...)` violates
+  this for every Python subprocess call — forwarding `RAILS_MASTER_KEY`,
+  `DATABASE_URL`, every `*_SECRET`/`*_KEY`/`*_TOKEN` to whatever the Python
+  layer spawns. This has been flagged as cleanup-for-later since R0.1/R1;
+  R7 is the actual trigger, since once `dispatch_python` is gone (Stage 3)
+  there is no remaining reason for a generic "forward everything" pattern —
+  every subprocess this app spawns (the `claude` CLI, the MCP bridge) already
+  uses `Pipeline::Subprocess`'s additive, explicit-allowlist discipline
+  instead. This is a real security property worth stating as an invariant,
+  not just a diff.
+
+- **The migration-toggle layer itself is in scope for deletion, not just the
+  Python files it points at.** `PipelineImplementation`'s own doc comment
+  already says these flags are "migration flags, not permanent
+  configuration — expected to be retired once every job type has a stable
+  Ruby implementation." Once Stage 2 lands there is only one implementation
+  per job type, so the toggle has no remaining purpose.
+
+- **Stage ordering, confirmed correct per review: delete the Python
+  implementation first, collapse the dispatcher abstraction second, not the
+  reverse.** `PipelineDispatcher`'s python/ruby branch existed to mediate
+  between two implementations; once only one exists, the abstraction is
+  historical compatibility, not active design. Simplifying it before the
+  Python side is actually gone would just be restructuring code that's
+  still load-bearing — lower-risk to remove the dependency first and let the
+  simplification follow from that fact, exactly the order below already
+  reflects.
+
+- **Staged plan — deletion is a one-way door once files are gone, so
+  sequencing matters more here than in any prior R-section:**
+  - **Stage 0 (precondition, not this milestone's own work):** R6.5 built
+    and spec-tested; every one of the 7 `PIPELINE_IMPL_*` flags
+    (5 existing + `PIPELINE_IMPL_FORMATTER`/`PIPELINE_IMPL_OCR` from R6.5)
+    actually flipped to `ruby` wherever the app really runs today (local
+    systemd `.env` — not production, which per
+    [[hawk_translations_shared_oracle_vm]] doesn't exist yet for this app).
+    Categories 2/3 above are explicitly *not* a precondition here anymore.
+  - **Stage 1 — soak, verify dependency, don't just trust the flag:**
+    confirm via real job history (`result_payload`s, logs), not RSpec green,
+    that every migrated job type has successfully processed representative
+    production workloads with `PIPELINE_IMPL_*` selecting Ruby, **and** that
+    no production execution path still depends on the Python
+    implementation — check for cron entries, runbook steps, or documented
+    fallback procedures that still assume `dispatch_python` is reachable,
+    not just whether it's currently being hit. No fixed calendar window is
+    recommended — usage is bursty, so "representative real jobs of each type
+    succeeded, and nothing still depends on the alternative" is the honest
+    bar, not "M days elapsed." This is the last point where rollback
+    (`PIPELINE_IMPL_*=python`) is still cheap; once Stage 2 runs, it isn't.
+  - **Stage 1.5 — negative inventory (new, added per review): a concrete,
+    run-it-yourself gate before Stage 2 begins, so "safe to delete" is
+    measurable rather than remembered.** Verify zero remaining references
+    to each of the following (a `git grep`/`grep -rn` pass, not a mental
+    check):
+    - `python` / `python3` (outside `docs/DECISIONS.md`'s historical prose
+      and this section's own text)
+    - `venv` / `requirements.txt`
+    - `src/` (as an import or file reference from anything outside itself)
+    - `clean_chapter.py`, `ocr_chapter.py`
+    - `run_preread.py`, `run_review.py`, `run_bible_build.py`
+    - any `PIPELINE_IMPL_*` value still resolving to `"python"` anywhere
+      (env files, deploy config, specs)
+    If this inventory turns up a live reference, Stage 2 does not proceed
+    until it's resolved — this is the concrete, checkable form of "nothing
+    depends on Python," not a restatement of intent.
+  - **Stage 2 — delete the category-1 automated-pipeline Python surface:**
+    the 8 category-1 root scripts; the `src/` subtree in full (`agent.py`,
+    `claude_code_agent.py`, `translation_backend.py`, `prompt_builder.py`,
+    `prompt_utils.py`, `bible_utils.py`, `novel_resolver.py`, `progress.py`,
+    `formatter/`, `preread/`, `skills/`, `bible_review/`, `mcp_servers/`,
+    `translator/`, `voice_calibration/`); `tests/`, `.pytest_cache/`, both
+    `__pycache__/` dirs; `venv/`; `docker/tesseract/` (already dead since
+    the 2026-07-23 OCR backend switch, kept only for a rollback whose
+    window has long since closed by this stage). Categories 2/3 are
+    untouched by this stage — their own decision records govern them
+    independently, on their own schedule.
+  - **Stage 3 — collapse the toggle layer**, now that Stage 2 has actually
+    removed the Python side it mediates between: delete
+    `app/services/pipeline_implementation.rb` and its spec; simplify
+    `PipelineDispatcher#call` back to one flat
+    `case @job.job_type ... end` calling `Pipeline::Ruby::*` directly (no
+    implementation-choice branch); delete the now-dead `dispatch_python`
+    private methods (`run_preread`, `run_translate_batch`, `run_bible_build`,
+    `run_post_translation_review`, `run_voice_calibration`, `script`) and
+    the `PYTHON` constant; same treatment for `FormatKoreanChapterJob`/
+    `OcrChapterJob`'s python branch and `Open3.popen3` calls.
+  - **Stage 4 — close the security surface that existed only to serve
+    Python (the highest-value stage of this milestone, not a cleanup
+    afterthought — see above):** remove `ANTHROPIC_API_KEY` from
+    `.kamal/secrets` and `config/deploy.yml`'s `env.secret` (supersede the
+    2026-03 DECISIONS.md entry); remove `TAVILY_API_KEY` if `local` stays
+    out of scope; remove `PYTHON`/`LLM_BASE_URL`/`LLM_API_KEY`/
+    `OPUS_MODEL`/`SONNET_MODEL`/`HAIKU_MODEL`/`HAWK_RAILS_URL` from
+    `.env`/`config/deploy.yml`; remove the Dockerfile's python3/pip/venv
+    install stage and its `PATH` prepend — this also removes a whole
+    second-language dependency surface (`openai`, `pydantic`,
+    `tavily-python`, `mcp`, `pytest` from PyPI) that has had **zero
+    automated vulnerability scanning this entire project** (verified:
+    `.github/workflows/ci.yml` runs `brakeman`/`bundler-audit`/
+    `importmap audit`/`rubocop`/`rspec` only) — this is a security
+    improvement in its own right, not merely "less CI to run." Fix
+    `PipelineDispatcher#execute`'s `env: ENV.to_h.merge(...)` full-
+    environment passthrough to establish the invariant stated above.
+  - **Stage 5 — docs:** update `CLAUDE.md`'s routing table (the "Python
+    pipeline dispatch" row); mark R7 done and supersede the relevant
+    `docs/DECISIONS.md` entries (2026-03 Docker/Python stage, 2026-03
+    `ANTHROPIC_API_KEY` placement); `README.md` needs no changes (checked —
+    it has no Python setup instructions to remove); open (or confirm
+    existence of) the separate decision records for categories 2 and 3.
+
+- **Acceptance criteria — stated as absences and non-dependencies, per
+  review, not as "deletion succeeded":**
+  - **No production code path requires Python** (the umbrella criterion;
+    everything below is one way of making it checkable).
+  - The Stage 1.5 negative inventory returns zero live references for every
+    item listed there.
+  - No `PIPELINE_IMPL_*` env var or `PipelineImplementation` reference
+    exists anywhere in the app, `.env`, `config/deploy.yml`, or specs — not
+    because the toggle was deleted, but because there is no longer a second
+    implementation for it to select between.
+  - **No external process launched by the Rails application receives the
+    Rails process environment by default** — verified by reading
+    `PipelineDispatcher#execute`'s (post-collapse, equivalent) subprocess
+    call and confirming it builds an explicit, additive env rather than
+    starting from `ENV.to_h`.
+  - `ANTHROPIC_API_KEY` and (if applicable) `TAVILY_API_KEY` are absent from
+    `.kamal/secrets` and `config/deploy.yml` — because nothing depends on
+    them, not merely because they were removed.
+  - `docker build` succeeds with no `python3`/`pip`/venv layer.
+  - Full RSpec suite green at (or better than) the pre-existing known-red
+    baseline.
+  - Categories 2 and 3 have their own explicit decision records, referenced
+    from this section, independent of R7's own completion — R7 is complete
+    whether those scripts are kept, ported, or retired, since none of them
+    were ever a production dependency.
