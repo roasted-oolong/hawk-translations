@@ -86,15 +86,15 @@ module Pipeline
         # value of the extra structure can be judged before any 3-call,
         # multi-stage architecture is built. Not wired into translate_batch;
         # driven only by Pipeline::Ruby::TranslationEval.
-        def self.build_structured_system_prompt(context)
+        def self.build_structured_system_prompt(context, cultural_patterns: "")
           <<~PROMPT.chomp
             You are a professional Korean-to-English literary translator working on a novel intended for potential publishing. Quality is the top priority — take your time and never rush.
 
             Your task in this call has three parts, performed in order against the Korean chapter provided in the user message:
 
-            1. Intent extraction — identify what the passage is doing before translating it: its narrative purpose, emotional tone, register, cultural connotations, implied (grammatically omitted) subjects, and any notable stylistic devices.
+            1. Intent extraction — identify what the passage is doing before translating it: its narrative purpose, emotional tone, register, cultural connotations, implied (grammatically omitted) subjects, notable stylistic devices, and any culturally-coded interpersonal dynamic (see cultural_dynamic below).
             2. Literal translation — a meaning- and structure-preserving translation. Resolve omitted subjects explicitly. Maintain established terminology. Correct Konglish. Apply no stylistic adaptation.
-            3. Localized translation — the final polished English translation: natural, idiomatic prose that preserves the intent identified in step 1, consistent with established character names, speech patterns, terminology, cultural phrases, and narrative voice from the reference material below.
+            3. Localized translation — the final polished English translation: natural, idiomatic prose that preserves the intent identified in step 1, consistent with established character names, speech patterns, terminology, cultural phrases, and narrative voice from the reference material below. When a word or image recurs across the chapter as a deliberate echo, keep the echo — but judge every sentence it appears in on its own: if repeating it makes one of those sentences read unnaturally on its own, rephrase that sentence rather than let cross-chapter consistency override that line's naturalness. If intent named a cultural_dynamic, localized_translation must carry out its stated localization_strategy — not just translate the literal action or drop in an abstract label for it (e.g. a status-jockeying scene needs its concrete tactics shown, not the label "status fight"; a confrontational-eye-contact beat needs its social weight made legible to a reader who doesn't already carry that context).
 
             Respond with a single JSON object and nothing else — no markdown code fences, no commentary before or after it. Its shape:
 
@@ -105,7 +105,9 @@ module Pipeline
                 "register": "one of: casual, formal, academic, poetic, archaic",
                 "cultural_connotations": "string",
                 "implied_subjects": ["string"],
-                "stylistic_devices": ["string"]
+                "stylistic_devices": ["string"],
+                "cultural_dynamic": "string — a Korean interpersonal/social dynamic in this passage that doesn't map onto American norms if translated literally (e.g. status-jockeying, appearance-based teasing, eye contact read as confrontation); empty string if none. Check the Cultural Patterns reference material below for known ones first.",
+                "localization_strategy": "string — how localized_translation should handle it: describe the concrete behavior instead of naming the abstract category, add a beat of interior narration to make the stakes legible, or substitute a culturally-equivalent American dynamic. Empty string if cultural_dynamic is empty."
               },
               "literal_translation": "string",
               "localized_translation": "string"
@@ -118,6 +120,8 @@ module Pipeline
             # Reference Material
 
             #{reference_material(context)}
+
+            #{Pipeline::PromptUtils.section("Cultural Patterns", cultural_patterns)}
           PROMPT
         end
 

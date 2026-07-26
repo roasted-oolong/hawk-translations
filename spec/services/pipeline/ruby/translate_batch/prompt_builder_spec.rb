@@ -91,6 +91,45 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
     it "never emits the web_search sentence" do
       expect(described_class.build_structured_system_prompt(context)).not_to include("web_search")
     end
+
+    it "instructs that per-sentence naturalness wins over cross-chapter motif consistency" do
+      prompt = described_class.build_structured_system_prompt(context)
+
+      expect(prompt).to include("if repeating it makes one of those sentences read unnaturally on its own, rephrase that sentence")
+    end
+
+    it "includes cultural_dynamic and localization_strategy in the intent schema" do
+      prompt = described_class.build_structured_system_prompt(context)
+
+      expect(prompt).to include('"cultural_dynamic"')
+      expect(prompt).to include('"localization_strategy"')
+    end
+
+    it "instructs localized_translation to carry out the stated localization_strategy" do
+      prompt = described_class.build_structured_system_prompt(context)
+
+      expect(prompt).to include("localized_translation must carry out its stated localization_strategy")
+    end
+
+    it "injects cultural_patterns content into its own section, separate from the shared reference material" do
+      prompt = described_class.build_structured_system_prompt(context, cultural_patterns: "Status-jockeying (기 싸움) notes here")
+
+      expect(prompt).to include("## Cultural Patterns")
+      expect(prompt).to include("Status-jockeying (기 싸움) notes here")
+    end
+
+    it "omits the Cultural Patterns section heading when no cultural_patterns content is given" do
+      prompt = described_class.build_structured_system_prompt(context)
+
+      expect(prompt).not_to include("## Cultural Patterns")
+    end
+
+    it "never leaks cultural_patterns content into the single-pass prompt" do
+      described_class.build_structured_system_prompt(context, cultural_patterns: "some pattern notes")
+      single_pass = described_class.build_system_prompt(context)
+
+      expect(single_pass).not_to include("some pattern notes")
+    end
   end
 
   describe ".extract_narrator_note" do

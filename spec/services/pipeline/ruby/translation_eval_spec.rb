@@ -91,6 +91,37 @@ RSpec.describe Pipeline::Ruby::TranslationEval do
     end
   end
 
+  it "passes bible/cultural_patterns.md content into the structured prompt only, not the single-pass one" do
+    novel_dir = build_novel_dir(@root)
+    write_korean_source(novel_dir, 1, "챕터 1 한국어")
+    File.write(File.join(novel_dir, "bible", "cultural_patterns.md"), "Status-jockeying pattern notes")
+
+    Dir.mktmpdir do |bin_dir|
+      bin = fake_claude(bin_dir, <<~RUBY)
+        require "json"
+        STDIN.read
+        prompt_path = ARGV[ARGV.index("--system-prompt-file") + 1]
+        prompt = File.read(prompt_path)
+        structured = prompt.include?("Respond with a single JSON object")
+        if structured
+          raise "missing cultural_patterns content in structured prompt" unless prompt.include?("Status-jockeying pattern notes")
+          puts({ is_error: false, result: { intent: {}, literal_translation: "l", localized_translation: "loc" }.to_json }.to_json)
+        else
+          raise "cultural_patterns content leaked into single-pass prompt" if prompt.include?("Status-jockeying pattern notes")
+          puts({ is_error: false, result: "single pass" }.to_json)
+        end
+      RUBY
+
+      results = described_class.call(
+        novel_dir: novel_dir, chapter_numbers: [ 1 ],
+        output_dir: @output_dir, config: config_for(bin)
+      )
+
+      expect(results.first.single_pass_error).to be_nil
+      expect(results.first.structured_error).to be_nil
+    end
+  end
+
   it "skips chapters with no Korean source without calling claude" do
     novel_dir = build_novel_dir(@root)
 

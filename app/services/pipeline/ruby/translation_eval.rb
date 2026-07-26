@@ -40,13 +40,22 @@ module Pipeline
         narrator_note         = TranslateBatch::PromptBuilder.extract_narrator_note(reference_data[:novel_info])
         context                = TranslateBatch::PromptBuilder::TranslationContext.new(**reference_data, narrator_note: narrator_note)
         single_pass_prompt     = TranslateBatch::PromptBuilder.build_system_prompt(context)
-        structured_prompt      = TranslateBatch::PromptBuilder.build_structured_system_prompt(context)
+        structured_prompt      = TranslateBatch::PromptBuilder.build_structured_system_prompt(context, cultural_patterns: read_cultural_patterns)
         mcp_config              = TranslateBatch::BridgeConfig.mcp_config(novel_directory_name: File.basename(@novel_dir))
 
         @chapter_numbers.map { |num| run_chapter(num, single_pass_prompt, structured_prompt, mcp_config) }
       end
 
       private
+
+      # Deliberately not part of TranslateBatch::PromptBuilder::NOVEL_FILES —
+      # this is eval-only reference material and must not flow into the
+      # production single-pass prompt via the context both prompt builders
+      # share.
+      def read_cultural_patterns
+        path = File.join(@novel_dir, "bible", "cultural_patterns.md")
+        File.exist?(path) ? File.read(path, encoding: "UTF-8") : ""
+      end
 
       def run_chapter(num, single_pass_prompt, structured_prompt, mcp_config)
         korean_path = File.join(@chapters_dir, "Chapter #{num} (Korean).txt")
