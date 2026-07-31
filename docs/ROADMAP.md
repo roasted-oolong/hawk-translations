@@ -600,7 +600,18 @@ folds into the existing preread/bible_build extraction path.
 
 ---
 
-## Future — Translation Quality Pipeline (Structured Intent/Literal/Localized)
+## Future — Translation Quality Pipeline (Structured Intent/Literal/Localized) — SUPERSEDED 2026-07-30
+
+Superseded, not built: the "stay single-call, only split if Test B shows
+drift" decision below is abandoned. Committed instead to a 2-call
+architecture (Call 1: comprehension + analysis; Call 2: rewrite + editorial
+sweep) on product-design grounds, plus a new `web_lookup` MCP skill scoped
+to recency. Full design in `docs/DECISIONS.md`'s 2026-07-30 "Translation
+quality pipeline: committing to a 2-call split" entry. This entry's content
+below is kept for history (the single-pass structured prompt it describes
+is real, shipped, and still the basis for Call 1/2's fields) but the
+decision gate is no longer the plan — do not wait for Test A/B before
+building the split.
 
 User proposal (2026-07-26): translate_batch's single-pass prompt was producing
 literal, sometimes unnatural output (Korean metonymy translated word-for-word,
