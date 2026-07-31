@@ -1,3 +1,5 @@
+require "json"
+
 # ---------------------------------------------------------------------------
 # Pipeline::Ruby::TranslateBatch::PromptBuilder
 #
@@ -188,6 +190,73 @@ module Pipeline
 
             #{Pipeline::PromptUtils.section("Cultural Patterns", cultural_patterns)}
           PROMPT
+        end
+
+        # Call 2 (Purpose-Preserving Rewrite + Editorial Sweep) of the 2-call
+        # translation quality pipeline — docs/DECISIONS.md's 2026-07-30 "committing
+        # to a 2-call split" entry. Consumes Call 1's analysis contract (see
+        # build_call1_system_prompt) via the user message — build_call2_user_message
+        # below assembles that — and produces the final localized translation per
+        # passage plus a self-graded editorial_checks block. Offline/eval-only for
+        # now: not wired into translate_batch.rb, and TranslationEval/bin/translation_eval
+        # don't chain Call 1 into this yet — that wiring, plus a live validation run,
+        # is separate follow-up work, not done in this pass.
+        def self.build_call2_system_prompt(context, cultural_patterns: "")
+          <<~PROMPT.chomp
+            You are a professional Korean-to-English literary translator working on a novel intended for potential publishing. Quality is the top priority — take your time and never rush.
+
+            This is the second of two calls. The first call segmented the chapter and produced an analysis per passage; the user message contains both the original Korean chapter and that analysis as JSON. Your job is to produce the final localized English translation, passage by passage, and a quick self-graded editorial check per passage. Do not re-segment — use the passages and their `passage_id` exactly as the analysis defines them.
+
+            For each passage in the analysis, in `passage_id` order:
+            - `passage_id`: echo the analysis's `passage_id` for this passage. This is the join key back to Call 1's analysis — not `anchor_quote` text-matching, which is fragile since whitespace/punctuation can drift on restatement.
+            - `localized_translation`: the polished, idiomatic English translation of this passage. Preserve the narrative intent and literal meaning the analysis identified. If the passage's `localization_strategy.category` isn't "none", carry out its `notes` concretely — show the behavior the notes describe (concrete tactics, added interior narration, a culturally-equivalent substitution, whatever the notes call for), not just an abstract label for it. When a word or image recurs across the chapter as a deliberate echo, keep the echo — but judge every sentence it appears in on its own: if repeating it makes one of those sentences read unnaturally on its own, rephrase that sentence rather than let cross-chapter consistency override that line's naturalness.
+            - `editorial_checks`: a self-graded triage signal for human review, not independent verification — grade honestly, but this never blocks or gates anything downstream. Five boolean checks: `voice_consistent` (matches established character voice/speech patterns), `emotional_arc_preserved` (the passage still carries the same emotional arc the analysis's narrative_intent identified), `cultural_dynamic_enacted` (true if `localization_strategy.category` was "none", or if it wasn't "none" and the rewrite actually carries out its cultural dynamic rather than just naming it), `idiomatic` (natural English, not a literal calque), `no_korean_shaped_syntax` (no Korean-shaped syntax left in the English). Add `notes` for anything a human reviewer should know — why a check is borderline, what you weren't sure about.
+
+            Concatenating every passage's `localized_translation` in `passage_id` order must produce the complete, publication-ready chapter — no gaps, no duplicated content, no commentary or meta text mixed into the prose.
+
+            Respond with a single JSON object and nothing else — no markdown code fences, no commentary before or after it. Its shape:
+
+            {
+              "localized_passages": [
+                {
+                  "passage_id": 1,
+                  "localized_translation": "string",
+                  "editorial_checks": {
+                    "voice_consistent": true,
+                    "emotional_arc_preserved": true,
+                    "cultural_dynamic_enacted": true,
+                    "idiomatic": true,
+                    "no_korean_shaped_syntax": true,
+                    "notes": "string"
+                  }
+                }
+              ]
+            }
+
+            ---
+
+            # Reference Material
+
+            #{reference_material(context)}
+
+            #{Pipeline::PromptUtils.section("Cultural Patterns", cultural_patterns)}
+          PROMPT
+        end
+
+        # Assembles Call 2's user message from the Korean chapter text and Call 1's
+        # parsed analysis (a Hash — typically JSON.parse(call1_result.output)).
+        # Distinct headings, not a single blob, so the model can address each part
+        # of build_call2_system_prompt's instructions unambiguously.
+        def self.build_call2_user_message(korean_text:, call1_analysis:)
+          <<~MESSAGE.chomp
+            # Korean Chapter
+
+            #{korean_text}
+
+            # Call 1 Analysis
+
+            #{JSON.pretty_generate(call1_analysis)}
+          MESSAGE
         end
 
         def self.reference_material(context)

@@ -614,13 +614,21 @@ decision gate is no longer the plan — do not wait for Test A/B before
 building the split.
 
 **Call 1 shipped 2026-07-30** (offline/eval-only — see `docs/DECISIONS.md`'s
-same-day "Call 1 implemented" entry):
-`PromptBuilder.build_call1_system_prompt`, wired into
-`Pipeline::Ruby::TranslationEval`/`bin/translation_eval` with a segmentation
-validator (sequential `passage_id`, `anchor_quote` concatenation reconstructs
-the source chapter). Not yet run against real chapters — that run is the
-gate before Call 2 starts, per the Sequencing note in the DECISIONS.md entry
-this superseded block links to above.
+same-day "Call 1 implemented" entry): `PromptBuilder.build_call1_system_prompt`,
+wired into `Pipeline::Ruby::TranslationEval`/`bin/translation_eval` with a
+segmentation validator (sequential `passage_id`, `anchor_quote` concatenation
+reconstructs the source chapter). **Live-validated same day** against real
+Chapter 68 — 52 passages, clean segmentation, non-degenerate strategy-category
+spread, 11 useful `chapter_level_notes.risks` flags. Chapters 74/75 not yet
+run.
+
+**Call 2 prompt builder shipped 2026-07-31** (see `docs/DECISIONS.md`'s
+2026-07-31 entry): `PromptBuilder.build_call2_system_prompt` +
+`.build_call2_user_message` — `localized_translation`/`editorial_checks` per
+passage, keyed on `passage_id` from Call 1's analysis. **Not yet wired** into
+`TranslationEval`/`bin/translation_eval`, and no live run chaining Call 1 →
+Call 2 has happened. That chaining plus a live run is the next gate before
+this pipeline is anywhere near production-ready.
 
 User proposal (2026-07-26): translate_batch's single-pass prompt was producing
 literal, sometimes unnatural output (Korean metonymy translated word-for-word,
