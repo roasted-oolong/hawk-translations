@@ -1359,10 +1359,59 @@ Still offline/eval-only — nothing here touches `translate_batch.rb` or any
   (`single_pass`, `structured`, `call1`) per chapter; trimming the
   superseded path back out, if the extra `claude` calls' cost isn't worth
   it, is a separate call for whoever's driving the next eval run.
-- **Not yet done:** an actual `bin/translation_eval` run against 2-3 real
-  `idols-rewind` chapters to confirm the model itself (not just the
-  validator) produces exhaustive, correctly-ordered segmentation in
-  practice — the validator only proves the *check* works, exercised so far
-  against hand-built fixtures in `spec/services/pipeline/ruby/translation_eval_spec.rb`,
-  not a live model response. That real-chapter run is the actual gate before
-  starting Call 2, per this doc's sequencing note above.
+- **Live-run gate cleared 2026-07-30**, same day: `bin/translation_eval
+  idols-rewind 68 --out tmp/translation_eval` against the real `claude`
+  CLI/Opus. Chapter 68 → 52 passages, `passage_id` sequential 1–52,
+  `anchor_quote` concatenation reconstructed the source chapter exactly
+  (whitespace-normalized) — segmentation held up against a live model
+  response, not just the hand-built fixtures in
+  `spec/services/pipeline/ruby/translation_eval_spec.rb`. `localization_strategy.category`
+  distribution wasn't degenerate (behavioral 24, idiomatic 5,
+  demographic_voice 5, register_shift 4, tone_shift 4,
+  motif_reinterpretation 2, none 8) and `chapter_level_notes.risks` surfaced
+  11 substantive flags (a POV-ambiguity note, an untranslatable 선배님/선생님
+  honorific distinction, a profanity-register calibration call, a possible
+  dropped beat vs. the bible's own "laughs twice" note, among others) — the
+  kind of thing this pipeline exists to surface instead of silently
+  guessing. Chapters 74/75 were not run (session budget) — one clean chapter
+  was judged sufficient to clear this specific gate; a broader sample is
+  still worth doing before treating Call 1 as fully validated.
+- Output lives in `tmp/translation_eval/chapter_68/` (gitignored scratch,
+  not committed) for direct review.
+
+---
+
+## 2026-07-31 · Call 2 prompt builder shipped, eval wiring deferred
+
+`PromptBuilder.build_call2_system_prompt` and `.build_call2_user_message`
+(`app/services/pipeline/ruby/translate_batch/prompt_builder.rb`), scoped
+narrowly to the prompt design + specs given remaining session budget —
+**not** wired into `TranslationEval`/`bin/translation_eval`, and no live run
+against Call 1's chapter-68 output. That chaining (feed
+`tmp/translation_eval/chapter_68/call1.json` into Call 2, reassemble
+`localized_passages` into a full chapter, validate against the source) is
+the next session's starting point, not done here.
+
+- **`localized_translation` keyed by `passage_id`**, echoed from Call 1's
+  analysis per this doc's 2026-07-30 entry — explicitly told not to
+  re-segment or join on `anchor_quote`.
+- **`localization_strategy.notes` must be carried out, not just detected** —
+  same instruction pattern as the old single-call structured prompt's
+  cultural_dynamic/localization_strategy fields (docs/ROADMAP.md's
+  superseded entry), now operating on Call 1's richer per-passage output
+  instead of a flat per-chapter guess.
+- **Per-sentence-naturalness-over-motif-consistency instruction carried
+  forward verbatim** from `build_structured_system_prompt` — same Ch. 68
+  "air"/"tense air" finding that motivated it originally still applies here.
+- **`editorial_checks` is 5 booleans + `notes`** (voice_consistent,
+  emotional_arc_preserved, cultural_dynamic_enacted, idiomatic,
+  no_korean_shaped_syntax), explicitly told it's self-graded triage that
+  never gates anything downstream — matches this doc's 2026-07-30 warning
+  that self-grading is a known-weak pattern, not independent verification.
+  Test A/Test B (does the model follow its own stated strategy, does that
+  hold across a full chapter) are still unbuilt and still the only real
+  check on whether this call is working, not `editorial_checks`.
+- **`build_call2_user_message`** assembles the two-part user message
+  (Korean chapter + Call 1's analysis JSON, under distinct `#` headings) —
+  needed because, unlike Call 1's plain-Korean-text user message, Call 2
+  needs both the source and the prior call's structured output.
