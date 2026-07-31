@@ -132,6 +132,118 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
     end
   end
 
+  describe ".build_call1_system_prompt" do
+    def context(overrides = {})
+      described_class::TranslationContext.new(
+        **{
+          novel_info: "Genre: romance fantasy", translation_guidelines: "Be faithful.",
+          narrator_note: "Kang narrates dryly.", characters: "## Hyuk Kang\n- Role: protagonist",
+          cultural_phrases: "", locations: "", story: "", terminology: "", voice_calibration: ""
+        }.merge(overrides)
+      )
+    end
+
+    it "instructs the model to return a single JSON object with a passages array and chapter_level_notes" do
+      prompt = described_class.build_call1_system_prompt(context)
+
+      expect(prompt).to include('"passages"')
+      expect(prompt).to include('"chapter_level_notes"')
+      expect(prompt).to include("Respond with a single JSON object")
+    end
+
+    it "requires segmentation to be an exhaustive, ordered, non-overlapping partition of the whole chapter" do
+      prompt = described_class.build_call1_system_prompt(context)
+
+      expect(prompt).to include("exhaustive")
+      expect(prompt).to include("non-overlapping")
+      expect(prompt).to include("not just notable")
+    end
+
+    it "specifies passage_id as the join key and anchor_quote as verbatim source text" do
+      prompt = described_class.build_call1_system_prompt(context)
+
+      expect(prompt).to include('"passage_id"')
+      expect(prompt).to include('"anchor_quote"')
+      expect(prompt).to include("verbatim")
+    end
+
+    it "includes the per-passage analysis fields" do
+      prompt = described_class.build_call1_system_prompt(context)
+
+      expect(prompt).to include('"literal_meaning"')
+      expect(prompt).to include('"cultural_signals"')
+      expect(prompt).to include('"narrative_intent"')
+      expect(prompt).to include('"localization_strategy"')
+      expect(prompt).to include('"bible_entries_used"')
+    end
+
+    it "constrains localization_strategy.category to the controlled six-value taxonomy plus none" do
+      prompt = described_class.build_call1_system_prompt(context)
+
+      %w[behavioral idiomatic tone_shift register_shift motif_reinterpretation demographic_voice none].each do |value|
+        expect(prompt).to include(value)
+      end
+    end
+
+    it "scopes bible_entries_used to attribution only, not a content dump" do
+      prompt = described_class.build_call1_system_prompt(context)
+
+      expect(prompt).to include("bible_lookup")
+    end
+
+    it "instructs chapter_level_notes.risks to record suspected gaps instead of guessing silently" do
+      prompt = described_class.build_call1_system_prompt(context)
+
+      expect(prompt).to include('"risks"')
+      expect(prompt.downcase).to include("guess")
+    end
+
+    it "never emits the web_search sentence" do
+      expect(described_class.build_call1_system_prompt(context)).not_to include("web_search")
+    end
+
+    it "does not instruct translation — this call is analysis only" do
+      prompt = described_class.build_call1_system_prompt(context)
+
+      expect(prompt).not_to include("localized_translation")
+      expect(prompt).not_to include("literal_translation")
+    end
+
+    it "includes the same reference material as the single-pass prompt" do
+      call1 = described_class.build_call1_system_prompt(context)
+
+      expect(call1).to include("Genre: romance fantasy")
+      expect(call1).to include("Hyuk Kang")
+      expect(call1).to include("Character Bible")
+    end
+
+    it "omits reference sections that are empty or template-only" do
+      prompt = described_class.build_call1_system_prompt(context(characters: "", novel_info: ""))
+
+      expect(prompt).not_to include("Character Bible")
+    end
+
+    it "injects cultural_patterns content into its own section, separate from the shared reference material" do
+      prompt = described_class.build_call1_system_prompt(context, cultural_patterns: "Status-jockeying (기 싸움) notes here")
+
+      expect(prompt).to include("## Cultural Patterns")
+      expect(prompt).to include("Status-jockeying (기 싸움) notes here")
+    end
+
+    it "omits the Cultural Patterns section heading when no cultural_patterns content is given" do
+      prompt = described_class.build_call1_system_prompt(context)
+
+      expect(prompt).not_to include("## Cultural Patterns")
+    end
+
+    it "never leaks cultural_patterns content into the single-pass prompt" do
+      described_class.build_call1_system_prompt(context, cultural_patterns: "some pattern notes")
+      single_pass = described_class.build_system_prompt(context)
+
+      expect(single_pass).not_to include("some pattern notes")
+    end
+  end
+
   describe ".extract_narrator_note" do
     it "extracts the Narrator Note section when followed by another section" do
       novel_info = "# Title\n\n## Narrator Note\nSome note text.\nMore text.\n\n## Next Section\nOther stuff"

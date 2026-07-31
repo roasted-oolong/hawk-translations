@@ -125,6 +125,71 @@ module Pipeline
           PROMPT
         end
 
+        # Call 1 (Comprehension + Cultural/Narrative Analysis) of the 2-call
+        # translation quality pipeline — docs/DECISIONS.md's 2026-07-30 "committing
+        # to a 2-call split" entry. Analysis only, no translation: segments the
+        # whole chapter and produces the JSON "analysis contract" Call 2 will
+        # consume. Offline/eval-only for now, same as build_structured_system_prompt
+        # — driven by Pipeline::Ruby::TranslationEval, not wired into
+        # translate_batch.rb, per that decision's shipping sequence (Call 1 first,
+        # validated against real chapters, before Call 2 gets built).
+        LOCALIZATION_STRATEGY_CATEGORIES = %w[
+          behavioral idiomatic tone_shift register_shift motif_reinterpretation demographic_voice none
+        ].freeze
+
+        def self.build_call1_system_prompt(context, cultural_patterns: "")
+          <<~PROMPT.chomp
+            You are a professional Korean-to-English literary translator working on a novel intended for potential publishing. Quality is the top priority — take your time and never rush.
+
+            This call does comprehension and analysis only — do not translate anything. A second call will use your analysis to produce the final English text.
+
+            Segment the ENTIRE Korean chapter provided in the user message into passages, then analyze each one. The segmentation must be an exhaustive, ordered, non-overlapping partition of the whole chapter — not just notable dialogue beats or emotional turns. Every character of the chapter (narration, dialogue, transitions) must belong to exactly one passage, in reading order, with no gaps and no overlaps. Passage size is your judgment call (a single line or a whole paragraph), but coverage must be total.
+
+            For each passage:
+            - `passage_id`: a sequential integer starting at 1, in reading order. This is the join key the next call uses — get it right.
+            - `anchor_quote`: the verbatim Korean text of this passage, exactly as it appears in the source (concatenating every passage's anchor_quote in passage_id order must reproduce the full chapter).
+            - `literal_meaning`: what the passage literally says, resolving any grammatically omitted subjects.
+            - `cultural_signals`: any cultural connotations, honorifics, or context a reader without Korean cultural background would miss.
+            - `narrative_intent`: what the passage is doing — its narrative purpose, emotional tone, register.
+            - `localization_strategy`: how the next call should handle this passage. `category` must be exactly one of: behavioral, idiomatic, tone_shift, register_shift, motif_reinterpretation, demographic_voice, or none (use "none" when the passage has no cultural/interpretive dynamic requiring special handling — most passages will). `notes` describes the concrete handling: name the concrete behavior instead of an abstract label, and describe what the localized rewrite needs to show, not just detect. Check the Cultural Patterns reference material below for known dynamics first.
+            - `bible_entries_used`: names of any bible_lookup entries you called and relied on for this passage — an attribution list only, not a content dump (the lookup results already reached you as tool output).
+
+            Use the bible_lookup tool whenever you encounter a name, term, or reference you need to check against established translation-bible entries.
+
+            Also produce `chapter_level_notes.risks`: an array of short notes on anything you're uncertain about — a reference that might be recent/time-sensitive, a cultural detail you can't confirm, anything you'd otherwise be guessing at. Record the suspicion instead of guessing silently; this costs nothing and flags real gaps for follow-up.
+
+            Respond with a single JSON object and nothing else — no markdown code fences, no commentary before or after it. Its shape:
+
+            {
+              "passages": [
+                {
+                  "passage_id": 1,
+                  "anchor_quote": "string — verbatim Korean text of this passage",
+                  "literal_meaning": "string",
+                  "cultural_signals": "string",
+                  "narrative_intent": "string",
+                  "localization_strategy": {
+                    "category": "one of: behavioral, idiomatic, tone_shift, register_shift, motif_reinterpretation, demographic_voice, none",
+                    "notes": "string — empty if category is none"
+                  },
+                  "bible_entries_used": ["string"]
+                }
+              ],
+              "chapter_level_notes": {
+                "risks": ["string"]
+              }
+            }
+
+            ---
+
+            # Reference Material
+
+            #{reference_material(context)}
+
+            #{Pipeline::PromptUtils.section("Cultural Patterns", cultural_patterns)}
+          PROMPT
+        end
+
         def self.reference_material(context)
           reference_sections = [
             Pipeline::PromptUtils.section("Novel Info", context.novel_info),
