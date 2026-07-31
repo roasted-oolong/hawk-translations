@@ -5,14 +5,15 @@
 # Offline prototype harness for the translation quality pipeline idea in
 # docs/ROADMAP.md — CLI wrapper around Pipeline::Ruby::TranslationEval. Runs
 # the current single-pass prompt, the (superseded, kept for history)
-# structured (intent/literal/localized) prompt, and Call 1 of the committed
-# 2-call pipeline (docs/DECISIONS.md's 2026-07-30 entry) over a handful of
-# chapters, writing all outputs to disk for manual side-by-side comparison.
-# Call 1's JSON also gets a segmentation check (sequential passage_id,
-# anchor_quote concatenation reconstructs the source chapter) — this is the
-# validation step the 2026-07-30 decision names before Call 2 gets built.
-# Never touches translate_batch.rb, PipelineJob, or the chapters/ files it
-# evaluates.
+# structured (intent/literal/localized) prompt, and the committed 2-call
+# pipeline (docs/DECISIONS.md's 2026-07-30/2026-07-31 entries) over a
+# handful of chapters, writing all outputs to disk for manual side-by-side
+# comparison. Call 1's JSON gets a segmentation check (sequential
+# passage_id, anchor_quote concatenation reconstructs the source chapter);
+# Call 2 only runs when that passes, and gets a coverage check
+# (localized_passages covers Call 1's passage_id sequence exactly) plus a
+# reassembled localized_chapter.txt for direct review. Never touches
+# translate_batch.rb, PipelineJob, or the chapters/ files it evaluates.
 #
 # Usage:
 #   bin/translation_eval <novel_dir> <chapter_numbers...> [--out DIR]
@@ -73,11 +74,24 @@ results.each do |r|
     else
       "ok"
     end
+  call2_status =
+    if r.call2_error&.start_with?("skipped:")
+      r.call2_error
+    elsif r.call2_error
+      "FAILED — #{r.call2_error}"
+    elsif r.call2_valid_json == false
+      "ok (call succeeded, JSON invalid)"
+    elsif r.call2_coverage_error
+      "JSON ok, coverage FAILED — #{r.call2_coverage_error}"
+    else
+      "ok"
+    end
 
   puts "Chapter #{r.number}:"
   puts "  single_pass: #{single_pass_status}"
   puts "  structured:  #{structured_status}"
   puts "  call1:       #{call1_status}"
+  puts "  call2:       #{call2_status}"
 end
 
 puts

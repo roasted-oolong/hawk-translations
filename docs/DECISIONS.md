@@ -1415,3 +1415,61 @@ the next session's starting point, not done here.
   (Korean chapter + Call 1's analysis JSON, under distinct `#` headings) —
   needed because, unlike Call 1's plain-Korean-text user message, Call 2
   needs both the source and the prior call's structured output.
+
+---
+
+## 2026-07-31 · Call 1 → Call 2 chaining wired, live-validated
+
+`Pipeline::Ruby::TranslationEval#run_call2` (plus `bin/translation_eval`
+reporting) closes the gap this doc's previous entry left open: Call 2 now
+actually consumes Call 1's analysis instead of sitting unwired.
+
+- **Chaining only happens when Call 1 cleared its own gate** — `run_call2`
+  is skipped (recorded as `call2_error: "skipped: Call 1 did not produce
+  valid, cleanly-segmented analysis"`) unless Call 1 returned valid JSON
+  with no segmentation error. There's no sound analysis to hand Call 2
+  otherwise.
+- **Coverage check, not a second segmentation check** — Call 2 is told to
+  echo Call 1's `passage_id` rather than re-derive it from `anchor_quote`
+  (previous entry), so "validate against the source" here means
+  `validate_call2_coverage`: `localized_passages`' `passage_id` sequence
+  must equal Call 1's exactly, order included (reassembly is a plain
+  concatenation, so order matters as much as set membership). A dropped,
+  duplicated, or reordered id fails this by construction.
+- **Reassembly**: when coverage passes, `chapter_dir/localized_chapter.txt`
+  is written by concatenating `localized_translation` in order — the
+  "reassemble into a full chapter" step this doc's previous entry named as
+  unstarted.
+- **Live-run gate cleared same day** against real Chapter 68, chaining a
+  fresh Call 1 run into Call 2 (not the stale 52-passage `call1.json` from
+  the 2026-07-30 run — this run resegmented to 63 passages, a reminder that
+  Call 1's segmentation isn't deterministic run-to-run, only internally
+  consistent within a run). `localized_passages`' 63 ids matched Call 1's
+  63 exactly, in order — coverage held against a live model response, not
+  just the hand-built fixtures in `translation_eval_spec.rb`.
+  `localization_strategy.category` spread stayed non-degenerate (behavioral
+  17, idiomatic 8, tone_shift 8, register_shift 8, demographic_voice 7,
+  motif_reinterpretation 4, none 11) and `chapter_level_notes.risks` surfaced
+  9 flags.
+- **New finding, not fixed this pass**: naive concatenation produces missing
+  paragraph breaks at passage boundaries — `localized_translation` isn't
+  guaranteed to carry the whitespace/newline that would separate it from
+  the next passage, so `localized_chapter.txt` occasionally reads like
+  `"...why I wasn't getting out."Hee-yeon sat..."` where two passages abut
+  with no space. This breaks the Call 2 prompt's own "no gaps" requirement
+  in a formatting sense, not a content sense. Fixing it (either a prompt
+  instruction to end each passage cleanly, or a join-time heuristic) is
+  next-session scope, not done here.
+- **`editorial_checks` came back all-`true` across all 63 passages, all
+  five booleans** — zero self-flagged issues, versus Call 1's 9
+  chapter-level risk flags on the same chapter. Consistent with this doc's
+  standing warning that `editorial_checks` is self-graded triage, not
+  independent verification: a check that never fires isn't yet evidence
+  it's working. Still not gating anything downstream, per design.
+- Chapters 74/75 still not run through the 2-call chain — one clean chapter
+  was judged sufficient to clear this specific wiring gate, same reasoning
+  as the 2026-07-30 Call 1 gate. A broader sample, Test A/Test B, and the
+  paragraph-break finding above are the open items before this pipeline is
+  closer to production-ready.
+- Output lives in `tmp/translation_eval/chapter_68/` (gitignored scratch,
+  including the new `call2.json`/`localized_chapter.txt`), not committed.

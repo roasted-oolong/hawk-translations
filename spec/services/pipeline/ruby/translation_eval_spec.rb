@@ -3,12 +3,13 @@ require "json"
 
 # Offline-only tool (docs/ROADMAP.md's translation quality pipeline note):
 # runs the current single-pass prompt, the (superseded, kept for history)
-# single-call structured prompt, and Call 1 of the committed 2-call pipeline
-# (docs/DECISIONS.md's 2026-07-30 entry) over the same chapters, side by
-# side, so a human can judge quality/cost/JSON-reliability — and, for Call 1,
-# segmentation exhaustiveness/passage_id stability — before any multi-call
-# pipeline goes into production. Not wired into translate_batch or any
-# TranslationJob — takes a plain directory, not a Novel record.
+# single-call structured prompt, and the committed 2-call pipeline
+# (docs/DECISIONS.md's 2026-07-30/2026-07-31 entries) over the same
+# chapters, side by side, so a human can judge quality/cost/JSON-reliability
+# — segmentation exhaustiveness/passage_id stability for Call 1, passage_id
+# coverage for Call 2 — before any multi-call pipeline goes into production.
+# Not wired into translate_batch or any TranslationJob — takes a plain
+# directory, not a Novel record.
 RSpec.describe Pipeline::Ruby::TranslationEval do
   def fake_claude(dir, body)
     path = File.join(dir, "claude")
@@ -32,12 +33,14 @@ RSpec.describe Pipeline::Ruby::TranslationEval do
     File.write(File.join(novel_dir, "chapters", "Chapter #{num} (Korean).txt"), text)
   end
 
-  # All three calls for one chapter share the same stdin (the Korean
-  # source), so responses are keyed on [marker, variant] and the variant is
-  # read back off the --system-prompt-file content itself: Call 1 is the
-  # only prompt with "chapter_level_notes", the (superseded) structured
-  # prompt is the only remaining one with "Respond with a single JSON
-  # object", everything else is the single-pass prompt.
+  # All four calls for one chapter share the same stdin (the Korean source
+  # for Call 1 and both single-call prompts; Korean + Call 1's analysis JSON
+  # for Call 2), so responses are keyed on [marker, variant] and the variant
+  # is read back off the --system-prompt-file content itself: Call 1 is the
+  # only prompt with "chapter_level_notes", Call 2 is the only remaining one
+  # with "localized_passages", the (superseded) structured prompt is the
+  # only remaining one with "Respond with a single JSON object", everything
+  # else is the single-pass prompt.
   def scripted_claude(bin_dir, responses_by_marker_and_variant)
     fake_claude(bin_dir, <<~RUBY)
       require "json"
@@ -47,6 +50,8 @@ RSpec.describe Pipeline::Ruby::TranslationEval do
       variant =
         if prompt.include?('"chapter_level_notes"')
           "call1"
+        elsif prompt.include?('"localized_passages"')
+          "call2"
         elsif prompt.include?("Respond with a single JSON object")
           "structured"
         else
@@ -83,10 +88,18 @@ RSpec.describe Pipeline::Ruby::TranslationEval do
         passages: [ { passage_id: 1, anchor_quote: "챕터 1 한국어" } ],
         chapter_level_notes: { risks: [] }
       }
+      call2_payload = {
+        localized_passages: [
+          { passage_id: 1, localized_translation: "Chapter 1 English",
+            editorial_checks: { voice_consistent: true, emotional_arc_preserved: true,
+                                 cultural_dynamic_enacted: true, idiomatic: true, no_korean_shaped_syntax: true, notes: "" } }
+        ]
+      }
       bin = scripted_claude(bin_dir, {
         [ "챕터 1", "single_pass" ] => { is_error: false, result: "single pass one" },
         [ "챕터 1", "structured" ]  => { is_error: false, result: structured_payload.to_json },
-        [ "챕터 1", "call1" ]       => { is_error: false, result: call1_payload.to_json }
+        [ "챕터 1", "call1" ]       => { is_error: false, result: call1_payload.to_json },
+        [ "챕터 1", "call2" ]       => { is_error: false, result: call2_payload.to_json }
       })
 
       results = described_class.call(
@@ -103,11 +116,16 @@ RSpec.describe Pipeline::Ruby::TranslationEval do
       expect(results.first.call1_error).to be_nil
       expect(results.first.call1_valid_json).to eq(true)
       expect(results.first.call1_segmentation_error).to be_nil
+      expect(results.first.call2_error).to be_nil
+      expect(results.first.call2_valid_json).to eq(true)
+      expect(results.first.call2_coverage_error).to be_nil
 
       chapter_dir = File.join(@output_dir, "chapter_1")
       expect(File.read(File.join(chapter_dir, "single_pass.txt"))).to eq("single pass one")
       expect(JSON.parse(File.read(File.join(chapter_dir, "structured.json")))["localized_translation"]).to eq("localized one")
       expect(JSON.parse(File.read(File.join(chapter_dir, "call1.json")))["chapter_level_notes"]).to eq({ "risks" => [] })
+      expect(JSON.parse(File.read(File.join(chapter_dir, "call2.json")))["localized_passages"].first["passage_id"]).to eq(1)
+      expect(File.read(File.join(chapter_dir, "localized_chapter.txt"))).to eq("Chapter 1 English")
     end
   end
 
@@ -170,10 +188,12 @@ RSpec.describe Pipeline::Ruby::TranslationEval do
 
     Dir.mktmpdir do |bin_dir|
       call1_payload = { passages: [ { passage_id: 1, anchor_quote: "챕터 1 한국어" } ], chapter_level_notes: { risks: [] } }
+      call2_payload = { localized_passages: [ { passage_id: 1, localized_translation: "x", editorial_checks: {} } ] }
       bin = scripted_claude(bin_dir, {
         [ "챕터 1", "single_pass" ] => { is_error: false, result: "single pass one" },
         [ "챕터 1", "structured" ]  => { is_error: false, result: "not json at all" },
-        [ "챕터 1", "call1" ]       => { is_error: false, result: call1_payload.to_json }
+        [ "챕터 1", "call1" ]       => { is_error: false, result: call1_payload.to_json },
+        [ "챕터 1", "call2" ]       => { is_error: false, result: call2_payload.to_json }
       })
 
       results = described_class.call(
@@ -198,13 +218,17 @@ RSpec.describe Pipeline::Ruby::TranslationEval do
     Dir.mktmpdir do |bin_dir|
       call1_payload_1 = { passages: [ { passage_id: 1, anchor_quote: "챕터 1 한국어" } ], chapter_level_notes: { risks: [] } }
       call1_payload_2 = { passages: [ { passage_id: 1, anchor_quote: "챕터 2 한국어" } ], chapter_level_notes: { risks: [] } }
+      call2_payload_1 = { localized_passages: [ { passage_id: 1, localized_translation: "one", editorial_checks: {} } ] }
+      call2_payload_2 = { localized_passages: [ { passage_id: 1, localized_translation: "two", editorial_checks: {} } ] }
       bin = scripted_claude(bin_dir, {
         [ "챕터 1", "single_pass" ] => { is_error: true, subtype: "boom", result: "failed" },
         [ "챕터 1", "structured" ]  => { is_error: false, result: { intent: {}, literal_translation: "l", localized_translation: "loc" }.to_json },
         [ "챕터 1", "call1" ]       => { is_error: false, result: call1_payload_1.to_json },
+        [ "챕터 1", "call2" ]       => { is_error: false, result: call2_payload_1.to_json },
         [ "챕터 2", "single_pass" ] => { is_error: false, result: "single pass two" },
         [ "챕터 2", "structured" ]  => { is_error: false, result: { intent: {}, literal_translation: "l2", localized_translation: "loc2" }.to_json },
-        [ "챕터 2", "call1" ]       => { is_error: false, result: call1_payload_2.to_json }
+        [ "챕터 2", "call1" ]       => { is_error: false, result: call1_payload_2.to_json },
+        [ "챕터 2", "call2" ]       => { is_error: false, result: call2_payload_2.to_json }
       })
 
       results = described_class.call(
@@ -228,10 +252,14 @@ RSpec.describe Pipeline::Ruby::TranslationEval do
 
   describe "Call 1 segmentation validation" do
     def responses_with_call1(korean_text, call1_payload)
+      call2_payload = {
+        localized_passages: call1_payload[:passages].map { |p| { passage_id: p[:passage_id], localized_translation: "x", editorial_checks: {} } }
+      }
       {
         [ "챕터", "single_pass" ] => { is_error: false, result: "single pass" },
         [ "챕터", "structured" ]  => { is_error: false, result: { intent: {}, literal_translation: "l", localized_translation: "loc" }.to_json },
-        [ "챕터", "call1" ]       => { is_error: false, result: call1_payload.to_json }
+        [ "챕터", "call1" ]       => { is_error: false, result: call1_payload.to_json },
+        [ "챕터", "call2" ]       => { is_error: false, result: call2_payload.to_json }
       }
     end
 
@@ -256,6 +284,8 @@ RSpec.describe Pipeline::Ruby::TranslationEval do
 
         expect(results.first.call1_valid_json).to eq(true)
         expect(results.first.call1_segmentation_error).to be_nil
+        expect(results.first.call2_error).to be_nil
+        expect(results.first.call2_coverage_error).to be_nil
       end
     end
 
@@ -369,6 +399,122 @@ RSpec.describe Pipeline::Ruby::TranslationEval do
         chapter_dir = File.join(@output_dir, "chapter_1")
         expect(File.read(File.join(chapter_dir, "call1.raw.txt"))).to eq("not json at all")
         expect(File.exist?(File.join(chapter_dir, "call1.json"))).to eq(false)
+        expect(results.first.call2_error).to eq("skipped: Call 1 did not produce valid, cleanly-segmented analysis")
+      end
+    end
+  end
+
+  describe "Call 2 chaining and coverage validation" do
+    it "skips Call 2 when Call 1's segmentation failed, without calling claude for it" do
+      novel_dir = build_novel_dir(@root)
+      write_korean_source(novel_dir, 1, "챕터 1 한국어")
+
+      Dir.mktmpdir do |bin_dir|
+        # Dropped "한" — a gap, so segmentation fails and Call 2 must never fire.
+        call1_payload = { passages: [ { passage_id: 1, anchor_quote: "챕터 1" }, { passage_id: 2, anchor_quote: "국어" } ], chapter_level_notes: { risks: [] } }
+        bin = scripted_claude(bin_dir, {
+          [ "챕터 1", "single_pass" ] => { is_error: false, result: "single pass" },
+          [ "챕터 1", "structured" ]  => { is_error: false, result: { intent: {}, literal_translation: "l", localized_translation: "loc" }.to_json },
+          [ "챕터 1", "call1" ]       => { is_error: false, result: call1_payload.to_json }
+          # Deliberately no "call2" entry — if TranslationEval called it anyway, scripted_claude would raise.
+        })
+
+        results = described_class.call(
+          novel_dir: novel_dir, chapter_numbers: [ 1 ],
+          output_dir: @output_dir, config: config_for(bin)
+        )
+
+        expect(results.first.call1_segmentation_error).to include("gap or overlap")
+        expect(results.first.call2_error).to eq("skipped: Call 1 did not produce valid, cleanly-segmented analysis")
+        expect(results.first.call2_valid_json).to be_nil
+        expect(File.exist?(File.join(@output_dir, "chapter_1", "call2.json"))).to eq(false)
+      end
+    end
+
+    it "flags a coverage mismatch when localized_passages drops a passage_id from Call 1" do
+      novel_dir = build_novel_dir(@root)
+      write_korean_source(novel_dir, 1, "챕터 1 한국어")
+
+      Dir.mktmpdir do |bin_dir|
+        call1_payload = {
+          passages: [ { passage_id: 1, anchor_quote: "챕터 1 " }, { passage_id: 2, anchor_quote: "한국어" } ],
+          chapter_level_notes: { risks: [] }
+        }
+        call2_payload = { localized_passages: [ { passage_id: 1, localized_translation: "one", editorial_checks: {} } ] }
+        bin = scripted_claude(bin_dir, {
+          [ "챕터 1", "single_pass" ] => { is_error: false, result: "single pass" },
+          [ "챕터 1", "structured" ]  => { is_error: false, result: { intent: {}, literal_translation: "l", localized_translation: "loc" }.to_json },
+          [ "챕터 1", "call1" ]       => { is_error: false, result: call1_payload.to_json },
+          [ "챕터 1", "call2" ]       => { is_error: false, result: call2_payload.to_json }
+        })
+
+        results = described_class.call(
+          novel_dir: novel_dir, chapter_numbers: [ 1 ],
+          output_dir: @output_dir, config: config_for(bin)
+        )
+
+        expect(results.first.call2_valid_json).to eq(true)
+        expect(results.first.call2_coverage_error).to include("missing passage_id(s) [2]")
+        expect(File.exist?(File.join(@output_dir, "chapter_1", "localized_chapter.txt"))).to eq(false)
+      end
+    end
+
+    it "reassembles localized_translation into a full chapter in passage_id order when coverage matches" do
+      novel_dir = build_novel_dir(@root)
+      write_korean_source(novel_dir, 1, "챕터 1 한국어")
+
+      Dir.mktmpdir do |bin_dir|
+        call1_payload = {
+          passages: [ { passage_id: 1, anchor_quote: "챕터 1 " }, { passage_id: 2, anchor_quote: "한국어" } ],
+          chapter_level_notes: { risks: [] }
+        }
+        call2_payload = {
+          localized_passages: [
+            { passage_id: 1, localized_translation: "Chapter one, ", editorial_checks: {} },
+            { passage_id: 2, localized_translation: "Korean.", editorial_checks: {} }
+          ]
+        }
+        bin = scripted_claude(bin_dir, {
+          [ "챕터 1", "single_pass" ] => { is_error: false, result: "single pass" },
+          [ "챕터 1", "structured" ]  => { is_error: false, result: { intent: {}, literal_translation: "l", localized_translation: "loc" }.to_json },
+          [ "챕터 1", "call1" ]       => { is_error: false, result: call1_payload.to_json },
+          [ "챕터 1", "call2" ]       => { is_error: false, result: call2_payload.to_json }
+        })
+
+        results = described_class.call(
+          novel_dir: novel_dir, chapter_numbers: [ 1 ],
+          output_dir: @output_dir, config: config_for(bin)
+        )
+
+        expect(results.first.call2_coverage_error).to be_nil
+        expect(File.read(File.join(@output_dir, "chapter_1", "localized_chapter.txt"))).to eq("Chapter one, Korean.")
+      end
+    end
+
+    it "saves invalid Call 2 JSON raw instead of crashing the run" do
+      novel_dir = build_novel_dir(@root)
+      write_korean_source(novel_dir, 1, "챕터 1 한국어")
+
+      Dir.mktmpdir do |bin_dir|
+        call1_payload = { passages: [ { passage_id: 1, anchor_quote: "챕터 1 한국어" } ], chapter_level_notes: { risks: [] } }
+        bin = scripted_claude(bin_dir, {
+          [ "챕터 1", "single_pass" ] => { is_error: false, result: "single pass" },
+          [ "챕터 1", "structured" ]  => { is_error: false, result: { intent: {}, literal_translation: "l", localized_translation: "loc" }.to_json },
+          [ "챕터 1", "call1" ]       => { is_error: false, result: call1_payload.to_json },
+          [ "챕터 1", "call2" ]       => { is_error: false, result: "not json at all" }
+        })
+
+        results = described_class.call(
+          novel_dir: novel_dir, chapter_numbers: [ 1 ],
+          output_dir: @output_dir, config: config_for(bin)
+        )
+
+        expect(results.first.call2_valid_json).to eq(false)
+        expect(results.first.call2_error).to include("invalid JSON")
+
+        chapter_dir = File.join(@output_dir, "chapter_1")
+        expect(File.read(File.join(chapter_dir, "call2.raw.txt"))).to eq("not json at all")
+        expect(File.exist?(File.join(chapter_dir, "call2.json"))).to eq(false)
       end
     end
   end

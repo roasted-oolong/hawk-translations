@@ -623,12 +623,22 @@ spread, 11 useful `chapter_level_notes.risks` flags. Chapters 74/75 not yet
 run.
 
 **Call 2 prompt builder shipped 2026-07-31** (see `docs/DECISIONS.md`'s
-2026-07-31 entry): `PromptBuilder.build_call2_system_prompt` +
+2026-07-31 entries): `PromptBuilder.build_call2_system_prompt` +
 `.build_call2_user_message` — `localized_translation`/`editorial_checks` per
-passage, keyed on `passage_id` from Call 1's analysis. **Not yet wired** into
-`TranslationEval`/`bin/translation_eval`, and no live run chaining Call 1 →
-Call 2 has happened. That chaining plus a live run is the next gate before
-this pipeline is anywhere near production-ready.
+passage, keyed on `passage_id` from Call 1's analysis.
+
+**Chained into `TranslationEval` and live-validated, also 2026-07-31** (see
+`docs/DECISIONS.md`'s same-day "Call 1 → Call 2 chaining wired" entry):
+`run_call2` feeds Call 1's analysis into Call 2 whenever Call 1 clears its
+own segmentation gate, checks `localized_passages`' `passage_id` coverage
+against Call 1's exactly, and reassembles a `localized_chapter.txt`. Live
+Chapter 68 run: 63/63 passages covered in order, non-degenerate strategy
+spread, 9 chapter-level risk flags. **Known gap, not fixed yet**: naive
+concatenation drops paragraph breaks at passage boundaries in the
+reassembled chapter — a prompt or join-time fix is next-session scope.
+`editorial_checks` came back all-`true` on all 63 passages — a self-grading
+result that's not yet trustworthy evidence of anything (see the doc entry).
+Chapters 74/75, Test A, and Test B are still unbuilt/unrun.
 
 User proposal (2026-07-26): translate_batch's single-pass prompt was producing
 literal, sometimes unnatural output (Korean metonymy translated word-for-word,
