@@ -1221,3 +1221,106 @@ is proven and stays valid; the 4 code changes above (`Pipeline::ClaudeVision`
 content-type branch, `Pipeline::Ruby::OcrChapter` loop restructure, the stale
 controller comment, a spec) are **not scheduled** — revisit only when a real
 PDF upload need shows up, not proactively.
+
+---
+
+## 2026-07-30 · Translation quality pipeline: committing to a 2-call split
+
+Supersedes this doc's own earlier "Translation Quality Pipeline" decision
+(`docs/ROADMAP.md`'s Future entry of the same name), which held the line at
+one call and said only split into 2 if Test B specifically demonstrated
+drift. **That evidence-gated approach is explicitly abandoned for this
+feature** — Test A/Test B were never built, and the split below is committed
+on product-design grounds (clean separation of responsibilities across the
+call boundary) instead. Not a violation of the "don't split without
+evidence" discipline so much as a conscious decision to stop waiting for it
+here; the discipline itself isn't repudiated, see the AI-Generated Bible
+Entry and other still-single-call Future items in `docs/ROADMAP.md`.
+
+**Call 1 — Comprehension + Cultural/Narrative Analysis.** Segments the
+chapter into passages, extracts literal meaning, cultural signals, narrative
+intent, and a localization strategy per passage (from a controlled six-value
+taxonomy: `behavioral | idiomatic | tone_shift | register_shift |
+motif_reinterpretation | demographic_voice`), grounded via `bible_lookup`
+(existing R2/R3 MCP tool) and the new `web_lookup` tool (see below). Output
+is a JSON "analysis contract" consumed whole by Call 2.
+
+- **Segmentation must be an exhaustive, ordered, non-overlapping partition
+  of the entire chapter** — not just "notable" dialogue beats/emotional
+  turns. This was an open question this session; resolved so that Call 2's
+  `localized_passages` can be concatenated in reading order to produce the
+  finished chapter, rather than needing a separate reassembly mechanism.
+  Prompt instructions and `bin/translation_eval` checks both need to enforce
+  this — gaps/overlaps are a correctness bug, not a quality nit.
+- **Join key is `passage_id` (sequential integer), not `anchor_quote`
+  string-matching.** `anchor_quote` stays as a human-readable pointer for
+  debugging/review UI only; joining Call 1 → Call 2 on a Korean text
+  snippet is fragile since Call 2 may restate it with different
+  whitespace/punctuation. Call 2 must echo `passage_id` per passage.
+- **`bible_entries_used` stays a lightweight attribution array (entry
+  names), not a content dump.** `bible_lookup` is a model-invoked MCP tool
+  call inside the same `claude` CLI invocation (see
+  `app/services/pipeline/skills/bible_lookup.rb`,
+  `app/services/pipeline/mcp/bible_lookup_tool.rb`) — results already reach
+  the model as tool-response content mid-generation. Re-serializing that
+  content into the JSON schema would just duplicate what already informed
+  `cultural_signals`/`localization_strategy`.
+
+**Call 2 — Purpose-Preserving Rewrite + Editorial Sweep.** Produces
+`localized_translation` per passage (keyed by `passage_id`), enacting Call
+1's chosen strategy, plus a per-passage `editorial_checks` block (voice
+consistency, emotional arc, cultural dynamic enacted, idiomaticity, no
+Korean-shaped syntax).
+
+- **`editorial_checks` is a self-graded triage/UX signal, not independent
+  verification, and must never gate anything.** Call 2 grades its own
+  rewrite in the same response that produced it — a known-weak pattern
+  (models tend to self-report pass). It's useful for flagging rows for
+  human review in the UI. It is explicitly *not* a substitute for
+  Test A/Test B (does the model follow its own stated strategy at all, and
+  does adherence hold across a full chapter) — those still need to be built
+  as an independent offline eval, checking `localized_translation` content
+  against `localization_strategy.category`, before either can be trusted as
+  validation.
+
+**web_lookup — new MCP skill, scoped to recency, not general cultural
+confirmation.** `bible_lookup` only knows what's been documented for this
+novel; the model's own training knowledge already covers most general
+cultural/demographic questions reasonably (untested assumption — worth
+checking via eval once Call 1 ships bible_lookup-only, per the note below).
+The gap with no substitute is **recent events, current slang, or cultural
+phenomena that may postdate the model's training** — a case where a model
+can be confidently wrong rather than visibly blank, which eval-by-omission
+can't catch. `web_lookup`'s tool description should explicitly scope to
+that: recent/time-sensitive references only, not general background
+`bible_lookup` or the model's own knowledge already cover. Same per-passage
+grounding discipline as `bible_lookup` — check before committing that
+passage's fields, not as a batch pass. If uncertain and the lookup doesn't
+resolve it, the model should still record the suspicion in
+`chapter_level_notes.risks` rather than guess silently — costs nothing,
+already in the schema, and gives a frequency signal from real chapters
+before commmitting to a search backend.
+
+- **Mechanically:** same 4-piece pattern as `bible_lookup` —
+  `Pipeline::Skills::WebLookup` (includes `Pipeline::Skill`), thin
+  `Pipeline::Mcp::WebLookupTool < MCP::Tool` adapter, registered in
+  `bin/mcp_skill_bridge`'s `tools:` array alongside `BibleLookupTool`.
+- **Backend is still unresolved — first thing to decide when building
+  starts, not before.** `Pipeline::ClaudeCode` invokes the CLI with
+  `--tools ""` plus `--strict-mcp-config` (`app/services/pipeline/claude_code.rb:96,98`)
+  — nothing is available to the model except what's explicitly registered
+  as an MCP tool, so there's no free hosted-search shortcut in this setup
+  as configured today. Two paths, unresolved: a third-party search API (own
+  key/billing/rate limits, separate from the Claude subscription this
+  project otherwise consolidates all pipeline cost onto — see this doc's
+  2026-07-30 PDF OCR entry for the same tension on OCR) vs. Anthropic's own
+  hosted `web_search` server tool, if it can be enabled and billed through
+  the CLI's existing subscription auth (unverified — check before assuming
+  either way).
+
+**Sequencing:** ship Call 1 with `bible_lookup` only first, validate
+segmentation exhaustiveness/`passage_id` stability via `bin/translation_eval`
+against 2-3 real chapters, *then* build Call 2, *then* build `web_lookup`
+once real chapter data shows how often recency gaps actually come up. Watch
+JSON/token size on long chapters at the same time (exhaustive per-passage
+segmentation could get large) — flagged, not yet measured.
