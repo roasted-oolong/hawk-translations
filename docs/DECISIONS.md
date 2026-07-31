@@ -1180,3 +1180,44 @@ this date. Stage 1 for those five is effectively satisfied; Stage 1.5's
 negative inventory still needs to actually pass before Stage 2 proceeds.
 This is a documentation update only — Stage 2 (deleting Python) was not
 run as part of this decision.
+
+---
+
+## 2026-07-30 · PDF OCR gap closes on Claude, not a second model
+
+Chapter photo-scan upload has advertised single-PDF support since the PaddleOCR
+era, but every PDF upload has silently failed since the 2026-07-15 switch to
+Tesseract and then the 2026-07-23 switch to Claude vision — neither backend
+ever gained PDF handling (see `docs/DECISIONS.md`'s 2026-07-23 entry and
+[[hawk_translations_pdf_ocr_broken]]). Considered Baidu's Unlimited-OCR (a
+local 3B VLM with native PDF support) as the fix.
+
+**Decision: extend the existing `claude -p` CLI-based OCR pipeline instead of
+adopting a second model.** Verified live: the Messages API's `document`
+content block (`{"type":"document","source":{"type":"base64",
+"media_type":"application/pdf",...}}`) works over the CLI's
+`--input-format stream-json` exactly like the `image` block
+`Pipeline::ClaudeVision` already sends — same subscription-OAuth billing, no
+new tool permissions, no architecture change. Smoke-tested against a real
+staged PDF (`spec/fixtures/files/sample.pdf`) through the actual `claude`
+binary: accepted, `is_error: false`, correctly read the page. Fix is
+additive to `Pipeline::ClaudeVision`/`Pipeline::Ruby::OcrChapter` — branch on
+content type, PDF path builds a `document` block instead of looping
+`image` blocks per page.
+
+**Why not Unlimited-OCR:** it would have solved the PDF gap too (native PDF
+rasterization, MIT license, small enough to run locally on this box), but the
+user's explicit priority right now is consolidating every pipeline cost onto
+one model — Claude, via the existing subscription — not adding a second,
+non-Claude model. Once the same-model fix was confirmed to work, there was no
+remaining reason to introduce Unlimited-OCR. Not ruled out forever: if photo
+(non-PDF) OCR quality or cost against Claude vision ever becomes a real
+problem, that's a separate, independent question from the PDF gap and can be
+revisited on its own terms — nothing here forecloses it.
+
+**Deprioritized 2026-07-30, same session: only photo (JPEG/PNG/WebP) uploads
+are actually in use right now — PDF upload isn't a live need.** Fix mechanism
+is proven and stays valid; the 4 code changes above (`Pipeline::ClaudeVision`
+content-type branch, `Pipeline::Ruby::OcrChapter` loop restructure, the stale
+controller comment, a spec) are **not scheduled** — revisit only when a real
+PDF upload need shows up, not proactively.
