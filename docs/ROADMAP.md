@@ -474,37 +474,16 @@ decided here.
 
 ---
 
-## Future — Auto-run Bible Build After Manual Review
+## Future — Auto-run Bible Build After Manual Review — SUPERSEDED 2026-07-30
 
-User idea (2026-07-26): once a chapter's translation is manually reviewed
-(`reviewed` status), automatically trigger a `bible_build` run for it instead of
-requiring a manual trip to the Jobs page. Distinct from `post_translation_review`,
-which the user asked to confirm isn't the same feature:
-
-- **`bible_build`** re-runs the *preread* extraction (new characters/terms/etc.)
-  over chapters that are **already translated** — same underlying scan as `preread`,
-  just against translated content instead of untranslated, for backfilling bible
-  data in bulk (`run_bible_build.py`'s own docstring: "rebuild bible entries from
-  existing content").
-- **`post_translation_review`** reviews **one** just-translated chapter specifically
-  for consistency against the existing bible (voice drift, naming) and proposes
-  edits to existing entries — a QA pass, not an extraction pass.
-
-They're complementary, not duplicates: bible_build finds *new* entries from content
-review already covers for existing-entry *drift*. Auto-triggering bible_build after
-review is a reasonable idea but needs its own scope before building:
-- Per-chapter (on that one chapter reaching `reviewed`) or batched (periodically,
-  or on some larger unit like "novel has N newly-reviewed chapters")?
-- Cost/frequency tradeoff — bible_build is a full `claude` CLI call per batch; firing
-  it on every single chapter review may be wasteful compared to batching.
-- Should `post_translation_review` also auto-trigger at the same point, or only
-  bible_build? (An initial chapter 65 report of missed characters/bad names turned
-  out to be user error — preread's results weren't reviewed before translating, not
-  a pipeline bug — so no known gap to resolve here beyond the trigger-timing
-  question itself.)
-
-Not scoped further than this note — needs a decision on the questions above before
-a design pass.
+Superseded, not built: `bible_build` and `post_translation_review` are being
+sunset from the UI (disable-only — see `docs/DECISIONS.md`'s 2026-07-30
+entry) in favor of the inline bible-entry model described below under
+"Add Bible Entry From Korean Text, Auto-Correct Existing Translations" and
+"Find and Replace Across Chapters." This note's original content (the
+distinction between the two job types, and the per-chapter-vs-batched
+auto-trigger question) is kept for history but is no longer the direction —
+do not build the auto-trigger described here.
 
 ---
 
@@ -569,24 +548,45 @@ For new novels, `poc_user_id` should default to `current_user` at creation time.
 
 ## Future — Find and Replace Across Chapters
 
-User idea (2026-07-26): a word-processor-style find-and-replace, but scoped across
+User idea (2026-07-26, tied to the bible-entry-creation flow above as of
+2026-07-30): a word-processor-style find-and-replace, but scoped across
 a novel's chapters rather than one document — likely needed for both Korean source
-and English translated text. Not scoped yet: single-chapter vs. cross-chapter vs.
-whole-novel scope, preview-before-apply, and interaction with already-`reviewed`
-chapters (does a replace reopen review status?).
+and English translated text. As of 2026-07-30 this is one of the two candidate
+mechanisms (alongside targeted re-translation) for propagating a new/corrected
+bible entry to every chapter where the old rendering already appears — see
+"Add Bible Entry From Korean Text" above. Not scoped yet: single-chapter vs.
+cross-chapter vs. whole-novel scope, preview-before-apply, and interaction with
+already-`reviewed` chapters (does a replace reopen review status?).
 
 ---
 
 ## Future — Add Bible Entry From Korean Text, Auto-Correct Existing Translations
 
-User idea (2026-07-26): let a user select/highlight Korean text directly (e.g. a
-name) and create a bible entry from it on the spot, then have the app find every
-place that term already appears in English translated output and correct it
-in-place to match the new entry — rather than the entry only affecting *future*
-translation calls. Not scoped yet: how "find relevant examples" matches loosely
-(a name can be transliterated multiple ways before an entry pins it down), and
-whether corrections apply automatically or go through a review step first (existing
-precedent leans toward human review — see R5's bible-review gating).
+User idea (2026-07-26, elevated to `bible_build`/`post_translation_review`'s
+replacement 2026-07-30 — see `docs/DECISIONS.md`): let a user select/highlight
+Korean text directly (e.g. a name) and create a bible entry from it on the spot,
+then have the app find every place that term already appears in English
+translated output and correct it in-place to match the new entry — rather than
+the entry only affecting *future* translation calls. Not scoped yet: how "find
+relevant examples" matches loosely (a name can be transliterated multiple ways
+before an entry pins it down), and whether corrections apply automatically or
+go through a review step first (existing precedent leans toward human review —
+see R5's bible-review gating).
+
+**2026-07-30 refinement (two entry points into the same feature, both from the
+translation/review screen, not a separate job):**
+- **English-first:** translator selects a mistranslated/awkward English word
+  in a chapter they're translating or reviewing, creates a bible entry from
+  it directly at that point.
+- **Korean-first:** translator selects the Korean source text and the app
+  auto-populates the suggested English side of the new entry from it (the
+  reverse direction of the original 2026-07-26 idea, which only covered
+  Korean-select → entry).
+- After either path, the same open question from 2026-07-26 applies: matched
+  existing instances of the old rendering get corrected either by re-running
+  translation on just those chapters, or via the find-and-replace feature
+  below — not yet decided which, possibly both depending on scope (single
+  chapter vs. novel-wide).
 
 ---
 

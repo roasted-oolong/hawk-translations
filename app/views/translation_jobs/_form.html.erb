@@ -23,12 +23,13 @@
   <div class="jobs-trigger__fields">
     <div class="form-group">
       <%= f.label :job_type, "Job type", class: "form-label" %>
+      <%# Bible build and post-translation review are sunset from this form —
+          see docs/DECISIONS.md's 2026-07-30 entry. Job type, model, and specs
+          are untouched; this is a UI-only trigger removal. %>
       <%= f.select :job_type,
             [
-              [ "Preread",                 "preread" ],
-              [ "Translate batch",         "translate_batch" ],
-              [ "Bible build",             "bible_build" ],
-              [ "Post-translation review", "post_translation_review" ]
+              [ "Preread",         "preread" ],
+              [ "Translate batch", "translate_batch" ]
             ],
             { include_blank: "— Select job type —" },
             class: "form-select" %>

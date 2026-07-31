@@ -1142,3 +1142,41 @@ even when OAuth was active — as its own deliberate milestone at the point
 the developer is ready to onboard other translators or teams, not before.
 Until then, the multi-tenant schema stays in place unused rather than ripped
 out, since it's the correct foundation for that future milestone.
+
+---
+
+## 2026-07-30 · `bible_build` and `post_translation_review` sunset from the UI, disable-only
+
+Both job types are being replaced by a different bible-maintenance model:
+adding/correcting bible entries inline, at the moment of translating or
+proofreading a chapter, rather than as a separate batch job run afterward.
+The intended replacement (not built yet — see `docs/ROADMAP.md`'s Future
+section) is: select a mistranslated English word during translation/review,
+create a bible entry from it directly, then either re-translate or
+find-and-replace every place the old rendering appears; separately, select
+Korean source text to auto-populate the English side when creating an
+entry. Both are extensions of the already-logged "Add Bible Entry From
+Korean Text" and "Find and Replace Across Chapters" Future items — this
+decision elevates them from parked ideas to the actual replacement for
+`bible_build`/`post_translation_review`, not just adjacent nice-to-haves.
+
+Disable-only, not deletion: `bible_build`/`post_translation_review` removed
+from the job-type dropdown in `translation_jobs/_form.html.erb` only. The
+job types, `Pipeline::Ruby::BibleBuild`/`Pipeline::Ruby::PostTranslationReview`,
+`PostTranslationReviewController`, routes, views, and specs are untouched —
+still triggerable directly (request/console) if needed, e.g. to backfill
+bible entries once more before the new inline workflow lands. Reversible;
+revisit full removal once the new workflow is built and has actually
+replaced what these covered.
+
+**Consequence for R7 (`docs/RAILS_REFACTOR_PLAN.md`):** these two job types
+being disabled going forward means they can't accumulate real production
+soak evidence under Stage 1's "every migrated job type" bar. Since nothing
+will trigger them through the normal app anymore, requiring soak proof for
+them before Stage 2 no longer makes sense — the other five job types
+(`preread`, `translate_batch`, `voice_calibration`, `formatter`, `ocr`)
+already each have at least one successful real run since `5b3f30f` as of
+this date. Stage 1 for those five is effectively satisfied; Stage 1.5's
+negative inventory still needs to actually pass before Stage 2 proceeds.
+This is a documentation update only — Stage 2 (deleting Python) was not
+run as part of this decision.
