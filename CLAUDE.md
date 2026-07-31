@@ -20,6 +20,7 @@ Ruby 3.4.2 · PostgreSQL · Hotwire (Turbo + Stimulus) · Solid Queue · Active 
 | Agent skills (R2) — `bible_lookup` in-process | `app/services/pipeline/skill.rb`, `app/services/pipeline/skills/` | `docs/RAILS_REFACTOR_PLAN.md` |
 | MCP skill bridge (R3) | `app/services/pipeline/mcp/`, `bin/mcp_skill_bridge` | `docs/RAILS_REFACTOR_PLAN.md` |
 | translate_batch orchestration (R4) | `app/services/pipeline/ruby/translate_batch.rb`, `app/services/pipeline/ruby/translate_batch/{prompt_builder,bridge_config}.rb` | `docs/RAILS_REFACTOR_PLAN.md` |
+| Translation quality pipeline eval (Call 1 analysis prompt, offline/eval-only) | `app/services/pipeline/ruby/translation_eval.rb`, `bin/translation_eval`, `PromptBuilder.build_call1_system_prompt` | `docs/DECISIONS.md` (2026-07-30 entries) |
 | Preread / bible_build orchestration (R6) | `app/services/pipeline/ruby/preread_runner/`, `app/services/pipeline/{prompt_utils,bible_utils,bible_file_editor,preread_bible_writer}.rb` | `docs/RAILS_REFACTOR_PLAN.md` |
 | Chapter formatter / OCR orchestration (R6.5) | `app/services/pipeline/ruby/{format_korean_chapter,ocr_chapter,formatter_prompt_builder,formatter_response_parser}.rb`, `app/services/pipeline/{local_llm_chat,claude_vision}.rb` | `docs/RAILS_REFACTOR_PLAN.md` |
 | Post-translation review / voice calibration orchestration (R5) | `app/services/pipeline/ruby/post_translation_review*`, `app/services/pipeline/ruby/voice_calibration*`, `app/services/pipeline/translated_chapter_reader.rb` | `docs/RAILS_REFACTOR_PLAN.md` |

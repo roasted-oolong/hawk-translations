@@ -1324,3 +1324,45 @@ against 2-3 real chapters, *then* build Call 2, *then* build `web_lookup`
 once real chapter data shows how often recency gaps actually come up. Watch
 JSON/token size on long chapters at the same time (exhaustive per-passage
 segmentation could get large) — flagged, not yet measured.
+
+---
+
+## 2026-07-30 · Call 1 implemented — analysis prompt + segmentation eval
+
+Ships the first step of this doc's own "Sequencing" note above:
+`PromptBuilder.build_call1_system_prompt` (`app/services/pipeline/ruby/translate_batch/prompt_builder.rb`)
+and its wiring into `Pipeline::Ruby::TranslationEval`/`bin/translation_eval`.
+Still offline/eval-only — nothing here touches `translate_batch.rb` or any
+`TranslationJob`; Call 2 is not built.
+
+- **Prompt matches the schema this doc specified**: `passages[]` keyed by
+  sequential `passage_id`, `anchor_quote` (verbatim Korean — doubles as the
+  eval's exhaustiveness check, see below), `literal_meaning`,
+  `cultural_signals`, `narrative_intent`, `localization_strategy.category`
+  (the six-value taxonomy plus `none`, since most passages carry no special
+  cultural dynamic) + `.notes`, `bible_entries_used` (attribution only), and
+  `chapter_level_notes.risks`. Grounded via the existing `bible_lookup` MCP
+  tool only — `web_lookup` stays unbuilt per the sequencing note.
+- **Segmentation is machine-checked, not just prompted for.** This doc said
+  gaps/overlaps are a correctness bug and both the prompt and
+  `bin/translation_eval` need to enforce it — `TranslationEval#validate_segmentation`
+  checks two things: `passage_id` equals each passage's 1-based array index
+  (sequential *and* ordered in one comparison), and concatenating every
+  passage's `anchor_quote` (whitespace-normalized) reproduces the source
+  chapter (whitespace-normalized) — a gap or overlap fails this by
+  construction. Result surfaces per-chapter as `call1_segmentation_error` on
+  `TranslationEval::ChapterResult` and in `bin/translation_eval`'s CLI
+  output, alongside the existing `single_pass`/`structured` lines.
+- **The superseded single-call `structured` prompt/eval path was left in
+  place**, not removed — this doc said its fields are still the basis for
+  Call 1/2 and it's "kept for history." `TranslationEval` now runs all three
+  (`single_pass`, `structured`, `call1`) per chapter; trimming the
+  superseded path back out, if the extra `claude` calls' cost isn't worth
+  it, is a separate call for whoever's driving the next eval run.
+- **Not yet done:** an actual `bin/translation_eval` run against 2-3 real
+  `idols-rewind` chapters to confirm the model itself (not just the
+  validator) produces exhaustive, correctly-ordered segmentation in
+  practice — the validator only proves the *check* works, exercised so far
+  against hand-built fixtures in `spec/services/pipeline/ruby/translation_eval_spec.rb`,
+  not a live model response. That real-chapter run is the actual gate before
+  starting Call 2, per this doc's sequencing note above.

@@ -613,6 +613,15 @@ is real, shipped, and still the basis for Call 1/2's fields) but the
 decision gate is no longer the plan — do not wait for Test A/B before
 building the split.
 
+**Call 1 shipped 2026-07-30** (offline/eval-only — see `docs/DECISIONS.md`'s
+same-day "Call 1 implemented" entry):
+`PromptBuilder.build_call1_system_prompt`, wired into
+`Pipeline::Ruby::TranslationEval`/`bin/translation_eval` with a segmentation
+validator (sequential `passage_id`, `anchor_quote` concatenation reconstructs
+the source chapter). Not yet run against real chapters — that run is the
+gate before Call 2 starts, per the Sequencing note in the DECISIONS.md entry
+this superseded block links to above.
+
 User proposal (2026-07-26): translate_batch's single-pass prompt was producing
 literal, sometimes unnatural output (Korean metonymy translated word-for-word,
 idiomatic nouns translated as their literal meaning, cultural dynamics like 기 싸움
