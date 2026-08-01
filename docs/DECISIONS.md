@@ -1868,3 +1868,121 @@ Spec coverage: `translation_config_spec.rb` (+2), `claude_code_spec.rb` (+2),
 `translation_eval_spec.rb` (rewritten to drop single-pass/structured
 fixtures, +1 for the factcheck-model-override behavior) — 51 examples across
 the three files, 0 failures.
+
+---
+
+## 2026-08-01 · Chapter QA: factcheck/editor surfaced as track changes in the production chapter review page
+
+The eval harness's factcheck/editor findings just proved themselves useful
+on a real chapter (see the entry above) but only existed as JSON files in a
+gitignored `tmp/` scratch dir, read from the terminal. This entry makes them
+a real, production-facing feature: a "Run Quality Check" pass inside the
+existing chapter review page (`app/views/chapter_review/show.html.erb`),
+rendering findings as Word-style tracked changes — strikethrough the
+flagged text, insert the proposed rewrite, attach a comment with the
+reviewing pass's rationale — with Accept/Reject per suggestion. "Talk it out
+with AI" (a chat-style negotiation over a specific suggestion) was
+explicitly scoped OUT of this build: the app's only LLM call pattern today
+is one-shot, stateless `claude -p --no-session-persistence`, and multi-turn
+negotiation is new territory not worth designing speculatively before
+Accept/Reject alone proves useful.
+
+**Architecture pivot during design, before any code was written**: the
+initial plan assumed `chapter_qa` would need to re-run the full 5-step eval
+pipeline (segmentation → analysis → localization → factcheck/editor)
+against the chapter's Korean source, since the eval harness's factcheck/
+editor findings are only meaningful relative to passages *that same
+pipeline* produced. Reading the most recent commit in the sibling
+`hawk-translations-ui-prototype/` repo (a working React mock of this exact
+feature: `qa-engine.ts`/`qa-navigator.tsx`/`tracked-changes-view.tsx`)
+showed the actually-intended design is simpler: QA runs directly against
+whatever `chapter.translated_output` **already** holds — no re-segmentation,
+no re-localization, just two flat whole-chapter calls (factcheck: Korean +
+English; editor: English only, Korean-blind) against the chapter's existing
+translation. This removed the biggest risk in the original plan (QA
+silently producing an alternate translation from an unproven pipeline) and
+meant the 5-step eval pipeline's beat segmentation work stays exactly where
+it already was — nothing about it needed to be "promoted to production" for
+this feature.
+
+**New prompt builders, deliberately separate from the eval harness's**:
+`PromptBuilder.build_chapter_qa_factcheck_system_prompt`/
+`.build_chapter_qa_editor_system_prompt` in
+`translate_batch/prompt_builder.rb`. Whole-chapter, no passages, flat
+`suggestions` array: `{quote, issue, suggested_revision, severity,
+korean_context}`. Two schema changes relative to the eval harness's
+existing factcheck/editor findings: `suggested_revision` is required (not
+just a diagnosis — always a concrete rewrite, needed for anything to be
+"acceptable" as a tracked change), and `severity` (`"strong"`/`"advisory"`)
+is now a structured field instead of prose-embedded ("Advisory." text) so
+the UI can badge/filter on it without string-sniffing. The existing
+eval-only `build_factcheck_system_prompt`/`build_editor_system_prompt` are
+untouched.
+
+**New job type `chapter_qa`**: added to `TranslationJob`'s `job_type` enum
+(plain string column, no migration) with a validation requiring
+`chapter_start == chapter_end` and that chapter already be `translated`/
+`reviewed`. `PipelineDispatcher#call` special-cases `chapter_qa` to call
+`Pipeline::Ruby::ChapterQa.call(@job)` directly, **bypassing**
+`PipelineImplementation` — that lookup defaults to `"python"` when its env
+var is unset, which would have silently misrouted this Python-less,
+Ruby-native-only job type to `dispatch_python`'s "Unknown job_type" failure
+in any environment that forgot to set an override. `PipelineJob#update_chapters`
+needed no change — its `case` already falls through to a no-op for unlisted
+job types, which is exactly right here: this job never mutates `Chapter`,
+everything lands in `result_payload`.
+
+**`Pipeline::Ruby::ChapterQa`** (new, `app/services/pipeline/ruby/chapter_qa.rb`):
+modeled on `PostTranslationReview`'s shape (not `TranslationEval`'s 5-step
+chain — there's no chain here). Reads the chapter's existing translation via
+`Pipeline::TranslatedChapterReader` (correct fit now, unlike the abandoned
+first draft which reached for it while also planning to regenerate a new
+translation) and the Korean source the same inline way `TranslationEval`/
+`translate_batch.rb` already do. Calls factcheck (on `factcheck_model`, per
+the cost change above) then editor; every finding's `quote` is verified as
+an actual substring of the checked text before being kept — an unanchored
+quote can't be located to render as a tracked-change span, so it's dropped,
+not surfaced. Returns `{"suggestions": [...]}`, each tagged with a generated
+`id`, `source`, and `status: "pending"`.
+
+**No new review controller/route** — unlike `post_translation_review`/
+`voice_calibration`'s separate-screen convention, this rides the *existing*
+`ChapterReviewController`/`show.html.erb` page, matching the prototype.
+Two new actions: `qa_status` (GET, polled after triggering — returns the
+latest `chapter_qa` job *for that specific chapter*, not "latest for the
+novel") and `update_qa_suggestion` (PATCH, bookkeeping-only — records a
+suggestion's `accepted`/`rejected` status inside the job's `result_payload`
+JSON, same mutable-scratchpad pattern `voice_calibration_review` already
+uses). Accepting a suggestion is **not** a separate "commit" step — it's a
+plain text substitution fed through the page's existing
+`saveCurrentText()` → `update_text` → `ChapterDiskWriter` + `translated_output.attach`
+path, the same one any manual edit already uses. The only genuinely new
+persisted state is each suggestion's own decision, so reopening the page
+doesn't re-prompt something already acted on.
+
+**Frontend** (`chapter_review_controller.ts`, `show.html.erb`,
+`_chapter_review.css`, extended in place, no new files): a "Run Quality
+Check" button in the topbar, a QA navigator bar (filter pills for All/
+Editor/Factcheck/Strong, prev/next, "Accept all", dismiss), and inline
+tracked-changes rendering (strikethrough old text + underlined proposed
+text, color-coded by source) — ported from the prototype's interaction
+model, not its React code. Two deliberate simplifications from the
+prototype, named rather than silently done: the suggestion detail panel is
+docked below the navigator instead of a floating tooltip anchored to the
+clicked span (avoids reimplementing viewport-collision positioning in raw
+TS), and compare mode + QA together shows the same tracked-changes content
+in the English pane rather than a fully bespoke dual layout.
+
+Spec coverage: `prompt_builder_spec.rb` (new `.build_chapter_qa_*` describe
+blocks), `chapter_qa_spec.rb` (new, 8 examples — happy path, factcheck-model
+usage, dropped-unanchored-quote handling, both failure short-circuits,
+invalid JSON, missing-file cases), `pipeline_dispatcher_spec.rb` (+2, the
+chapter_qa bypass), `translation_job_spec.rb` (model validation, existing
+coverage extended), `chapter_review_qa_spec.rb` (new request spec, 10
+examples covering `qa_status`/`update_qa_suggestion`). TypeScript changes
+verified via `esbuild` (the project's actual build path — there is no `tsc`
+type-check gate in this repo) plus an ad hoc strict `tsc --noEmit` pass
+against a corrected local tsconfig, which caught and fixed one real
+`noUncheckedIndexedAccess` issue in the new code; the repo's own
+`tsconfig.json` itself does not type-check clean under the installed
+TypeScript version (pre-existing, unrelated to this change, not fixed here).

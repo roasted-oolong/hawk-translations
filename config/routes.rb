@@ -63,8 +63,12 @@ Rails.application.routes.draw do
     # Full-page chapter review slideshow
     # GET  /novels/:novel_id/chapter_review              → novel_chapter_review_path
     # PATCH /novels/:novel_id/chapter_review/chapters/:id/text → save edited text
-    get   "chapter_review",                         to: "chapter_review#show",        as: :chapter_review
-    patch "chapter_review/chapters/:id/text",       to: "chapter_review#update_text", as: :update_chapter_review_text
+    # GET   /novels/:novel_id/chapter_review/chapters/:id/qa → poll a chapter's latest chapter_qa job
+    # PATCH /novels/:novel_id/chapter_review/chapters/:id/qa/suggestions/:suggestion_id → accept/reject one suggestion
+    get   "chapter_review",                                            to: "chapter_review#show",               as: :chapter_review
+    patch "chapter_review/chapters/:id/text",                          to: "chapter_review#update_text",        as: :update_chapter_review_text
+    get   "chapter_review/chapters/:id/qa",                            to: "chapter_review#qa_status",          as: :chapter_review_qa
+    patch "chapter_review/chapters/:id/qa/suggestions/:suggestion_id", to: "chapter_review#update_qa_suggestion", as: :update_chapter_review_qa_suggestion
 
     # Preread results review + bible import + dismiss restore
     # GET    /novels/:novel_id/preread_review   → novel_preread_review_path

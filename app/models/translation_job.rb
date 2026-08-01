@@ -13,7 +13,8 @@ class TranslationJob < ApplicationRecord
     translate_batch:          "translate_batch",
     bible_build:              "bible_build",
     post_translation_review:  "post_translation_review",
-    voice_calibration:        "voice_calibration"
+    voice_calibration:        "voice_calibration",
+    chapter_qa:               "chapter_qa"
   }
 
   enum :status, {
@@ -32,6 +33,7 @@ class TranslationJob < ApplicationRecord
 
   validate :chapter_range_valid
   validate :voice_calibration_chapter_reviewed, if: -> { voice_calibration? && chapter_start.present? }
+  validate :chapter_qa_single_chapter_translated, if: -> { chapter_qa? && chapter_start.present? }
 
   # ---------------------------------------------------------------------------
   # Scopes
@@ -142,6 +144,19 @@ class TranslationJob < ApplicationRecord
   def voice_calibration_chapter_reviewed
     unless novel.chapters.reviewed.exists?(number: chapter_start)
       errors.add(:chapter_start, "must be a reviewed chapter")
+    end
+  end
+
+  # chapter_qa reviews one already-translated chapter's existing text — it
+  # never re-translates, so there's nothing to run it against until the
+  # chapter has a translated_output to read.
+  def chapter_qa_single_chapter_translated
+    if chapter_start != chapter_end
+      errors.add(:chapter_end, "must equal chapter_start — chapter_qa reviews one chapter at a time")
+    end
+
+    unless novel.chapters.where(status: %w[translated reviewed]).exists?(number: chapter_start)
+      errors.add(:chapter_start, "must be a translated chapter")
     end
   end
 

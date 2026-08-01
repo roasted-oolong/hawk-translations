@@ -38,6 +38,15 @@ class PipelineDispatcher
   end
 
   def call
+    # chapter_qa has no Python implementation and never will (it's a
+    # production-native Ruby feature, not a migrated-from-Python one) — it
+    # deliberately bypasses PipelineImplementation rather than adding a
+    # PIPELINE_IMPL_CHAPTER_QA entry, since that lookup defaults to
+    # "python" when unset, which would silently misroute this job type to
+    # dispatch_python's "Unknown job_type" failure in any environment that
+    # forgot to set the override.
+    return Pipeline::Ruby::ChapterQa.call(@job) if @job.job_type == "chapter_qa"
+
     case PipelineImplementation.for(@job.job_type)
     when :python then dispatch_python
     when :ruby   then dispatch_ruby

@@ -503,6 +503,107 @@ module Pipeline
           MESSAGE
         end
 
+        # ---------------------------------------------------------------------
+        # Chapter QA (production feature — docs/DECISIONS.md's chapter_qa
+        # entry). An independent two-pass review of a chapter's ALREADY-SAVED
+        # translation (Chapter#translated_output), not the 5-step eval
+        # pipeline above and not sharing its prompts: there's no segmentation
+        # or analysis here, just the whole chapter's Korean/English text
+        # reviewed as one piece, returning a flat list of suggestions each
+        # anchored to an exact quote so a track-changes UI can render it
+        # inline. Kept as its own pair of prompts rather than forcing a
+        # "one fake passage = whole chapter" shape through
+        # build_factcheck_system_prompt/build_editor_system_prompt above,
+        # which stay untouched and eval-only.
+        # ---------------------------------------------------------------------
+
+        def self.build_chapter_qa_factcheck_system_prompt(context, cultural_patterns: "")
+          <<~PROMPT.chomp
+            You are an independent fact and cultural-consistency reviewer for a Korean-to-English literary translation intended for potential publishing. You did not write the translation. Your only job is to check that nothing factual or culturally load-bearing got lost or changed between the Korean source and the English translation — you are not judging prose quality or how natural the English sounds; a separate editor pass handles that.
+
+            The user message gives you the whole chapter's Korean source and its English translation, each in full.
+
+            Go through the chapter and flag every place where a name, place, organization, concrete fact (event, promise, threat, number, timeline), or culturally load-bearing cue (honorific, status move, indirect refusal, face-saving gesture) was lost, changed, or flattened between the Korean and the English. Only flag real problems — an empty `suggestions` array is a claim you're prepared to defend, not a default; go looking for a problem before you settle on finding none.
+
+            For each problem found, respond with:
+            - `quote`: the exact substring of the English translation that's the problem — copied verbatim, not paraphrased, since it's used to locate the text.
+            - `issue`: what's wrong and why it matters.
+            - `suggested_revision`: your proposed replacement text for `quote` — always give a concrete rewrite, never just a description of what should change.
+            - `severity`: `"strong"` if the change materially alters meaning, fact, or a load-bearing cultural dynamic; `"advisory"` if it's a smaller fidelity loss that doesn't change what a reader understands to have happened.
+            - `korean_context`: the relevant excerpt of Korean source text this finding is based on.
+
+            Respond with a single JSON object and nothing else — no markdown code fences, no commentary before or after it. Its shape:
+
+            {
+              "suggestions": [
+                { "quote": "string — exact substring from the English translation",
+                  "issue": "string",
+                  "suggested_revision": "string",
+                  "severity": "strong" or "advisory",
+                  "korean_context": "string" }
+              ]
+            }
+
+            ---
+
+            # Reference Material
+
+            #{reference_material(context)}
+
+            #{Pipeline::PromptUtils.section("Cultural Patterns", cultural_patterns)}
+          PROMPT
+        end
+
+        # Korean-blind by the same deliberate design as build_editor_system_prompt
+        # above: no source access, so awkward phrasing can't be excused by
+        # tracing it back to what it maps to.
+        def self.build_chapter_qa_editor_system_prompt
+          <<~PROMPT.chomp
+            You are an independent English-language editor reviewing a literary translation for a novel intended for potential publishing. You do not have access to the Korean source, and that is deliberate: your job is to judge whether this reads as natural, coherent, published English prose on its own terms, the way a monolingual editor would, without the ability to excuse awkward phrasing by tracing it back to source meaning.
+
+            The user message gives you the whole chapter's English translation, and nothing else.
+
+            Go through the chapter and flag every place where the prose doesn't read as natural, coherent English: calques and literal-feeling translated phrasing, odd leftover particles doing no real work, misassigned agency, dangling or run-on constructions, redundant or circular phrasing, register that shifts unmotivated within one speaker's own lines, or narrative flow that jumps abruptly between passages. Only flag real problems — an empty `suggestions` array is a claim you're prepared to defend, not a default; go looking for a problem before you settle on finding none.
+
+            For each problem found, respond with:
+            - `quote`: the exact substring of the English translation that's the problem — copied verbatim, not paraphrased, since it's used to locate the text.
+            - `issue`: what's wrong and why it matters.
+            - `suggested_revision`: your proposed replacement text for `quote` — always give a concrete rewrite, never just a description of what should change.
+            - `severity`: `"strong"` if the passage is hard to parse or clearly reads as translated; `"advisory"` for smaller polish issues that don't obstruct comprehension.
+
+            Respond with a single JSON object and nothing else — no markdown code fences, no commentary before or after it. Its shape:
+
+            {
+              "suggestions": [
+                { "quote": "string — exact substring from the English translation",
+                  "issue": "string",
+                  "suggested_revision": "string",
+                  "severity": "strong" or "advisory" }
+              ]
+            }
+          PROMPT
+        end
+
+        def self.build_chapter_qa_factcheck_user_message(korean_text:, english_text:)
+          <<~MESSAGE.chomp
+            # Korean Source
+
+            #{korean_text}
+
+            # English Translation
+
+            #{english_text}
+          MESSAGE
+        end
+
+        def self.build_chapter_qa_editor_user_message(english_text:)
+          <<~MESSAGE.chomp
+            # English Translation
+
+            #{english_text}
+          MESSAGE
+        end
+
         def self.reference_material(context)
           reference_sections = [
             Pipeline::PromptUtils.section("Novel Info", context.novel_info),
