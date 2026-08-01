@@ -638,6 +638,72 @@ concatenation drops paragraph breaks at passage boundaries in the
 reassembled chapter — a prompt or join-time fix is next-session scope.
 `editorial_checks` came back all-`true` on all 63 passages — a self-grading
 result that's not yet trustworthy evidence of anything (see the doc entry).
+
+**Call 2 prompt revised + Call 3 (independent review) added, 2026-08-01**
+(see `docs/DECISIONS.md`'s same-day entry): human read-through of the
+2026-07-31 output found real unnatural prose behind all-`true`
+`editorial_checks` — clause-by-clause substitution stapling together
+unrelated idiom registers, plus a calqued discourse particle. Call 2's
+`localized_translation` instruction was rewritten to author continuous
+English prose instead of one-sentence-per-Korean-clause, with a 6th
+self-check (`reads_as_continuous_prose`) and an explicit warning against
+mixing idiom registers within one character's speech. Call 3
+(`build_call3_system_prompt`/`run_call3`) is a separate call, blind to Call
+2's own self-grade, that independently re-grades the same six checks and
+must cite a quoted excerpt for any `false`. Live re-run flagged 18/93
+passages with grounded, quotable findings — real signal — but the exact
+original failure pattern (register-mixing in a mentorship speech) still
+slipped past **both** Call 2's self-grade and Call 3's independent
+review, suggesting a shared model blind spot rather than a pure
+authorship-bias problem. The self-grading caveat is reduced, not
+eliminated — see the doc entry for what's still open.
+
+**3-call pipeline replaced with a 5-step pipeline, also 2026-08-01** (see
+`docs/DECISIONS.md`'s same-day "5-step pipeline replaces 3-call pipeline"
+entry): the 3-call design's self-grade-plus-independent-review approach hit a
+real limit above, so the whole pipeline was decomposed instead — segmentation
+(`build_segmentation_system_prompt`, now its own call, defining a passage as
+one continuous unit of voice), literary analysis (`build_analysis_system_prompt`,
+Korean only, no self-grading), localization (`build_localization_system_prompt`,
+writes English prose with no self-grade field at all), and two independent QA
+passes that both depend only on localization: fact/culture check
+(`build_factcheck_system_prompt`) and an English editor
+(`build_editor_system_prompt`) that receives **only** the English text — no
+Korean, no analysis, no reference material — the most aggressive isolation
+attempted yet. Old Call 1/2/3 code and specs deleted outright, not kept
+alongside. Live re-run: 107 passages (segmentation instability persists even
+fully isolated — 52 → 63 → 93 → 107 across four runs), all 5 steps completed
+cleanly, factcheck flagged 10/107, editor flagged 23/107, with real,
+well-grounded findings in both (fabricated specifics, honorific loss, article
+errors, a sequence contradiction). But the original register-mixing failure
+recurred again (passage 42) and slipped past **even the Korean-blind editor**
+— stronger evidence this specific error class is a shared model limitation,
+not a self-grading or source-contamination artifact. See the doc entry for
+the full breakdown and untried follow-ups (negative exemplars in the editor
+prompt; a different model for the editor pass specifically).
+
+**Hybrid deterministic/semantic beat segmentation, 2026-08-02** (see
+`docs/DECISIONS.md`'s same-day entry): Step 1's free-form segmentation was
+replaced with a hybrid — Ruby deterministically pre-chunks the chapter into
+3-7-line candidate blocks (forcing a boundary at every literal `***` scene
+marker), one LLM call classifies each block's relationship to the block
+before it (`CONTINUE`/`BREAK`/`BRIDGE`, plus speaker), and Ruby merges the
+result — so the model never invents a boundary from scratch, only answers a
+bounded per-block question. Still one LLM call per chapter for this step. A
+"beat" can now span more than one speaker (a back-and-forth exchange sharing
+one emotional/topical moment is one beat), so `speaker` became `speakers`
+(array), with matching wording updates to analysis/localization/editor.
+Live re-run on Chapter 68: **14 final passages**, down from the free-form
+design's non-deterministic 52 → 63 → 93 → 107 history — a qualitative
+step-change. Multi-speaker merging worked as intended (e.g. a
+greeting-and-bow exchange between two named characters merged into one
+beat instead of being shredded into independent turns), and a spot-check of
+the exact "idol, beginner" line every prior pipeline generation flagged for
+register-mixing now reads as one coherent beat instead of stapled fragments
+— promising, but not yet confirmed by factcheck/editor for this run. Old
+`build_segmentation_system_prompt` code/specs deleted outright. See the doc
+entry for the still-pending factcheck/editor results.
+
 Chapters 74/75, Test A, and Test B are still unbuilt/unrun.
 
 User proposal (2026-07-26): translate_batch's single-pass prompt was producing

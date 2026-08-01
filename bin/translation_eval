@@ -4,16 +4,25 @@
 #
 # Offline prototype harness for the translation quality pipeline idea in
 # docs/ROADMAP.md — CLI wrapper around Pipeline::Ruby::TranslationEval. Runs
-# the current single-pass prompt, the (superseded, kept for history)
-# structured (intent/literal/localized) prompt, and the committed 2-call
-# pipeline (docs/DECISIONS.md's 2026-07-30/2026-07-31 entries) over a
-# handful of chapters, writing all outputs to disk for manual side-by-side
-# comparison. Call 1's JSON gets a segmentation check (sequential
-# passage_id, anchor_quote concatenation reconstructs the source chapter);
-# Call 2 only runs when that passes, and gets a coverage check
-# (localized_passages covers Call 1's passage_id sequence exactly) plus a
-# reassembled localized_chapter.txt for direct review. Never touches
-# translate_batch.rb, PipelineJob, or the chapters/ files it evaluates.
+# the 5-step pipeline (docs/DECISIONS.md's 2026-08-01 "5-step pipeline
+# replaces 3-call pipeline" entry, updated by the 2026-08-02 hybrid beat
+# segmentation entry) over a handful of chapters, writing all outputs to disk
+# for manual review.
+#
+# The 5-step pipeline chains strictly, each step gated on the previous one
+# producing valid, fully-covered output:
+#   1. segmentation  — splits the chapter into passages (sequential
+#      passage_id, anchor_quote concatenation reconstructs the source).
+#   2. analysis      — Korean-only literary analysis per passage.
+#   3. localization  — writes the English translation (no self-grading);
+#      reassembled into localized_chapter.txt for direct review.
+#   4. factcheck     — independently checks names/facts/cultural cues.
+#   5. editor        — independently reviews ONLY the English text (no
+#      Korean, no analysis) for prose quality.
+# factcheck and editor both depend only on localization succeeding, not on
+# each other. Their flagged-passage counts are where to look first. Never
+# touches translate_batch.rb, PipelineJob, or the chapters/ files it
+# evaluates.
 #
 # Usage:
 #   bin/translation_eval <novel_dir> <chapter_numbers...> [--out DIR]
@@ -49,49 +58,34 @@ results = Pipeline::Ruby::TranslationEval.call(
   novel_dir: novel_dir, chapter_numbers: chapter_numbers, output_dir: output_dir
 )
 
+def stage_status(error, valid_json, coverage_error, flagged_count: nil)
+  if error&.start_with?("skipped:")
+    error
+  elsif error
+    "FAILED — #{error}"
+  elsif valid_json == false
+    "ok (call succeeded, JSON invalid)"
+  elsif coverage_error
+    "JSON ok, coverage FAILED — #{coverage_error}"
+  elsif flagged_count
+    "ok (#{flagged_count} passage(s) flagged)"
+  else
+    "ok"
+  end
+end
+
 results.each do |r|
   if r.missing_source
     puts "Chapter #{r.number}: SKIPPED (no Korean source)"
     next
   end
 
-  single_pass_status = r.single_pass_error ? "FAILED — #{r.single_pass_error}" : "ok"
-  structured_status =
-    if r.structured_error
-      "FAILED — #{r.structured_error}"
-    elsif r.structured_valid_json
-      "ok"
-    else
-      "ok (call succeeded, JSON invalid)"
-    end
-  call1_status =
-    if r.call1_error
-      "FAILED — #{r.call1_error}"
-    elsif r.call1_valid_json == false
-      "ok (call succeeded, JSON invalid)"
-    elsif r.call1_segmentation_error
-      "JSON ok, segmentation FAILED — #{r.call1_segmentation_error}"
-    else
-      "ok"
-    end
-  call2_status =
-    if r.call2_error&.start_with?("skipped:")
-      r.call2_error
-    elsif r.call2_error
-      "FAILED — #{r.call2_error}"
-    elsif r.call2_valid_json == false
-      "ok (call succeeded, JSON invalid)"
-    elsif r.call2_coverage_error
-      "JSON ok, coverage FAILED — #{r.call2_coverage_error}"
-    else
-      "ok"
-    end
-
   puts "Chapter #{r.number}:"
-  puts "  single_pass: #{single_pass_status}"
-  puts "  structured:  #{structured_status}"
-  puts "  call1:       #{call1_status}"
-  puts "  call2:       #{call2_status}"
+  puts "  segmentation: #{stage_status(r.segmentation_error, r.segmentation_valid_json, r.segmentation_coverage_error)}"
+  puts "  analysis:     #{stage_status(r.analysis_error, r.analysis_valid_json, r.analysis_coverage_error)}"
+  puts "  localization: #{stage_status(r.localization_error, r.localization_valid_json, r.localization_coverage_error)}"
+  puts "  factcheck:    #{stage_status(r.factcheck_error, r.factcheck_valid_json, r.factcheck_coverage_error, flagged_count: r.factcheck_flagged_count)}"
+  puts "  editor:       #{stage_status(r.editor_error, r.editor_valid_json, r.editor_coverage_error, flagged_count: r.editor_flagged_count)}"
 end
 
 puts

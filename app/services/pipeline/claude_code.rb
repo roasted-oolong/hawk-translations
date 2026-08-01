@@ -39,16 +39,17 @@ module Pipeline
     end
 
     def self.call(system_prompt:, user_message:, config: TranslationConfig.from_env,
-                   mcp_config: nil, timeout: DEFAULT_TIMEOUT, process_env: ENV)
+                   mcp_config: nil, model: nil, timeout: DEFAULT_TIMEOUT, process_env: ENV)
       new(system_prompt: system_prompt, user_message: user_message, config: config,
-          mcp_config: mcp_config, timeout: timeout, process_env: process_env).call
+          mcp_config: mcp_config, model: model, timeout: timeout, process_env: process_env).call
     end
 
-    def initialize(system_prompt:, user_message:, config:, mcp_config:, timeout:, process_env:)
+    def initialize(system_prompt:, user_message:, config:, mcp_config:, model:, timeout:, process_env:)
       @system_prompt = system_prompt
       @user_message  = user_message
       @config        = config
       @mcp_config    = mcp_config
+      @model         = model
       @timeout       = timeout
       @process_env   = process_env
     end
@@ -92,7 +93,7 @@ module Pipeline
         "-p",
         "--system-prompt-file", prompt_path,
         "--output-format", "json",
-        "--model", @config.translation_model,
+        "--model", @model || @config.translation_model,
         "--tools", ""
       ]
       cmd += [ "--strict-mcp-config", "--mcp-config", @mcp_config.to_json ] if @mcp_config

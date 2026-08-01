@@ -35,6 +35,25 @@ RSpec.describe TranslationConfig do
         expect(config.translation_max_budget_usd).to eq(3.00)
       end
     end
+
+    it "defaults FACTCHECK_MODEL to sonnet, independently of TRANSLATION_MODEL" do
+      Dir.mktmpdir do |dir|
+        fake_executable(dir, "claude")
+        config = described_class.from_env(env("PATH" => dir, "TRANSLATION_MODEL" => "opus"))
+
+        expect(config.factcheck_model).to eq("sonnet")
+      end
+    end
+
+    it "allows FACTCHECK_MODEL to be overridden independently of TRANSLATION_MODEL" do
+      Dir.mktmpdir do |dir|
+        fake_executable(dir, "claude")
+        config = described_class.from_env(env("PATH" => dir, "FACTCHECK_MODEL" => "haiku"))
+
+        expect(config.factcheck_model).to eq("haiku")
+        expect(config.translation_model).to eq("opus")
+      end
+    end
   end
 
   describe "TRANSLATION_BACKEND / CALIBRATION_BACKEND" do

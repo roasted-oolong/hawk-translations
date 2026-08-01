@@ -1473,3 +1473,398 @@ actually consumes Call 1's analysis instead of sitting unwired.
   closer to production-ready.
 - Output lives in `tmp/translation_eval/chapter_68/` (gitignored scratch,
   including the new `call2.json`/`localized_chapter.txt`), not committed.
+
+## 2026-08-01 · Human review finds real quality gaps behind all-`true` editorial_checks; Call 3 (independent review) added
+
+The previous entry's warning stopped being theoretical: manual read-through of
+`localized_chapter.txt` from the live Chapter 68 run turned up two clearly
+unnatural lines, both self-graded `idiomatic: true` and `no_korean_shaped_syntax:
+true` by Call 2:
+
+- *"Idol, beginner, none of that matters... Show good acting and that's the end
+  of the discussion. You know what I'm saying? Stay hungry all the way through
+  to the end."* — four short imperative fragments, each individually idiomatic
+  but drawn from unrelated registers (debate-closing idiom, contemporary
+  colloquial filler, sports-motivational phrasing) stapled onto a 40-year-old
+  veteran actor's mentorship speech.
+- *"...I'm asking you here."* — a calqued discourse particle (부탁할게 → "I'm
+  asking you here") where "here" does no locative work in English; exactly what
+  `no_korean_shaped_syntax` claimed wasn't present.
+
+Root cause, diagnosed against the actual prompt text: Call 2's
+`localized_translation` instruction told the model to "preserve the narrative
+intent **and** literal meaning" in the same breath. `literal_meaning` is
+deliberately close to the Korean's clause structure (that's its job as the
+fidelity anchor for Call 1), so in practice the instruction resolved toward
+clause-for-clause substitution — one Korean clause, one short English
+sentence — over authoring the passage as continuous prose. `editorial_checks`
+grades each resulting sentence in isolation, so four individually-idiomatic
+fragments could each pass while the passage as a whole didn't read as one
+person talking.
+
+**Two changes, both in `PromptBuilder.build_call2_system_prompt`:**
+
+1. **Rewrote the `localized_translation` instruction** to read `narrative_intent`
+   + `cultural_signals` + `literal_meaning` together, then author the passage
+   fresh as continuous English prose — explicitly not a sentence-by-sentence
+   substitution. Permits merging/splitting/reordering clauses from the Korean's
+   layout when English cadence calls for it; demotes `literal_meaning` to a
+   post-hoc invented/dropped-content check rather than a structural template.
+   Added an explicit warning against mixing idiom registers within one
+   character's speech (the actual failure mode above).
+2. **Added a 6th `editorial_checks` boolean, `reads_as_continuous_prose`** —
+   whether the passage reads as one continuous utterance in natural English
+   rhythm, not a stack of independently-correct short sentences. The five
+   existing checks are all atomic/per-clause; nothing previously checked
+   passage-level cohesion.
+
+**Call 3 (Independent Editorial Review) added** —
+`PromptBuilder.build_call3_system_prompt`/`.build_call3_user_message`, chained
+in via `TranslationEval#run_call3` (only runs when Call 2 produced valid,
+fully-covered output; `bin/translation_eval` reports
+`call3: ok (N passage(s) flagged)`). This exists because self-grading in the
+same call that produced the translation is a conflict of interest by
+construction — Call 3 runs as a **separate call**, given the Korean source,
+Call 1's analysis, and Call 2's `localized_translation` **with
+`editorial_checks` stripped out**, and independently re-answers the same six
+booleans. Any `false` check must cite a quoted substring and explain the
+problem — an empty `findings` array is only valid when every check is `true`,
+framed in the prompt as "a claim you're prepared to defend, not a default," to
+push back against reflexive rubber-stamping.
+
+**Live-validated against a fresh Chapter 68 run** (93 passages this time —
+Call 1's segmentation instability, already noted in the 2026-07-31 entry, holds
+again: 52 → 63 → 93 across three runs of the same chapter). Results:
+
+- **Real signal, not noise**: Call 3 flagged 18 of 93 passages, each with a
+  quoted excerpt and a specific complaint — e.g. passage 7 correctly marked
+  both `no_korean_shaped_syntax: false` and `reads_as_continuous_prose: false`
+  on *"Judging by her voice. There wasn't a grain of worry in it."*, quoting
+  the dangling fragment and explaining it's a stranded evidential clause from
+  Korean's clause-final structure. Other findings were advisory without
+  flipping a check — e.g. flagging that 기 싸움 was rendered "standing" in one
+  passage but "fighting over rank" elsewhere, breaking a cross-chapter echo
+  Call 1's analysis asked to preserve. This is exactly the kind of grounded,
+  citable finding self-grading wasn't producing.
+- **The caveat is reduced, not eliminated.** The closest match to the original
+  "idol/beginner" mentorship speech (passage 38 this run) still reads as four
+  choppy fragments — *"...that's the end of the conversation. You understand
+  what I'm saying? Keep the fire in it all the way to the end. Don't let
+  yourself burn out."* — essentially the same failure class as the original
+  finding above, just reworded. Both Call 2's self-grade **and** Call 3's
+  independent review marked `reads_as_continuous_prose: true` on it. Since
+  Call 1's segmentation isn't stable run-to-run, this isn't a controlled
+  before/after on the identical passage — but it's the same failure pattern,
+  caught by neither pass. This suggests a shared model blind spot for this
+  specific error class (subtle register-mixing that doesn't trip an obvious
+  calque detector), not purely an authorship-bias problem that a second call
+  was guaranteed to fix. Separately, the other original example partially
+  improved on its own (the "I'm asking you **here**" calque didn't reappear)
+  but a related issue in the same line — stacked one-word tags "Okay? Hm?"
+  reading staccato rather than pleading — went uncaught by both passes too.
+- **Not yet done**: feeding known failure exemplars (like the two above)
+  directly into Call 3's prompt as concrete negative examples, or trying a
+  different model for the review pass specifically to break the shared-blind-spot
+  pattern, are both candidate follow-ups, not attempted this session.
+- Output lives in `tmp/translation_eval/chapter_68/` (gitignored scratch,
+  including the new `call3.json`), not committed.
+
+---
+
+## 2026-08-01 · 3-call pipeline replaced with a 5-step pipeline (segmentation → analysis → localization → factcheck + editor)
+
+User proposal, in response to the entry above: rather than keep adding checks
+to a 3-call design that had already shown a real limit (the shared blind spot
+above), decompose the pipeline itself so each concern gets its own call
+instead of being bundled with others. Approved and built the same session —
+the entire 3-call design (`build_call1/2/3_system_prompt`, `run_call1/2/3`,
+their specs) was deleted, not deprecated alongside the new one.
+
+**The 5 steps** (all in `PromptBuilder`, chained in `TranslationEval#run_chapter`,
+each gated on the previous step producing valid, fully-covered output):
+
+1. **Segmentation** (`build_segmentation_system_prompt`) — Korean only, no
+   analysis or translation. Deliberately split out of the old Call 1, which
+   bundled segmentation with analysis — segmentation's non-determinism (52 →
+   63 → 93 passages across three runs of the identical chapter, per the
+   entries above) was never isolated enough to debug on its own. A passage is
+   now explicitly defined as **one continuous unit of voice** — one
+   character's whole speech turn, or one continuous stretch of narration —
+   rather than by sentence or paragraph count, directly targeting the
+   clearest observed failure mode: a single utterance getting fragmented into
+   several short sentences that then get judged independently instead of as
+   a whole.
+2. **Literary analysis** (`build_analysis_system_prompt`) — Korean only,
+   forbidden from producing any English rendering of the passage's content
+   (even inside a notes field) — the discipline meant to stop translation
+   from leaking into analysis. Five fields per the user's design
+   (`core_message`, `emphasis`, `pacing_rhythm`, `voice_register`,
+   `narrative_function`); Call 1's `cultural_signals`/`localization_strategy`/
+   `bible_entries_used` machinery is retained unchanged — it worked and
+   wasn't part of what needed fixing.
+3. **Localization** (`build_localization_system_prompt`) — writes the English
+   prose. No self-graded `editorial_checks` field at all anymore — the
+   2026-08-01 entry above treated self-grading as untrustworthy and added an
+   independent check on top of it; this design removes the self-grade
+   entirely rather than layering a fix over a known-bad signal.
+4. **Fact & culture check** (`build_factcheck_system_prompt`) — independently
+   checks names/facts/cultural cues against the Korean and the analysis.
+   Scoped explicitly to *not* judge prose quality. Reuses the quoted-evidence
+   discipline from the old Call 3 (`findings` must cite a substring; an empty
+   `findings` array is framed as "a claim you're prepared to defend, not a
+   default") and adds a comparative check against the analysis's
+   `core_message`/`emphasis`, since Step 3 no longer self-reports whether
+   anything was dropped.
+5. **English editor** (`build_editor_system_prompt`) — the sharpest structural
+   change. This call receives **only the English text** — no Korean, no
+   analysis, no reference material of any kind (`build_editor_system_prompt`
+   takes no arguments). The old Call 3 was independent but still had the
+   Korean and analysis in front of it, and live validation showed it could
+   still rubber-stamp a passage by tracing each fragment back to a Korean
+   clause. A reviewer with zero source access can't excuse awkward English by
+   pointing at what it maps to — the hypothesis was that this would catch
+   what Call 3 missed.
+
+Steps 4 and 5 both depend only on Step 3's output, not on each other — they
+run one after another in `run_chapter` for simplicity, but neither result
+gates the other.
+
+**Live-validated against a fresh Chapter 68 run** (107 passages this time —
+segmentation instability persists even fully isolated in its own call: 52 →
+63 → 93 → 107 across four runs of the same chapter. Isolating segmentation
+did not fix its non-determinism; it only made it cheaper to study in
+isolation, which is still worth having). All 5 steps completed with valid,
+fully-covered JSON. Factcheck flagged 10/107 passages; the editor flagged
+23/107.
+
+- **The core hypothesis did not hold.** The closest recurrence of the
+  original "idol/beginner" mentorship speech (passage 42 this run) reads
+  almost identically to the version the 2026-08-01 Call 3 entry already
+  documented missing: *"Idol, beginner, none of it counts for anything. Show
+  good acting and that's the end of the conversation. You understand what
+  I'm telling you? Keep the fire the whole way through. Don't burn out."*
+  Both factcheck and the **Korean-blind editor** — the design built
+  specifically to catch this by removing the model's ability to rationalize
+  against the source — marked every check `true` with empty `findings` on
+  it. Total removal of source access did not surface the problem. This is
+  stronger evidence for a genuine shared capability gap on this specific
+  error class (short, individually-idiomatic imperative fragments that don't
+  cohere into one continuous utterance) than for the "reviewer excuses
+  awkwardness by tracing it to source meaning" mechanism the editor step was
+  built to defeat — that mechanism may still be real for other error
+  classes, but it isn't what's protecting this one.
+- **Partial, measurable progress on the second original example.** The
+  manager-caving line (passage 80 this run) now reads *"You're right....
+  No chance. That crazy woman would never. But let's keep it quiet today
+  anyway. All right? Yeah? I'm asking you."* The calqued discourse particle
+  from the original complaint ("I'm asking you **here**") is gone — a real,
+  confirmed fix. The stacked short tag-questions pattern persists in
+  different words ("All right? Yeah?" for "Okay? Hm?"), and neither
+  factcheck nor the editor flagged it as a phrasing problem — the editor did
+  flag this passage, but only for an unrelated typographic inconsistency
+  (a four-dot ellipsis that doesn't match the three-dot style used
+  elsewhere), not the tag-question staccato.
+- **Genuine, more specific signal elsewhere than the 3-call design produced.**
+  Splitting fact-checking from prose-quality review let each dig deeper into
+  its own lane instead of doing both shallowly. Factcheck caught fabricated
+  specifics not in the Korean — an invented "ninety seconds" for a vague
+  '이제 막 들어왔는데' (we've only just walked in), an invented "fifty takes" for
+  an unspecified '수십 개' (dozens) — plus an honorific/deference loss and a
+  misattributed line (English gave a character power he explicitly disclaims
+  having in the Korean). The editor caught real prose defects unrelated to
+  the original complaint: an antecedent-less "the order", an article error
+  ("an actors' business"), a British/American spelling inconsistency
+  ("armour" beside "parking garage" elsewhere in the same chapter), and a
+  narrative sequence contradiction (a character described as walking toward
+  an elevator, then as having already passed the narrator). These are
+  concrete, well-grounded findings a human editor would actually raise — the
+  quoted-evidence discipline carried over from Call 3 is still doing its job.
+- **Net assessment**: more numerous and more specific findings than the
+  3-call design produced, cleanly separated by concern (fact vs. prose), but
+  the exact failure class that motivated this whole redesign — short
+  imperative fragments stapled from unrelated registers — survived every
+  mitigation tried across both pipeline generations, including the most
+  aggressive one (zero source access). The caveat from the prior entry
+  stands, sharpened: this specific error class looks like a shared model
+  limitation, not a self-grading or context-contamination problem, and
+  neither more independent review calls nor stricter isolation closed it.
+- **Not yet done, still on the table**: feeding the passage 42/80 exemplars
+  directly into the editor's prompt as concrete negative examples, or trying
+  a different model for the editor pass specifically, are both untried.
+  Given the editor step is now maximally isolated (no source, no reference
+  material, no other steps' output) and still missed passage 42, a
+  different-model trial is the more informative next experiment — it would
+  distinguish "this model can't see this error class" from "no model can."
+- Output lives in `tmp/translation_eval/chapter_68/` (gitignored scratch),
+  not committed.
+
+---
+
+## 2026-08-02 · Hybrid deterministic/semantic beat segmentation replaces free-form Step 1
+
+Step 1 of the 5-step pipeline (2026-08-01 entry) was a single free-form LLM
+call asked to segment the whole chapter into "one continuous unit of voice"
+passages from scratch. That call's output was non-deterministic run-to-run
+on the identical chapter — 52 → 63 → 93 → 107 passages across four runs —
+because the model was inventing its own boundaries every time with no stable
+anchor to classify against. The user proposed replacing it with a hybrid,
+matching how Korean webnovels are actually structured (built from
+one-liners; boundaries follow dramatic beats, not formatting):
+
+1. **Deterministic pre-chunking** (`Pipeline::Ruby::TranslateBatch::BeatSegmenter.candidate_blocks`,
+   pure Ruby, no LLM call) — splits the chapter on blank lines into
+   one-liners, groups them into candidate blocks of 3-7 lines, and forces a
+   block boundary at every literal `***` scene marker (confirmed the only
+   scene-break convention used across all 75 chapters in this novel). A
+   trailing remainder under 3 lines merges into the preceding block rather
+   than standing alone, trading an occasional oversized block for never
+   reproducing the free-form design's micro-passage problem.
+2. **Beat classification** (one LLM call — `PromptBuilder.build_beat_classification_system_prompt` /
+   `.build_beat_classification_user_message`) — the model is never asked to
+   invent a boundary from raw text; it only classifies each candidate
+   block's relationship to the block immediately before it: `CONTINUE` (same
+   beat), `BREAK` (new beat), or `BRIDGE` (a short transitional block —
+   a pause, a breath, a shift in posture — attached to whichever beat
+   follows it). It also attributes a `speaker` per block. Scene-marker
+   blocks are excluded from what the model classifies — Ruby already knows
+   their boundary is structural, not semantic.
+3. **Deterministic merge** (`BeatSegmenter.merge_beats`, pure Ruby, no LLM
+   call) — assembles final passages from the classification labels. The
+   first block of every scene is always forced `BREAK` regardless of what
+   the model returned, since that boundary was never actually in question.
+   A trailing `BRIDGE` with no following beat to attach to (scene or
+   chapter ends right after it) falls back to attaching to the beat before
+   it.
+
+Segmentation still costs exactly one LLM call per chapter (the classification
+call), matching the "one batched call per step" design already established —
+the pre-chunk and merge are free.
+
+**Beats can span more than one speaker.** This is a deliberate redefinition,
+not an oversight: a back-and-forth exchange between two characters can be
+one beat if it's all serving the same emotional or topical moment (e.g. a
+greeting-and-bow exchange, or a short Q&A), matching how these scenes
+actually read. This required `speaker` (string) to become `speakers` (array)
+on each passage, and required reworking the wording of every downstream step
+that used to assume "one passage = one voice": `voice_register` (Step 2/
+analysis) now explicitly asks for each speaker's own voice when `speakers`
+has more than one entry; `localized_translation` (Step 3/localization) now
+requires each speaker to hold their own consistent register while the
+passage as a whole still reads as one connected beat, not one uniform voice;
+the editor's `continuous_utterance` and `register_unified` checks (Step 5)
+were reworded the same way — a legitimate two-character exchange with two
+different personalities is not a `register_unified` violation on its own,
+only mixing registers within one speaker's own lines still is.
+
+**Live-validated against a fresh Chapter 68 run**: **14 final passages** —
+down from the free-form design's 52/63/93/107 non-deterministic history, a
+qualitative step-change, not just a smaller number. The classification call
+returned 19 classifiable blocks (12 `BREAK`, 7 `CONTINUE`, 0 `BRIDGE` this
+run) across 2 scene markers, merging into 12 real content beats plus the 2
+scene-marker beats. 3 of the 14 are genuine multi-speaker beats — e.g.
+passage 5 correctly grouped a bow-and-greeting exchange between two named
+characters (`이희연`/Hee-yeon Lee greeting `손철환`/Chul-hwan Son) into one
+beat instead of shredding it into independent one-line turns, which is
+exactly the scene-grammar behavior this redesign was built to produce. Full
+spec suite: `beat_segmenter_spec.rb` (17 examples), plus the rewritten
+`prompt_builder_spec.rb` (77 examples) and `translation_eval_spec.rb` (23
+examples) — 116 examples combined (excluding beat_segmenter_spec, 99 with it
+under `spec/services/pipeline`), 0 failures. `spec/services/pipeline/**` in
+full: 322 examples, 0 failures.
+
+- Steps 2-5 (analysis/localization/factcheck/editor) needed no change to
+  their own chaining/coverage logic — they only needed the wording updates
+  above plus the schema rename (`speaker` → `speakers`). The generalized
+  `validate_ordered_coverage`/`validate_set_coverage` helpers in
+  `TranslationEval` gained an `id_key:` parameter (default `"passage_id"`)
+  so Step 1's own coverage check (over `block_id`, before merge) could reuse
+  the same helper instead of a bespoke one.
+- The old free-form segmentation's "gap/overlap" and "non-sequential
+  passage_id" failure modes are now structurally impossible: `anchor_quote`
+  content and `passage_id` sequencing are both assigned by Ruby from the
+  real source text after classification, never sourced from the LLM
+  response at all. The LLM can now only fail Step 1 by producing invalid
+  JSON or omitting/reordering a `block_id` in its classification response —
+  both still validated, with `translation_eval_spec.rb` covering each.
+- The 3-call design's old `build_call1_system_prompt` free-form segmentation
+  prompt was already deleted in the 2026-08-01 entry; this entry deletes and
+  replaces its 5-step-pipeline successor, `build_segmentation_system_prompt`,
+  which never shipped to production either — both were eval-only, driven
+  only by `Pipeline::Ruby::TranslationEval`.
+- **Promising early qualitative signal, not yet independently confirmed.**
+  Passage 5 — the beat spanning Hee-yeon's greeting and Chul-hwan Son's
+  mentorship remarks — contains a near-verbatim recurrence of the exact
+  "idol, beginner" line that every prior pipeline generation flagged for
+  register-mixing (most recently the 2026-08-01 entry's passage 42). Here it
+  reads as one coherent scene: *"Idol, beginner, none of that matters. Show
+  people good acting and that's the end of the conversation. You know what I
+  mean? Keep the fire going all the way to the end. Don't let yourself get
+  worn down."* — followed immediately by Hee-yeon's reply and the scene
+  moving on, all as a single connected beat, not the standalone stapled-
+  imperative-fragment shape earlier runs produced. This is consistent with a
+  hypothesis worth testing further: giving localization a genuinely correct
+  beat boundary (the full exchange as context) rather than a fragment may
+  fix more of this error class at the source than any downstream review step
+  did across two pipeline generations. This is a single spot-check on one
+  passage, not a factcheck/editor-confirmed result — the independent review
+  calls for this run were still in progress when this entry was written (see
+  below) and should be checked before treating this as validated.
+- Not yet done: factcheck.json and editor.json for this run were still being
+  generated live against the real `claude` CLI when this entry was written
+  and weren't waited on to completion, to avoid spending unbounded session
+  time/context on a live 7-call run (single_pass, structured, classification,
+  analysis, and localization had already completed and are reflected above).
+  Output lands in `tmp/translation_eval_hybrid/chapter_68/` (gitignored
+  scratch) whenever the run finishes; check `factcheck.json` and
+  `editor.json` there next time this area is touched, specifically for
+  whether either flags anything on passage 5 that the spot-check above missed.
+
+## 2026-08-01 · Eval harness drops single-pass/structured calls; factcheck moves to a cheaper model
+
+`Pipeline::Ruby::TranslationEval`/`bin/translation_eval` ran 7 calls per
+chapter: the production single-pass prompt, the superseded structured
+(intent/literal/localized) prompt, and the 5-step pipeline under test. The
+first two aren't part of the pipeline being evaluated and were only burning
+extra calls/cost on every eval run, so they're removed from this harness
+entirely — `ChapterResult` no longer carries `single_pass_error`/
+`structured_error`/`structured_valid_json`, and `run_single_pass`/
+`run_structured` are deleted. `PromptBuilder.build_system_prompt`/
+`.build_structured_system_prompt` are untouched — they're still the real
+production single-pass path (`translate_batch.rb`) and voice_calibration's
+own path respectively, with their own spec coverage; only the eval harness's
+use of them is gone. Re-running chapter 68 through the now 5-call-only
+harness reproduced the same clean result as before (14 passages, all 5
+steps `ok`), confirming the earlier factcheck/editor spot-check wasn't an
+artifact of the extra calls.
+
+Also implements cost-reduction option B from the same discussion (options A/
+C/D — merging factcheck+editor into one call, caching Step 2, and further
+reducing segmentation calls — were considered and deliberately not taken:
+A risks contaminating the editor's Korean-blind natural-English judgment
+with the source text, and C/D didn't have a clear win outside this eval
+harness's own dev loop): `Pipeline::ClaudeCode.call` gained an optional
+`model:` keyword that overrides `config.translation_model` for a single
+call; `TranslationConfig` gained `factcheck_model` (env `FACTCHECK_MODEL`,
+default `"sonnet"`, independent of `translation_model`'s `"opus"` default).
+Step 4 (factcheck) now runs on `factcheck_model` — it's a comparison/
+verification task (do these names/facts survive translation), not creative
+generation, so a weaker model is expected to hold up. Steps 1/2/3/5 are
+unaffected. Not yet measured: whether sonnet's factcheck findings are as
+sharp as opus's on the same chapter — worth a side-by-side spot-check before
+trusting sonnet's factcheck output on anything but this eval harness.
+
+Full findings from the re-run's `factcheck.json`/`editor.json` (still on
+opus for this specific run, before the model switch): factcheck flagged 8/14
+passages but every finding was advisory with all hard checks (`names_preserved`
+etc.) true — the recurring pattern is Korean address terms (형님, 오빠,
+선배님들) flattening into generic English, not factual errors. Editor
+flagged 9/14 passages, all on `natural_english` specifically (structural
+checks — `continuous_utterance`, `register_unified`, `narrative_flow` — all
+held), catching calques ("eyes must be broken," "the manager was dying") and
+a few dangling/run-on constructions. Both point at real, addressable
+categories rather than pipeline breakage.
+
+Spec coverage: `translation_config_spec.rb` (+2), `claude_code_spec.rb` (+2),
+`translation_eval_spec.rb` (rewritten to drop single-pass/structured
+fixtures, +1 for the factcheck-model-override behavior) — 51 examples across
+the three files, 0 failures.

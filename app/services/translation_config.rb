@@ -20,7 +20,7 @@ class TranslationConfig
   VALID_BACKENDS = %w[local claude_code].freeze
 
   attr_reader :translation_backend, :calibration_backend, :format_backend, :llm_base_url, :llm_api_key,
-              :translation_model, :translation_max_budget_usd, :claude_bin
+              :translation_model, :factcheck_model, :translation_max_budget_usd, :claude_bin
 
   def self.from_env(env = ENV)
     new(env)
@@ -33,6 +33,11 @@ class TranslationConfig
     @llm_base_url                = env.fetch("LLM_BASE_URL", "http://localhost:11434/v1")
     @llm_api_key                 = env.fetch("LLM_API_KEY", "local")
     @translation_model           = env.fetch("TRANSLATION_MODEL", "opus")
+    # Factcheck (translation_eval.rb's Step 4) is a comparison/verification
+    # task, not creative generation — it doesn't need the strongest model.
+    # A separate field rather than reusing translation_model, since the two
+    # are tuned independently.
+    @factcheck_model              = env.fetch("FACTCHECK_MODEL", "sonnet")
     @translation_max_budget_usd = validate_budget(env)
     @claude_bin                  = resolve_claude_bin(env)
   end
