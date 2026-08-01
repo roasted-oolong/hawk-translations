@@ -704,6 +704,21 @@ register-mixing now reads as one coherent beat instead of stapled fragments
 `build_segmentation_system_prompt` code/specs deleted outright. See the doc
 entry for the still-pending factcheck/editor results.
 
+The factcheck/editor re-run against Chapter 68 that followed (still on the
+eval harness, dropped its single-pass/structured calls to cut cost/noise —
+see docs/DECISIONS.md) came back clean and substantive: 8/14 passages
+flagged by factcheck, all advisory (honorific flattening, not factual
+errors), 9/14 by editor (calques, dangling constructions — prose polish,
+not structural breakage). That result is what motivated shipping **Chapter
+QA** as a real production feature rather than leaving it in the offline
+harness: a "Run Quality Check" pass inside the existing chapter review page,
+rendering factcheck/editor findings as Word-style tracked changes (accept/
+reject per suggestion; "discuss with AI" deliberately deferred). It runs
+directly against whatever translation is already saved — no re-segmentation,
+no re-localization — so it doesn't depend on the beat-segmentation work
+above being promoted to production at all. Full design/build notes in
+docs/DECISIONS.md's chapter_qa entry.
+
 Chapters 74/75, Test A, and Test B are still unbuilt/unrun.
 
 User proposal (2026-07-26): translate_batch's single-pass prompt was producing

@@ -616,6 +616,121 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
     end
   end
 
+  describe ".build_chapter_qa_factcheck_system_prompt" do
+    def context(overrides = {})
+      described_class::TranslationContext.new(
+        **{
+          novel_info: "Genre: romance fantasy", translation_guidelines: "Be faithful.",
+          narrator_note: "Kang narrates dryly.", characters: "## Hyuk Kang\n- Role: protagonist",
+          cultural_phrases: "", locations: "", story: "", terminology: "", voice_calibration: ""
+        }.merge(overrides)
+      )
+    end
+
+    it "tells the reviewer it did not write the translation" do
+      prompt = described_class.build_chapter_qa_factcheck_system_prompt(context)
+
+      expect(prompt).to include("You did not write the translation")
+    end
+
+    it "instructs the model to return a single JSON object with a flat suggestions array, not reviewed_passages" do
+      prompt = described_class.build_chapter_qa_factcheck_system_prompt(context)
+
+      expect(prompt).to include('"suggestions"')
+      expect(prompt).not_to include("reviewed_passages")
+      expect(prompt).not_to include("passage_id")
+      expect(prompt).to include("Respond with a single JSON object")
+    end
+
+    it "requires a concrete suggested_revision and a structured severity, not just an issue description" do
+      prompt = described_class.build_chapter_qa_factcheck_system_prompt(context)
+
+      expect(prompt).to include("suggested_revision")
+      expect(prompt).to include("always give a concrete rewrite")
+      expect(prompt).to include('"strong" or "advisory"')
+    end
+
+    it "asks for korean_context on every finding" do
+      prompt = described_class.build_chapter_qa_factcheck_system_prompt(context)
+
+      expect(prompt).to include("korean_context")
+    end
+
+    it "explicitly scopes out prose-quality judgment to a separate call" do
+      prompt = described_class.build_chapter_qa_factcheck_system_prompt(context)
+
+      expect(prompt).to include("not judging prose quality")
+    end
+
+    it "includes the same reference material as the single-pass prompt" do
+      prompt = described_class.build_chapter_qa_factcheck_system_prompt(context)
+
+      expect(prompt).to include("Genre: romance fantasy")
+      expect(prompt).to include("Hyuk Kang")
+      expect(prompt).to include("Character Bible")
+    end
+
+    it "injects cultural_patterns content into its own section" do
+      prompt = described_class.build_chapter_qa_factcheck_system_prompt(context, cultural_patterns: "Status-jockeying (기 싸움) notes here")
+
+      expect(prompt).to include("## Cultural Patterns")
+      expect(prompt).to include("Status-jockeying (기 싸움) notes here")
+    end
+  end
+
+  describe ".build_chapter_qa_factcheck_user_message" do
+    it "includes the whole Korean source and whole English translation under distinct headings" do
+      message = described_class.build_chapter_qa_factcheck_user_message(
+        korean_text: "챕터 1 한국어", english_text: "Chapter one, in English."
+      )
+
+      expect(message).to include("# Korean Source")
+      expect(message).to include("챕터 1 한국어")
+      expect(message).to include("# English Translation")
+      expect(message).to include("Chapter one, in English.")
+    end
+  end
+
+  describe ".build_chapter_qa_editor_system_prompt" do
+    it "tells the reviewer it has no access to the Korean source" do
+      prompt = described_class.build_chapter_qa_editor_system_prompt
+
+      expect(prompt).to include("You do not have access to the Korean source")
+    end
+
+    it "instructs the model to return a single JSON object with a flat suggestions array, not reviewed_passages" do
+      prompt = described_class.build_chapter_qa_editor_system_prompt
+
+      expect(prompt).to include('"suggestions"')
+      expect(prompt).not_to include("reviewed_passages")
+      expect(prompt).not_to include("passage_id")
+    end
+
+    it "requires a concrete suggested_revision and a structured severity" do
+      prompt = described_class.build_chapter_qa_editor_system_prompt
+
+      expect(prompt).to include("suggested_revision")
+      expect(prompt).to include('"strong" or "advisory"')
+    end
+
+    it "never asks for korean_context — it has no Korean to draw one from" do
+      expect(described_class.build_chapter_qa_editor_system_prompt).not_to include("korean_context")
+    end
+
+    it "takes no context/reference-material arguments — it must stay blind to the Korean and any bible/style reference" do
+      expect(described_class.method(:build_chapter_qa_editor_system_prompt).arity).to eq(0)
+    end
+  end
+
+  describe ".build_chapter_qa_editor_user_message" do
+    it "includes only the English translation, with no Korean content" do
+      message = described_class.build_chapter_qa_editor_user_message(english_text: "Chapter one, in English.")
+
+      expect(message).to include("# English Translation")
+      expect(message).to include("Chapter one, in English.")
+    end
+  end
+
   describe ".extract_narrator_note" do
     it "extracts the Narrator Note section when followed by another section" do
       novel_info = "# Title\n\n## Narrator Note\nSome note text.\nMore text.\n\n## Next Section\nOther stuff"

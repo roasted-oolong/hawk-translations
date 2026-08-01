@@ -5,6 +5,9 @@
      data-controller="chapter-review bible-lookup"
      data-chapter-review-approve-url-value="<%= approve_novel_chapter_path(@novel, ":id") %>"
      data-chapter-review-save-url-value="<%= novel_update_chapter_review_text_path(@novel, id: ":id") %>"
+     data-chapter-review-qa-create-url-value="<%= novel_translation_jobs_path(@novel) %>"
+     data-chapter-review-qa-status-url-value="<%= novel_chapter_review_qa_path(@novel, id: ":id") %>"
+     data-chapter-review-qa-suggestion-url-value="<%= novel_update_chapter_review_qa_suggestion_path(@novel, id: ":id", suggestion_id: ":suggestionId") %>"
      data-bible-lookup-search-url-value="<%= novel_bible_search_path(@novel) %>"
      data-bible-lookup-novel-id-value="<%= @novel.id %>"
      data-testid="chapter-review-shell">
@@ -79,6 +82,20 @@
       </span>
       <div class="chapter-review__topbar-end">
         <button type="button"
+                class="chapter-review__qa-btn"
+                data-action="click->chapter-review#runQa"
+                data-chapter-review-target="qaBtn"
+                title="Run an independent factcheck + editor QA pass"
+                data-testid="button-run-qa">
+          ⚡ Run Quality Check
+        </button>
+        <span class="chapter-review__qa-running"
+              data-chapter-review-target="qaRunningIndicator"
+              hidden>
+          <span class="chapter-review__qa-spinner" aria-hidden="true"></span>
+          <span data-chapter-review-target="qaRunningLabel">Checking…</span>
+        </span>
+        <button type="button"
                 class="chapter-review__compare-btn"
                 data-action="click->chapter-review#toggleKorean"
                 data-chapter-review-target="compareBtn"
@@ -103,6 +120,63 @@
               aria-live="polite">
           ✓ Saved
         </span>
+      </div>
+    </div>
+
+    <%# ---- QA navigator (shown once a quality check has completed for the current chapter) ---- %>
+    <div class="chapter-review__qa-navigator"
+         data-chapter-review-target="qaNavigator"
+         data-testid="qa-navigator"
+         hidden>
+      <div class="chapter-review__qa-navigator-left">
+        <span class="chapter-review__qa-summary" data-chapter-review-target="qaSummary"></span>
+        <div class="chapter-review__qa-filters">
+          <% [ ["all", "All"], ["editor", "Editor"], ["factcheck", "Factcheck"], ["strong", "⬆ Strong"] ].each do |key, label| %>
+            <button type="button"
+                    class="chapter-review__qa-filter-pill"
+                    data-chapter-review-target="qaFilterPill"
+                    data-filter="<%= key %>"
+                    data-action="click->chapter-review#setQaFilter"
+                    data-chapter-review-filter-param="<%= key %>"
+                    data-testid="qa-filter-<%= key %>">
+              <%= label %> <span class="chapter-review__qa-filter-count" data-chapter-review-target="qaFilterCount" data-filter="<%= key %>">0</span>
+            </button>
+          <% end %>
+        </div>
+      </div>
+      <div class="chapter-review__qa-navigator-right">
+        <span class="chapter-review__qa-position" data-chapter-review-target="qaPosition"></span>
+        <button type="button" class="chapter-review__qa-nav-btn" data-action="click->chapter-review#qaPrev" title="Previous suggestion" data-testid="qa-prev">‹</button>
+        <button type="button" class="chapter-review__qa-nav-btn" data-action="click->chapter-review#qaNext" title="Next suggestion" data-testid="qa-next">›</button>
+        <button type="button" class="chapter-review__qa-accept-all" data-action="click->chapter-review#qaAcceptAll" data-chapter-review-target="qaAcceptAllBtn" data-testid="qa-accept-all">Accept all</button>
+        <button type="button" class="chapter-review__qa-dismiss" data-action="click->chapter-review#dismissQa" title="Dismiss quality check" data-testid="qa-dismiss">×</button>
+      </div>
+    </div>
+
+    <%# ---- QA suggestion detail panel — docked below the navigator rather
+        than a floating tooltip, opened by clicking a highlighted suggestion
+        span; shows the source/severity badges, proposed rewrite, reason,
+        Korean context (factcheck only), and Accept/Reject. ---- %>
+    <div class="chapter-review__qa-detail"
+         data-chapter-review-target="qaDetail"
+         data-testid="qa-detail"
+         hidden>
+      <div class="chapter-review__qa-detail-badges">
+        <span class="chapter-review__qa-badge" data-chapter-review-target="qaDetailSource"></span>
+        <span class="chapter-review__qa-badge" data-chapter-review-target="qaDetailSeverity"></span>
+        <button type="button" class="chapter-review__qa-detail-close" data-action="click->chapter-review#closeQaDetail" aria-label="Close">×</button>
+      </div>
+      <p class="chapter-review__qa-detail-label">Suggested rewrite</p>
+      <p class="chapter-review__qa-detail-rewrite" data-chapter-review-target="qaDetailRewrite"></p>
+      <p class="chapter-review__qa-detail-label">Reason</p>
+      <p class="chapter-review__qa-detail-reason" data-chapter-review-target="qaDetailReason"></p>
+      <div data-chapter-review-target="qaDetailKoreanWrap" hidden>
+        <p class="chapter-review__qa-detail-label">Korean source</p>
+        <p class="chapter-review__qa-detail-korean" data-chapter-review-target="qaDetailKorean" lang="ko"></p>
+      </div>
+      <div class="chapter-review__qa-detail-actions">
+        <button type="button" class="chapter-review__qa-reject" data-action="click->chapter-review#qaRejectFocused" data-testid="qa-detail-reject">Reject</button>
+        <button type="button" class="chapter-review__qa-accept" data-action="click->chapter-review#qaAcceptFocused" data-testid="qa-detail-accept">Accept</button>
       </div>
     </div>
 
@@ -144,6 +218,13 @@
                     autocapitalize="off"
                     placeholder="No translated content available."><%= @chapter_texts[chapter.id].to_s.strip %></textarea>
 
+          <%# QA tracked-changes view (single-column mode) — populated by JS,
+              shown in place of editableText once a quality check completes %>
+          <div class="chapter-review__qa-pane"
+               data-chapter-review-target="qaPane"
+               data-testid="qa-pane-<%= chapter.number %>"
+               hidden></div>
+
           <%# Compare mode split panes — hidden until KO toggle %>
           <div class="chapter-review__split-panes"
                data-chapter-review-target="splitPanes">
@@ -158,6 +239,11 @@
                         autocomplete="off"
                         autocorrect="off"
                         autocapitalize="off"><%= @chapter_texts[chapter.id].to_s.strip %></textarea>
+              <%# QA tracked-changes view (compare mode) — mirrors qaPane above %>
+              <div class="chapter-review__qa-pane chapter-review__qa-pane--compare"
+                   data-chapter-review-target="qaPaneCompare"
+                   data-testid="qa-pane-compare-<%= chapter.number %>"
+                   hidden></div>
             </div>
 
             <div class="chapter-review__pane-divider" aria-hidden="true"></div>

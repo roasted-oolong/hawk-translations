@@ -34,6 +34,12 @@ FactoryBot.define do
       chapter_end   { 1 }
     end
 
+    trait :chapter_qa do
+      job_type      { "chapter_qa" }
+      chapter_start { 1 }
+      chapter_end   { 1 }
+    end
+
     trait :queued do
       status { "queued" }
     end

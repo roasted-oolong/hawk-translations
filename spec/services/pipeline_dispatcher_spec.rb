@@ -95,4 +95,31 @@ RSpec.describe PipelineDispatcher do
       expect(described_class.call(job)).to eq([ "ok", "", true ])
     end
   end
+
+  describe "#call for a chapter_qa job" do
+    let(:chapter) { create(:chapter, novel: novel, number: 7, status: "translated") }
+    let(:qa_job) do
+      create(:translation_job, novel: novel, user: user, job_type: "chapter_qa",
+             chapter_start: chapter.number, chapter_end: chapter.number)
+    end
+
+    it "routes straight to Pipeline::Ruby::ChapterQa without consulting PipelineImplementation or Subprocess" do
+      expect(PipelineImplementation).not_to receive(:for)
+      expect(Pipeline::Subprocess).not_to receive(:run)
+      expect(Pipeline::Ruby::ChapterQa).to receive(:call).with(qa_job).and_return([ "ok", "", true ])
+
+      expect(described_class.call(qa_job)).to eq([ "ok", "", true ])
+    end
+
+    it "ignores PIPELINE_IMPL_CHAPTER_QA even if someone sets it, since chapter_qa always bypasses that lookup" do
+      original = ENV["PIPELINE_IMPL_CHAPTER_QA"]
+      ENV["PIPELINE_IMPL_CHAPTER_QA"] = "python"
+      begin
+        expect(Pipeline::Ruby::ChapterQa).to receive(:call).with(qa_job).and_return([ "ok", "", true ])
+        expect(described_class.call(qa_job)).to eq([ "ok", "", true ])
+      ensure
+        ENV["PIPELINE_IMPL_CHAPTER_QA"] = original
+      end
+    end
+  end
 end

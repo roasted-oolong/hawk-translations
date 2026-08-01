@@ -93,8 +93,9 @@ class TranslationJobsController < ApplicationController
   def coerce_chapter_range(permitted)
     permitted[:chapter_start] = nil if permitted[:chapter_start].blank?
     permitted[:chapter_end]   = nil if permitted[:chapter_end].blank?
-    # Voice calibration targets a single chapter — end defaults to start.
-    if permitted[:job_type] == "voice_calibration" && permitted[:chapter_end].nil?
+    # Voice calibration and chapter QA both target a single chapter — end
+    # defaults to start.
+    if %w[voice_calibration chapter_qa].include?(permitted[:job_type]) && permitted[:chapter_end].nil?
       permitted[:chapter_end] = permitted[:chapter_start]
     end
     permitted

@@ -548,8 +548,11 @@
   padding: var(--space-6) var(--space-8) 0;
 }
 
-/* Hide big textarea in compare mode */
-.chapter-review__chapter-card--compare .chapter-review__edit-textarea {
+/* Hide big textarea (and its QA tracked-changes counterpart) in compare mode
+   — the compare-mode QA pane lives inside .chapter-review__split-panes
+   instead and follows that container's own visibility rule below. */
+.chapter-review__chapter-card--compare .chapter-review__edit-textarea,
+.chapter-review__chapter-card--compare .chapter-review__qa-pane:not(.chapter-review__qa-pane--compare) {
   display: none;
 }
 
@@ -911,4 +914,304 @@
   color: #3a4e4a;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+/* ==========================================================================
+   Chapter QA — factcheck/editor track-changes review
+   ========================================================================== */
+
+.chapter-review__qa-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 1.75rem;
+  padding-inline: var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.chapter-review__qa-btn:hover {
+  background-color: var(--color-primary);
+  color: var(--color-bg);
+}
+
+.chapter-review__qa-running {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 1.75rem;
+  padding-inline: var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  background-color: var(--color-primary-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.chapter-review__qa-spinner {
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid var(--color-primary-subtle);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: chapter-review-qa-spin 0.7s linear infinite;
+}
+
+@keyframes chapter-review-qa-spin {
+  to { transform: rotate(360deg); }
+}
+
+.chapter-review__qa-navigator {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-2) var(--space-8);
+  background-color: var(--color-surface-container);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-xs);
+}
+
+.chapter-review__qa-navigator-left,
+.chapter-review__qa-navigator-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.chapter-review__qa-summary {
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.chapter-review__qa-filters {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.chapter-review__qa-filter-pill {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 1.5rem;
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-sm);
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.chapter-review__qa-filter-pill:hover {
+  background-color: var(--color-surface-manuscript);
+  color: var(--color-text);
+}
+
+.chapter-review__qa-filter-pill--active {
+  background-color: var(--color-primary);
+  color: var(--color-bg);
+}
+
+.chapter-review__qa-filter-count {
+  opacity: 0.7;
+}
+
+.chapter-review__qa-position {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 3rem;
+  text-align: right;
+}
+
+.chapter-review__qa-nav-btn,
+.chapter-review__qa-dismiss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.chapter-review__qa-nav-btn:hover,
+.chapter-review__qa-dismiss:hover {
+  background-color: var(--color-surface-manuscript);
+  color: var(--color-text);
+}
+
+.chapter-review__qa-accept-all {
+  height: 1.5rem;
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-sm);
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+}
+
+.chapter-review__qa-accept-all:hover {
+  background-color: var(--color-primary-subtle);
+}
+
+/* --- Tracked-changes rendering --- */
+
+.chapter-review__qa-pane {
+  font-size: var(--text-base, 1rem);
+  line-height: 1.85;
+  white-space: pre-wrap;
+}
+
+.chapter-review__qa-pane--compare {
+  flex: 1;
+  min-width: 0;
+}
+
+.chapter-review__qa-suggestion {
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.chapter-review__qa-suggestion--focused {
+  background-color: var(--color-warning-subtle);
+}
+
+.chapter-review__qa-suggestion-old {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+.chapter-review__qa-suggestion-new {
+  text-decoration: underline dashed;
+  text-underline-offset: 2px;
+}
+
+.chapter-review__qa-suggestion-new--editor { color: var(--color-primary); }
+.chapter-review__qa-suggestion-new--factcheck { color: var(--color-danger); }
+
+.chapter-review__qa-suggestion--accepted {
+  color: var(--color-primary);
+  border-bottom: 1px solid var(--color-primary);
+  cursor: default;
+}
+
+.chapter-review__qa-suggestion--rejected {
+  cursor: default;
+}
+
+/* --- Suggestion detail panel (docked, not a floating tooltip) --- */
+
+.chapter-review__qa-detail {
+  flex-shrink: 0;
+  padding: var(--space-4) var(--space-8);
+  background-color: var(--color-surface-manuscript);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.chapter-review__qa-detail-badges {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.chapter-review__qa-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.chapter-review__qa-badge--source-factcheck { background-color: var(--color-danger-subtle); color: var(--color-danger); }
+.chapter-review__qa-badge--source-editor    { background-color: var(--color-primary-subtle); color: var(--color-primary); }
+.chapter-review__qa-badge--severity-strong    { background-color: var(--color-warning-subtle); color: var(--color-warning); }
+.chapter-review__qa-badge--severity-advisory  { background-color: var(--color-success-subtle); color: var(--color-success); }
+
+.chapter-review__qa-detail-close {
+  margin-left: auto;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: var(--text-sm);
+}
+
+.chapter-review__qa-detail-label {
+  font-size: 10px;
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.chapter-review__qa-detail-rewrite {
+  color: var(--color-text);
+  margin-bottom: var(--space-3);
+}
+
+.chapter-review__qa-detail-reason {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-3);
+}
+
+.chapter-review__qa-detail-korean {
+  color: var(--color-text-muted);
+  font-style: italic;
+  margin-bottom: var(--space-3);
+}
+
+.chapter-review__qa-detail-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.chapter-review__qa-reject,
+.chapter-review__qa-accept {
+  flex: 1;
+  padding-block: var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: none;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+}
+
+.chapter-review__qa-reject {
+  color: var(--color-text-muted);
+}
+
+.chapter-review__qa-reject:hover {
+  background-color: var(--color-danger-subtle);
+  color: var(--color-danger);
+}
+
+.chapter-review__qa-accept {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.chapter-review__qa-accept:hover {
+  background-color: var(--color-primary-subtle);
 }
