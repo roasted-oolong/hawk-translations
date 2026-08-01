@@ -76,6 +76,35 @@ RSpec.describe Pipeline::ClaudeCode do
       end
     end
 
+    it "uses the model: override instead of config.translation_model when given" do
+      Dir.mktmpdir do |dir|
+        bin = fake_claude(dir, ECHO_SCRIPT)
+        config = config_for(bin, "TRANSLATION_MODEL" => "opus")
+
+        result = described_class.call(
+          system_prompt: "be a translator", user_message: "translate this",
+          config: config, model: "sonnet"
+        )
+
+        argv = result.raw["argv"]
+        expect(argv[argv.index("--model") + 1]).to eq("sonnet")
+      end
+    end
+
+    it "falls back to config.translation_model when model: is not given" do
+      Dir.mktmpdir do |dir|
+        bin = fake_claude(dir, ECHO_SCRIPT)
+        config = config_for(bin, "TRANSLATION_MODEL" => "opus")
+
+        result = described_class.call(
+          system_prompt: "be a translator", user_message: "translate this", config: config
+        )
+
+        argv = result.raw["argv"]
+        expect(argv[argv.index("--model") + 1]).to eq("opus")
+      end
+    end
+
     it "deletes the system-prompt temp file after the call" do
       Dir.mktmpdir do |dir|
         bin = fake_claude(dir, ECHO_SCRIPT)

@@ -127,59 +127,100 @@ module Pipeline
           PROMPT
         end
 
-        # Call 1 (Comprehension + Cultural/Narrative Analysis) of the 2-call
-        # translation quality pipeline — docs/DECISIONS.md's 2026-07-30 "committing
-        # to a 2-call split" entry. Analysis only, no translation: segments the
-        # whole chapter and produces the JSON "analysis contract" Call 2 will
-        # consume. Offline/eval-only for now, same as build_structured_system_prompt
-        # — driven by Pipeline::Ruby::TranslationEval, not wired into
-        # translate_batch.rb, per that decision's shipping sequence (Call 1 first,
-        # validated against real chapters, before Call 2 gets built).
+        # 5-step translation quality pipeline — docs/DECISIONS.md's 2026-08-01
+        # "5-step pipeline replaces 3-call pipeline" entry. Replaces the earlier
+        # 3-call design (Call 1 analysis -> Call 2 rewrite+self-grade -> Call 3
+        # independent review): that design still let the closest recurrence of a
+        # known bad pattern slip past both the self-grade and the independent
+        # review, because segmentation, literary understanding, prose authorship,
+        # fact-checking, and prose-quality review were all entangled across only
+        # three calls. This design gives each concern its own call:
+        #
+        #   1. Beat classification (build_beat_classification_system_prompt) —
+        #      Korean only. Deterministic/semantic hybrid, not one free-form
+        #      call: BeatSegmenter pre-chunks the chapter into small blocks in
+        #      Ruby, this call classifies each block's relationship to the one
+        #      before it (CONTINUE/BREAK/BRIDGE), and BeatSegmenter merges the
+        #      result into final passages/beats — see BeatSegmenter's own
+        #      comment for why the old free-form version was replaced.
+        #   2. Literary analysis (build_analysis_system_prompt) — Korean only, no
+        #      English rendering of the content: understand each passage's
+        #      message, emphasis, pacing, voice, and function before any English
+        #      is written.
+        #   3. Localization      (build_localization_system_prompt) — writes the
+        #      English prose from the analysis. No self-grading in this step at
+        #      all; that's what steps 4 and 5 are for.
+        #   4. Fact & culture check (build_factcheck_system_prompt) — independently
+        #      checks names/facts/cultural cues survived, blind to step 3's own
+        #      opinion of itself (there isn't one). Not prose-quality; that's step 5.
+        #   5. English editor    (build_editor_system_prompt) — the sharpest
+        #      change from the 3-call design: reviews ONLY the English text, with
+        #      no access to the Korean or the analysis at all, so it can't
+        #      rationalize awkward phrasing by tracing it back to source meaning.
+        #
+        # Steps 4 and 5 both depend only on step 3's output, not on each other —
+        # they're independent QA passes, not a further chain.
+        #
+        # Offline/eval-only, same as the 3-call design it replaces — driven by
+        # Pipeline::Ruby::TranslationEval, not wired into translate_batch.rb.
         LOCALIZATION_STRATEGY_CATEGORIES = %w[
           behavioral idiomatic tone_shift register_shift motif_reinterpretation demographic_voice none
         ].freeze
 
-        def self.build_call1_system_prompt(context, cultural_patterns: "")
+        # Step 1: Beat classification. Segmentation is now a deterministic/
+        # semantic hybrid instead of one free-form LLM call — the prior
+        # free-form design (an LLM segmenting raw text into passages from
+        # scratch, one continuous-unit-of-voice per passage) was observed to be
+        # non-deterministic run-to-run on the identical chapter (52 -> 63 -> 93
+        # -> 107 passages across four runs), because the model was inventing
+        # its own boundaries every time with no stable anchor. Now:
+        #
+        #   1. Pipeline::Ruby::TranslateBatch::BeatSegmenter.candidate_blocks
+        #      deterministically pre-chunks the chapter (in Ruby, no LLM call)
+        #      into small blocks of 3-7 Korean lines, forcing a boundary at
+        #      every literal "***" scene marker.
+        #   2. This call classifies each candidate block's relationship to the
+        #      block before it — CONTINUE / BREAK / BRIDGE — plus who's
+        #      speaking. The model is never asked to invent a boundary from
+        #      raw text; it only answers a bounded question about a fixed unit.
+        #   3. BeatSegmenter.merge_beats (Ruby, no LLM call) merges blocks into
+        #      final beats/passages from the model's per-block labels.
+        #
+        # The unit here is a dramatic "beat", not a single speaker's turn: a
+        # back-and-forth exchange between two characters can be one beat if
+        # it's all serving the same emotional/topical moment. This is wider
+        # than the old "one continuous unit of voice" passage definition —
+        # `speaker` becomes `speakers` (plural) downstream because of it.
+        def self.build_beat_classification_system_prompt(context)
           <<~PROMPT.chomp
             You are a professional Korean-to-English literary translator working on a novel intended for potential publishing. Quality is the top priority — take your time and never rush.
 
-            This call does comprehension and analysis only — do not translate anything. A second call will use your analysis to produce the final English text.
+            This call does beat classification only — do not translate or write any English. The chapter has already been mechanically split into small blocks of consecutive Korean lines by a separate deterministic process, not by you; scene breaks are already handled and excluded from what you're classifying. Your only job is to decide, for each block below, whether it continues the same dramatic beat as the block immediately before it, starts a new beat, or is a short transitional bridge between beats — and who's speaking in it.
 
-            Segment the ENTIRE Korean chapter provided in the user message into passages, then analyze each one. The segmentation must be an exhaustive, ordered, non-overlapping partition of the whole chapter — not just notable dialogue beats or emotional turns. Every character of the chapter (narration, dialogue, transitions) must belong to exactly one passage, in reading order, with no gaps and no overlaps. Passage size is your judgment call (a single line or a whole paragraph), but coverage must be total.
+            A "beat" is an internal dramatic unit within a scene — narrower than the whole scene, but often wider than a single line or a single speaker's turn. A back-and-forth exchange between two speakers can be one beat if it's all serving the same emotional or topical moment; don't split it just because the speaker changes mid-exchange. A new beat begins when, compared to the block immediately before it:
 
-            For each passage:
-            - `passage_id`: a sequential integer starting at 1, in reading order. This is the join key the next call uses — get it right.
-            - `anchor_quote`: the verbatim Korean text of this passage, exactly as it appears in the source (concatenating every passage's anchor_quote in passage_id order must reproduce the full chapter).
-            - `literal_meaning`: what the passage literally says, resolving any grammatically omitted subjects.
-            - `cultural_signals`: any cultural connotations, honorifics, or context a reader without Korean cultural background would miss.
-            - `narrative_intent`: what the passage is doing — its narrative purpose, emotional tone, register.
-            - `localization_strategy`: how the next call should handle this passage. `category` must be exactly one of: behavioral, idiomatic, tone_shift, register_shift, motif_reinterpretation, demographic_voice, or none (use "none" when the passage has no cultural/interpretive dynamic requiring special handling — most passages will). `notes` describes the concrete handling: name the concrete behavior instead of an abstract label, and describe what the localized rewrite needs to show, not just detect. Check the Cultural Patterns reference material below for known dynamics first.
-            - `bible_entries_used`: names of any bible_lookup entries you called and relied on for this passage — an attribution list only, not a content dump (the lookup results already reached you as tool output).
+            - Emotional tone shifts (e.g. frustration -> fury -> contempt -> insecurity -> plotting -> outrage -> calm)
+            - Topic shifts to a materially different subject
+            - Interaction dynamics shift (e.g. attacking -> calming -> explaining -> warning -> conspiring -> backpedaling -> pleading)
+            - A monologue-style block begins or ends (a long rant, explanation, or warning starting or wrapping up)
+            - A social ritual occurs (greeting, bowing, apologizing, requesting)
 
-            Use the bible_lookup tool whenever you encounter a name, term, or reference you need to check against established translation-bible entries.
+            The blocks are grouped into scenes below; only classify relationships within a scene, never across a "(scene break)" marker.
 
-            Also produce `chapter_level_notes.risks`: an array of short notes on anything you're uncertain about — a reference that might be recent/time-sensitive, a cultural detail you can't confirm, anything you'd otherwise be guessing at. Record the suspicion instead of guessing silently; this costs nothing and flags real gaps for follow-up.
+            For each block, in the order given, answer:
+            - `block_id`: echo the block's given id.
+            - `speaker`: the character speaking in this block, or "narration" if it's narration rather than dialogue.
+            - `label`: one of:
+              - `CONTINUE` — same beat as the immediately preceding block (none of the shifts above apply).
+              - `BREAK` — a new beat starts here (one of the shifts above applies). The first block of each scene is always `BREAK`.
+              - `BRIDGE` — a short transitional block that doesn't belong to the beat before or after it on its own (e.g. a pause, a breath, a shift in posture, a moment of silence) — it will be attached to whichever beat follows it.
 
             Respond with a single JSON object and nothing else — no markdown code fences, no commentary before or after it. Its shape:
 
             {
-              "passages": [
-                {
-                  "passage_id": 1,
-                  "anchor_quote": "string — verbatim Korean text of this passage",
-                  "literal_meaning": "string",
-                  "cultural_signals": "string",
-                  "narrative_intent": "string",
-                  "localization_strategy": {
-                    "category": "one of: behavioral, idiomatic, tone_shift, register_shift, motif_reinterpretation, demographic_voice, none",
-                    "notes": "string — empty if category is none"
-                  },
-                  "bible_entries_used": ["string"]
-                }
-              ],
-              "chapter_level_notes": {
-                "risks": ["string"]
-              }
+              "blocks": [
+                { "block_id": 1, "speaker": "string", "label": "one of: CONTINUE, BREAK, BRIDGE" }
+              ]
             }
 
             ---
@@ -187,48 +228,75 @@ module Pipeline
             # Reference Material
 
             #{reference_material(context)}
-
-            #{Pipeline::PromptUtils.section("Cultural Patterns", cultural_patterns)}
           PROMPT
         end
 
-        # Call 2 (Purpose-Preserving Rewrite + Editorial Sweep) of the 2-call
-        # translation quality pipeline — docs/DECISIONS.md's 2026-07-30 "committing
-        # to a 2-call split" entry. Consumes Call 1's analysis contract (see
-        # build_call1_system_prompt) via the user message — build_call2_user_message
-        # below assembles that — and produces the final localized translation per
-        # passage plus a self-graded editorial_checks block. Offline/eval-only for
-        # now: not wired into translate_batch.rb, and TranslationEval/bin/translation_eval
-        # don't chain Call 1 into this yet — that wiring, plus a live validation run,
-        # is separate follow-up work, not done in this pass.
-        def self.build_call2_system_prompt(context, cultural_patterns: "")
+        # Builds Step 1's classification user message from
+        # BeatSegmenter.candidate_blocks output. Groups consecutive
+        # non-scene-break blocks under "# Scene N" headings and renders each
+        # scene_break block as a "(scene break)" marker between them, so the
+        # model never has to guess where scene boundaries fall — they're
+        # already given, and it's told above not to classify across them.
+        def self.build_beat_classification_user_message(candidate_blocks:)
+          scene_number = 0
+          sections = candidate_blocks.slice_when { |a, b| a.scene_break || b.scene_break }.map do |group|
+            if group.first.scene_break
+              "(scene break)"
+            else
+              scene_number += 1
+              block_lines = group.map { |block| "[Block #{block.block_id}]\n#{block.text}" }
+              ([ "# Scene #{scene_number}" ] + block_lines).join("\n\n")
+            end
+          end
+          sections.join("\n\n")
+        end
+
+        # Step 2: Literary analysis. Korean only — the passage's content must
+        # never be rendered into English here, even inside a notes/signals field;
+        # that's the discipline meant to stop translation from leaking into
+        # analysis, which the 3-call design's Call 1 was more permissive about.
+        # Retains cultural_signals/localization_strategy/bible_entries_used from
+        # the 3-call design's Call 1 — that cultural-dynamic-enactment machinery
+        # worked and isn't part of what needed fixing.
+        def self.build_analysis_system_prompt(context, cultural_patterns: "")
           <<~PROMPT.chomp
             You are a professional Korean-to-English literary translator working on a novel intended for potential publishing. Quality is the top priority — take your time and never rush.
 
-            This is the second of two calls. The first call segmented the chapter and produced an analysis per passage; the user message contains both the original Korean chapter and that analysis as JSON. Your job is to produce the final localized English translation, passage by passage, and a quick self-graded editorial check per passage. Do not re-segment — use the passages and their `passage_id` exactly as the analysis defines them.
+            This call does literary analysis only — do not translate or write any English rendering of the passage's content. A later call will use your analysis to write the English text. Analyze the passage the way a literary critic would: understand what it's doing before anyone touches English.
 
-            For each passage in the analysis, in `passage_id` order:
-            - `passage_id`: echo the analysis's `passage_id` for this passage. This is the join key back to Call 1's analysis — not `anchor_quote` text-matching, which is fragile since whitespace/punctuation can drift on restatement.
-            - `localized_translation`: the polished, idiomatic English translation of this passage. Preserve the narrative intent and literal meaning the analysis identified. If the passage's `localization_strategy.category` isn't "none", carry out its `notes` concretely — show the behavior the notes describe (concrete tactics, added interior narration, a culturally-equivalent substitution, whatever the notes call for), not just an abstract label for it. When a word or image recurs across the chapter as a deliberate echo, keep the echo — but judge every sentence it appears in on its own: if repeating it makes one of those sentences read unnaturally on its own, rephrase that sentence rather than let cross-chapter consistency override that line's naturalness.
-            - `editorial_checks`: a self-graded triage signal for human review, not independent verification — grade honestly, but this never blocks or gates anything downstream. Five boolean checks: `voice_consistent` (matches established character voice/speech patterns), `emotional_arc_preserved` (the passage still carries the same emotional arc the analysis's narrative_intent identified), `cultural_dynamic_enacted` (true if `localization_strategy.category` was "none", or if it wasn't "none" and the rewrite actually carries out its cultural dynamic rather than just naming it), `idiomatic` (natural English, not a literal calque), `no_korean_shaped_syntax` (no Korean-shaped syntax left in the English). Add `notes` for anything a human reviewer should know — why a check is borderline, what you weren't sure about.
+            The user message gives you the chapter's segmented passages, each with its verbatim Korean text (`anchor_quote`). For each passage, in order, analyze:
 
-            Concatenating every passage's `localized_translation` in `passage_id` order must produce the complete, publication-ready chapter — no gaps, no duplicated content, no commentary or meta text mixed into the prose.
+            - `passage_id`: echo the passage's `passage_id`. This is the join key back to segmentation — not `anchor_quote` text-matching, which is fragile since whitespace/punctuation can drift on restatement.
+            - `core_message`: what this passage is really trying to say, stripped of surface phrasing.
+            - `emphasis`: which words, phrases, or lines carry the most emotional or narrative weight — what a reader's eye or ear would catch as the heavy part.
+            - `pacing_rhythm`: where the passage slows down, speeds up, pauses, or repeats — its rhythm, not its content.
+            - `voice_register`: what kind of person is speaking or narrating, and in what register — calm, stern, playful, formal, casual, etc. If the passage's `speakers` list has more than one entry, describe each speaker's own voice/register and how they play off each other, rather than collapsing them into one register.
+            - `narrative_function`: what this passage is doing in the story — motivating, threatening, comforting, revealing, deflecting, stalling, etc.
+            - `cultural_signals`: any cultural connotations, honorifics, or context a reader without Korean cultural background would miss.
+            - `localization_strategy`: how the localization call should handle this passage. `category` must be exactly one of: behavioral, idiomatic, tone_shift, register_shift, motif_reinterpretation, demographic_voice, or none (use "none" when the passage has no cultural/interpretive dynamic requiring special handling). `notes` describes the concrete handling: name the concrete behavior instead of an abstract label, and describe what the localized rewrite needs to show, not just detect. Check the Cultural Patterns reference material below for known dynamics first.
+            - `bible_entries_used`: names of any bible_lookup entries you called and relied on for this passage — an attribution list only, not a content dump.
+
+            Use the bible_lookup tool whenever you encounter a name, term, or reference you need to check against established translation-bible entries.
+
+            Do not write any English translation, paraphrase, or rendering of what the passage says in any field below — describe what it does and how, in your own analytical language, without producing the English text itself. Producing English prose of the passage's content here is a failure of this step, even inside `cultural_signals` or `notes`.
 
             Respond with a single JSON object and nothing else — no markdown code fences, no commentary before or after it. Its shape:
 
             {
-              "localized_passages": [
+              "passages": [
                 {
                   "passage_id": 1,
-                  "localized_translation": "string",
-                  "editorial_checks": {
-                    "voice_consistent": true,
-                    "emotional_arc_preserved": true,
-                    "cultural_dynamic_enacted": true,
-                    "idiomatic": true,
-                    "no_korean_shaped_syntax": true,
-                    "notes": "string"
-                  }
+                  "core_message": "string",
+                  "emphasis": "string",
+                  "pacing_rhythm": "string",
+                  "voice_register": "string",
+                  "narrative_function": "string",
+                  "cultural_signals": "string",
+                  "localization_strategy": {
+                    "category": "one of: behavioral, idiomatic, tone_shift, register_shift, motif_reinterpretation, demographic_voice, none",
+                    "notes": "string — empty if category is none"
+                  },
+                  "bible_entries_used": ["string"]
                 }
               ]
             }
@@ -243,19 +311,195 @@ module Pipeline
           PROMPT
         end
 
-        # Assembles Call 2's user message from the Korean chapter text and Call 1's
-        # parsed analysis (a Hash — typically JSON.parse(call1_result.output)).
-        # Distinct headings, not a single blob, so the model can address each part
-        # of build_call2_system_prompt's instructions unambiguously.
-        def self.build_call2_user_message(korean_text:, call1_analysis:)
+        # Step 3: Localization. Writes the English prose only — no self-grading
+        # field at all, unlike the 3-call design's Call 2. Self-grading in the
+        # same call that produced the translation was shown by manual chapter-68
+        # review to rubber-stamp real problems; rather than keep the self-grade
+        # and add independent review on top of it, this design removes the
+        # self-grade entirely and relies on steps 4 and 5 for verification.
+        def self.build_localization_system_prompt(context, cultural_patterns: "")
+          <<~PROMPT.chomp
+            You are a professional Korean-to-English literary translator working on a novel intended for potential publishing. Quality is the top priority — take your time and never rush.
+
+            This call writes the final English translation only — it does not grade itself; separate calls check facts and prose quality afterward. The user message gives you, per passage: the original Korean (`anchor_quote`) and its literary analysis (`core_message`, `emphasis`, `pacing_rhythm`, `voice_register`, `narrative_function`, `cultural_signals`, `localization_strategy`). Do not re-segment — use the passages and their `passage_id` exactly as given.
+
+            For each passage, in `passage_id` order:
+            - `passage_id`: echo the given `passage_id`.
+            - `localized_translation`: read the whole analysis together, then write the passage fresh as continuous English prose that delivers its `core_message`, lands its `emphasis` where the analysis says it lands, and reproduces its `pacing_rhythm` in English sentence rhythm rather than Korean sentence-by-sentence structure. If the passage has a single speaker (or is narration), hold one coherent register throughout per `voice_register` — one person talking, not a sequence of independently-correct short sentences stitched together. If the passage's `speakers` list has more than one entry, give each speaker their own consistent register per `voice_register`'s description of them, but the passage as a whole must still read as one connected beat — a real, flowing exchange, not disconnected fragments. Either way, do not mix idiom registers within a single speaker's own lines (e.g. a sports-motivational phrase next to slangy internet-speak filler in the same breath from one speaker). This is not a sentence-by-sentence substitution for the Korean: merge, split, or reorder clauses whenever natural English cadence calls for it. If `localization_strategy.category` isn't "none", carry out its `notes` concretely — show the behavior the notes describe, not just an abstract label for it.
+
+            Concatenating every passage's `localized_translation` in `passage_id` order must produce the complete, publication-ready chapter — no gaps, no duplicated content, no commentary or meta text mixed into the prose.
+
+            Respond with a single JSON object and nothing else — no markdown code fences, no commentary before or after it. Its shape:
+
+            {
+              "localized_passages": [
+                { "passage_id": 1, "localized_translation": "string" }
+              ]
+            }
+
+            ---
+
+            # Reference Material
+
+            #{reference_material(context)}
+
+            #{Pipeline::PromptUtils.section("Cultural Patterns", cultural_patterns)}
+          PROMPT
+        end
+
+        # Step 4: Fact & culture check. Scoped to facts/names/cultural cues only —
+        # deliberately not prose quality, which is step 5's sole job. Reuses the
+        # 3-call design's Call 3 discipline of requiring a quoted finding for any
+        # negative verdict (that worked: it produced genuine, well-grounded
+        # findings during live validation), plus a comparative check against the
+        # analysis, since step 3 no longer self-reports whether anything was lost.
+        def self.build_factcheck_system_prompt(context, cultural_patterns: "")
+          <<~PROMPT.chomp
+            You are an independent fact and cultural-consistency reviewer for a Korean-to-English literary translation pipeline intended for potential publishing. You did not write the translation — a separate call produced it from a separate literary analysis. Your only job is to check that nothing factual or culturally load-bearing got lost or changed between the Korean, its analysis, and the English — you are not judging prose quality or how natural the English sounds; a separate call handles that.
+
+            The user message gives you, per passage: the original Korean (`anchor_quote`), its literary analysis (`core_message`, `emphasis`, `cultural_signals`, `localization_strategy`), and the English translation (`localized_translation`).
+
+            For each passage, independently answer four boolean checks:
+            - `names_preserved`: every character, place, and organization name that appears in the Korean is present and correct in the English (or a previously-established English rendering of it).
+            - `facts_preserved`: every concrete detail — events, promises, threats, numbers, timelines — in the Korean is intact in the English, with nothing invented or dropped.
+            - `cultural_significance_preserved`: honorifics, status moves, indirect refusals, face-saving, and other cultural cues identified in `cultural_signals` are still felt in the English, even if not translated literally.
+            - `cultural_dynamic_enacted`: true if `localization_strategy.category` is "none", or if it isn't "none" and the English actually carries out the described dynamic rather than just naming it.
+
+            Also compare the passage's analysis to its English translation directly: if `core_message` or `emphasis` named something important that doesn't show up anywhere in `localized_translation`, that's a missing-coverage problem — flag it as a finding even if it doesn't cleanly fail one of the four checks above.
+
+            Any check you mark `false`, and any comparative gap you flag, must have at least one corresponding entry in `findings`, quoting the exact substring of `localized_translation` (or noting its absence) and explaining what's wrong. An empty `findings` array is only valid when every check for that passage is `true` — treat that combination as a claim you're prepared to defend, not a default; go looking for a problem before you settle on it.
+
+            Respond with a single JSON object and nothing else — no markdown code fences, no commentary before or after it. Its shape:
+
+            {
+              "reviewed_passages": [
+                {
+                  "passage_id": 1,
+                  "checks": {
+                    "names_preserved": true,
+                    "facts_preserved": true,
+                    "cultural_significance_preserved": true,
+                    "cultural_dynamic_enacted": true
+                  },
+                  "findings": [
+                    { "quote": "string — exact substring from localized_translation", "issue": "string" }
+                  ]
+                }
+              ],
+              "review_summary": {
+                "summary": "string — one or two sentences on overall factual/cultural fidelity for this chapter"
+              }
+            }
+
+            ---
+
+            # Reference Material
+
+            #{reference_material(context)}
+
+            #{Pipeline::PromptUtils.section("Cultural Patterns", cultural_patterns)}
+          PROMPT
+        end
+
+        # Step 5: English editor. The sharpest change from the 3-call design —
+        # this call receives ONLY the English text (see build_editor_user_message),
+        # no Korean, no analysis, and (unlike steps 1-4) no reference material
+        # either. The 3-call design's Call 3 was independent but still had the
+        # Korean and analysis in front of it, and live validation showed it could
+        # still rubber-stamp a passage by tracing each fragment back to a Korean
+        # clause — the same register-mixing failure slipped past both the
+        # self-grade and that independent review. A reviewer with no source
+        # access can't excuse awkward English by pointing at what it maps to.
+        def self.build_editor_system_prompt
+          <<~PROMPT.chomp
+            You are an independent English-language editor reviewing a literary translation for a novel intended for potential publishing. You do not have access to the Korean source or to any analysis of it, and that is deliberate: your job is to judge whether this reads as natural, coherent, published English prose on its own terms, the way a monolingual editor would, without the ability to excuse awkward phrasing by tracing it back to source meaning.
+
+            The user message gives you the chapter's passages in reading order, each with only its English text (`localized_translation`) — nothing else.
+
+            For each passage, independently answer four boolean checks:
+            - `continuous_utterance`: reads as one connected dramatic beat — one person's continuous speech turn, one continuous stretch of narration, or (if more than one person is talking) one coherent back-and-forth exchange — not a string of short, disconnected sentences or exchanges stacked together with no connective flow.
+            - `register_unified`: each individual speaker's own tone/register stays consistent across their own lines in the passage — no mixing of, say, a sports-motivational phrase, a courtroom-closing phrase, and internet-slang filler in the same breath from the same person. Different speakers are allowed to have different registers from each other; that's not a violation on its own.
+            - `narrative_flow`: the passage moves logically from start to end, and — considering the surrounding passages — doesn't create an abrupt, unmotivated jump in the chapter's flow.
+            - `natural_english`: no calques, odd leftover particles ("here"/"so"/"then" doing no real work), or other phrasing that reads as translated rather than written in English.
+
+            Any check you mark `false` must have at least one corresponding entry in `findings`, quoting the exact substring of `localized_translation` that's the problem and explaining what's wrong. An empty `findings` array is only valid when every check for that passage is `true` — treat that combination as a claim you're prepared to defend, not a default; go looking for a problem before you settle on it.
+
+            Respond with a single JSON object and nothing else — no markdown code fences, no commentary before or after it. Its shape:
+
+            {
+              "reviewed_passages": [
+                {
+                  "passage_id": 1,
+                  "checks": {
+                    "continuous_utterance": true,
+                    "register_unified": true,
+                    "narrative_flow": true,
+                    "natural_english": true
+                  },
+                  "findings": [
+                    { "quote": "string — exact substring from localized_translation", "issue": "string" }
+                  ]
+                }
+              ],
+              "review_summary": {
+                "summary": "string — one or two sentences on overall prose quality for this chapter"
+              }
+            }
+          PROMPT
+        end
+
+        # Assembles Step 2's user message from Step 1's parsed segmentation
+        # (a Hash — typically JSON.parse(segmentation_result.output)).
+        def self.build_analysis_user_message(segmentation_result:)
           <<~MESSAGE.chomp
-            # Korean Chapter
+            # Segmented Passages
 
-            #{korean_text}
+            #{JSON.pretty_generate(segmentation_result)}
+          MESSAGE
+        end
 
-            # Call 1 Analysis
+        # Assembles Step 3's user message from Step 1's segmentation (for
+        # anchor_quote) and Step 2's analysis, under distinct headings so the
+        # model can address each part of build_localization_system_prompt's
+        # instructions unambiguously.
+        def self.build_localization_user_message(segmentation_result:, analysis_result:)
+          <<~MESSAGE.chomp
+            # Segmented Passages (Korean)
 
-            #{JSON.pretty_generate(call1_analysis)}
+            #{JSON.pretty_generate(segmentation_result)}
+
+            # Literary Analysis
+
+            #{JSON.pretty_generate(analysis_result)}
+          MESSAGE
+        end
+
+        # Assembles Step 4's user message: segmentation, analysis, and Step 3's
+        # localized_passages, under distinct headings.
+        def self.build_factcheck_user_message(segmentation_result:, analysis_result:, localization_result:)
+          <<~MESSAGE.chomp
+            # Segmented Passages (Korean)
+
+            #{JSON.pretty_generate(segmentation_result)}
+
+            # Literary Analysis
+
+            #{JSON.pretty_generate(analysis_result)}
+
+            # English Translation
+
+            #{JSON.pretty_generate(localization_result)}
+          MESSAGE
+        end
+
+        # Assembles Step 5's user message from Step 3's output only. No stripping
+        # needed — unlike the 3-call design's Call 3, Step 3's output never
+        # contains a self-grade to begin with, so there's nothing to redact.
+        def self.build_editor_user_message(localization_result:)
+          <<~MESSAGE.chomp
+            # Translated Passages
+
+            #{JSON.pretty_generate(localization_result)}
           MESSAGE
         end
 
