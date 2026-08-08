@@ -9,6 +9,12 @@ class ChapterReviewController < ApplicationController
     pending            = BibleMarkdownParser.new(@novel).pending_entries
     @pending_breakdown = pending.transform_values(&:size)
     @pending_count     = @pending_breakdown.values.sum
+
+    # Drives the poll wrapper around the "Preread Bible Entries" card (see
+    # the view) — while a preread job is running, that card keeps re-fetching
+    # this action so @pending_count/@pending_breakdown pick up newly-written
+    # suggestions without the user refreshing the whole Review tab.
+    @active_preread_job = @novel.translation_jobs.preread.where(status: %w[queued running]).exists?
   end
 
   def show
