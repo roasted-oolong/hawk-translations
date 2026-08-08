@@ -210,6 +210,18 @@ RSpec.describe "TranslationJobs", type: :request do
         expect(response).to have_http_status(:not_found)
       end
     end
+
+    context "when requested as JSON (the chapter review QA cancel-and-rerun flow)" do
+      it "cancels the job and responds with ok instead of redirecting" do
+        job = create(:translation_job, :running, novel: novel, user: user)
+
+        delete novel_translation_job_path(novel, job), headers: { "Accept" => "application/json" }
+
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)).to eq({ "ok" => true })
+        expect(job.reload.status).to eq("cancelled")
+      end
+    end
   end
 
   # ---------------------------------------------------------------------------

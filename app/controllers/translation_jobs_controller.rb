@@ -46,8 +46,13 @@ class TranslationJobsController < ApplicationController
   # ---------------------------------------------------------------------------
   def destroy
     @translation_job.cancel!
-    redirect_back fallback_location: novel_translation_job_path(@novel, @translation_job),
-                  notice: "Job cancelled."
+    respond_to do |format|
+      format.json { render json: { ok: true } }
+      format.html do
+        redirect_back fallback_location: novel_translation_job_path(@novel, @translation_job),
+                      notice: "Job cancelled."
+      end
+    end
   end
 
   # ---------------------------------------------------------------------------
