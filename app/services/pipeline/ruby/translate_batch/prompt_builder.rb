@@ -721,6 +721,8 @@ module Pipeline
             Then fill in these fields, grounded only in what the given text actually supports:
             #{field_lines}
 
+            Keep every field as short as it can be while still saying the thing — a phrase or one plain sentence, not a paragraph. These are starting points the translator edits by hand, not finished prose; the fewer words carrying the same information, the less there is for them to trim or reread.
+
             Leave any field you can't determine with reasonable confidence as an empty string — an empty field is fine and expected; a guessed or invented detail is not. Never invent plot, relationships, or facts not evidenced in the given text.
 
             Respond with a single JSON object and nothing else — no markdown code fences, no commentary before or after it. Its shape:

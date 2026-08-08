@@ -18,6 +18,12 @@ require "json"
 # raise": an empty fields hash just means the form's fields stay blank for
 # the user to fill in by hand, same as before this feature existed. Never a
 # reason to block entry creation.
+#
+# Runs on config.bible_entry_suggestion_model (default "haiku"), not
+# translation_model — this is a small extraction task (find one term, fill a
+# few short fields from text already in the prompt), not creative
+# generation, so it's tuned independently and cheaper by default, same
+# override pattern as factcheck_model.
 # ---------------------------------------------------------------------------
 module Pipeline
   class BibleEntrySuggestion
@@ -100,7 +106,7 @@ module Pipeline
         ),
         config:     @config,
         mcp_config: @mcp_config,
-        model:      @config.translation_model,
+        model:      @config.bible_entry_suggestion_model,
         timeout:    45
       )
       return degrade(result.error_category, "#{result.error_category}: #{result.error_message}") unless result.success?

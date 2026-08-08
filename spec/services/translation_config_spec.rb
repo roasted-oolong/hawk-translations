@@ -54,6 +54,25 @@ RSpec.describe TranslationConfig do
         expect(config.translation_model).to eq("opus")
       end
     end
+
+    it "defaults BIBLE_ENTRY_SUGGESTION_MODEL to haiku, independently of TRANSLATION_MODEL" do
+      Dir.mktmpdir do |dir|
+        fake_executable(dir, "claude")
+        config = described_class.from_env(env("PATH" => dir, "TRANSLATION_MODEL" => "opus"))
+
+        expect(config.bible_entry_suggestion_model).to eq("haiku")
+      end
+    end
+
+    it "allows BIBLE_ENTRY_SUGGESTION_MODEL to be overridden independently of TRANSLATION_MODEL" do
+      Dir.mktmpdir do |dir|
+        fake_executable(dir, "claude")
+        config = described_class.from_env(env("PATH" => dir, "BIBLE_ENTRY_SUGGESTION_MODEL" => "sonnet"))
+
+        expect(config.bible_entry_suggestion_model).to eq("sonnet")
+        expect(config.translation_model).to eq("opus")
+      end
+    end
   end
 
   describe "TRANSLATION_BACKEND / CALIBRATION_BACKEND" do

@@ -2650,7 +2650,6 @@ environment limitation, reproducible on `main` before this change too,
 unrelated to it). Needs a manual check: accept/reject a suggestion and
 confirm the page doesn't move.
 
-
 ## 2026-08-08 · Chapter QA review: untouched chapter text stays directly editable
 
 Reported by the user: once any chapter_qa suggestions were on screen, the
@@ -2914,3 +2913,44 @@ no-results state.
 Spec coverage: unchanged from the entry above — this is a DOM-shape/CSS
 change with no new request/response surface, and the Tab-driven
 interaction was already a manual-check item (Cuprite/Chromium sandbox
+limitation).
+
+---
+
+## 2026-08-08 · bible-entry-suggestion now runs on a cheaper model and is told to be concise
+
+`Pipeline::BibleEntrySuggestion` (2026-08-08 entry above) was calling
+`Pipeline::ClaudeCode` with `config.translation_model` (default `"opus"`)
+— the same model tuned for whole-chapter creative translation. The
+suggestion call is a much smaller extraction task: find one Korean term
+already present in the given source text, and fill a handful of short
+fields from context also already in the prompt. No creative judgment
+call the way a full translation pass requires.
+
+`TranslationConfig` gained `bible_entry_suggestion_model` (env
+`BIBLE_ENTRY_SUGGESTION_MODEL`, default `"haiku"`), independent of both
+`translation_model` and `factcheck_model` — same override pattern as
+`factcheck_model` (2026-08-07 entry), but defaulted a tier cheaper since
+this task is simpler than factcheck's cross-text comparison work.
+`BibleEntrySuggestion` now passes `model: config.bible_entry_suggestion_model`
+to `Pipeline::ClaudeCode.call` instead of `config.translation_model`.
+
+Also added a brevity instruction to
+`PromptBuilder.build_bible_entry_suggestion_system_prompt`: fields should
+be as short as possible while still saying the thing — a phrase or one
+plain sentence, not a paragraph. These are prefilled starting points the
+translator reviews and edits by hand before creating the entry, not
+finished bible prose; shorter suggestions mean less for them to trim or
+reread, and cost less either way.
+
+Not yet measured: whether haiku's suggestions hold up in quality/accuracy
+on the same entries opus would have produced — worth a spot-check across
+a few real Tab-to-create-entry sessions before assuming haiku is
+sufficient beyond this specific field-extraction task.
+
+Spec coverage: `translation_config_spec.rb` (+2, default and override),
+`prompt_builder_spec.rb` (+5, new describe blocks for
+`.build_bible_entry_suggestion_system_prompt`/`_user_message` — these had
+no prior coverage). `bible_entry_suggestion_spec.rb` unchanged — its
+fake-`claude` scripts don't assert on the `--model` argv value, only on
+stdin/stdout behavior, so the model swap needed no new fixtures there.
