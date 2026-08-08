@@ -220,10 +220,16 @@
                     placeholder="No translated content available."><%= @chapter_texts[chapter.id].to_s.strip %></textarea>
 
           <%# QA tracked-changes view (single-column mode) — populated by JS,
-              shown in place of editableText once a quality check completes %>
+              shown in place of editableText once a quality check completes.
+              contenteditable so untouched prose stays directly editable;
+              suggestion spans themselves are locked via their own
+              contenteditable="false" (see renderSuggestionSpan). %>
           <div class="chapter-review__qa-pane"
                data-chapter-review-target="qaPane"
                data-testid="qa-pane-<%= chapter.number %>"
+               data-action="input->chapter-review#syncQaPaneEdit keydown.enter->chapter-review#qaPaneKeydown paste->chapter-review#qaPanePaste"
+               contenteditable="true"
+               spellcheck="false"
                hidden></div>
 
           <%# Compare mode split panes — hidden until KO toggle %>
@@ -244,6 +250,9 @@
               <div class="chapter-review__qa-pane chapter-review__qa-pane--compare"
                    data-chapter-review-target="qaPaneCompare"
                    data-testid="qa-pane-compare-<%= chapter.number %>"
+                   data-action="input->chapter-review#syncQaPaneEdit keydown.enter->chapter-review#qaPaneKeydown paste->chapter-review#qaPanePaste"
+                   contenteditable="true"
+                   spellcheck="false"
                    hidden></div>
             </div>
 
