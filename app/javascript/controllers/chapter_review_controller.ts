@@ -966,11 +966,16 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
     suggestion.status = status
     this.persistQaDecision(chapterId, id, status)
 
-    const remaining = this.filteredPendingSuggestions(suggestions)
-    this.qaFocusedId = remaining[0]?.id ?? null
+    // Deliberately does not auto-focus or scroll to "the next" suggestion —
+    // resolving one used to jump the reviewer's screen to whatever the flat
+    // suggestions array considered next, which (before chapter_qa.rb ordered
+    // it by position) could be anywhere else in the chapter, and even now
+    // means yanking the viewport away from wherever the reviewer is actually
+    // reading. Scrolling stays reserved for deliberate navigation — qaNext/
+    // qaPrev, a filter change, or clicking a span directly.
+    this.qaFocusedId = null
     this.closeQaDetail()
     this.renderQaForCurrentChapter()
-    this.scrollToFocusedSuggestion()
   }
 
   private persistQaDecision(chapterId: string, suggestionId: string, status: "accepted" | "rejected") {

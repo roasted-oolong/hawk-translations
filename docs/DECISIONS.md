@@ -2008,3 +2008,23 @@ Spec coverage: new case in `chapter_qa_spec.rb` — a factcheck quote placed
 after an editor quote in the source text still comes back after it in the
 merged array.
 
+## 2026-08-08 · Chapter QA review no longer forces a scroll on accept/reject
+
+Related to the reading-order fix above, and reported together: the review
+screen auto-scrolled on every accept/reject even when the reviewer wanted
+to keep reading in place, compounding the jump-to-the-wrong-suggestion
+problem above.
+
+`applyQaDecision()` in `chapter_review_controller.ts` used to auto-select
+`remaining[0]` as focused and force-scroll to it after every accept/reject.
+Removed: resolving a suggestion now leaves `qaFocusedId` null and the
+viewport untouched. Scrolling is reserved for deliberate navigation only —
+`qaNext`/`qaPrev`, a filter change, or clicking a suggestion span directly.
+
+Not covered by an automated test — this is a pure viewport/focus behavior
+change with no server-observable effect, and this sandbox's Cuprite/
+Chromium system specs don't render JS-driven content correctly (pre-existing
+environment limitation, reproducible on `main` before this change too,
+unrelated to it). Needs a manual check: accept/reject a suggestion and
+confirm the page doesn't move.
+
