@@ -168,7 +168,8 @@ export default class BibleLookupController extends Controller<HTMLElement> {
   private currentQuery:    string = ""
   private currentResults:  SearchResult[] = []
 
-  private taKeydown = (e: KeyboardEvent) => this.handleTabOnTextarea(e)
+  private taKeydown       = (e: KeyboardEvent) => this.handleTabOnTextarea(e)
+  private editableKeydown = (e: KeyboardEvent) => this.handleTabOnEditable(e)
   private docEsc    = (e: KeyboardEvent) => { if (e.key === "Escape") { e.preventDefault(); this.closePopover() } }
   private docClick  = (e: MouseEvent)    => { if (this.popover && !this.popover.contains(e.target as Node)) this.closePopover() }
 
@@ -176,11 +177,21 @@ export default class BibleLookupController extends Controller<HTMLElement> {
     this.element.querySelectorAll<HTMLTextAreaElement>("textarea").forEach(ta => {
       ta.addEventListener("keydown", this.taKeydown)
     })
+    // contenteditable regions (e.g. chapter_review's QA tracked-changes pane)
+    // don't have a <textarea> to hang the plain listener above off of — same
+    // Tab-to-look-up behavior, wired separately since the two need different
+    // selection APIs (see handleTabOnEditable).
+    this.element.querySelectorAll<HTMLElement>('[contenteditable="true"]').forEach(el => {
+      el.addEventListener("keydown", this.editableKeydown)
+    })
   }
 
   disconnect() {
     this.element.querySelectorAll<HTMLTextAreaElement>("textarea").forEach(ta => {
       ta.removeEventListener("keydown", this.taKeydown)
+    })
+    this.element.querySelectorAll<HTMLElement>('[contenteditable="true"]').forEach(el => {
+      el.removeEventListener("keydown", this.editableKeydown)
     })
     this.closePopover()
   }
@@ -199,6 +210,26 @@ export default class BibleLookupController extends Controller<HTMLElement> {
 
     this.currentQuery = query
     this.anchorRect   = this.selectionRect(ta, selectionStart!)
+    this.openLoading()
+    this.fetchResults(query)
+  }
+
+  // Mirrors handleTabOnTextarea above for contenteditable regions. A plain
+  // <textarea> exposes selectionStart/selectionEnd; a contenteditable div has
+  // no equivalent — the Selection API (and a Range's own, already-viewport-
+  // relative getBoundingClientRect()) stands in for both the textarea's
+  // slice-by-offset query text and its mirror-div selectionRect() hack below.
+  private handleTabOnEditable(event: KeyboardEvent) {
+    if (event.key !== "Tab") return
+    const selection = window.getSelection()
+    if (!selection || selection.isCollapsed) return
+
+    event.preventDefault()
+    const query = selection.toString().trim()
+    if (query.length < 2) return
+
+    this.currentQuery = query
+    this.anchorRect   = selection.getRangeAt(0).getBoundingClientRect()
     this.openLoading()
     this.fetchResults(query)
   }

@@ -83,6 +83,18 @@ RSpec.describe "Chapters", type: :request do
         expect(response).to have_http_status(:ok)
       end
     end
+
+    # Editor functions (currently: select text + Tab to look up/add to the
+    # bible) are meant to be available in every editable text field, not just
+    # chapter_review's — this page's editor was missing the controller
+    # entirely until this was reported.
+    it "wires the bible-lookup controller into the chapter editor" do
+      get novel_chapter_path(novel, chapter)
+
+      expect(response.body).to include('data-controller="chapter-viewer bible-lookup"')
+      expect(response.body).to include("data-bible-lookup-search-url-value=")
+      expect(response.body).to include("data-bible-lookup-novel-id-value=\"#{novel.id}\"")
+    end
   end
 
   # ---------------------------------------------------------------------------
