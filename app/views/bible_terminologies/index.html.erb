@@ -26,6 +26,15 @@
     <button class="bible-tabs__btn" type="button"
             data-bible-tabs-target="btn"
             data-action="click->bible-tabs#show"
+            data-bible-tabs-panel-param="pending">
+      Pending suggestions
+      <% if @pending_preread_entries.any? %>
+        <span class="bible-tabs__count"><%= @pending_preread_entries.size %></span>
+      <% end %>
+    </button>
+    <button class="bible-tabs__btn" type="button"
+            data-bible-tabs-target="btn"
+            data-action="click->bible-tabs#show"
             data-bible-tabs-panel-param="dismissed">
       Dismissed preread
       <% if @dismissed_preread_entries.any? %>
@@ -71,6 +80,17 @@
             <% end %>
           </tbody>
         </table>
+      </div>
+    <% end %>
+  </div>
+
+  <div data-bible-tabs-target="panel" data-bible-tabs-panel="pending" hidden>
+    <% if @pending_preread_entries.any? %>
+      <%= render "components/preread_pending_entries",
+            entries: @pending_preread_entries, novel: @novel, category: :terminology %>
+    <% else %>
+      <div class="empty-state" data-testid="pending-empty">
+        <p class="empty-state__message">No pending preread suggestions.</p>
       </div>
     <% end %>
   </div>

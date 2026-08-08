@@ -1,0 +1,37 @@
+<%# locals: (entries:, novel:, category:) %>
+<%
+  name_key   = { characters: :name, locations: :name, terminology: :term,
+                 cultural_phrases: :phrase, story: :title }[category]
+  korean_key = { characters: :korean_name, locations: :korean_name,
+                 terminology: :korean_term, cultural_phrases: :korean_phrase,
+                 story: nil }[category]
+%>
+<section class="preread-pending" data-testid="preread-pending-section">
+  <h2 class="preread-pending__heading">Pending preread suggestions</h2>
+  <p class="preread-pending__hint">
+    New or updated entries proposed by preread, not yet reviewed. Dismiss one
+    outright here, or
+    <%= link_to "review all of them in the full slideshow →", novel_preread_review_path(novel) %>
+  </p>
+
+  <div class="preread-pending__list">
+    <% entries.each do |entry| %>
+      <div class="preread-pending__entry" data-testid="pending-entry">
+        <div class="preread-pending__entry-info">
+          <span class="preread-pending__entry-badge preread-pending__entry-badge--<%= entry[:is_existing] ? "update" : "new" %>">
+            <%= entry[:is_existing] ? "Update" : "New" %>
+          </span>
+          <span class="preread-pending__entry-name"><%= entry[name_key] %></span>
+          <% if korean_key && entry[korean_key].present? %>
+            <span class="preread-pending__entry-korean"><%= entry[korean_key] %></span>
+          <% end %>
+        </div>
+        <%= form_with url: novel_preread_dismiss_path(novel), method: :post, data: { turbo: false } do |f| %>
+          <%= f.hidden_field :key, value: "#{category}:#{entry[:korean_key]}" %>
+          <%= f.submit "Dismiss", class: "btn btn--sm btn--ghost",
+                data: { testid: "btn-dismiss-#{entry[:korean_key]}" } %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</section>

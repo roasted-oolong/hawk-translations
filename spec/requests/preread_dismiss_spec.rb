@@ -6,6 +6,40 @@ RSpec.describe "PrereadDismiss", type: :request do
 
   before { sign_in(user) }
 
+  describe "POST /novels/:novel_id/preread_dismiss" do
+    context "when the key is not already dismissed" do
+      before { novel.update_column(:preread_dismissed_keys, '["locations:서울"]') }
+
+      it "adds the key to dismissed keys" do
+        post novel_preread_dismiss_path(novel), params: { key: "characters:김민준" }
+
+        novel.reload
+        dismissed = JSON.parse(novel.preread_dismissed_keys)
+        expect(dismissed).to match_array([ "locations:서울", "characters:김민준" ])
+      end
+    end
+
+    context "when the key is already dismissed" do
+      before { novel.update_column(:preread_dismissed_keys, '["characters:김민준"]') }
+
+      it "does not duplicate the key" do
+        post novel_preread_dismiss_path(novel), params: { key: "characters:김민준" }
+
+        novel.reload
+        expect(JSON.parse(novel.preread_dismissed_keys)).to eq([ "characters:김민준" ])
+      end
+    end
+
+    context "when no keys have been dismissed yet" do
+      it "records the dismissed key" do
+        post novel_preread_dismiss_path(novel), params: { key: "characters:김민준" }
+
+        novel.reload
+        expect(JSON.parse(novel.preread_dismissed_keys)).to eq([ "characters:김민준" ])
+      end
+    end
+  end
+
   describe "DELETE /novels/:novel_id/preread_dismiss" do
     context "when the key exists in dismissed keys" do
       before do
