@@ -34,26 +34,43 @@
     </div>
   <% end %>
 
-  <% if @pending_count > 0 %>
-    <div class="chapter-review-tab__header chapter-review-tab__header--section">
-      <h2 class="chapter-review-tab__title">Preread Bible Entries</h2>
-      <span class="chapter-review-tab__count"><%= @pending_count %> pending</span>
-    </div>
+  <%# Poll wrapper — only rendered while a preread job is queued/running, so
+      this card picks up newly-written suggestions without a full page
+      refresh. Once the job reaches a terminal state, the server omits the
+      wrapper on the next poll fetch and this stops polling itself (same
+      pattern as translation_jobs/show.html.erb and voice_calibration/tab). %>
+  <% if @active_preread_job %>
+    <div data-controller="poll"
+         data-poll-interval-value="3000"
+         data-poll-url-value="<%= novel_chapter_review_tab_path(@novel) %>">
+  <% end %>
 
-    <div class="chapter-review-tab__card" data-testid="preread-entries-card">
-      <div class="preread-review-tab__breakdown">
-        <% @pending_breakdown.each do |cat, count| %>
-          <% next if count == 0 %>
-          <span class="preread-review-tab__cat">
-            <strong><%= count %></strong> <%= cat.to_s.humanize.downcase %>
-          </span>
-        <% end %>
+  <%= turbo_frame_tag "preread-entries-status" do %>
+    <% if @pending_count > 0 %>
+      <div class="chapter-review-tab__header chapter-review-tab__header--section">
+        <h2 class="chapter-review-tab__title">Preread Bible Entries</h2>
+        <span class="chapter-review-tab__count"><%= @pending_count %> pending</span>
       </div>
 
-      <%= link_to "Review Entries",
-            novel_preread_review_path(@novel),
-            class: "btn btn--primary",
-            data: { turbo_frame: "_top", testid: "button-review-preread" } %>
+      <div class="chapter-review-tab__card" data-testid="preread-entries-card">
+        <div class="preread-review-tab__breakdown">
+          <% @pending_breakdown.each do |cat, count| %>
+            <% next if count == 0 %>
+            <span class="preread-review-tab__cat">
+              <strong><%= count %></strong> <%= cat.to_s.humanize.downcase %>
+            </span>
+          <% end %>
+        </div>
+
+        <%= link_to "Review Entries",
+              novel_preread_review_path(@novel),
+              class: "btn btn--primary",
+              data: { turbo_frame: "_top", testid: "button-review-preread" } %>
+      </div>
+    <% end %>
+  <% end %><%# /turbo-frame preread-entries-status %>
+
+  <% if @active_preread_job %>
     </div>
   <% end %>
 
