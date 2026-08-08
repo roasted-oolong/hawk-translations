@@ -2287,6 +2287,82 @@ positioning bug class, no working browser in this environment to write a
 system spec against). Manual click-through still pending a real browser
 here.
 
+---
+
+## 2026-08-03 · Chapter QA factcheck: bible-spelling and tense checks were never actually wired in
+
+Found via a user report: the user ran Chapter QA on a chapter with a known
+wrong character-name romanization and an incorrect narration tense, and
+neither was flagged. Root cause was two separate gaps in
+`build_chapter_qa_factcheck_system_prompt` and its 5-step sibling
+`build_factcheck_system_prompt`, both in `prompt_builder.rb`:
+
+1. **Name checks were anchored to Korean fidelity, not the bible.** The
+   instruction asked whether a name was "lost, changed, or flattened"
+   relative to the Korean — a self-consistent, Korean-faithful romanization
+   that simply doesn't match `characters.md`'s established spelling (e.g.
+   "Jun-ho" vs. a bible entry for "Junho") was never "lost" from the Korean,
+   so it was never flagged, even though the Character Bible text was
+   sitting right there in the same prompt's Reference Material section.
+2. **No check existed for Translation Guidelines compliance at all** (e.g.
+   the "narration must be past tense" rule in `translation_guidelines.md`).
+   The only call built to review prose (`build_editor_system_prompt`/
+   `build_chapter_qa_editor_system_prompt`) is deliberately blind to all
+   reference material, including the guidelines themselves (2026-08-01 "3-call
+   pipeline replaced" entry, live-validated design, backed by an explicit
+   `arity == 0` spec) — so no step in either pipeline had both the rule and
+   a mandate to check it.
+
+**Deliberately did not touch the editor's reference-blindness** — that's a
+tested, live-validated design decision (same 2026-08-01 entry), not an
+oversight, and reversing it wasn't asked for. Instead, both `names_preserved`
+and a new `style_guidelines_followed` check were added to the *factcheck*
+call, which already receives the full Reference Material and is framed as
+checking against a source of truth rather than judging prose naturalness —
+tense compliance is an objective rule check, not a subjective quality
+judgment, so it fits there without contradicting factcheck's existing "not
+judging prose quality" framing.
+
+**What changed:**
+
+- `names_preserved` (5-step) and the equivalent name-checking paragraph
+  (chapter_qa) now explicitly instruct cross-referencing against the
+  Character Bible / Locations / Terminology sections of the Reference
+  Material for established spelling, not just Korean-to-English fidelity,
+  and to call `bible_lookup` when a name isn't covered there.
+- New `style_guidelines_followed` check (5-step) / new flagging paragraph
+  (chapter_qa) for explicit, checkable Translation Guidelines rules —
+  narration tense named as the primary example — framed as rule compliance,
+  not prose-quality judgment.
+- **`chapter_qa.rb`'s factcheck call never had `mcp_config` wired in at
+  all** (`run_pass` didn't accept or pass it), so `bible_lookup` was
+  unavailable even when the prompt asked for it. `run_pass` now takes an
+  `mcp_config:` keyword, and `call` builds one via
+  `TranslateBatch::BridgeConfig.mcp_config` for the factcheck call only —
+  the editor call stays tool-free, consistent with its own deliberate
+  blindness to bible/reference content. `five_step_runner.rb`'s factcheck
+  already had `mcp_config` wired in (untouched here); only chapter_qa was
+  missing it.
+
+**Known, deliberately unaddressed adjacent issue**: `bible_lookup` queries
+the DB-backed `bible_characters`/etc. tables via `BibleSearchService`, while
+the Reference Material text injected into every prompt comes from the
+flat `bible/characters.md` file — these two stores have no automatic sync
+in either direction (`BibleCharactersController` only writes the DB;
+`BibleReviewWriter`/`PrereadBibleWriter` only write the file;
+`BibleMarkdownParser#pending_entries` only diffs and displays the gap for a
+human to resolve at `/novels/:id/preread_review`). If the two drift, a
+factcheck call could get conflicting answers between what's inlined and
+what `bible_lookup` returns. Not fixed here — flagged for a future decision
+on which store is authoritative.
+
+Spec coverage: `prompt_builder_spec.rb` gained cases asserting
+`style_guidelines_followed` is requested and asserting both factcheck
+prompts explicitly mention the Character Bible/Locations/Terminology
+sections and `bible_lookup` for name checks. `chapter_qa_spec.rb` gained a
+case asserting the factcheck call's argv includes `--mcp-config` and the
+editor call's does not.
+
 ## 2026-08-08 · Chapter QA suggestions ordered by position in text, not by pass
 
 Reported by the user: resolving a factcheck suggestion near the start of a

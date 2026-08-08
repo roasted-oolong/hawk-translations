@@ -355,17 +355,18 @@ module Pipeline
         # analysis, since step 3 no longer self-reports whether anything was lost.
         def self.build_factcheck_system_prompt(context, cultural_patterns: "")
           <<~PROMPT.chomp
-            You are an independent fact and cultural-consistency reviewer for a Korean-to-English literary translation pipeline intended for potential publishing. You did not write the translation — a separate call produced it from a separate literary analysis. Your only job is to check that nothing factual or culturally load-bearing got lost or changed between the Korean, its analysis, and the English — you are not judging prose quality or how natural the English sounds; a separate call handles that.
+            You are an independent fact and cultural-consistency reviewer for a Korean-to-English literary translation pipeline intended for potential publishing. You did not write the translation — a separate call produced it from a separate literary analysis. Your only job is to check that nothing factual or culturally load-bearing got lost or changed between the Korean, its analysis, and the English, and that the translation complies with the stated Translation Guidelines — you are not judging prose quality or how natural the English sounds; a separate call handles that.
 
             The user message gives you, per passage: the original Korean (`anchor_quote`), its literary analysis (`core_message`, `emphasis`, `cultural_signals`, `localization_strategy`), and the English translation (`localized_translation`).
 
-            For each passage, independently answer four boolean checks:
-            - `names_preserved`: every character, place, and organization name that appears in the Korean is present and correct in the English (or a previously-established English rendering of it).
+            For each passage, independently answer five boolean checks:
+            - `names_preserved`: every character, place, and organization name that appears in the Korean matches the established English spelling for that entity. Check this against the Character Bible / Locations / Terminology sections in the Reference Material below, not just against whether something was rendered from the Korean at all — a self-consistent, Korean-faithful romanization that simply doesn't match the bible's established spelling (e.g. "Jun-ho" vs. a bible entry for "Junho") is still a failure of this check. If a name isn't covered by the Reference Material below or you're unsure of its established form, use the `bible_lookup` tool to check before deciding.
             - `facts_preserved`: every concrete detail — events, promises, threats, numbers, timelines — in the Korean is intact in the English, with nothing invented or dropped.
             - `cultural_significance_preserved`: honorifics, status moves, indirect refusals, face-saving, and other cultural cues identified in `cultural_signals` are still felt in the English, even if not translated literally.
             - `cultural_dynamic_enacted`: true if `localization_strategy.category` is "none", or if it isn't "none" and the English actually carries out the described dynamic rather than just naming it.
+            - `style_guidelines_followed`: the passage complies with any explicit, checkable rule stated in the Translation Guidelines section of the Reference Material below — most commonly a stated narration tense (e.g. narration written in present tense when the guidelines require past tense). This is a compliance check against a stated rule, not a subjective judgment of how natural the prose reads, so it belongs here rather than the prose-quality call. Dialogue that intentionally departs from a stated rule to reflect a character's natural speech is not a violation if the guidelines allow for that.
 
-            Also compare the passage's analysis to its English translation directly: if `core_message` or `emphasis` named something important that doesn't show up anywhere in `localized_translation`, that's a missing-coverage problem — flag it as a finding even if it doesn't cleanly fail one of the four checks above.
+            Also compare the passage's analysis to its English translation directly: if `core_message` or `emphasis` named something important that doesn't show up anywhere in `localized_translation`, that's a missing-coverage problem — flag it as a finding even if it doesn't cleanly fail one of the checks above.
 
             Any check you mark `false`, and any comparative gap you flag, must have at least one corresponding entry in `findings`, quoting the exact substring of `localized_translation` (or noting its absence) and explaining what's wrong. An empty `findings` array is only valid when every check for that passage is `true` — treat that combination as a claim you're prepared to defend, not a default; go looking for a problem before you settle on it.
 
@@ -379,7 +380,8 @@ module Pipeline
                     "names_preserved": true,
                     "facts_preserved": true,
                     "cultural_significance_preserved": true,
-                    "cultural_dynamic_enacted": true
+                    "cultural_dynamic_enacted": true,
+                    "style_guidelines_followed": true
                   },
                   "findings": [
                     { "quote": "string — exact substring from localized_translation", "issue": "string" }
@@ -519,11 +521,15 @@ module Pipeline
 
         def self.build_chapter_qa_factcheck_system_prompt(context, cultural_patterns: "")
           <<~PROMPT.chomp
-            You are an independent fact and cultural-consistency reviewer for a Korean-to-English literary translation intended for potential publishing. You did not write the translation. Your only job is to check that nothing factual or culturally load-bearing got lost or changed between the Korean source and the English translation — you are not judging prose quality or how natural the English sounds; a separate editor pass handles that.
+            You are an independent fact and cultural-consistency reviewer for a Korean-to-English literary translation intended for potential publishing. You did not write the translation. Your only job is to check that nothing factual or culturally load-bearing got lost or changed between the Korean source and the English translation, and that the translation complies with the stated Translation Guidelines — you are not judging prose quality or how natural the English sounds; a separate editor pass handles that.
 
             The user message gives you the whole chapter's Korean source and its English translation, each in full.
 
-            Go through the chapter and flag every place where a name, place, organization, concrete fact (event, promise, threat, number, timeline), or culturally load-bearing cue (honorific, status move, indirect refusal, face-saving gesture) was lost, changed, or flattened between the Korean and the English. Only flag real problems — an empty `suggestions` array is a claim you're prepared to defend, not a default; go looking for a problem before you settle on finding none.
+            Go through the chapter and flag every place where a name, place, organization, concrete fact (event, promise, threat, number, timeline), or culturally load-bearing cue (honorific, status move, indirect refusal, face-saving gesture) was lost, changed, or flattened between the Korean and the English. For every character, place, and organization name, also check it against the established English spelling in the Character Bible / Locations / Terminology sections of the Reference Material below — a name can be a self-consistent, Korean-faithful romanization and still be wrong if it doesn't match the bible's established spelling for that entity (e.g. "Jun-ho" vs. a bible entry for "Junho"); flag that mismatch even though nothing was "lost" from the Korean. If a name isn't covered by the Reference Material or you're unsure of its established form, use the `bible_lookup` tool to check before deciding.
+
+            Separately, flag any place where the English narration violates an explicit, checkable rule stated in the Translation Guidelines section of the Reference Material below — most commonly a stated narration tense (e.g. narration written in present tense when the guidelines require past tense). This is a compliance check against a stated rule, not a judgment of how natural the prose reads, so it belongs here rather than the editor pass. Dialogue that intentionally departs from a stated rule to reflect a character's natural speech is not a violation if the guidelines allow for that.
+
+            Only flag real problems — an empty `suggestions` array is a claim you're prepared to defend, not a default; go looking for a problem before you settle on finding none.
 
             For each problem found, respond with:
             - `quote`: the exact substring of the English translation that's the problem — copied verbatim, not paraphrased, since it's used to locate the text.
