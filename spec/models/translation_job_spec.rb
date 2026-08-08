@@ -299,4 +299,45 @@ RSpec.describe TranslationJob, type: :model do
       expect(novel.chapters.find_by(number: 1).status).to eq("prereading")
     end
   end
+
+  describe "#broadcast_preread_entries_status" do
+    let(:novel) { create(:novel) }
+    let(:user)  { create(:user) }
+
+    def capture_broadcasts(job)
+      calls = []
+      allow(job).to receive(:broadcast_replace_later_to) { |target, **kwargs| calls << [ target, kwargs ] }
+      allow(job).to receive(:broadcast_remove_to)
+      yield
+      calls
+    end
+
+    it "broadcasts a replace to the novel's preread stream on a preread job's status change" do
+      job = create(:translation_job, :queued, novel: novel, user: user, job_type: "preread")
+
+      calls = capture_broadcasts(job) { job.update!(status: "running") }
+
+      expect(calls.map(&:first)).to include("novel_#{novel.id}_preread")
+    end
+
+    it "does not broadcast to the preread stream for non-preread job types" do
+      job = create(:translation_job, :queued, novel: novel, user: user,
+                   job_type: "translate_batch", chapter_start: 1, chapter_end: 1)
+
+      calls = capture_broadcasts(job) { job.update!(status: "running") }
+
+      expect(calls.map(&:first)).not_to include("novel_#{novel.id}_preread")
+    end
+
+    it "targets the preread-entries-status element with the shared partial" do
+      job = create(:translation_job, :queued, novel: novel, user: user, job_type: "preread")
+
+      calls = capture_broadcasts(job) { job.update!(status: "running") }
+
+      _target, kwargs = calls.find { |(target, _)| target == "novel_#{novel.id}_preread" }
+      expect(kwargs[:target]).to eq("preread-entries-status")
+      expect(kwargs[:partial]).to eq("chapter_review/preread_entries_status")
+      expect(kwargs[:locals][:novel]).to eq(novel)
+    end
+  end
 end

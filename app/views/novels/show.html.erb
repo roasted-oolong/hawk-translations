@@ -1,6 +1,13 @@
 <%# app/views/novels/show.html.erb %>
 <% content_for :title, "#{@novel.title} — Hawk" %>
 
+<%# Persistent subscription for the Review tab's "Preread Bible Entries"
+    card — lives here, in the page shell, rather than inside
+    chapter_review/tab.html.erb's swappable frame content, so it survives
+    tab switches instead of resubscribing on every render. See
+    TranslationJob#broadcast_preread_entries_status. %>
+<%= turbo_stream_from "novel_#{@novel.id}_preread" %>
+
 <%= render "layouts/breadcrumb", crumbs: [
       ["Novels", novels_path],
       [@novel.title, nil]
