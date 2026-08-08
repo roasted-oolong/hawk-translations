@@ -739,6 +739,68 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
     end
   end
 
+  describe ".build_bible_entry_suggestion_system_prompt" do
+    let(:fields) do
+      [
+        { key: "role", label: "Role", hint: "their function in the story so far" },
+        { key: "notes", label: "Notes", hint: "translation-relevant notes" }
+      ]
+    end
+
+    it "scopes the call to the one new entry, not the rest of the bible" do
+      prompt = described_class.build_bible_entry_suggestion_system_prompt(
+        korean_label: "Korean name", korean_key: "korean_name", fields: fields
+      )
+
+      expect(prompt).to include("scoped to exactly this one entry")
+    end
+
+    it "names the korean_key/korean_label and every field's key, label, and hint" do
+      prompt = described_class.build_bible_entry_suggestion_system_prompt(
+        korean_label: "Korean name", korean_key: "korean_name", fields: fields
+      )
+
+      expect(prompt).to include("`korean_name` (Korean name)")
+      expect(prompt).to include("`role` (Role): their function in the story so far")
+      expect(prompt).to include("`notes` (Notes): translation-relevant notes")
+    end
+
+    it "instructs brevity, since these are hand-edited starting points, not finished prose" do
+      prompt = described_class.build_bible_entry_suggestion_system_prompt(
+        korean_label: "Korean name", korean_key: "korean_name", fields: fields
+      )
+
+      expect(prompt).to include("as short as it can be")
+    end
+
+    it "instructs the model to return a single JSON object shaped from korean_key plus every field key" do
+      prompt = described_class.build_bible_entry_suggestion_system_prompt(
+        korean_label: "Korean name", korean_key: "korean_name", fields: fields
+      )
+
+      expect(prompt).to include("\"korean_name\": \"string\"")
+      expect(prompt).to include("\"role\": \"string\"")
+      expect(prompt).to include("\"notes\": \"string\"")
+    end
+  end
+
+  describe ".build_bible_entry_suggestion_user_message" do
+    it "gives the selected English text, its surrounding context, and the full Korean source under distinct headings" do
+      message = described_class.build_bible_entry_suggestion_user_message(
+        english_text:       "Crimson Peak",
+        context_text:       "They rode toward Crimson Peak at dawn.",
+        korean_source_text: "그들은 새벽에 붉은 봉우리를 향해 말을 달렸다."
+      )
+
+      expect(message).to include("# Selected English Text")
+      expect(message).to include("Crimson Peak")
+      expect(message).to include("# Surrounding English Context")
+      expect(message).to include("They rode toward Crimson Peak at dawn.")
+      expect(message).to include("# Korean Source (full chapter)")
+      expect(message).to include("그들은 새벽에 붉은 봉우리를 향해 말을 달렸다.")
+    end
+  end
+
   describe ".extract_narrator_note" do
     it "extracts the Narrator Note section when followed by another section" do
       novel_info = "# Title\n\n## Narrator Note\nSome note text.\nMore text.\n\n## Next Section\nOther stuff"

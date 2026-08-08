@@ -20,7 +20,8 @@ class TranslationConfig
   VALID_BACKENDS = %w[local claude_code].freeze
 
   attr_reader :translation_backend, :calibration_backend, :format_backend, :llm_base_url, :llm_api_key,
-              :translation_model, :factcheck_model, :translation_max_budget_usd, :claude_bin
+              :translation_model, :factcheck_model, :bible_entry_suggestion_model,
+              :translation_max_budget_usd, :claude_bin
 
   def self.from_env(env = ENV)
     new(env)
@@ -38,6 +39,14 @@ class TranslationConfig
     # A separate field rather than reusing translation_model, since the two
     # are tuned independently.
     @factcheck_model              = env.fetch("FACTCHECK_MODEL", "sonnet")
+    # Pipeline::BibleEntrySuggestion is a small one-shot extraction task
+    # (find the Korean equivalent, fill a few short fields from text already
+    # given in the prompt) scoped to a single new bible entry — not the
+    # creative, whole-chapter judgment translation_model is tuned for. Same
+    # override pattern as factcheck_model, defaulted to the cheapest tier
+    # rather than sonnet, since this task is simpler than factcheck's
+    # cross-text comparison.
+    @bible_entry_suggestion_model = env.fetch("BIBLE_ENTRY_SUGGESTION_MODEL", "haiku")
     @translation_max_budget_usd = validate_budget(env)
     @claude_bin                  = resolve_claude_bin(env)
   end
