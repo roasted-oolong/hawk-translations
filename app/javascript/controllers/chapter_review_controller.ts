@@ -147,6 +147,18 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
   // displayed and the reviewer dismissed, or re-translated the chapter
   // since" — and kept re-showing the old result forever instead of ever
   // starting a new run.
+  private qaSeenJobId = new Map<string, number>()
+
+  // Chapter ids with a chapter_qa job actually in flight right now (queued
+  // or running), server-confirmed. renderQaForCurrentChapter() runs on
+  // every suggestion interaction (accept/reject/filter/dismiss), not just
+  // job completion, so it needs a way to tell "idle, safe to show the Run
+  // Quality Check button" apart from "a fresh run is currently in progress
+  // for this chapter" — otherwise reviewing old suggestions while a new
+  // check runs in the background would stomp the running indicator back to
+  // idle mid-run.
+  private qaRunningChapters = new Set<string>()
+
   private handleKeydown = (event: KeyboardEvent) => {
     if ((event.ctrlKey || event.metaKey) && event.key === 's') {
       event.preventDefault()
@@ -549,11 +561,20 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
           }
           return
         }
-        // A completed run already sits server-side (e.g. connect()'s own
-        // status check just hasn't resolved yet) — show it instead of
-        // silently kicking off a second, redundant paid LLM run.
+        // A completed run already sits server-side. If we haven't shown
+        // *this specific job* yet (e.g. connect()'s own status check just
+        // hasn't resolved before the click), show it instead of silently
+        // kicking off a second, redundant paid LLM run. But if this job id
+        // was already surfaced once (shown, or shown-then-dismissed) — the
+        // reviewer clicking "Run Quality Check" again is a deliberate
+        // request for a fresh pass (e.g. after re-translating the chapter),
+        // not a request to see the same stale result again.
         if (data.status === "completed") {
-          this.pollQaStatus(chapterId)
+          if (data.id !== null && this.qaSeenJobId.get(chapterId) === data.id) {
+            this.startQa(chapterId)
+          } else {
+            this.pollQaStatus(chapterId)
+          }
           return
         }
         this.startQa(chapterId)
@@ -564,6 +585,7 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
   private startQa(chapterId: string) {
     const card = this.currentCard
     const chapterNumber = card.dataset.chapterNumber ?? ""
+    this.qaRunningChapters.add(chapterId)
     this.qaBtnTarget.hidden = true
     this.qaRunningIndicatorTarget.hidden = false
     this.qaRunningLabelTarget.textContent = "Running factcheck pass…"
@@ -583,7 +605,7 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
       body,
     })
       .then(() => this.pollQaStatus(chapterId))
-      .catch(() => this.resetQaToIdle())
+      .catch(() => this.resetQaToIdle(chapterId))
   }
 
   private cancelJob(jobId: number | null): Promise<void> {
@@ -611,6 +633,7 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
           // now also runs once from connect() to resume watching a job that
           // was already in flight before the page loaded, when the button
           // is still in its default server-rendered visible state.
+          this.qaRunningChapters.add(chapterId)
           this.qaBtnTarget.hidden = true
           this.qaRunningIndicatorTarget.hidden = false
           const pct = data.progress_pct ?? 0
@@ -619,8 +642,11 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
           return
         }
 
+        this.qaRunningChapters.delete(chapterId)
+
         if (data.status === "completed") {
           this.qaSuggestionsByChapter.set(chapterId, data.suggestions)
+          if (data.id !== null) this.qaSeenJobId.set(chapterId, data.id)
           this.qaFilter = "all"
           this.qaFocusedId = this.firstPendingId(data.suggestions)
           this.renderQaForCurrentChapter()
@@ -628,12 +654,13 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
         }
 
         // failed, cancelled, or none — nothing to review, back to idle.
-        this.resetQaToIdle()
+        this.resetQaToIdle(chapterId)
       })
-      .catch(() => this.resetQaToIdle())
+      .catch(() => this.resetQaToIdle(chapterId))
   }
 
-  private resetQaToIdle() {
+  private resetQaToIdle(chapterId: string) {
+    this.qaRunningChapters.delete(chapterId)
     this.qaRunningIndicatorTarget.hidden = true
     this.qaBtnTarget.hidden = false
   }
@@ -667,12 +694,20 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
       if (qaPaneCompare) qaPaneCompare.hidden = true
       if (editableText) editableText.hidden = false
       if (paneText) paneText.hidden = false
-      this.resetQaToIdle()
+      if (!this.qaRunningChapters.has(chapterId)) this.resetQaToIdle(chapterId)
       return
     }
 
-    this.qaRunningIndicatorTarget.hidden = true
-    this.qaBtnTarget.hidden = true
+    // Button and tracked-changes coexist: a completed run's suggestions stay
+    // on screen (and "Run Quality Check" stays clickable, not swapped out
+    // for the navigator) so re-checking after a re-translation, or after
+    // accepting/rejecting a few suggestions, doesn't require dismissing the
+    // current results first. Only suppressed while a fresh run for this
+    // chapter is actually in flight — see qaRunningChapters above.
+    if (!this.qaRunningChapters.has(chapterId)) {
+      this.qaRunningIndicatorTarget.hidden = true
+      this.qaBtnTarget.hidden = false
+    }
     this.qaNavigatorTarget.hidden = false
 
     const html = this.buildTrackedChangesHtml(this.textForRendering(chapterId, editableText, paneText), suggestions)
