@@ -4,6 +4,7 @@ class BibleLocationsController < ApplicationController
   before_action :set_novel
   before_action :set_entry, only: [ :show, :edit, :update, :destroy ]
   include BiblePrereadDismissed
+  include BibleEntryChapterPrefill
 
   def index
     @entries = @novel.bible_locations.by_name
@@ -18,6 +19,7 @@ class BibleLocationsController < ApplicationController
 
   def create
     @entry = @novel.bible_locations.build(entry_params)
+    prefill_first_appearance_chapter(@entry)
     respond_to do |format|
       if @entry.save
         format.html { redirect_to edit_novel_bible_location_path(@novel, @entry), notice: "Location added. Fill in the details below." }

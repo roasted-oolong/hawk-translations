@@ -58,6 +58,31 @@ RSpec.describe "BibleCharacters", type: :request do
         expect(response).to have_http_status(:unprocessable_entity)
       end
     end
+
+    context "with a chapter_id param (bible-lookup quick-create)" do
+      let(:chapter) { create(:chapter, novel: novel, number: 7) }
+
+      it "fills first_appearance_chapter from the chapter's number" do
+        post novel_bible_characters_path(novel), params: {
+          bible_character: { name: "Lee Sooha" }, chapter_id: chapter.id
+        }
+        expect(BibleCharacter.last.first_appearance_chapter).to eq(7)
+      end
+
+      it "does not override first_appearance_chapter if one was already given" do
+        post novel_bible_characters_path(novel), params: {
+          bible_character: { name: "Lee Sooha", first_appearance_chapter: 2 }, chapter_id: chapter.id
+        }
+        expect(BibleCharacter.last.first_appearance_chapter).to eq(2)
+      end
+
+      it "leaves first_appearance_chapter blank for an unknown chapter_id" do
+        post novel_bible_characters_path(novel), params: {
+          bible_character: { name: "Lee Sooha" }, chapter_id: 0
+        }
+        expect(BibleCharacter.last.first_appearance_chapter).to be_nil
+      end
+    end
   end
 
   describe "GET /novels/:novel_id/bible_characters/:id/edit" do

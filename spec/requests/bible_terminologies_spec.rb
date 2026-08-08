@@ -58,6 +58,16 @@ RSpec.describe "BibleTerminologies", type: :request do
         expect(response).to have_http_status(:unprocessable_entity)
       end
     end
+
+    context "with a chapter_id param (bible-lookup quick-create)" do
+      it "fills first_appearance_chapter from the chapter's number" do
+        chapter = create(:chapter, novel: novel, number: 7)
+        post novel_bible_terminologies_path(novel), params: {
+          bible_terminology: { term: "Gate" }, chapter_id: chapter.id
+        }
+        expect(BibleTerminology.last.first_appearance_chapter).to eq(7)
+      end
+    end
   end
 
   describe "GET /novels/:novel_id/bible_terminologies/:id/edit" do

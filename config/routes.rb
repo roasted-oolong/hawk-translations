@@ -60,6 +60,12 @@ Rails.application.routes.draw do
     # as: :bible_search generates novel_bible_search_path (Rails prepends :novel_ from the resources block)
     get "bible/search", to: "bible_search#show", as: :bible_search
 
+    # Bible entry suggestion — API-first JSON endpoint, fired from the
+    # bible-lookup Tab-to-create-entry popover to prefill the Korean
+    # equivalent + a few descriptive fields for one new entry.
+    # POST /novels/:novel_id/bible_entry_suggestion
+    post "bible_entry_suggestion", to: "bible_entry_suggestions#create", as: :bible_entry_suggestion
+
     # Full-page chapter review slideshow
     # GET  /novels/:novel_id/chapter_review              → novel_chapter_review_path
     # PATCH /novels/:novel_id/chapter_review/chapters/:id/text → save edited text

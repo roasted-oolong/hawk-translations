@@ -4,6 +4,7 @@ class BibleCharactersController < ApplicationController
   before_action :set_novel
   before_action :set_entry, only: [ :show, :edit, :update, :destroy ]
   include BiblePrereadDismissed
+  include BibleEntryChapterPrefill
 
   def index
     @entries = @novel.bible_characters.by_name
@@ -18,6 +19,7 @@ class BibleCharactersController < ApplicationController
 
   def create
     @entry = @novel.bible_characters.build(entry_params)
+    prefill_first_appearance_chapter(@entry)
     respond_to do |format|
       if @entry.save
         format.html { redirect_to edit_novel_bible_character_path(@novel, @entry), notice: "Character added. Fill in the details below." }
