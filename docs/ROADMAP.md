@@ -588,6 +588,15 @@ translation/review screen, not a separate job):**
   below — not yet decided which, possibly both depending on scope (single
   chapter vs. novel-wide).
 
+**English-first direction implemented 2026-08-08** — see `docs/DECISIONS.md`'s
+bible-entry-suggestion entry: BibleLookupController's Tab-to-create-entry
+popover now suggests the Korean equivalent plus a handful of descriptive
+fields (from `Pipeline::BibleEntrySuggestion`, one call scoped to the single
+entry being created) the moment the quick-create form opens. Still open from
+this item: the Korean-first entry point (select Korean source text, suggest
+the English side instead), and the find-and-correct-existing-instances half
+below.
+
 ---
 
 ## Future — AI-Generated Bible Entry
@@ -599,6 +608,18 @@ drafts, what context it's given, and whether this is its own small `claude` call
 folds into the existing preread/bible_build extraction path.
 
 ---
+
+## Translation Quality Pipeline (Structured Intent/Literal/Localized) — production path reverted 2026-08-07
+
+**2026-08-07: `translate_batch` reverted to the single-call design**, plus a
+new `FeelCheck` phase (chunk the translation into segments, re-evaluate each
+for how it reads, auto-rewrite the ones that don't) — see
+`docs/DECISIONS.md`'s same-day entry. The 5-step pipeline below is judged
+worse in production and no longer runs there; its code
+(`FiveStepRunner`/`BeatSegmenter`/`Pipeline::Ruby::TranslationEval`) stays as
+an offline eval harness for future pipeline experiments. Everything below
+this point is kept for history, not as a description of the current
+production path.
 
 ## Future — Translation Quality Pipeline (Structured Intent/Literal/Localized) — SUPERSEDED 2026-07-30
 
@@ -718,6 +739,31 @@ directly against whatever translation is already saved — no re-segmentation,
 no re-localization — so it doesn't depend on the beat-segmentation work
 above being promoted to production at all. Full design/build notes in
 docs/DECISIONS.md's chapter_qa entry.
+
+**Promoted to production, 2026-08-02** (see `docs/DECISIONS.md`'s same-day
+"5-step pipeline promoted to translate_batch's production path" entry):
+segmentation → analysis → localization above are now `translate_batch`'s
+actual generation path, replacing the old single-pass prompt outright.
+Ships with the register-mixing risk and other open caveats named throughout
+this section still unresolved; the doc entry records them explicitly rather
+than treating this as a quality milestone. Also fixed as part of the
+promotion: the paragraph-break-loss bug on chapter reassembly (2026-07-31
+entry above), which the offline harness could tolerate but production
+writing publishable chapter text could not.
+
+Same-day follow-up (`docs/DECISIONS.md`'s "translate_batch narrowed to 3
+steps" entry): factcheck/editor were pulled back out of that production
+path before shipping. `translate_batch` runs only the 3 steps above;
+factcheck/editor remain optional, available only through the pre-existing,
+separately-prompted Chapter QA feature two paragraphs above, run on demand
+rather than on every generation.
+
+**Reverted 2026-08-07** (see this section's top note and
+`docs/DECISIONS.md`'s same-day entry): this promotion produced translations
+judged significantly worse than the pre-quality-pipeline single-call design.
+`translate_batch` is back on that single call, with a new `FeelCheck` phase
+in its place — see the same doc entry. The 3-step generation path described
+in this paragraph and the one above no longer runs in production.
 
 Chapters 74/75, Test A, and Test B are still unbuilt/unrun.
 
