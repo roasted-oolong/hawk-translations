@@ -166,8 +166,13 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
       return
     }
 
-    const tag = (event.target as HTMLElement).tagName
-    if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT') return
+    const target = event.target as HTMLElement
+    // isContentEditable also exempts qaPane/qaPaneCompare (and anything
+    // inside them, e.g. a click that landed on a locked suggestion span) —
+    // without it, typing a word containing "a"/"s"/"p" while hand-editing
+    // QA-reviewed text fires approve()/skip()/prev() on top of the keystroke,
+    // since those panes are a contenteditable <div>, not a <textarea>.
+    if (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.isContentEditable) return
 
     switch (event.key) {
       case 'ArrowLeft':
@@ -1017,9 +1022,14 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
     return html
   }
 
+  // contenteditable="false" on both branches below is what makes these
+  // spans locked islands inside the otherwise-editable qaPane/qaPaneCompare
+  // (see the view) — the reviewer can type freely in the surrounding prose,
+  // but can't peck at a flagged phrase itself; resolving it via accept/
+  // reject is still the only way to change it.
   private renderSuggestionSpan(suggestion: QaSuggestion): string {
     if (suggestion.status === "accepted") {
-      return `<span class="chapter-review__qa-suggestion chapter-review__qa-suggestion--accepted">${this.escapeHtml(suggestion.suggested_revision)}</span>`
+      return `<span class="chapter-review__qa-suggestion chapter-review__qa-suggestion--accepted" contenteditable="false">${this.escapeHtml(suggestion.suggested_revision)}</span>`
     }
 
     const focusedClass = this.qaFocusedId === suggestion.id ? " chapter-review__qa-suggestion--focused" : ""
@@ -1028,11 +1038,130 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
       : "chapter-review__qa-suggestion-new--factcheck"
 
     return (
-      `<span class="chapter-review__qa-suggestion${focusedClass}" data-suggestion-id="${suggestion.id}">` +
+      `<span class="chapter-review__qa-suggestion${focusedClass}" data-suggestion-id="${suggestion.id}" contenteditable="false">` +
       `<span class="chapter-review__qa-suggestion-old">${this.escapeHtml(suggestion.quote)}</span> ` +
       `<span class="chapter-review__qa-suggestion-new ${newColorClass}">${this.escapeHtml(suggestion.suggested_revision)}</span>` +
       `</span>`
     )
+  }
+
+  // ── QA pane direct editing ────────────────────────────────────────────
+  //
+  // qaPane/qaPaneCompare are contenteditable (see the view); locked
+  // suggestion spans (contenteditable="false" above) are the only parts the
+  // reviewer can't type into directly. These handlers keep the hidden
+  // textarea that everything else (saveCurrentText, applyQaDecision,
+  // qaAcceptAll, autosave-on-Cmd+S) already treats as the source of truth
+  // in sync with whatever's actually in that contenteditable DOM, without
+  // touching any of that existing code.
+
+  syncQaPaneEdit = (event: Event) => {
+    this.commitPaneEdit(event.currentTarget as HTMLElement)
+  }
+
+  // Browsers turn a bare Enter keypress in a contenteditable region into a
+  // wrapped <div>/<br>, not the literal "\n" a <textarea> would insert —
+  // left alone, that fragments the DOM the serializer below has to walk and
+  // drifts the editing feel from the plain-text mode used before a QA run.
+  // Intercepting it and inserting a real newline character keeps Enter
+  // behaving identically in both modes.
+  qaPaneKeydown = (event: KeyboardEvent) => {
+    event.preventDefault()
+    const pane = event.currentTarget as HTMLElement
+    this.insertPlainTextAtCaret("\n")
+    this.commitPaneEdit(pane)
+  }
+
+  // Pasting rich text (e.g. from a Word doc or another translation) would
+  // otherwise drop arbitrary HTML into the DOM the serializer walks — force
+  // plain text only, matching a <textarea>'s native paste behavior.
+  qaPanePaste = (event: ClipboardEvent) => {
+    event.preventDefault()
+    const pane = event.currentTarget as HTMLElement
+    const text = event.clipboardData?.getData("text/plain") ?? ""
+    this.insertPlainTextAtCaret(text)
+    this.commitPaneEdit(pane)
+  }
+
+  private insertPlainTextAtCaret(text: string) {
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0) return
+    const range = selection.getRangeAt(0)
+    range.deleteContents()
+    const node = document.createTextNode(text)
+    range.insertNode(node)
+    range.setStartAfter(node)
+    range.setEndAfter(node)
+    selection.removeAllRanges()
+    selection.addRange(range)
+  }
+
+  // Figures out which chapter card's textarea this edit belongs to from the
+  // pane element itself (rather than trusting this.index/compareActive),
+  // since qaPane and qaPaneCompare both exist in the DOM at once — only one
+  // is ever visible per the CSS rule hiding the inactive one, and only that
+  // one can actually receive input, but resolving it structurally keeps
+  // this correct even if that CSS assumption ever changes.
+  private commitPaneEdit(pane: HTMLElement) {
+    let i = this.qaPaneTargets.indexOf(pane)
+    if (i !== -1) {
+      const textarea = this.editableTextTargets[i]
+      if (textarea) textarea.value = this.serializePaneText(pane, i)
+      return
+    }
+    i = this.qaPaneCompareTargets.indexOf(pane)
+    if (i !== -1) {
+      const paneText = this.paneTextTargets[i]
+      if (paneText) paneText.value = this.serializePaneText(pane, i)
+    }
+  }
+
+  // Reconstructs the plain-text document the rest of the controller expects
+  // from qaPane's DOM. A pending suggestion span reads back as its original
+  // quote (the old/new tracked-changes markup inside it is display-only —
+  // resolving the suggestion, not hand-editing, is what changes that text);
+  // an accepted span reads back as its own text content, since it's a
+  // locked, single, already-final run. Everything else is prose the
+  // reviewer can freely edit, walked node-by-node.
+  private serializePaneText(pane: HTMLElement, cardIndex: number): string {
+    const chapterId = this.chapterCardTargets[cardIndex]?.dataset.chapterId ?? ""
+    const suggestions = this.qaSuggestionsByChapter.get(chapterId) ?? []
+    const byId = new Map(suggestions.map(s => [ s.id, s ]))
+
+    let out = ""
+    const walk = (node: ChildNode) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        out += node.textContent ?? ""
+        return
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return
+      const el = node as HTMLElement
+
+      if (el.tagName === "BR") {
+        out += "\n"
+        return
+      }
+
+      const suggestionId = el.dataset.suggestionId
+      if (suggestionId) {
+        out += byId.get(suggestionId)?.quote ?? ""
+        return
+      }
+      if (el.classList.contains("chapter-review__qa-suggestion--accepted")) {
+        out += el.textContent ?? ""
+        return
+      }
+
+      // Any other wrapper element (a stray <div>/<p> a browser might still
+      // insert, e.g. on paste) — recurse, then add a newline for its own
+      // line break so multi-paragraph structure round-trips.
+      const startLength = out.length
+      el.childNodes.forEach(walk)
+      if (out.length > startLength && getComputedStyle(el).display === "block") out += "\n"
+    }
+
+    pane.childNodes.forEach(walk)
+    return out
   }
 
   private escapeHtml(text: string): string {

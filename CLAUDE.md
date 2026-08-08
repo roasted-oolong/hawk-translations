@@ -28,7 +28,7 @@ Ruby 3.4.2 · PostgreSQL · Hotwire (Turbo + Stimulus) · Solid Queue · Active 
 | Bible semantic search | `app/services/bible_search_service.rb` | |
 | Embedding generation | `app/jobs/generate_embedding_job.rb`, `app/services/voyage_client.rb` | |
 | Voice calibration review, commit | `app/controllers/voice_calibration_review_controller.rb`, `app/services/voice_calibration_doc_writer.rb` | |
-| Chapter review (edit/save) + Chapter QA (factcheck+editor track-changes, production) | `app/controllers/chapter_review_controller.rb`, `app/views/chapter_review/`, `app/javascript/controllers/chapter_review_controller.ts`, `app/services/pipeline/ruby/chapter_qa.rb`, `PromptBuilder.build_chapter_qa_factcheck_system_prompt`/`.build_chapter_qa_editor_system_prompt` | `docs/DECISIONS.md` (chapter_qa entry) |
+| Chapter review (edit/save) + Chapter QA (factcheck+editor track-changes, production; suggestions ordered by position in text; qaPane/qaPaneCompare are contenteditable with locked suggestion spans, untouched prose stays directly editable) | `app/controllers/chapter_review_controller.rb`, `app/views/chapter_review/`, `app/javascript/controllers/chapter_review_controller.ts`, `app/services/pipeline/ruby/chapter_qa.rb`, `PromptBuilder.build_chapter_qa_factcheck_system_prompt`/`.build_chapter_qa_editor_system_prompt` | `docs/DECISIONS.md` (chapter_qa entry, 2026-08-08 suggestion-ordering/no-forced-scroll/direct-editing entries) |
 | Stimulus controllers | `app/javascript/controllers/` | `docs/UI.md` |
 | Model validations, scopes, enums | `app/models/` | `docs/SCHEMA.md` |
 | Request specs | `spec/requests/` | |

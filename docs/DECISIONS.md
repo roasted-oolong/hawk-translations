@@ -2028,3 +2028,56 @@ environment limitation, reproducible on `main` before this change too,
 unrelated to it). Needs a manual check: accept/reject a suggestion and
 confirm the page doesn't move.
 
+
+
+## 2026-08-08 · Chapter QA review: untouched chapter text stays directly editable
+
+Reported by the user: once any chapter_qa suggestions were on screen, the
+entire chapter text was locked — not just the flagged phrases. Cause:
+`qaPane`/`qaPaneCompare` were plain, non-editable `<div>`s once a chapter
+had suggestions — the underlying `<textarea>` was hidden entirely, so
+nothing in the tracked-changes view could be typed into, flagged or not.
+
+Both panes are now `contenteditable`; each suggestion span (pending or
+accepted) carries its own `contenteditable="false"`, so only the flagged
+phrases stay locked — the surrounding untouched prose is directly editable,
+same as before a QA run. An accepted span stays locked too, on purpose:
+it's already an applied change, not open text; only a rejected suggestion's
+span disappears entirely (see `buildTrackedChangesHtml`), leaving its quote
+as ordinary editable text.
+
+This didn't require touching `saveCurrentText`, `applyQaDecision`, or
+`qaAcceptAll` — the hidden textarea stays the single source of truth those
+already read from. Three new handlers on the pane
+(`syncQaPaneEdit`/`qaPaneKeydown`/`qaPanePaste`) keep it in sync: `input`
+re-serializes the pane's DOM into the textarea's `.value` on every
+keystroke; `Enter` is intercepted to insert a literal `"\n"` instead of the
+`<div>`/`<br>` a contenteditable region would otherwise wrap it in
+(matching a plain `<textarea>`'s behavior, and keeping the DOM the
+serializer walks flat); `paste` is forced to plain text so pasted rich
+content can't inject arbitrary markup. The serializer
+(`serializePaneText`) reads a pending suggestion span back as its
+*original* `quote` (the old/new markup inside it is display-only — only
+resolving the suggestion changes that text) and an accepted span back as
+its own text content (a locked, already-final run); everything else is
+walked node-by-node as live prose.
+
+Caught by the user during manual smoke-testing: `handleKeydown`'s global
+review shortcuts (A/P/S, arrow keys → approve/prev/skip) only skipped
+themselves while the focused element's `tagName` was `TEXTAREA`/`INPUT`/
+`SELECT`. qaPane/qaPaneCompare are a `contenteditable` `<div>`, not a
+`<textarea>`, so typing a word containing "a", "s", or "p" while
+hand-editing QA-reviewed text also fired `approve()`/`skip()`/`prev()` —
+each keystroke both inserted the character and silently advanced the
+review. Fixed by also exempting `target.isContentEditable`, which covers
+the pane itself and everything inside it (including a locked suggestion
+span).
+
+Not covered by an automated browser test, for the same Cuprite/Chromium
+sandbox limitation noted above. Covered instead by a request spec asserting
+the show page renders both QA panes `contenteditable` and wired to all
+three handlers. The contenteditable editing/serialization path itself needs
+a manual smoke-test pass in a real browser before being treated as
+verified: typing plain prose around a flagged phrase, pressing Enter inside
+the pane, pasting plain and rich text, and accepting/rejecting a suggestion
+after a nearby hand-edit.
