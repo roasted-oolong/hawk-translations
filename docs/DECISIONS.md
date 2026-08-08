@@ -2097,3 +2097,54 @@ nothing useful at all.
 Fixed by adding `tabindex="-1"` to both suggestion-span branches — pulls
 them out of sequential Tab order entirely without affecting click handling
 (`handleQaPaneClick`) or their own locked-editing behavior.
+
+## 2026-08-08 · bible-lookup Tab shortcut extended to contenteditable, and wired into the single-chapter editor
+
+Turned out the tabindex fix above wasn't the whole story. "The tab function
+in the editor" the user meant was `BibleLookupController`'s actual feature:
+select a term, press Tab, get a popover to search/add it to the bible.
+`connect()` only ever attached that listener to `<textarea>` elements found
+under its root — once a chapter had QA suggestions, editing moved to the
+new contenteditable `qaPane`/`qaPaneCompare` divs (see the direct-editing
+entry above), which the controller never knew existed, so the Tab shortcut
+silently stopped firing there. The `tabindex="-1"` fix was still worth
+keeping (a real, separate problem — Tab cycling through locked suggestion
+spans instead of leaving the pane at all), it just wasn't *this* bug.
+
+Fixed by giving `BibleLookupController` a second, parallel listener path:
+`connect()`/`disconnect()` now also wire up every `[contenteditable="true"]`
+element under the root, and `handleTabOnEditable` mirrors
+`handleTabOnTextarea` using the Selection API (`window.getSelection()`,
+`Range.getBoundingClientRect()`) in place of a `<textarea>`'s
+`selectionStart`/`selectionEnd` and the mirror-div positioning hack that
+API doesn't have an equivalent for. Same query-length gate, same
+`openLoading()`/`fetchResults()` path afterward — the two entry points only
+differ in how they read "what's selected" and "where's its rect."
+
+Also, per the user: editor functions like this one (and, later, bulk find
++replace) are meant to be available in *every* editable text field in the
+app, not just whichever one happened to get them first. The single-chapter
+editor (`chapters#show` → `chapter_viewer_controller.ts`) never had
+`bible-lookup` mounted on it at all — fixed by adding it to that page's
+root `data-controller` alongside `chapter-viewer`, with the same
+`data-bible-lookup-*-value` attributes `chapter_review/show.html.erb`
+already sets. Nothing else needed: `BibleLookupController#connect()`
+already discovers every textarea under its root generically, so
+`chapter_viewer`'s existing plain-textarea editor picked up the feature
+with zero controller-side changes of its own.
+
+Confirmed as a non-issue rather than fixed: the user also asked whether a
+completed QA review's accepted/rejected changes stay in sync with what the
+single-chapter page shows. They already do — `chapter_qa` suggestions live
+only in `TranslationJob#result_payload`; `ChaptersController#show` never
+reads that table, only `Chapter#translated_output`, which is the same
+attachment `ChapterReviewController#update_text` writes to on every accept/
+reject (via the existing `saveCurrentText()` path). No separate "wipe"
+step was needed because there was never a second copy to wipe.
+
+Spec coverage: new case in `chapters_spec.rb` asserting the `bible-lookup`
+controller and its value attributes render on the chapter editor page.
+The contenteditable Tab-intercept path itself isn't covered by an
+automated test, for the same Cuprite/Chromium sandbox limitation noted in
+the entries above — needs a manual check: select text inside the QA pane
+after a chapter_qa run and confirm Tab opens the bible-lookup popover.

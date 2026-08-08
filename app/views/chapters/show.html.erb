@@ -41,8 +41,10 @@
 <%# Chapter content editor                                              %>
 <%# ------------------------------------------------------------------ %>
 <div class="chapter-viewer"
-     data-controller="chapter-viewer"
-     data-chapter-viewer-save-url-value="<%= novel_update_chapter_review_text_path(@novel, id: @chapter.id) %>">
+     data-controller="chapter-viewer bible-lookup"
+     data-chapter-viewer-save-url-value="<%= novel_update_chapter_review_text_path(@novel, id: @chapter.id) %>"
+     data-bible-lookup-search-url-value="<%= novel_bible_search_path(@novel) %>"
+     data-bible-lookup-novel-id-value="<%= @novel.id %>">
 
   <div class="chapter-viewer__toolbar">
     <button type="button"
