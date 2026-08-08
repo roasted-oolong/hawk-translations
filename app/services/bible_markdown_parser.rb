@@ -39,6 +39,14 @@ class BibleMarkdownParser
     end
   end
 
+  # Just the counts — shared by ChapterReviewController#tab (initial render)
+  # and TranslationJob's preread broadcast (push update), so both compute
+  # the "N pending" card from one place rather than re-deriving it twice.
+  def pending_breakdown
+    by_category = pending_entries.transform_values(&:size)
+    { total: by_category.values.sum, by_category: by_category }
+  end
+
   def dismissed_entries
     return empty_result if bible_dir.nil?
 

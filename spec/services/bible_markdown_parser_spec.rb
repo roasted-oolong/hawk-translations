@@ -84,6 +84,46 @@ RSpec.describe BibleMarkdownParser do
     end
   end
 
+  describe "#pending_breakdown" do
+    context "when the bible directory does not exist" do
+      before { allow(ENV).to receive(:fetch).with("HAWK_PROJECT_ROOT", "").and_return("") }
+
+      it "returns a zero total and empty per-category counts" do
+        result = described_class.new(novel).pending_breakdown
+        expect(result[:total]).to eq(0)
+        expect(result[:by_category].values.all?(&:zero?)).to be true
+      end
+    end
+
+    context "with pending characters" do
+      let(:bible_dir) { Dir.mktmpdir }
+
+      before do
+        FileUtils.mkdir_p(File.join(bible_dir, "bible"))
+        allow(ENV).to receive(:fetch).with("HAWK_PROJECT_ROOT", "").and_return(File.dirname(bible_dir))
+        allow(novel).to receive(:directory_name).and_return(File.basename(bible_dir))
+
+        File.write(File.join(bible_dir, "bible", "characters.md"), <<~MD)
+          ## Park Jisoo (박지수)
+          - Korean name: 박지수
+          - Role: Protagonist
+        MD
+
+        %w[locations.md terminology.md cultural_phrases.md story.md].each do |f|
+          FileUtils.touch(File.join(bible_dir, "bible", f))
+        end
+      end
+
+      after { FileUtils.rm_rf(bible_dir) }
+
+      it "sums per-category counts into a total matching #pending_entries" do
+        result = described_class.new(novel).pending_breakdown
+        expect(result[:by_category][:characters]).to eq(1)
+        expect(result[:total]).to eq(1)
+      end
+    end
+  end
+
   describe "#dismissed_entries" do
     let(:bible_dir) { Dir.mktmpdir }
 

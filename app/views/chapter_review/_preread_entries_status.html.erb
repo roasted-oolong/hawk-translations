@@ -1,0 +1,33 @@
+<%# app/views/chapter_review/_preread_entries_status.html.erb
+    locals: (novel:, pending_count:, pending_breakdown:)
+
+    Rendered both by ChapterReviewController#tab (initial page load) and by
+    TranslationJob#broadcast_preread_entries_status (pushed over Turbo
+    Streams whenever a preread job's status changes) — the root element's id
+    is the target both paths replace, so it must stay in sync with the
+    turbo_stream_from "novel_#{novel.id}_preread" subscription in
+    novels/show.html.erb. %>
+<div id="preread-entries-status">
+  <% if pending_count > 0 %>
+    <div class="chapter-review-tab__header chapter-review-tab__header--section">
+      <h2 class="chapter-review-tab__title">Preread Bible Entries</h2>
+      <span class="chapter-review-tab__count"><%= pending_count %> pending</span>
+    </div>
+
+    <div class="chapter-review-tab__card" data-testid="preread-entries-card">
+      <div class="preread-review-tab__breakdown">
+        <% pending_breakdown.each do |cat, count| %>
+          <% next if count == 0 %>
+          <span class="preread-review-tab__cat">
+            <strong><%= count %></strong> <%= cat.to_s.humanize.downcase %>
+          </span>
+        <% end %>
+      </div>
+
+      <%= link_to "Review Entries",
+            novel_preread_review_path(novel),
+            class: "btn btn--primary",
+            data: { turbo_frame: "_top", testid: "button-review-preread" } %>
+    </div>
+  <% end %>
+</div>

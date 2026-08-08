@@ -6,15 +6,13 @@ class ChapterReviewController < ApplicationController
     @reviewed_count       = @novel.chapters.reviewed.count
     @total_count          = @novel.chapters.count
 
-    pending            = BibleMarkdownParser.new(@novel).pending_entries
-    @pending_breakdown = pending.transform_values(&:size)
-    @pending_count     = @pending_breakdown.values.sum
-
-    # Drives the poll wrapper around the "Preread Bible Entries" card (see
-    # the view) — while a preread job is running, that card keeps re-fetching
-    # this action so @pending_count/@pending_breakdown pick up newly-written
-    # suggestions without the user refreshing the whole Review tab.
-    @active_preread_job = @novel.translation_jobs.preread.where(status: %w[queued running]).exists?
+    # The "Preread Bible Entries" card also gets pushed fresh values over
+    # Turbo Streams as preread jobs progress — see
+    # TranslationJob#broadcast_preread_entries_status — so this is just the
+    # initial render.
+    breakdown           = BibleMarkdownParser.new(@novel).pending_breakdown
+    @pending_count     = breakdown[:total]
+    @pending_breakdown = breakdown[:by_category]
   end
 
   def show

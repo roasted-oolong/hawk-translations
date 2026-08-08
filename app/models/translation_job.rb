@@ -195,5 +195,24 @@ class TranslationJob < ApplicationRecord
         locals: { novel: fresh_novel }
       )
     end
+
+    broadcast_preread_entries_status if preread?
+  end
+
+  # Pushes the Review tab's "Preread Bible Entries" card up to date on every
+  # status change of a preread job — every tab panel loads eagerly and stays
+  # in the DOM even while hidden (see tabs_controller.ts), so this reaches
+  # the card whether or not the Review tab happens to be the visible one.
+  # Subscribed to from novels/show.html.erb (the persistent page shell, not
+  # the swappable tab-frame content, so the subscription survives tab
+  # switches) via turbo_stream_from "novel_#{novel_id}_preread".
+  def broadcast_preread_entries_status
+    breakdown = BibleMarkdownParser.new(novel).pending_breakdown
+    broadcast_replace_later_to(
+      "novel_#{novel_id}_preread",
+      target: "preread-entries-status",
+      partial: "chapter_review/preread_entries_status",
+      locals: { novel: novel, pending_count: breakdown[:total], pending_breakdown: breakdown[:by_category] }
+    )
   end
 end
