@@ -1026,10 +1026,16 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
   // spans locked islands inside the otherwise-editable qaPane/qaPaneCompare
   // (see the view) — the reviewer can type freely in the surrounding prose,
   // but can't peck at a flagged phrase itself; resolving it via accept/
-  // reject is still the only way to change it.
+  // reject is still the only way to change it. tabindex="-1" alongside it
+  // is load-bearing, not decorative: a contenteditable="false" island nested
+  // inside a contenteditable="true" ancestor is still sequentially
+  // focusable by default in Chromium/WebKit, so without this, pressing Tab
+  // walks through every suggestion span on screen before ever reaching the
+  // next real control (Save, next chapter, ...) — reported by the user as
+  // "tab doesn't work anymore" once a chapter had several suggestions.
   private renderSuggestionSpan(suggestion: QaSuggestion): string {
     if (suggestion.status === "accepted") {
-      return `<span class="chapter-review__qa-suggestion chapter-review__qa-suggestion--accepted" contenteditable="false">${this.escapeHtml(suggestion.suggested_revision)}</span>`
+      return `<span class="chapter-review__qa-suggestion chapter-review__qa-suggestion--accepted" contenteditable="false" tabindex="-1">${this.escapeHtml(suggestion.suggested_revision)}</span>`
     }
 
     const focusedClass = this.qaFocusedId === suggestion.id ? " chapter-review__qa-suggestion--focused" : ""
@@ -1038,7 +1044,7 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
       : "chapter-review__qa-suggestion-new--factcheck"
 
     return (
-      `<span class="chapter-review__qa-suggestion${focusedClass}" data-suggestion-id="${suggestion.id}" contenteditable="false">` +
+      `<span class="chapter-review__qa-suggestion${focusedClass}" data-suggestion-id="${suggestion.id}" contenteditable="false" tabindex="-1">` +
       `<span class="chapter-review__qa-suggestion-old">${this.escapeHtml(suggestion.quote)}</span> ` +
       `<span class="chapter-review__qa-suggestion-new ${newColorClass}">${this.escapeHtml(suggestion.suggested_revision)}</span>` +
       `</span>`

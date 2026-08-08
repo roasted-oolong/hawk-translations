@@ -2081,3 +2081,19 @@ a manual smoke-test pass in a real browser before being treated as
 verified: typing plain prose around a flagged phrase, pressing Enter inside
 the pane, pasting plain and rich text, and accepting/rejecting a suggestion
 after a nearby hand-edit.
+
+## 2026-08-08 · Tab key restored after the QA pane went contenteditable
+
+Reported by the user during smoke-testing the direct-editing change above:
+"the tab function in the editor is not working anymore." Cause: a
+`contenteditable="false"` island nested inside a `contenteditable="true"`
+ancestor is still sequentially focusable by default in Chromium/WebKit —
+`renderSuggestionSpan`'s locked suggestion spans never had an explicit
+`tabindex`, so pressing Tab walked through every suggestion span on screen
+before ever reaching the next real control (Save, next chapter, ...).
+With more than a couple of suggestions pending, that reads as Tab doing
+nothing useful at all.
+
+Fixed by adding `tabindex="-1"` to both suggestion-span branches — pulls
+them out of sequential Tab order entirely without affecting click handling
+(`handleQaPaneClick`) or their own locked-editing behavior.
