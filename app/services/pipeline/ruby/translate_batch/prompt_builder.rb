@@ -3,20 +3,30 @@ require "json"
 # ---------------------------------------------------------------------------
 # Pipeline::Ruby::TranslateBatch::PromptBuilder
 #
-# Ruby port of src/prompt_builder.py plus the reference-file-loading half of
-# src/translator/chapter_loader.py — assembles TranslationContext and the
-# system prompt for one translate_batch call. No knowledge of the API,
-# subprocess mechanics, or batch/progress orchestration; receives a novel
-# directory and returns plain strings/structs.
+# Assembles TranslationContext and every system/user prompt this app's
+# translation-related pipelines use. Five distinct prompt families live here:
 #
-# SYSTEM_PROMPT_TEMPLATE is a byte-for-byte port of Python's
-# build_translation_prompt output (verified against a live
-# `python3 -c "from src.prompt_builder import ..."` run — see
-# PromptBuilderSpec's byte-match test) with one deliberate difference: the
-# "use the web_search tool" sentence is stripped, per the R4 design's
-# recommendation (a) in docs/RAILS_REFACTOR_PLAN.md — R3's bridge never
-# wired web_search, so the ported prompt must not instruct the model to use
-# a tool absent from its own --mcp-config.
+#   - build_system_prompt — production translate_batch's single-call
+#     translation prompt (Pipeline::Ruby::TranslateBatch). A straight Ruby
+#     port of src/prompt_builder.py's one-call design.
+#   - build_feel_check_* — production translate_batch's second call: takes
+#     that single-call translation, chunked into segments, and re-evaluates/
+#     rewrites each as a localization pass — narrative-equivalent delivery,
+#     not just grammar (Pipeline::Ruby::TranslateBatch::FeelCheck).
+#   - build_title_finalize_* — production translate_batch's third call, run
+#     last: replaces build_system_prompt's draft title with one translated
+#     against the finished, feel-check-polished body
+#     (Pipeline::Ruby::TranslateBatch::TitleFinalizer).
+#   - build_beat_classification_*/build_analysis_*/build_localization_*/
+#     build_factcheck_*/build_editor_* — the 5-step translation quality
+#     pipeline. Offline/eval-only (Pipeline::Ruby::TranslationEval); not
+#     wired into translate_batch's production path. See docs/DECISIONS.md
+#     for why the 5-step design was tried and then not kept in production.
+#   - build_chapter_qa_* — Chapter QA, an independent on-demand review of an
+#     already-saved translation (see that section's own comment below).
+#
+# No knowledge of the API, subprocess mechanics, or batch/progress
+# orchestration; receives a novel directory and returns plain strings/structs.
 # ---------------------------------------------------------------------------
 module Pipeline
   module Ruby
@@ -62,6 +72,15 @@ module Pipeline
           match ? match[1].strip : ""
         end
 
+        # Production translate_batch's translation call — the only prompt in
+        # this file that produces the initial English draft. Byte-for-byte
+        # port of Python's build_translation_prompt output (verified against
+        # a live `python3 -c "from src.prompt_builder import ..."` run — see
+        # PromptBuilderSpec's byte-match test) with one deliberate
+        # difference: the "use the web_search tool" sentence is stripped, per
+        # the R4 design's recommendation (a) in docs/RAILS_REFACTOR_PLAN.md —
+        # R3's bridge never wired web_search, so the ported prompt must not
+        # instruct the model to use a tool absent from its own --mcp-config.
         def self.build_system_prompt(context)
           # .chomp: Python's f-string ends immediately after {references}
           # with no trailing newline; the heredoc's own closing line adds
@@ -82,49 +101,112 @@ module Pipeline
           PROMPT
         end
 
-        # Offline-evaluation-only variant (see docs/ROADMAP.md's translation
-        # quality pipeline note) — asks for intent extraction, a literal
-        # pass, and a localized pass as one call instead of three, so the
-        # value of the extra structure can be judged before any 3-call,
-        # multi-stage architecture is built. Not wired into translate_batch;
-        # driven only by Pipeline::Ruby::TranslationEval.
-        def self.build_structured_system_prompt(context, cultural_patterns: "")
+        # Production translate_batch's second call. Takes build_system_prompt's
+        # already-complete English translation, chunked into segments by
+        # BeatSegmenter.candidate_blocks (pure Ruby, no LLM call — see
+        # FeelCheck), and re-evaluates each segment as a localization pass, not
+        # a grammar/proofreading pass: is this the natural English equivalent
+        # of what the beat is doing dramatically, not just a sentence that
+        # parses. Per docs/DECISIONS.md's 2026-08-08 entry, the original
+        # wording under-caught two live failure modes — flat, over-literal
+        # delivery of a line that an English speaker would soften/hedge, and
+        # consecutive short beats left as disconnected statements instead of
+        # fused into one flowing moment — because "reads naturally" alone let
+        # grammatically-clean-but-too-literal segments pass. Korean-blind by
+        # the same deliberate design as build_editor_system_prompt/
+        # build_chapter_qa_editor_system_prompt below: no source access, so a
+        # flat or choppy delivery can't be excused by tracing it back to what
+        # it maps to — the judgment has to be "does this land as English,"
+        # not "is this a defensible rendering of the Korean." Unlike those
+        # two, this call doesn't just flag problems for a human — it rewrites
+        # the flagged segment itself, since FeelCheck applies the rewrite
+        # automatically rather than surfacing it for review.
+        def self.build_feel_check_system_prompt
           <<~PROMPT.chomp
-            You are a professional Korean-to-English literary translator working on a novel intended for potential publishing. Quality is the top priority — take your time and never rush.
+            You are an independent literary localization editor reviewing an English translation for a novel intended for potential publishing, immediately after it was drafted. You do not have access to the Korean source, and that is deliberate: your job is to judge whether this reads as the natural English equivalent of what's happening in the scene, not to run a grammar pass or confirm the sentence parses — the way a monolingual editor doing a real localization pass would, without the ability to excuse a too-literal or badly-delivered line by tracing it back to source meaning.
 
-            Your task in this call has three parts, performed in order against the Korean chapter provided in the user message:
+            The user message gives you the chapter split into segments, in reading order, each with only its English text (`text`) — nothing else.
 
-            1. Intent extraction — identify what the passage is doing before translating it: its narrative purpose, emotional tone, register, cultural connotations, implied (grammatically omitted) subjects, notable stylistic devices, and any culturally-coded interpersonal dynamic (see cultural_dynamic below).
-            2. Literal translation — a meaning- and structure-preserving translation. Resolve omitted subjects explicitly. Maintain established terminology. Correct Konglish. Apply no stylistic adaptation.
-            3. Localized translation — the final polished English translation: natural, idiomatic prose that preserves the intent identified in step 1, consistent with established character names, speech patterns, terminology, cultural phrases, and narrative voice from the reference material below. When a word or image recurs across the chapter as a deliberate echo, keep the echo — but judge every sentence it appears in on its own: if repeating it makes one of those sentences read unnaturally on its own, rephrase that sentence rather than let cross-chapter consistency override that line's naturalness. If intent named a cultural_dynamic, localized_translation must carry out its stated localization_strategy — not just translate the literal action or drop in an abstract label for it (e.g. a status-jockeying scene needs its concrete tactics shown, not the label "status fight"; a confrontational-eye-contact beat needs its social weight made legible to a reader who doesn't already carry that context).
+            For each segment, first read it for what it's actually doing dramatically: is a character deflecting, teasing, threatening, pleading, hedging, making a promise, admitting something? Is a narration beat landing a reaction and then moving into what happens next? Then judge whether the English delivers that beat the way it would actually land in English — not whether the sentence you were handed happens to be grammatical. A line can be flawless grammar and still be the wrong English equivalent of the moment.
+
+            Flag a segment for any of the following:
+            - Calques or literal-feeling translated phrasing; odd leftover particles ("here"/"so"/"then") doing no real work
+            - Misassigned agency, dangling or run-on constructions, redundant or circular phrasing
+            - Register that shifts unmotivated within one speaker's own lines
+            - A line that states its point more bluntly or directly than an English speaker delivering the same beat would. Translated dialogue tends to carry over the source's flat declaratives as-is; the natural English equivalent often needs to soften that into a hedge ("you could say...", "I guess..."), a rhetorical question, an indirect promise, or understatement instead of a flat claim. Treat this with the same weight as a calque — it is a real defect, not a stylistic nicety you can let slide because the grammar is clean.
+            - Narrative flow that reads as a list of separate, disconnected facts rather than one continuous beat. When consecutive sentences in the segment are really one flowing moment — a reaction and what immediately follows it, an action and its consequence — fuse them with the connective tissue an English writer would use (a transition, a causal link, a shared clause) rather than leaving them as flat, back-to-back statements. The segment's own paragraph breaks are not sacred: collapse one if the fix calls for it.
+            - Narrative flow that jumps abruptly from the segment before it — you're given every segment in reading order, so judge this against what precedes it, not in isolation.
+
+            Judge each segment on its own terms — most segments from a competent translation will already land correctly; only flag one where something is actually, specifically wrong, not out of a default suspicion that everything needs rewriting. But do not wave off a flat, over-literal delivery just because it is grammatically clean — that is exactly the kind of problem this pass exists to catch, not a false positive to avoid.
+
+            For each segment:
+            - `segment_id`: echo the segment's given id.
+            - `reads_naturally`: true if the segment has no such problem.
+            - `rewritten_text`: only when `reads_naturally` is false — the complete segment rewritten to fix the problem while preserving its exact meaning and every concrete detail (names, facts, events). Omit this field (or leave it empty) when `reads_naturally` is true.
 
             Respond with a single JSON object and nothing else — no markdown code fences, no commentary before or after it. Its shape:
 
             {
-              "intent": {
-                "narrative_purpose": "string",
-                "emotional_tone": "one of: neutral, tense, melancholic, playful, romantic, humorous, dramatic, introspective",
-                "register": "one of: casual, formal, academic, poetic, archaic",
-                "cultural_connotations": "string",
-                "implied_subjects": ["string"],
-                "stylistic_devices": ["string"],
-                "cultural_dynamic": "string — a Korean interpersonal/social dynamic in this passage that doesn't map onto American norms if translated literally (e.g. status-jockeying, appearance-based teasing, eye contact read as confrontation); empty string if none. Check the Cultural Patterns reference material below for known ones first.",
-                "localization_strategy": "string — how localized_translation should handle it: describe the concrete behavior instead of naming the abstract category, add a beat of interior narration to make the stakes legible, or substitute a culturally-equivalent American dynamic. Empty string if cultural_dynamic is empty."
-              },
-              "literal_translation": "string",
-              "localized_translation": "string"
+              "segments": [
+                { "segment_id": 1, "reads_naturally": true },
+                { "segment_id": 2, "reads_naturally": false, "rewritten_text": "string" }
+              ]
             }
-
-            Produce the complete chapter in both literal_translation and localized_translation. Do not summarize or skip sections.
-
-            ---
-
-            # Reference Material
-
-            #{reference_material(context)}
-
-            #{Pipeline::PromptUtils.section("Cultural Patterns", cultural_patterns)}
           PROMPT
+        end
+
+        # Builds FeelCheck's user message from BeatSegmenter.candidate_blocks
+        # output — each block becomes one segment, in order, using block_id as
+        # segment_id so the join key back to reassembly is unambiguous.
+        def self.build_feel_check_user_message(segments:)
+          <<~MESSAGE.chomp
+            # Segments
+
+            #{JSON.pretty_generate(segments)}
+          MESSAGE
+        end
+
+        # Production translate_batch's third call, run last — after
+        # FeelCheck's polish pass, not before it. build_system_prompt still
+        # translates the chapter title as part of its one-shot draft
+        # (unchanged scope); this call's only job is to replace that draft
+        # with a better-informed one. Per docs/DECISIONS.md's 2026-08-08
+        # title-last entry: a title translated before the body exists can't
+        # echo a specific word, phrase, or motif the body translation
+        # actually lands on, because that phrasing doesn't exist yet at the
+        # point build_system_prompt commits to it — it's the first thing
+        # that call writes. TitleFinalizer runs this against the *finished,
+        # feel-check-polished* body, not the pre-polish draft, so it's the
+        # best-informed version of the chapter this pipeline ever produces.
+        # On any failure TitleFinalizer keeps the draft rather than losing
+        # it — same "failure degrades, doesn't fail the chapter" discipline
+        # as FeelCheck.
+        def self.build_title_finalize_system_prompt
+          <<~PROMPT.chomp
+            You are a professional Korean-to-English literary translator working on a novel intended for potential publishing. Quality is the top priority — take your time and never rush.
+
+            This call has one job: translate this chapter's title, and only its title. A separate call already translated the rest of the chapter, and the finished English body is given to you below so you can draw on the specific word choices, phrasing, and motifs that translation actually landed on — a title decided before that phrasing existed can't echo it. A title that resonates with something the chapter itself does in English usually lands better than one translated in isolation from it.
+
+            The user message gives you the original Korean title, a draft English title (translated before the body existed — shown only so you can match its formatting, not its wording), and the finished English chapter body.
+
+            Produce only the final English title, on its own line, formatted the same way the draft title is formatted (the same leading symbol or markup convention, if any). Do not include the body, commentary, or anything else in your response — the title line and nothing else.
+          PROMPT
+        end
+
+        def self.build_title_finalize_user_message(korean_title:, draft_title:, english_body:)
+          <<~MESSAGE.chomp
+            # Korean Title
+
+            #{korean_title}
+
+            # Draft Title (formatting reference only — do not reuse its wording)
+
+            #{draft_title}
+
+            # Finished English Chapter Body
+
+            #{english_body}
+          MESSAGE
         end
 
         # 5-step translation quality pipeline — docs/DECISIONS.md's 2026-08-01
@@ -161,8 +243,10 @@ module Pipeline
         # Steps 4 and 5 both depend only on step 3's output, not on each other —
         # they're independent QA passes, not a further chain.
         #
-        # Offline/eval-only, same as the 3-call design it replaces — driven by
-        # Pipeline::Ruby::TranslationEval, not wired into translate_batch.rb.
+        # Offline/eval-only, same as the 3-call design it replaced — driven by
+        # Pipeline::Ruby::TranslateBatch::FiveStepRunner and
+        # Pipeline::Ruby::TranslationEval, not wired into translate_batch.rb's
+        # production path (see docs/DECISIONS.md's 2026-08-07 revert entry).
         LOCALIZATION_STRATEGY_CATEGORIES = %w[
           behavioral idiomatic tone_shift register_shift motif_reinterpretation demographic_voice none
         ].freeze
@@ -516,7 +600,8 @@ module Pipeline
         # inline. Kept as its own pair of prompts rather than forcing a
         # "one fake passage = whole chapter" shape through
         # build_factcheck_system_prompt/build_editor_system_prompt above,
-        # which stay untouched and eval-only.
+        # which stay untouched (those review one passage at a time as part
+        # of the 5-step chain, offline-eval-only — see the class comment).
         # ---------------------------------------------------------------------
 
         def self.build_chapter_qa_factcheck_system_prompt(context, cultural_patterns: "")

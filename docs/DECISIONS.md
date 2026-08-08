@@ -2362,6 +2362,218 @@ prompts explicitly mention the Character Bible/Locations/Terminology
 sections and `bible_lookup` for name checks. `chapter_qa_spec.rb` gained a
 case asserting the factcheck call's argv includes `--mcp-config` and the
 editor call's does not.
+---
+
+## 2026-08-07 · translate_batch reverted to single-call, plus a new feel-check rewrite pass
+
+The 5-step pipeline's promotion to `translate_batch`'s production path
+(2026-08-02 entries above) produced translations judged significantly worse
+than the pre-quality-pipeline single-call design — reverted. Note this
+promotion was never actually committed: the switch from the single call to
+`FiveStepRunner` only ever existed as an uncommitted working-tree edit, so
+this revert is a clean discard of that dirt (`git restore
+translate_batch.rb`), not a new commit undoing an old one. `prompt_builder.rb`
+needed a hand-merge instead of a blind restore: the same uncommitted diff
+that dropped `translate_batch`'s production path also carried real,
+unrelated improvements to Chapter QA's factcheck prompt (the
+`style_guidelines_followed` check and bible-lookup name-spelling
+verification from the entry above) — those stayed, only the deletion of
+`build_system_prompt`/`build_structured_system_prompt` was undone.
+
+**Kept, not reverted:** the 5-step pipeline's code (`FiveStepRunner`,
+`BeatSegmenter`, the `build_beat_classification_*`/`build_analysis_*`/
+`build_localization_*`/`build_factcheck_*`/`build_editor_*` prompts) and
+`Pipeline::Ruby::TranslationEval`, the offline eval harness that drives
+them — both still available as a dev tool for future pipeline experiments,
+just no longer wired into production. Chapter QA (`chapter_qa.rb`, its
+`build_chapter_qa_*` prompts, and the review UI) is untouched — always a
+separate on-demand feature, not part of this change.
+
+**New: `Pipeline::Ruby::TranslateBatch::FeelCheck`.** One idea from the
+quality-pipeline detour was worth keeping: a phase that chunks the
+translation into segments and re-evaluates each for how it reads, not just
+whether it's faithful. `translate_batch.rb` now runs this as a second call
+per chapter, immediately after the single-call translation:
+
+- **Chunking** reuses `BeatSegmenter.candidate_blocks` (deterministic, no
+  LLM call, language-agnostic — it was already just blank-line paragraph
+  grouping with a forced boundary at `***` scene markers, nothing
+  Korean-specific about it). Scene-marker blocks are excluded from what's
+  sent to the model (nothing to judge) and kept verbatim on reassembly,
+  same discipline `BeatSegmenter`'s own classification call already uses.
+- **One call per chapter**, not one per segment — matches the existing
+  editor-pass convention of reviewing a whole chapter in one call rather
+  than paying for N round trips. New prompt pair:
+  `PromptBuilder.build_feel_check_system_prompt`/
+  `.build_feel_check_user_message`. **Korean-blind by design**, the same
+  proven isolation as `build_editor_system_prompt`/
+  `build_chapter_qa_editor_system_prompt` — judges pure English naturalness
+  with no source text in context, so it can't excuse awkward phrasing by
+  tracing it back to what it maps to. Unlike those two, it doesn't just
+  flag problems for a human to review later: it returns a `rewritten_text`
+  for any segment it flags, and `FeelCheck` substitutes that straight into
+  the reassembled chapter before it's written to disk.
+- Uses `config.translation_model`, not `config.factcheck_model` — rewriting
+  for naturalness is a creative-writing task, the same reasoning that
+  already separates those two model configs.
+- **Failure degrades, it doesn't fail the chapter**: a call failure, bad
+  JSON, or missing segment coverage all fall back to writing the original
+  (pre-feel-check) translation unchanged rather than failing the chapter —
+  the translation itself already succeeded and is publishable; losing the
+  polish pass isn't grounds to drop it. `translate_batch.rb`'s stdout notes
+  which chapters, if any, had their feel-check pass skipped this way.
+
+**Not done as part of this change:** chapters already translated under the
+5-step pipeline aren't auto-regenerated — that's a separate follow-up if
+wanted. `CLAUDE.md`'s routing table was updated to describe the reverted
+production path and the new `FeelCheck` phase.
+
+Spec coverage: `translate_batch_spec.rb` restored to its pre-quality-pipeline
+baseline plus new cases for the feel-check phase (rewrite applied, nothing
+flagged, call failure degrades gracefully with the stdout note). New
+`feel_check_spec.rb` covers rewrite application, no-op on an all-natural
+chapter, scene-marker exclusion from the model call, model selection, and
+each of the three degrade paths (call failure, invalid JSON, missing
+coverage) independently of `translate_batch.rb`. `prompt_builder_spec.rb`
+and `spec/fixtures/translate_batch/system_prompt_sample.txt` needed the same
+kind of restoration as `prompt_builder.rb` itself — the same uncommitted
+diff that deleted `build_system_prompt` had deleted its byte-match spec and
+staged its fixture for deletion in lockstep; both are back, plus a new
+describe block for `build_feel_check_system_prompt`/`.build_feel_check_user_message`.
+`build_structured_system_prompt` (dead code, no callers anywhere even before
+this revert) was deliberately not restored, in either the production file or
+its spec.
+
+## 2026-08-08 · Feel-check prompt reframed as a localization pass, not a proofread
+
+Manual review of a chapter (idols-rewind, the broadcast-hall confrontation
+scene) against the user's own line-by-line revision surfaced a pattern:
+`build_feel_check_system_prompt`'s original wording — "judge whether this
+reads as natural, coherent English" — was letting two real failure modes
+through as `reads_naturally: true`, because both produce grammatically clean
+segments:
+
+- **Over-literal dialogue delivery.** Korean's flat declaratives ("I really
+  am a pushover") were being carried straight into English as flat
+  declaratives, when a natural English speaker making the same social move
+  (deflecting, teasing) would hedge, question, or soften it ("you could say
+  I'm a bit of a pushover"). Grammatically fine, so the old checklist — all
+  calque/particle/agency/register items — had nothing to catch it on.
+- **Choppy consecutive beats.** Short narration sentences that individually
+  read fine (a manager's eyes bulge; a crowd walks in) were being left as
+  flat, back-to-back statements instead of fused into one flowing moment
+  ("Manager Gong's eyes bulged in anger as he prepared to fire back — just
+  then, a crowd of people appeared"). The old "no narrative flow that jumps
+  abruptly from the segment before it" check has too high a bar for this: two
+  beats can be individually coherent and not abruptly disconnected, while
+  still reading as a list of separate facts rather than one scene.
+
+Root cause: the prompt's framing was "proofread this English," which only
+catches translation artifacts (calques, leftover particles, run-ons). It
+never asked the model to read a segment for its narrative/dramatic function
+first and judge delivery against that — the actual job the user wants this
+pass doing, per their framing: read the narrative intent of each scene/line,
+then find its natural English equivalent.
+
+**Fix:** rewrote `build_feel_check_system_prompt`'s job description and
+checklist (JSON shape, field names, and the Korean-blind design are
+unchanged — no code or spec changes needed beyond the prompt string itself):
+
+- Opens by asking the model to read what each segment is doing dramatically
+  (deflecting, teasing, threatening, landing a reaction, etc.) before judging
+  the English, not just whether the sentence parses.
+- Adds an explicit checklist item for over-literal/blunt delivery, naming it
+  as being as real a defect as a calque — not a stylistic nicety a clean
+  grammar check can wave off.
+- Strengthens the flow item to name the "list of disconnected facts" failure
+  specifically, and explicitly permits `rewritten_text` to collapse a
+  segment's own internal paragraph break when fusing two beats calls for it.
+
+**Known remaining limitation, not addressed here:** `FeelCheck.reassemble`
+always joins adjacent `BeatSegmenter.candidate_blocks` blocks with `"\n\n"`
+and each segment's `rewritten_text` can only rewrite within its own block —
+so this fix only reaches fusion opportunities that fall inside one block (up
+to 7 paragraphs). A fusion that needs to cross a block boundary is still
+structurally impossible under the current one-segment-in/one-segment-out
+design. Not fixed now — flagged for a future pass if it shows up in practice.
+
+**Also flagged, not investigated here:** the same review surfaced characters
+(Manager Gong, Mina) that appeared in a bible review but aren't in
+`idols-rewind/bible/characters.md` — looks like a bible-write bug, not a
+prompt issue. Deferred to a separate investigation.
+
+No spec changes: `prompt_builder_spec.rb`'s feel-check tests only assert on
+the Korean-blindness phrase and the JSON field names, both preserved
+verbatim.
+
+## 2026-08-08 · Title-last: chapter titles now translated after the body, not before it
+
+Same review session as the entry above. The user's own observation: `build_system_prompt`
+translates the chapter title as the literal first tokens of its output — before
+it has translated a single line of the body — even though it has already
+*read* the whole Korean chapter by then. The title's English wording gets
+locked in before any of the body's specific word choices, phrasing, or
+motifs exist for it to draw on, which matters for a title that would
+otherwise echo something the translation itself coins.
+
+Two designs were weighed:
+
+- **A — dedicated final call (chosen).** Leave `build_system_prompt` alone
+  (still produces a draft title as part of its one-shot translation,
+  unchanged scope/risk); add a third, small call, run after FeelCheck, that
+  translates only the title, given the Korean title and the *finished,
+  feel-check-polished* English body as context, then swaps the result in.
+- **B — single-call marker reorder.** Keep one call; instruct the model to
+  write the body first, then a fixed marker, then the title; Ruby reorders
+  on parse. Rejected: no extra call, but relies on parsing a delimiter out
+  of one large blob (fragile if the model doesn't comply, needs its own
+  fallback), and the title would still only see the pre-feel-check draft
+  body, not the polished one — a strictly worse result for a design meant
+  to specifically chase quality.
+
+**Implementation (Option A):**
+
+- **New `Pipeline::Ruby::TranslateBatch::TitleFinalizer`** — pure Ruby text
+  split (no LLM call) breaks both the Korean source and the current English
+  text on their first blank line, the same paragraph convention
+  `BeatSegmenter.candidate_blocks` already treats as structural, giving
+  "title" vs. "everything else" without guessing. Then one small Claude call
+  translates just the title against the finished body, and the result is
+  spliced back in as `"#{final_title}\n\n#{body}"`.
+  - No blank line found in either the Korean or the current English text
+    (no separable title line at all) short-circuits before any call is
+    made — not a failure, just nothing to finalize.
+  - **Failure degrades, doesn't fail the chapter** — same discipline as
+    FeelCheck: call failure or an empty returned title both fall back to
+    the draft title untouched. The draft is a perfectly publishable title
+    on its own, just a less-informed one.
+  - Uses `config.translation_model`, no `mcp_config` — same reasoning
+    FeelCheck already established (creative-writing task; no bible_lookup
+    need for a single title line).
+- **New prompt pair** in `prompt_builder.rb`:
+  `build_title_finalize_system_prompt`/`.build_title_finalize_user_message`.
+  The user message gives the model the Korean title, the current draft
+  title (labeled "formatting reference only — do not reuse its wording",
+  so the model matches the novel's title convention — e.g. a `#` heading —
+  without anchoring on the draft's actual phrasing), and the finished
+  English body.
+- **`translate_batch.rb` wiring**: `run_batch` now runs
+  `TitleFinalizer.call` immediately after `FeelCheck.call`, using
+  `feel_check.text` (not the pre-feel-check draft) as the body context.
+  Tracks a new `title_finalize_degraded` array in parallel with
+  `feel_check_degraded`, threaded through both early-return paths
+  (fatal-error, cancelled) and the final return; `build_stdout` gained a
+  matching "Title finalize pass skipped, draft title kept as-is (...)"
+  line.
+
+Spec coverage: new `title_finalizer_spec.rb` (replacement applied, both
+no-separable-title short-circuits proven to make zero calls, call-failure
+degrade, empty-title degrade, correct model selection) plus two new
+`prompt_builder_spec.rb` describe blocks. `translate_batch_spec.rb` gained a
+"title finalize pass" describe block (success + call-failure degrade); its
+existing tests needed no changes — their Korean fixtures are single-line
+with no blank line, so `TitleFinalizer` always short-circuits to a no-op
+against them, same result as before this change existed.
 
 ## 2026-08-08 · Chapter QA suggestions ordered by position in text, not by pass
 

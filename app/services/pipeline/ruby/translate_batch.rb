@@ -9,9 +9,21 @@ require "fileutils"
 # Pipeline::ClaudeCode (R1) with it.
 #
 # Orchestrates only: load references -> build context -> build prompt ->
-# invoke Pipeline::ClaudeCode -> write file -> report progress. Translation,
-# search, bible formatting, MCP, and subprocess mechanics all stay owned by
-# R1-R3 — nothing here reimplements them.
+# invoke Pipeline::ClaudeCode -> feel-check pass (TranslateBatch::FeelCheck)
+# -> title-finalize pass (TranslateBatch::TitleFinalizer) -> write file ->
+# report progress. Translation, search, bible formatting, MCP, and
+# subprocess mechanics all stay owned by R1-R3 — nothing here reimplements
+# them.
+#
+# The feel-check pass chunks the translation into segments and re-evaluates
+# each as a localization pass, not just for grammar — see FeelCheck's own
+# comment. The title-finalize pass runs after it, not before: it replaces
+# build_system_prompt's draft title (written before any of the body existed
+# to draw on) with one translated against the finished, feel-check-polished
+# body — see TitleFinalizer's own comment and docs/DECISIONS.md's 2026-08-08
+# title-last entry. Both failures degrade rather than failing the chapter
+# (see run_batch): the translation itself already succeeded, and losing a
+# polish pass isn't grounds to drop it.
 #
 # CLI-only surface from translate_batch.py (arg parsing, interactive chapter
 # prompting/confirmation, novel-name disambiguation) has no port here:
@@ -69,9 +81,10 @@ module Pipeline
         mcp_config     = BridgeConfig.mcp_config(novel_directory_name: @job.novel.directory_name)
 
         write_progress(1)
-        written, failures, aborted, stop_reason = run_batch(requests, system_prompt, mcp_config)
+        written, failures, aborted, stop_reason, feel_check_degraded, title_finalize_degraded =
+          run_batch(requests, system_prompt, mcp_config)
 
-        [ build_stdout(written, missing_source, aborted, stop_reason),
+        [ build_stdout(written, missing_source, aborted, stop_reason, feel_check_degraded, title_finalize_degraded),
           build_stderr(failures, aborted, stop_reason),
           failures.empty? ]
       end
@@ -87,6 +100,8 @@ module Pipeline
       def run_batch(requests, system_prompt, mcp_config)
         written  = []
         failures = []
+        feel_check_degraded = []
+        title_finalize_degraded = []
         total    = requests.size
 
         requests.each_with_index do |(num, korean_path), index|
@@ -100,24 +115,30 @@ module Pipeline
           )
 
           if result.success?
-            write_chapter_output(num, result.output)
+            feel_check = FeelCheck.call(english_text: result.output, config: @config)
+            feel_check_degraded << num unless feel_check.ok?
+
+            title_finalize = TitleFinalizer.call(korean_text: korean_text, english_text: feel_check.text, config: @config)
+            title_finalize_degraded << num unless title_finalize.ok?
+
+            write_chapter_output(num, title_finalize.text)
             written << num
             write_progress((written.size.to_f / total * 100).to_i)
           else
             failures << { number: num, error_category: result.error_category, error_message: result.error_message }
             if FATAL_CATEGORIES.include?(result.error_category)
               remaining = requests[(index + 1)..].map(&:first)
-              return [ written, failures, remaining, :fatal_error ]
+              return [ written, failures, remaining, :fatal_error, feel_check_degraded, title_finalize_degraded ]
             end
           end
 
           if @job.reload.cancelled?
             remaining = requests[(index + 1)..].map(&:first)
-            return [ written, failures, remaining, :cancelled ]
+            return [ written, failures, remaining, :cancelled, feel_check_degraded, title_finalize_degraded ]
           end
         end
 
-        [ written, failures, [], nil ]
+        [ written, failures, [], nil, feel_check_degraded, title_finalize_degraded ]
       end
 
       # Returns [requests, missing_source] where requests is
@@ -155,10 +176,16 @@ module Pipeline
         File.rename(tmp_path, final_path)
       end
 
-      def build_stdout(written, missing_source, aborted, stop_reason)
+      def build_stdout(written, missing_source, aborted, stop_reason, feel_check_degraded, title_finalize_degraded)
         lines = [ "#{written.size} chapter(s) translated." ]
         lines << "Skipped (missing source files): #{missing_source.sort.inspect}" if missing_source.any?
         lines << "Not attempted (#{stop_description(stop_reason)}): #{aborted.sort.inspect}" if aborted.any?
+        if feel_check_degraded.any?
+          lines << "Feel-check pass skipped, original translation kept as-is (#{feel_check_degraded.sort.inspect})"
+        end
+        if title_finalize_degraded.any?
+          lines << "Title finalize pass skipped, draft title kept as-is (#{title_finalize_degraded.sort.inspect})"
+        end
         lines.join("\n")
       end
 
