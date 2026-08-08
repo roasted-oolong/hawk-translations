@@ -314,6 +314,16 @@
   padding: 0;
 }
 
+/* Same [hidden]-vs-display:block conflict as .chapter-review__chapter-card
+   above: chapter_review_controller.ts toggles this element's `hidden`
+   property to swap it out for the QA tracked-changes pane once a quality
+   check completes, but the plain class rule's display:block ties (and wins
+   source-order) against [hidden]'s display:none, so the JS toggle was
+   silently a no-op and the untouched textarea stayed on screen. */
+.chapter-review__edit-textarea[hidden] {
+  display: none !important;
+}
+
 .chapter-review__edit-textarea::placeholder {
   color: var(--color-text-muted);
   font-style: italic;
@@ -609,6 +619,13 @@
   resize: none;
   overflow: hidden;
   padding: 0;
+}
+
+/* Same fix as .chapter-review__edit-textarea[hidden] above — this is the
+   compare-mode (split-pane) counterpart that chapter_review_controller.ts
+   hides in favor of qaPaneCompare once a quality check completes. */
+.chapter-review__pane-textarea[hidden] {
+  display: none !important;
 }
 
 .chapter-review__sync-hint {
