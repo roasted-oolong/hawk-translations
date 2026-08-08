@@ -2137,6 +2137,156 @@ cancellation test's trigger point moved from the editor call to the
 localization call, since localization is now the last step translate_batch
 actually runs per chapter.
 
+---
+
+## 2026-08-04 · Chapter QA: resume-on-load and confirm-before-cancel-and-rerun
+
+Found via a real support case, not a design review: a chapter 75 Chapter QA
+run (2026-08-03, job id 125) completed cleanly server-side in 6m33s, but the
+reviewer's browser tab still showed "Running editor pass…" 11 hours later.
+Root cause — `pollQaStatus`'s recursive `window.setTimeout` loop is the
+*only* thing that ever surfaces a `chapter_qa` job's result; nothing runs it
+except a click on "Run Quality Check". If the tab is backgrounded (this
+review page is regularly used over `/remote-control` on a phone, where
+background tabs get their JS timers throttled or suspended by the OS) the
+loop can die mid-run without ever seeing the "completed" response, and
+`show.html.erb` always server-renders the idle "⚡ Run Quality Check" button
+regardless of whether a job is actually still in flight — so even reloading
+the page doesn't recover the already-finished suggestions, and clicking the
+button again silently starts a second, redundant LLM run.
+
+**Fix, `chapter_review_controller.ts` + `chapter_review_controller.rb`:**
+
+- `connect()` now calls `pollQaStatus(this.currentChapterId)` once on page
+  load, in addition to the existing click-triggered path. `pollQaStatus`'s
+  running/queued branch was widened to unconditionally set
+  `qaBtnTarget.hidden`/`qaRunningIndicatorTarget.hidden` on every tick
+  (previously only `runQa()` did this, once, before the poll loop started)
+  so the same method now correctly re-enters "running" UI state from a
+  fresh page load, not just from a button click. Its completed branch was
+  already sufficient to render suggestions once reached. Deliberately
+  scoped to the chapter loaded at `connect()` time only, not every chapter
+  in the slideshow on each navigation — `renderQaForCurrentChapter()` (used
+  by `dismissQa()` among others) intentionally stays untouched, since
+  hooking a status check into its general "no suggestions" branch would
+  have made `dismissQa()` immediately re-fetch and restore the very job
+  result the reviewer just dismissed.
+- `runQa()` no longer assumes idle. It now checks `qa_status` first; if a
+  job is `queued`/`running`, it confirms ("A quality check is already
+  running for this chapter. Cancel it and start a new one?") before doing
+  anything — decline and it just resumes watching the existing job,
+  confirm and it cancels then starts fresh. Guards the case the resume fix
+  above doesn't fully close (e.g. two tabs open on the same chapter, or a
+  click racing the connect()-time check).
+- `qa_status` (`chapter_review_controller.rb`) now includes the job's `id`
+  in its JSON so the frontend has something to target for cancellation.
+  Reused the existing generic `DELETE /novels/:novel_id/translation_jobs/:id`
+  (`TranslationJobsController#destroy`, already used elsewhere for
+  cancelling queued/running jobs) rather than adding a chapter_qa-specific
+  cancel route — it already scopes by novel and calls `TranslationJob#cancel!`,
+  which was already status-agnostic. Its only change: `destroy` now
+  responds to `format.json` with `{ ok: true }` instead of always doing an
+  HTML `redirect_back`, since the QA cancel flow needs a fetchable response
+  and has no page to redirect back to. Existing HTML callers
+  (`modal_button_to` cancel links elsewhere in the app) are unaffected —
+  format negotiation falls through to the pre-existing `redirect_back`
+  branch for them.
+
+Spec coverage: `chapter_review_qa_spec.rb`'s existing running/completed
+`qa_status` examples extended to assert on `id`; `translation_jobs_spec.rb`
+gained a case for the JSON-format `destroy` response. No new spec file —
+both are extensions of existing describe blocks, not new endpoints.
+
+---
+
+## 2026-08-04 · Chapter QA tracked changes were never actually visible — `[hidden]` vs `display: block` conflict
+
+Once the resume-on-load fix above let chapter 75's completed QA run
+(job 125) actually reach the page, the suggestions summary/filter counts
+showed up but the tracked-changes text itself never did — no strikethrough,
+no proposed rewrites, and stepping through suggestions only moved the
+position counter. Confirmed this wasn't a data problem first: replayed
+`buildTrackedChangesHtml`'s exact matching logic in Node against job 125's
+real payload and the chapter's real (stripped) text — 33/36 quotes matched
+and produced spans correctly (3 skipped for legitimate span-overlap, not a
+bug), and the served `application.js` bundle was current. So the HTML being
+generated was correct; something was stopping it from being *seen*.
+
+Found it in `_chapter_review.css`: `.chapter-review__edit-textarea` and
+`.chapter-review__pane-textarea` both declare `display: block` unconditionally.
+`chapter_review_controller.ts` hides them (`.hidden = true`) once QA results
+exist, in favor of `qaPane`/`qaPaneCompare` sitting next to them — but an
+author-stylesheet `.class { display: block }` rule at equal-or-tying
+specificity beats `[hidden]`'s `display: none` from `modern-normalize`
+(loaded earlier in the cascade), so the JS toggle was a silent no-op: the
+plain, unmarked textarea stayed on screen the entire time, and the
+correctly-rendered `qaPane`/`qaPaneCompare` sat hidden or downstream of it,
+never seen. This is the exact same conflict already identified and fixed
+once for `.chapter-review__chapter-card[hidden]` (see that rule's own
+comment, just above it in the file) — the fix was never extended to these
+two textareas when Chapter QA was built on 2026-08-01, and nothing caught
+it because this is the first time anyone got far enough past the
+resume-on-load bug to see the feature render at all; there's no browser
+test coverage for it (Playwright has no usable Chrome in this WSL
+environment — request specs can't catch a pure-CSS visibility bug).
+
+**Fix:** added `.chapter-review__edit-textarea[hidden] { display: none !important; }`
+and the same for `.chapter-review__pane-textarea[hidden]`, mirroring the
+chapter-card rule exactly. No JS or Ruby change — this was CSS-only.
+
+No new automated coverage — this class of bug (correct DOM state, wrong
+visual result) isn't something the existing request-spec suite can see, and
+system specs are blocked on the same missing-Chrome environment issue noted
+above. Worth a real click-through once a working browser is available here.
+
+---
+
+## 2026-08-04 · Chapter QA suggestion detail reverses the docked-panel simplification, becomes a floating popup
+
+The 2026-08-01 Chapter QA entry named "docked panel instead of a floating
+tooltip" as a deliberate scope cut, to avoid reimplementing
+viewport-collision positioning in raw TS. Explicitly revisited and reversed
+today at the user's request, once the `[hidden]` CSS bug above was fixed
+enough to actually see the feature: compared directly against the
+prototype's `SuggestionTooltip` (`tracked-changes-view.tsx`) and ported its
+behavior — `chapter_review_controller.ts` now positions
+`.chapter-review__qa-detail` with `position: fixed`, anchored under the
+clicked suggestion span (flips above if too close to the viewport bottom,
+clamps horizontally, re-anchors on window resize/scroll), closes on
+click-outside (`pointerdown` on `document`, excluding suggestion spans so
+`openQaDetail`'s own click-driven toggle stays the single source of truth
+for span clicks), and toggles closed if the same open suggestion is clicked
+again. `setQaFilter`/`stepQaFocus` (next/prev, filter pills) now close it
+too, matching the prototype's "close on focused-suggestion change" — this
+was a real pre-existing gap even under the old docked design: stepping
+through suggestions while the panel was open left it showing stale content
+for whichever suggestion had been clicked, not the one now highlighted.
+
+**Anchor-lookup subtlety found while wiring the positioning**:
+`buildTrackedChangesHtml`'s output gets written into *both*
+`qaPane` (single-column mode) and `qaPaneCompare` (split/compare mode)
+unconditionally — only one is ever visible (CSS hides the non-active one),
+but a suggestion id is present in both copies simultaneously. A blind
+`document.querySelector` for that id can resolve to the hidden copy, whose
+bounding rect is all zeros — silently breaking positioning (and, it turns
+out, `scrollToFocusedSuggestion`'s pre-existing use of the same blind
+lookup, fixed here too rather than left as a latent duplicate of the same
+bug). Added `findVisibleSuggestionAnchor(id)`, scoped to
+`qaPaneCompareTargets[this.index]` or `qaPaneTargets[this.index]` depending
+on `compareActive`, and both call sites now go through it.
+
+CSS-only on the container side: `.chapter-review__qa-detail` dropped its
+docked-bar styling (`flex-shrink`, full-width padding, `border-bottom`) for
+`position: fixed`, a fixed `width: 300px`, `border-radius`/`box-shadow`
+matching this app's existing floating-surface convention (`--radius-lg`/
+`--shadow-lg`, same tokens `_modal.css` uses) — none of the inner
+badge/label/rewrite/reason/actions styling changed.
+
+No new automated coverage, same reasoning as the entry above (CSS/DOM
+positioning bug class, no working browser in this environment to write a
+system spec against). Manual click-through still pending a real browser
+here.
+
 ## 2026-08-08 · Chapter QA suggestions ordered by position in text, not by pass
 
 Reported by the user: resolving a factcheck suggestion near the start of a

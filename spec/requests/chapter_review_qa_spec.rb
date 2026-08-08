@@ -18,13 +18,14 @@ RSpec.describe "ChapterReview QA", type: :request do
     end
 
     it "returns the running job's status and progress without exposing suggestions yet" do
-      create(:translation_job, :chapter_qa, novel: novel, user: user,
+      job = create(:translation_job, :chapter_qa, novel: novel, user: user,
              chapter_start: chapter.number, chapter_end: chapter.number,
              status: "running", progress_pct: 50)
 
       get novel_chapter_review_qa_path(novel, chapter)
 
       body = JSON.parse(response.body)
+      expect(body["id"]).to eq(job.id)
       expect(body["status"]).to eq("running")
       expect(body["progress_pct"]).to eq(50)
       expect(body["suggestions"]).to eq([])
@@ -32,13 +33,14 @@ RSpec.describe "ChapterReview QA", type: :request do
 
     it "returns parsed suggestions once the job has completed" do
       suggestions = [ { "id" => "s1", "source" => "editor", "quote" => "x", "status" => "pending" } ]
-      create(:translation_job, :chapter_qa, :completed, novel: novel, user: user,
+      job = create(:translation_job, :chapter_qa, :completed, novel: novel, user: user,
              chapter_start: chapter.number, chapter_end: chapter.number,
              result_payload: { suggestions: suggestions }.to_json)
 
       get novel_chapter_review_qa_path(novel, chapter)
 
       body = JSON.parse(response.body)
+      expect(body["id"]).to eq(job.id)
       expect(body["status"]).to eq("completed")
       expect(body["suggestions"]).to eq(suggestions)
     end
