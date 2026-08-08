@@ -52,84 +52,63 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
     end
   end
 
-  describe ".build_structured_system_prompt" do
-    def context(overrides = {})
-      described_class::TranslationContext.new(
-        **{
-          novel_info: "Genre: romance fantasy", translation_guidelines: "Be faithful.",
-          narrator_note: "Kang narrates dryly.", characters: "## Hyuk Kang\n- Role: protagonist",
-          cultural_phrases: "", locations: "", story: "", terminology: "", voice_calibration: ""
-        }.merge(overrides)
+  describe ".build_feel_check_system_prompt" do
+    it "is Korean-blind, same as build_editor_system_prompt" do
+      prompt = described_class.build_feel_check_system_prompt
+
+      expect(prompt.downcase).to include("do not have access to the korean source")
+    end
+
+    it "asks for a rewrite, not just a flag, on a segment that doesn't read naturally" do
+      prompt = described_class.build_feel_check_system_prompt
+
+      expect(prompt).to include('"reads_naturally"')
+      expect(prompt).to include('"rewritten_text"')
+    end
+
+    it "instructs the model to return a single JSON object with a segments array" do
+      prompt = described_class.build_feel_check_system_prompt
+
+      expect(prompt).to include('"segments"')
+      expect(prompt).to include('"segment_id"')
+    end
+  end
+
+  describe ".build_feel_check_user_message" do
+    it "renders the given segments as JSON under a Segments heading" do
+      segments = [ { "segment_id" => 1, "text" => "Some English text." } ]
+
+      message = described_class.build_feel_check_user_message(segments: segments)
+
+      expect(message).to include("# Segments")
+      expect(message).to include('"segment_id": 1')
+      expect(message).to include("Some English text.")
+    end
+  end
+
+  describe ".build_title_finalize_system_prompt" do
+    it "scopes the call to the title only, informed by the finished body" do
+      prompt = described_class.build_title_finalize_system_prompt
+
+      expect(prompt).to include("translate this chapter's title, and only its title")
+      expect(prompt.downcase).to include("finished english body")
+    end
+  end
+
+  describe ".build_title_finalize_user_message" do
+    it "gives the Korean title, the draft title, and the finished English body under distinct headings" do
+      message = described_class.build_title_finalize_user_message(
+        korean_title: "한국어 제목",
+        draft_title:  "Draft Title",
+        english_body: "The finished English body text."
       )
-    end
 
-    it "instructs the model to return a single JSON object with intent, literal, and localized keys" do
-      prompt = described_class.build_structured_system_prompt(context)
-
-      expect(prompt).to include('"intent"')
-      expect(prompt).to include('"literal_translation"')
-      expect(prompt).to include('"localized_translation"')
-      expect(prompt).to include("Respond with a single JSON object")
-    end
-
-    it "includes the same reference material as the single-pass prompt" do
-      structured = described_class.build_structured_system_prompt(context)
-      single_pass = described_class.build_system_prompt(context)
-
-      expect(structured).to include("Genre: romance fantasy")
-      expect(structured).to include("Hyuk Kang")
-      # Both prompts should agree on which reference sections were non-empty.
-      expect(structured).to include("Character Bible")
-      expect(single_pass).to include("Character Bible")
-    end
-
-    it "omits reference sections that are empty or template-only, same as the single-pass prompt" do
-      prompt = described_class.build_structured_system_prompt(context(characters: "", novel_info: ""))
-
-      expect(prompt).not_to include("Character Bible")
-    end
-
-    it "never emits the web_search sentence" do
-      expect(described_class.build_structured_system_prompt(context)).not_to include("web_search")
-    end
-
-    it "instructs that per-sentence naturalness wins over cross-chapter motif consistency" do
-      prompt = described_class.build_structured_system_prompt(context)
-
-      expect(prompt).to include("if repeating it makes one of those sentences read unnaturally on its own, rephrase that sentence")
-    end
-
-    it "includes cultural_dynamic and localization_strategy in the intent schema" do
-      prompt = described_class.build_structured_system_prompt(context)
-
-      expect(prompt).to include('"cultural_dynamic"')
-      expect(prompt).to include('"localization_strategy"')
-    end
-
-    it "instructs localized_translation to carry out the stated localization_strategy" do
-      prompt = described_class.build_structured_system_prompt(context)
-
-      expect(prompt).to include("localized_translation must carry out its stated localization_strategy")
-    end
-
-    it "injects cultural_patterns content into its own section, separate from the shared reference material" do
-      prompt = described_class.build_structured_system_prompt(context, cultural_patterns: "Status-jockeying (기 싸움) notes here")
-
-      expect(prompt).to include("## Cultural Patterns")
-      expect(prompt).to include("Status-jockeying (기 싸움) notes here")
-    end
-
-    it "omits the Cultural Patterns section heading when no cultural_patterns content is given" do
-      prompt = described_class.build_structured_system_prompt(context)
-
-      expect(prompt).not_to include("## Cultural Patterns")
-    end
-
-    it "never leaks cultural_patterns content into the single-pass prompt" do
-      described_class.build_structured_system_prompt(context, cultural_patterns: "some pattern notes")
-      single_pass = described_class.build_system_prompt(context)
-
-      expect(single_pass).not_to include("some pattern notes")
+      expect(message).to include("# Korean Title")
+      expect(message).to include("한국어 제목")
+      expect(message).to include("# Draft Title")
+      expect(message).to include("Draft Title")
+      expect(message).to include("# Finished English Chapter Body")
+      expect(message).to include("The finished English body text.")
     end
   end
 
@@ -191,7 +170,7 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
       expect(described_class.build_beat_classification_system_prompt(context)).not_to include("web_search")
     end
 
-    it "includes the same reference material as the single-pass prompt" do
+    it "includes the shared reference material" do
       prompt = described_class.build_beat_classification_system_prompt(context)
 
       expect(prompt).to include("Genre: romance fantasy")
@@ -300,7 +279,7 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
       expect(described_class.build_analysis_system_prompt(context)).not_to include("web_search")
     end
 
-    it "includes the same reference material as the single-pass prompt" do
+    it "includes the shared reference material" do
       prompt = described_class.build_analysis_system_prompt(context)
 
       expect(prompt).to include("Genre: romance fantasy")
@@ -417,7 +396,7 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
       expect(described_class.build_localization_system_prompt(context)).not_to include("web_search")
     end
 
-    it "includes the same reference material as the single-pass prompt" do
+    it "includes the shared reference material" do
       prompt = described_class.build_localization_system_prompt(context)
 
       expect(prompt).to include("Genre: romance fantasy")
@@ -539,7 +518,7 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
       expect(described_class.build_factcheck_system_prompt(context)).not_to include("web_search")
     end
 
-    it "includes the same reference material as the single-pass prompt" do
+    it "includes the shared reference material" do
       prompt = described_class.build_factcheck_system_prompt(context)
 
       expect(prompt).to include("Genre: romance fantasy")
@@ -691,7 +670,7 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
       expect(prompt).to include("narration tense")
     end
 
-    it "includes the same reference material as the single-pass prompt" do
+    it "includes the shared reference material" do
       prompt = described_class.build_chapter_qa_factcheck_system_prompt(context)
 
       expect(prompt).to include("Genre: romance fantasy")
