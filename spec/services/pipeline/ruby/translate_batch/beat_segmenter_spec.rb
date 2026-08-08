@@ -78,7 +78,7 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::BeatSegmenter do
       passages = described_class.merge_beats(blocks, classifications)
 
       expect(passages).to eq([
-        { "passage_id" => 1, "speakers" => [ "narration" ], "anchor_quote" => "hello" }
+        { "passage_id" => 1, "speakers" => [ "narration" ], "anchor_quote" => "hello", "paragraph_break_before" => false }
       ])
     end
 
@@ -93,7 +93,7 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::BeatSegmenter do
       passages = described_class.merge_beats(blocks, classifications)
 
       expect(passages).to eq([
-        { "passage_id" => 1, "speakers" => [ "정한", "희연" ], "anchor_quote" => "one\n\ntwo\n\nthree" }
+        { "passage_id" => 1, "speakers" => [ "정한", "희연" ], "anchor_quote" => "one\n\ntwo\n\nthree", "paragraph_break_before" => false }
       ])
     end
 
@@ -158,10 +158,22 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::BeatSegmenter do
       passages = described_class.merge_beats(blocks, classifications)
 
       expect(passages).to eq([
-        { "passage_id" => 1, "speakers" => [ "정한" ], "anchor_quote" => "one" },
-        { "passage_id" => 2, "speakers" => [ "narration" ], "anchor_quote" => "***" },
-        { "passage_id" => 3, "speakers" => [ "희연" ], "anchor_quote" => "two" }
+        { "passage_id" => 1, "speakers" => [ "정한" ], "anchor_quote" => "one", "paragraph_break_before" => false },
+        { "passage_id" => 2, "speakers" => [ "narration" ], "anchor_quote" => "***", "paragraph_break_before" => true },
+        { "passage_id" => 3, "speakers" => [ "희연" ], "anchor_quote" => "two", "paragraph_break_before" => true }
       ])
+    end
+
+    it "sets paragraph_break_before to false only on the chapter's first passage" do
+      blocks = [ block(1, "one"), block(2, "two") ]
+      classifications = [
+        classified(1, speaker: "narration", label: "BREAK"),
+        classified(2, speaker: "정한", label: "BREAK")
+      ]
+
+      passages = described_class.merge_beats(blocks, classifications)
+
+      expect(passages.map { |p| p["paragraph_break_before"] }).to eq([ false, true ])
     end
 
     it "forces the first block after a scene break into its own beat regardless of the given label" do
@@ -187,6 +199,88 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::BeatSegmenter do
       passages = described_class.merge_beats(blocks, classifications)
 
       expect(passages.map { |p| p["passage_id"] }).to eq([ 1, 2, 3 ])
+    end
+  end
+
+  describe ".assemble_chapter_text" do
+    def segmentation_passage(id, paragraph_break_before:)
+      { "passage_id" => id, "paragraph_break_before" => paragraph_break_before }
+    end
+
+    def localized_passage(id, text)
+      { "passage_id" => id, "localized_translation" => text }
+    end
+
+    it "joins passages with a blank line where the source had a paragraph break" do
+      segmentation_passages = [
+        segmentation_passage(1, paragraph_break_before: false),
+        segmentation_passage(2, paragraph_break_before: true)
+      ]
+      localized_passages = [ localized_passage(1, "Chapter one,"), localized_passage(2, "Korean.") ]
+
+      result = described_class.assemble_chapter_text(
+        segmentation_passages: segmentation_passages, localized_passages: localized_passages
+      )
+
+      expect(result).to eq("Chapter one,\n\nKorean.")
+    end
+
+    it "joins with a single space when the segmenter records no paragraph break (defensive branch, not reachable via merge_beats today)" do
+      segmentation_passages = [
+        segmentation_passage(1, paragraph_break_before: false),
+        segmentation_passage(2, paragraph_break_before: false)
+      ]
+      localized_passages = [ localized_passage(1, "one"), localized_passage(2, "two") ]
+
+      result = described_class.assemble_chapter_text(
+        segmentation_passages: segmentation_passages, localized_passages: localized_passages
+      )
+
+      expect(result).to eq("one two")
+    end
+
+    it "never emits a leading separator before the chapter's first passage regardless of its flag" do
+      segmentation_passages = [ segmentation_passage(1, paragraph_break_before: true) ]
+      localized_passages = [ localized_passage(1, "only passage") ]
+
+      result = described_class.assemble_chapter_text(
+        segmentation_passages: segmentation_passages, localized_passages: localized_passages
+      )
+
+      expect(result).to eq("only passage")
+    end
+
+    it "contributes no stray separator for a passage with an empty localized translation" do
+      segmentation_passages = [
+        segmentation_passage(1, paragraph_break_before: false),
+        segmentation_passage(2, paragraph_break_before: true),
+        segmentation_passage(3, paragraph_break_before: true)
+      ]
+      localized_passages = [
+        localized_passage(1, "one"),
+        localized_passage(2, ""),
+        localized_passage(3, "three")
+      ]
+
+      result = described_class.assemble_chapter_text(
+        segmentation_passages: segmentation_passages, localized_passages: localized_passages
+      )
+
+      expect(result).to eq("one\n\nthree")
+    end
+
+    it "strips each passage's own whitespace so an explicit join separator can't stack" do
+      segmentation_passages = [
+        segmentation_passage(1, paragraph_break_before: false),
+        segmentation_passage(2, paragraph_break_before: true)
+      ]
+      localized_passages = [ localized_passage(1, "one \n"), localized_passage(2, "\n two") ]
+
+      result = described_class.assemble_chapter_text(
+        segmentation_passages: segmentation_passages, localized_passages: localized_passages
+      )
+
+      expect(result).to eq("one\n\ntwo")
     end
   end
 end

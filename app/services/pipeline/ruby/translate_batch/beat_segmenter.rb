@@ -162,10 +162,38 @@ module Pipeline
           {
             "passage_id" => passage_id,
             "speakers" => speakers,
-            "anchor_quote" => blocks.map(&:text).join("\n\n")
+            "anchor_quote" => blocks.map(&:text).join("\n\n"),
+            # Every beat boundary sits exactly on a candidate_blocks boundary, and every
+            # candidate_blocks boundary is, by construction of candidate_blocks' blank-line
+            # split, a place the source Korean had a blank line — so this is a structural
+            # fact about where beats come from, not a heuristic guess. True for every passage
+            # except the chapter's first, which has nothing before it to break from.
+            "paragraph_break_before" => passage_id > 1
           }
         end
         private_class_method :to_passage
+
+        # Joins Step 3 (localization)'s per-passage translations into the final chapter text,
+        # using Step 1's paragraph_break_before facts rather than trusting the model to have
+        # reproduced source whitespace at passage boundaries on its own (docs/DECISIONS.md
+        # 2026-07-31: naive concatenation was found to silently weld passages together with
+        # zero separator). Looks passages up by passage_id rather than relying on matching
+        # array order, so it stays correct even without a prior ordered-coverage check.
+        def self.assemble_chapter_text(segmentation_passages:, localized_passages:)
+          paragraph_break_by_id = segmentation_passages.to_h { |passage| [ passage["passage_id"], passage["paragraph_break_before"] ] }
+
+          localized_passages.reduce(+"") do |text, passage|
+            piece = passage["localized_translation"].to_s.strip
+            next text if piece.empty?
+
+            unless text.empty?
+              # Defaulting a missing lookup to true is defensive, not currently reachable —
+              # see paragraph_break_before's comment on to_passage.
+              text << (paragraph_break_by_id.fetch(passage["passage_id"], true) ? "\n\n" : " ")
+            end
+            text << piece
+          end
+        end
       end
     end
   end

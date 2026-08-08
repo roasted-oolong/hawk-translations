@@ -67,6 +67,21 @@ class TranslationJob < ApplicationRecord
     queued? || running?
   end
 
+  # translate_batch's result_payload is a JSON blob (per-chapter step data,
+  # see Pipeline::Ruby::TranslateBatch) rather than the plain human-readable
+  # text every other job type stores — views that render result_payload
+  # verbatim should use this instead so a reader sees the human summary, not
+  # raw JSON. Falls back to the raw string for any payload that isn't the
+  # expected shape (e.g. a failed job's payload, which appends stderr text
+  # after the JSON — see PipelineJob's failure branch).
+  def result_summary
+    return result_payload unless translate_batch?
+
+    JSON.parse(result_payload.to_s)["summary"] || result_payload
+  rescue JSON::ParserError
+    result_payload
+  end
+
   def shows_progress?
     false
   end

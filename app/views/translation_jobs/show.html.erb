@@ -134,7 +134,7 @@
     </div>
     <div class="job-terminal__body">
       <% if @translation_job.result_payload.present? %>
-        <pre class="job-terminal__pre"><%= @translation_job.result_payload %></pre>
+        <pre class="job-terminal__pre"><%= @translation_job.result_summary %></pre>
       <% elsif @translation_job.queued? || @translation_job.running? %>
         <p class="job-terminal__placeholder" data-testid="job-pending-message">
           Job is <strong><%= @translation_job.status %></strong> — output will appear here when complete.
