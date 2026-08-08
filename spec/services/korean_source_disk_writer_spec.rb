@@ -83,4 +83,27 @@ RSpec.describe KoreanSourceDiskWriter do
       expect { described_class.new(novel).delete(chapter) }.not_to raise_error
     end
   end
+
+  describe "#path_for" do
+    it "returns the on-disk path for the chapter, without requiring the file to exist" do
+      expect(described_class.new(novel).path_for(chapter)).to eq(output_path)
+    end
+
+    it "raises clearly when HAWK_PROJECT_ROOT is not set" do
+      ENV["HAWK_PROJECT_ROOT"] = nil
+      expect { described_class.new(novel).path_for(chapter) }
+        .to raise_error(/HAWK_PROJECT_ROOT/)
+    end
+  end
+
+  describe "#read" do
+    it "returns the on-disk content for the chapter" do
+      described_class.new(novel).write(chapter)
+      expect(described_class.new(novel).read(chapter)).to eq("안녕하세요")
+    end
+
+    it "returns nil when no file exists on disk yet" do
+      expect(described_class.new(novel).read(chapter)).to be_nil
+    end
+  end
 end

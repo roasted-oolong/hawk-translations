@@ -95,6 +95,15 @@ RSpec.describe "Chapters", type: :request do
       expect(response.body).to include("data-bible-lookup-search-url-value=")
       expect(response.body).to include("data-bible-lookup-novel-id-value=\"#{novel.id}\"")
     end
+
+    # BibleLookupController resolves "which chapter is this selection in"
+    # via .closest('[data-chapter-id]') — chapter_review's per-pane markup
+    # already carries this; the single-chapter editor needed it added.
+    it "stamps data-chapter-id on the editor root so bible-entry suggestions know the current chapter" do
+      get novel_chapter_path(novel, chapter)
+
+      expect(response.body).to include("data-chapter-id=\"#{chapter.id}\"")
+    end
   end
 
   # ---------------------------------------------------------------------------

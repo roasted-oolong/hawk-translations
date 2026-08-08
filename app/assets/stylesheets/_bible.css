@@ -967,6 +967,25 @@ button.bible-lookup__view-link {
   color: var(--color-danger);
 }
 
+/* Shown next to the Korean/descriptive fields while
+   Pipeline::BibleEntrySuggestion's suggestion fetch is in flight — purely
+   informational, never blocks typing or submitting the form. */
+.bible-lookup__qc-suggesting {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  font-size: 10px;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.bible-lookup__qc-suggesting .bible-lookup__spinner {
+  width: 10px;
+  height: 10px;
+  border-width: 1.5px;
+}
+
 .bible-lookup__qc-submit {
   width: 100%;
   padding: 7px var(--space-4);
@@ -987,6 +1006,228 @@ button.bible-lookup__view-link {
 .bible-lookup__qc-submit:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Bible "New Entry" dialog
+   Native <dialog>, opened over the anchored popover (which stays mounted,
+   hidden, behind it — Cancel returns to the same search results instead of
+   losing them). Same shell convention as _modal.css's .modal-dialog /
+   .bulk-translate-dialog; the header/pills/badge language borrows from
+   hawk-translations-ui-prototype's CreateEntryModal, with production's
+   real per-type field sets (not that prototype's generic 4-field shape —
+   see DECISIONS.md 2026-08-08 bible-entry-suggestion entry) and the
+   English field (not Korean) as the required, prefilled anchor, matching
+   this app's actual English-selected → Korean-suggested flow.
+   ========================================================================== */
+
+.bible-lookup-create-dialog {
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  background: transparent;
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(90vw, 32rem);
+  max-height: calc(100vh - 2rem);
+}
+
+.bible-lookup-create-dialog::backdrop {
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+}
+
+.bible-lookup-create-dialog__panel {
+  background-color: var(--color-surface-manuscript);
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 2rem);
+  overflow: hidden;
+}
+
+.bible-lookup-create-dialog__form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.bible-lookup-create-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.bible-lookup-create-dialog__title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0;
+}
+
+.bible-lookup-create-dialog__close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.bible-lookup-create-dialog__close:hover {
+  color: var(--color-text);
+  background-color: var(--color-surface);
+}
+
+.bible-lookup-create-dialog__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-6) 0;
+}
+
+.bible-lookup-create-dialog__pill {
+  padding: 5px var(--space-3);
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.bible-lookup-create-dialog__pill:hover {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.bible-lookup-create-dialog__pill--active {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+  color: #fff;
+}
+
+/* Separates "pick a type" (pills, above) from "fill it in" (fields,
+   below) — without it the two sections ran together as one block. */
+.bible-lookup-create-dialog__divider {
+  height: 1px;
+  background-color: var(--color-border);
+  margin: var(--space-4) var(--space-6) 0;
+}
+
+.bible-lookup-create-dialog__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  overflow-y: auto;
+}
+
+.bible-lookup-create-dialog__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.bible-lookup-create-dialog__label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.bible-lookup-create-dialog__required {
+  color: var(--color-danger);
+  font-size: 10px;
+}
+
+.bible-lookup-create-dialog__input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  background: #fff;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color var(--transition-fast);
+}
+
+.bible-lookup-create-dialog__input:focus {
+  border-color: var(--color-primary);
+}
+
+.bible-lookup-create-dialog__input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.7;
+}
+
+.bible-lookup-create-dialog__input--korean {
+  font-family: var(--font-family-korean);
+}
+
+textarea.bible-lookup-create-dialog__input {
+  resize: none;
+}
+
+.bible-lookup-create-dialog__suggesting {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  font-size: 10px;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.bible-lookup-create-dialog__suggesting .bible-lookup__spinner {
+  width: 10px;
+  height: 10px;
+  border-width: 1.5px;
+}
+
+.bible-lookup-create-dialog__error {
+  margin: 0 var(--space-6);
+  font-size: var(--text-xs);
+  color: var(--color-danger);
+}
+
+.bible-lookup-create-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Hides the anchored popover (not unmounted — its search results stay
+   intact) while the create dialog is open on top of it. */
+.bible-lookup--hidden {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* ── Success state ── */

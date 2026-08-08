@@ -16,7 +16,7 @@ class KoreanSourceDiskWriter
   def write(chapter)
     return unless chapter.korean_source.attached?
 
-    output_path = chapter_path(chapter)
+    output_path = path_for(chapter)
     FileUtils.mkdir_p(File.dirname(output_path))
 
     tmp_path = "#{output_path}.#{SecureRandom.hex(8)}.tmp"
@@ -33,17 +33,29 @@ class KoreanSourceDiskWriter
   # PrereadRunner::ChapterDiscovery), so a later re-upload of that chapter
   # number would silently be re-fed the deleted chapter's old text.
   def delete(chapter)
-    path = chapter_path(chapter)
+    path = path_for(chapter)
     File.delete(path) if File.exist?(path)
   end
 
-  private
-
-  def chapter_path(chapter)
+  # Public so other Korean-source readers (Pipeline::BibleEntrySuggestion,
+  # and eventually translate_batch.rb/chapter_qa.rb's own private copies of
+  # this same convention) have one place to get the on-disk path from,
+  # instead of re-deriving "Chapter <N> (Korean).txt" themselves — this
+  # class is the only writer of that file, so it's the only convention that
+  # should matter here.
+  def path_for(chapter)
     root = ENV.fetch("HAWK_PROJECT_ROOT") do
       raise "HAWK_PROJECT_ROOT environment variable is not set. " \
             "Check .env (development) or Rails credentials (production)."
     end
     File.join(root, @novel.directory_name, "chapters", "Chapter #{chapter.number} (Korean).txt")
+  end
+
+  # Returns nil (not "") when nothing's been written yet — a routine,
+  # non-error condition, same convention translate_batch.rb/chapter_qa.rb's
+  # own read helpers already use for a missing source file.
+  def read(chapter)
+    path = path_for(chapter)
+    File.exist?(path) ? File.read(path, encoding: "UTF-8") : nil
   end
 end

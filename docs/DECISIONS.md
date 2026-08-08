@@ -2769,3 +2769,148 @@ The contenteditable Tab-intercept path itself isn't covered by an
 automated test, for the same Cuprite/Chromium sandbox limitation noted in
 the entries above — needs a manual check: select text inside the QA pane
 after a chapter_qa run and confirm Tab opens the bible-lookup popover.
+
+---
+
+## 2026-08-08 · bible-entry-suggestion: Korean equivalent + fields auto-suggested on Tab-created entries
+
+Implements the "English-first" direction of `docs/ROADMAP.md`'s "Add Bible
+Entry From Korean Text, Auto-Correct Existing Translations" future item —
+the replacement `bible_build`/`post_translation_review` were sunset in
+favor of (2026-07-30 entry). BibleLookupController's Tab-to-create-entry
+quick-create form (shipped 2026-08-08, entry above) had exactly two
+fields: English (pre-filled from the selection) and Korean (blank, typed
+by hand). Now, the moment that form opens for a Korean-bearing type
+(Character, Location, Terminology, Cultural Phrase — not Story Entry,
+which has no Korean field), it fires a background request that finds the
+Korean equivalent in the chapter's Korean source and suggests a handful of
+descriptive fields (role, definition, notes, etc., depending on type),
+prefilling the form for the user to review and edit before creating —
+scoped to exactly the one entry being created, not a bible-wide pass.
+
+**Form itself grew**, not just its two original fields — the quick-create
+form now shows the same field set `EDIT_FIELDS` already used for the
+popover's inline *edit* form (Role/Aliases/Notes for Character,
+Significance/Notes for Location, Definition/Usage Notes/Notes for
+Terminology, Established Translation/Intended Meaning/Notes for Cultural
+Phrase), derived from `EDIT_FIELDS` rather than hand-duplicated so the two
+forms can't drift apart. User's explicit choice, after reviewing two
+options: expand the popover inline (chosen) vs. keep it minimal and only
+prefill the follow-up edit page. `hawk-translations-ui-prototype`'s
+`bible-lookup-popover.tsx`/`CreateEntryModal` was the reference for what a
+fuller create form looks like, though production kept its real per-type
+field sets instead of that prototype's generic 4-field shape.
+
+**New pieces:**
+- `Pipeline::BibleEntrySuggestion` (`app/services/pipeline/bible_entry_suggestion.rb`)
+  — one `Pipeline::ClaudeCode` call, modeled on `TitleFinalizer`'s
+  Result/`ok?`/degrade-don't-raise shape. `FIELD_SPECS` is the single
+  source of truth for which fields exist per type; unknown type or no
+  Korean source short-circuits without a call.
+- Prompt building lives in the existing shared
+  `TranslateBatch::PromptBuilder` (`build_bible_entry_suggestion_*`) —
+  despite the namespace, that's already where `chapter_qa`/`title_finalizer`
+  prompts live too, not just translate_batch's own.
+- `BibleEntrySuggestionsController` (`POST /novels/:novel_id/bible_entry_suggestion`),
+  API-first JSON, modeled on `BibleSearchController`. Always 200 with a
+  (possibly empty) `fields` hash — no Korean source, an LLM failure, or bad
+  JSON all mean "nothing to suggest," never an error toward the user. Only
+  a missing novel/chapter 404s.
+- `KoreanSourceDiskWriter#chapter_path` promoted from private to public
+  `#path_for`, plus a new `#read` — this class already owned the
+  `Chapter <N> (Korean).txt` on-disk convention that `translate_batch.rb`/
+  `chapter_qa.rb` each independently re-derive; this suggestion controller
+  reuses it instead of adding a third copy. The other two call sites were
+  left alone — retrofitting them is a nice-to-have, not required here.
+- `BibleEntryChapterPrefill` concern (mirrors the existing
+  `BiblePrereadDismissed` concern's shape), included by all four
+  Korean-bearing `bible_*_controller.rb`s: fills `first_appearance_chapter`
+  from the `chapter_id` param the quick-create form now sends, when the
+  entry doesn't already have one. The one bible field that's fully
+  derivable without asking the user or the LLM for anything.
+
+**Deliberate architecture exception:** the suggestion call runs
+synchronously inside the request — every other `Pipeline::ClaudeCode.call`
+site in this app runs inside an async `TranslationJob`/`PipelineJob`.
+Scoped exception, not a new default: a single small call from a
+low-traffic solo-dev tool (`RAILS_MAX_THREADS` is 3), not a batch/chapter
+job needing progress tracking or cancellation. Bounded to a 45s timeout
+(vs. `ClaudeCode::DEFAULT_TIMEOUT`'s 1200s) so a stuck call can't tie up a
+Puma thread indefinitely.
+
+**Chapter-id wiring:** `BibleLookupController` needed to know which
+chapter a selection came from. `chapter_review/show.html.erb` already
+stamps `data-chapter-id` per pane (multi-chapter slideshow);
+`chapters/show.html.erb`'s single-chapter editor didn't have it at all —
+added to its root. Both `handleTabOnTextarea`/`handleTabOnEditable` now
+resolve it via `.closest('[data-chapter-id]')` rather than a new Stimulus
+value, reusing DOM structure both pages already have (or now have).
+
+**Not in scope:** the reverse "Korean-first" entry point (select Korean
+text, suggest English) from the same `docs/ROADMAP.md` item; propagating a
+corrected entry into already-translated chapters (the separate
+"Find and Replace Across Chapters" item).
+
+Spec coverage: `bible_entry_suggestion_spec.rb` (success, malformed-JSON/
+CLI-failure degrade, unknown-type and no-Korean-source short-circuits,
+stray-key filtering), `korean_source_disk_writer_spec.rb` (`#path_for`/
+`#read`), `bible_entry_suggestions_spec.rb` (200-with-empty-fields on every
+degrade path, 404s), the four `bible_*_spec.rb`s' `chapter_id` → 
+`first_appearance_chapter` cases, and a `chapters_spec.rb` case for the new
+`data-chapter-id` attribute. The actual Tab-driven popover interaction
+(selection → suggestion → fields filling in) stays a manual check, same
+Cuprite/Chromium sandbox limitation as the rest of this controller's
+interaction tests.
+
+## 2026-08-08 · bible-lookup "New Bible Entry" form moved from inline panel to a modal dialog
+
+Revisits the modal-vs-inline fork from the entry above — that entry chose
+to expand the quick-create form inline within the anchored popover, using
+`hawk-translations-ui-prototype`'s `bible-lookup-popover.tsx`/
+`CreateEntryModal` only as a reference for field breadth, explicitly not
+for its modal shell. User's explicit choice this time, after being shown
+that history: keep the earlier per-type field-set decision (production's
+real fields, not the prototype's generic Role/Description/Notes/First-
+appearance shape) but reverse the inline-vs-modal part — the create step
+now opens as a centered native `<dialog>` (`.bible-lookup-create-dialog`,
+same shell convention as `_modal.css`'s `.modal-dialog`/
+`.bulk-translate-dialog`), matching the prototype's `CreateEntryModal`
+shape more closely: title + colored type badge, a switchable "Entry type"
+pill row (`CREATE_TYPE_CONFIG`-driven, was previously locked in once
+chosen from the empty-state buttons), and a Cancel/"Save to Bible" footer
+in place of the old single "Create {Type}" button.
+
+**Anchored popover stays mounted, hidden** (`.bible-lookup--hidden`
+class toggled, not removed from the DOM) while the dialog is open, rather
+than being torn down — Cancel/Escape/backdrop-click restores it with the
+same search results intact, only a successful create closes both
+together. `BibleLookupController`'s own `docEsc`/`docClick` handlers now
+bail out while a create dialog is open (mirrors the prototype's own
+`if (createType !== null) return` guard) since a click inside the dialog
+still bubbles to `document` — the dialog isn't a separate DOM tree, only
+visually top-layered.
+
+**Deliberate deviation from the prototype, not an oversight:** the
+prototype's primary/required/prefilled field is Korean (`koName`,
+autofocused). Production keeps English as that field instead — the real
+Tab-to-lookup flow selects English text and suggests the Korean
+equivalent (2026-08-08 bible-entry-suggestion entry above), the reverse
+of what the prototype assumes. Copying "Korean first, required" verbatim
+would have required either faking a still-empty required field or
+reversing the selection direction, which is explicitly out of scope
+(see "Not in scope" above). Switching entry type via the pills keeps the
+typed English value (the one thing that means the same thing across
+types) and resets the type-specific extra fields, since e.g. Character's
+Role and Cultural Phrase's Established Translation don't correspond.
+
+**Not changed:** the *edit* form for an already-found entry
+(`showEditForm`/`editFormHTML`/`submitEditForm`) — still the original
+inline panel within the popover body. Only the "New Bible Entry" creation
+step moved. The results list's "Not what you need? Create new entry"
+affordance from the prototype (offering create even when matches exist)
+wasn't added — production still only offers "Create as" from the
+no-results state.
+
+Spec coverage: unchanged from the entry above — this is a DOM-shape/CSS
+change with no new request/response surface, and the Tab-driven
+interaction was already a manual-check item (Cuprite/Chromium sandbox

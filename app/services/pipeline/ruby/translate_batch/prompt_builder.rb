@@ -695,6 +695,58 @@ module Pipeline
           MESSAGE
         end
 
+        # Pipeline::BibleEntrySuggestion's one call — fired synchronously from
+        # BibleEntrySuggestionsController when a translator Tab-creates a new
+        # bible entry from selected English text (see docs/DECISIONS.md's
+        # bible-entry-suggestion entry). Scoped to exactly one entry, not a
+        # bible_build-style batch pass: given the selected English term, its
+        # surrounding context, and the chapter's Korean source, find the
+        # Korean equivalent and a small set of type-specific descriptive
+        # fields. `fields` is an array of { key:, label:, hint: } — the
+        # type-specific field list/labels/hints live in
+        # Pipeline::BibleEntrySuggestion::FIELD_SPECS, not here; this method
+        # only formats whatever it's given.
+        def self.build_bible_entry_suggestion_system_prompt(korean_label:, korean_key:, fields:)
+          field_lines = fields.map { |f| "- `#{f[:key]}` (#{f[:label]}): #{f[:hint]}" }.join("\n")
+          json_lines  = ([ "\"#{korean_key}\": \"string\"" ] + fields.map { |f| "\"#{f[:key]}\": \"string\"" })
+            .join(",\n  ")
+
+          <<~PROMPT.chomp
+            You are helping a Korean-to-English literary translator populate one new entry of their translation bible, immediately after they selected an English term in a chapter they're translating or reviewing and chose to add it to the bible. This is scoped to exactly this one entry — you are not reviewing or rebuilding the rest of the bible.
+
+            The user message gives you the selected English text, some surrounding English context it was selected from, and the full Korean source of the chapter it came from.
+
+            First, find the specific Korean word or phrase in the source that the selected English text is the translation of — use the surrounding context to identify the right occurrence if the term appears more than once or in more than one form. Put that in `#{korean_key}` (#{korean_label}).
+
+            Then fill in these fields, grounded only in what the given text actually supports:
+            #{field_lines}
+
+            Leave any field you can't determine with reasonable confidence as an empty string — an empty field is fine and expected; a guessed or invented detail is not. Never invent plot, relationships, or facts not evidenced in the given text.
+
+            Respond with a single JSON object and nothing else — no markdown code fences, no commentary before or after it. Its shape:
+
+            {
+              #{json_lines}
+            }
+          PROMPT
+        end
+
+        def self.build_bible_entry_suggestion_user_message(english_text:, context_text:, korean_source_text:)
+          <<~MESSAGE.chomp
+            # Selected English Text
+
+            #{english_text}
+
+            # Surrounding English Context
+
+            #{context_text}
+
+            # Korean Source (full chapter)
+
+            #{korean_source_text}
+          MESSAGE
+        end
+
         def self.reference_material(context)
           reference_sections = [
             Pipeline::PromptUtils.section("Novel Info", context.novel_info),

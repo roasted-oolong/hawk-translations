@@ -365,7 +365,10 @@ Consistent styling for chapter list and job list tables.
 explicit close button. Focus trapped inside while open.  
 **Implementation:** Native HTML `<dialog>` element. No external library.  
 **Notes:** Used for delete confirmations (replacing `turbo_confirm` where richer
-UI is needed) and potentially bible entry quick-view.
+UI is needed), the Bulk Translate chapter picker, and bible-lookup's "New Bible
+Entry" create form (`bible_lookup_controller.ts`'s `.bible-lookup-create-dialog`
+— opened over the anchored lookup popover, which stays mounted, hidden, behind
+it; see DECISIONS.md 2026-08-08 bible-lookup-modal entry).
 
 ### Toast Notification
 **Type:** Display + behavior  
