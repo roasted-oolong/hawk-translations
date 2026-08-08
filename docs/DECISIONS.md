@@ -2574,6 +2574,40 @@ degrade, empty-title degrade, correct model selection) plus two new
 existing tests needed no changes — their Korean fixtures are single-line
 with no blank line, so `TitleFinalizer` always short-circuits to a no-op
 against them, same result as before this change existed.
+---
+
+## 2026-08-08 · Re-translating a chapter now discards its stale chapter_qa history
+
+A re-translated chapter (translate_batch run against a chapter that was
+already `translated`/`reviewed`) left its earlier `chapter_qa` job(s)
+behind. `ChapterReviewController#qa_status` always serves the *latest*
+`chapter_qa` job for a chapter (by design — see the 2026-08-01 chapter_qa
+entry), so on the next review page load the old job's suggestions —
+`quote`/`korean_context` checked against text that no longer exists —
+silently resurfaced as if they applied to the fresh translation. Reported
+by the user as leftover QA state after a new translation.
+
+Fixed in `PipelineJob#attach_translated_outputs`: right after a chapter's
+`translated_output` is (re)attached and its status set to `"translated"`,
+`discard_stale_chapter_qa` destroys any `chapter_qa` `TranslationJob` rows
+scoped to that chapter number in that novel. Scoped per-chapter, same as
+the attach loop itself, so a multi-chapter batch only clears QA history for
+chapters that actually got new output — an untouched chapter in the same
+range keeps its existing QA run. Destroyed rather than left as inert
+history: unlike `translate_batch`/`preread` jobs, a `chapter_qa` result has
+no meaning once the text it reviewed is gone, so keeping the row around in
+the jobs list would just be confusing, not useful audit trail.
+
+First-time translation is an unaffected no-op (nothing to destroy yet).
+Manual edits via `ChapterReviewController#update_text` — including
+applying an accepted QA suggestion — deliberately do **not** trigger this;
+that path re-attaches `translated_output` too, but wiping QA there would
+delete the very suggestions the user is in the middle of acting on.
+
+Spec coverage: new context in `pipeline_job_spec.rb`'s "translate_batch"
+describe block — a chapter with a prior `chapter_qa` job gets re-translated
+and that job is destroyed, while a sibling chapter's and a different
+novel's `chapter_qa` jobs are left alone.
 
 ## 2026-08-08 · Chapter QA suggestions ordered by position in text, not by pass
 
@@ -2615,7 +2649,6 @@ Chromium system specs don't render JS-driven content correctly (pre-existing
 environment limitation, reproducible on `main` before this change too,
 unrelated to it). Needs a manual check: accept/reject a suggestion and
 confirm the page doesn't move.
-
 
 
 ## 2026-08-08 · Chapter QA review: untouched chapter text stays directly editable

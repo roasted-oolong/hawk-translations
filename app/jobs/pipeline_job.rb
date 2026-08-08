@@ -128,7 +128,24 @@ class PipelineJob < ApplicationJob
         )
       end
       chapter.update!(status: "translated")
+      discard_stale_chapter_qa(chapter)
     end
+  end
+
+  # A (re-)translation invalidates any earlier chapter_qa run for this
+  # chapter — its suggestions (quote/korean_context) were checked against
+  # the text that just got overwritten, and ChapterReviewController#qa_status
+  # always serves the *latest* chapter_qa job for a chapter (see its own
+  # comment), so a stale row left behind would silently resurface old
+  # suggestions against the new translation the next time the review page
+  # loads. Destroyed rather than kept as inert history — a chapter_qa
+  # result has no meaning once the text it reviewed is gone, unlike
+  # translate_batch/preread jobs, which stay valid audit history regardless
+  # of later re-translations.
+  def discard_stale_chapter_qa(chapter)
+    chapter.novel.translation_jobs.chapter_qa
+      .where(chapter_start: chapter.number, chapter_end: chapter.number)
+      .destroy_all
   end
 
   def build_result_payload(job, stdout)
