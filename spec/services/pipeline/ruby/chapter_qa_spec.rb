@@ -46,7 +46,7 @@ RSpec.describe Pipeline::Ruby::ChapterQa do
   # Distinguishes the two calls by the one structural difference between
   # their system prompts: only factcheck's asks for korean_context (editor
   # is deliberately Korean-blind and never mentions it).
-  def scripted_claude(bin_dir, factcheck_response:, editor_response:, models_log: nil)
+  def scripted_claude(bin_dir, factcheck_response:, editor_response:, models_log: nil, mcp_log: nil)
     fake_claude(bin_dir, <<~RUBY)
       require "json"
       STDIN.read
@@ -54,6 +54,7 @@ RSpec.describe Pipeline::Ruby::ChapterQa do
       prompt = File.read(prompt_path)
       variant = prompt.include?("korean_context") ? "factcheck" : "editor"
       #{"File.open(#{models_log.inspect}, 'a') { |f| f.puts \"\#{variant}:\#{ARGV[ARGV.index('--model') + 1]}\" }" if models_log}
+      #{"File.open(#{mcp_log.inspect}, 'a') { |f| f.puts \"\#{variant}:\#{ARGV.include?('--mcp-config')}\" }" if mcp_log}
       response = variant == "factcheck" ? #{factcheck_response.to_json.inspect} : #{editor_response.to_json.inspect}
       puts response
     RUBY
@@ -165,6 +166,29 @@ RSpec.describe Pipeline::Ruby::ChapterQa do
         models_by_variant = File.readlines(models_log).map(&:chomp).to_h { |line| line.split(":", 2) }
         expect(models_by_variant["factcheck"]).to eq("sonnet")
         expect(models_by_variant["editor"]).to eq("opus")
+      end
+    end
+  end
+
+  it "gives the factcheck call the bible_lookup MCP tool but keeps the editor call tool-free" do
+    with_env("HAWK_PROJECT_ROOT" => @project_root) do
+      novel_dir = build_novel_dir(korean: "한국어", english: "English text.")
+      novel = Novel.find_by!(directory_name: File.basename(novel_dir))
+      @job = create_qa_job(novel)
+
+      Dir.mktmpdir do |bin_dir|
+        mcp_log = File.join(bin_dir, "mcp.log")
+        bin = scripted_claude(bin_dir,
+          factcheck_response: { is_error: false, result: { suggestions: [] }.to_json },
+          editor_response:    { is_error: false, result: { suggestions: [] }.to_json },
+          mcp_log: mcp_log)
+
+        _stdout, _stderr, success = described_class.call(@job, config: config_for(bin))
+
+        expect(success).to eq(true)
+        mcp_by_variant = File.readlines(mcp_log).map(&:chomp).to_h { |line| line.split(":", 2) }
+        expect(mcp_by_variant["factcheck"]).to eq("true")
+        expect(mcp_by_variant["editor"]).to eq("false")
       end
     end
   end

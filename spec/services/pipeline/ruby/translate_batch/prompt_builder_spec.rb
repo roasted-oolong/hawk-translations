@@ -490,15 +490,30 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
       expect(prompt).to include("Respond with a single JSON object")
     end
 
-    it "asks for four fact/culture checks, not prose-quality checks" do
+    it "asks for five fact/culture/compliance checks, not prose-quality checks" do
       prompt = described_class.build_factcheck_system_prompt(context)
 
       expect(prompt).to include("names_preserved")
       expect(prompt).to include("facts_preserved")
       expect(prompt).to include("cultural_significance_preserved")
       expect(prompt).to include("cultural_dynamic_enacted")
+      expect(prompt).to include("style_guidelines_followed")
       expect(prompt).not_to include("continuous_utterance")
       expect(prompt).not_to include("register_unified")
+    end
+
+    it "anchors names_preserved to the bible's established spelling, not just Korean fidelity" do
+      prompt = described_class.build_factcheck_system_prompt(context)
+
+      expect(prompt).to include("Character Bible / Locations / Terminology sections")
+      expect(prompt).to include("bible_lookup")
+    end
+
+    it "scopes style_guidelines_followed to stated rules like tense, distinct from prose quality" do
+      prompt = described_class.build_factcheck_system_prompt(context)
+
+      expect(prompt).to include("style_guidelines_followed")
+      expect(prompt).to include("narration tense")
     end
 
     it "explicitly scopes out prose-quality judgment to a separate call" do
@@ -660,6 +675,20 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
       prompt = described_class.build_chapter_qa_factcheck_system_prompt(context)
 
       expect(prompt).to include("not judging prose quality")
+    end
+
+    it "anchors name checks to the bible's established spelling, not just whether the Korean was lost" do
+      prompt = described_class.build_chapter_qa_factcheck_system_prompt(context)
+
+      expect(prompt).to include("Character Bible / Locations / Terminology sections")
+      expect(prompt).to include("bible_lookup")
+    end
+
+    it "flags Translation Guidelines violations like narration tense, separately from prose quality" do
+      prompt = described_class.build_chapter_qa_factcheck_system_prompt(context)
+
+      expect(prompt).to include("Translation Guidelines section")
+      expect(prompt).to include("narration tense")
     end
 
     it "includes the same reference material as the single-pass prompt" do

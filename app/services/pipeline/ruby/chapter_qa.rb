@@ -52,10 +52,15 @@ module Pipeline
         context            = TranslateBatch::PromptBuilder::TranslationContext.new(**reference_data, narrator_note: narrator_note)
         cultural_patterns  = read_cultural_patterns
 
+        # mcp_config only on the factcheck call — it's the pass that checks names/terms
+        # against the bible and needs bible_lookup available for entries not already
+        # covered by the inlined Character Bible reference text. The editor call stays
+        # tool-free, consistent with its own deliberate reference-blindness.
         factcheck_suggestions, factcheck_error = run_pass(
           system_prompt: TranslateBatch::PromptBuilder.build_chapter_qa_factcheck_system_prompt(context, cultural_patterns: cultural_patterns),
           user_message:  TranslateBatch::PromptBuilder.build_chapter_qa_factcheck_user_message(korean_text: korean_text, english_text: english_text),
-          checked_text:  english_text, source: "factcheck", model: @config.factcheck_model
+          checked_text:  english_text, source: "factcheck", model: @config.factcheck_model,
+          mcp_config: TranslateBatch::BridgeConfig.mcp_config(novel_directory_name: @job.novel.directory_name)
         )
         return [ "", "factcheck: #{factcheck_error}", false ] if factcheck_error
 
@@ -95,9 +100,9 @@ module Pipeline
       # is dropped, not kept — an unanchored quote can't be located to
       # render as a tracked-change span, so keeping it would just surface a
       # suggestion the UI can never place.
-      def run_pass(system_prompt:, user_message:, checked_text:, source:, model: nil)
+      def run_pass(system_prompt:, user_message:, checked_text:, source:, model: nil, mcp_config: nil)
         result = Pipeline::ClaudeCode.call(
-          system_prompt: system_prompt, user_message: user_message, config: @config, model: model
+          system_prompt: system_prompt, user_message: user_message, config: @config, model: model, mcp_config: mcp_config
         )
         return [ nil, "#{result.error_category}: #{result.error_message}" ] unless result.success?
 
