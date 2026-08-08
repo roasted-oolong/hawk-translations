@@ -23,6 +23,29 @@ RSpec.describe Pipeline::BibleUtils do
     end
   end
 
+  describe ".normalize_korean" do
+    it "collapses runs of internal whitespace to a single space" do
+      expect(described_class.normalize_korean("김민준   에게")).to eq("김민준 에게")
+    end
+
+    it "strips leading/trailing whitespace" do
+      expect(described_class.normalize_korean("  영석  ")).to eq("영석")
+    end
+
+    it "downcases Latin-script terms without affecting Hangul" do
+      expect(described_class.normalize_korean("SM Entertainment")).to eq("sm entertainment")
+      expect(described_class.normalize_korean("영석")).to eq("영석")
+    end
+
+    it "unicode-normalises so full-width and half-width forms match" do
+      expect(described_class.normalize_korean("ＳＭ")).to eq(described_class.normalize_korean("SM").downcase)
+    end
+
+    it "is nil-safe" do
+      expect(described_class.normalize_korean(nil)).to eq("")
+    end
+  end
+
   describe ".extract_heading_keys" do
     it "returns one key per ## heading in the text" do
       text = <<~MD
