@@ -16,6 +16,13 @@ interface QaSuggestion {
   status: QaSuggestionStatus
 }
 
+interface QaStatusResponse {
+  id: number | null
+  status: string
+  progress_pct: number | null
+  suggestions: QaSuggestion[]
+}
+
 export default class ChapterReviewController extends Controller<HTMLElement> {
   static values = {
     approveUrl: String,
@@ -23,6 +30,7 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
     qaCreateUrl: String,
     qaStatusUrl: String,
     qaSuggestionUrl: String,
+    translationJobUrl: String,
   }
 
   static targets = [
@@ -73,6 +81,7 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
   declare qaCreateUrlValue: string
   declare qaStatusUrlValue: string
   declare qaSuggestionUrlValue: string
+  declare translationJobUrlValue: string
   declare chapterCardTargets: HTMLElement[]
   declare editableTextTargets: HTMLTextAreaElement[]
   declare navItemTargets: HTMLElement[]
@@ -129,6 +138,15 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
   private qaFocusedId: string | null = null
   private qaPollHandle: number | null = null
 
+  // Job id of the last completed chapter_qa run actually shown to the user,
+  // keyed by chapter id. qa_status always returns the *latest* chapter_qa
+  // job for a chapter, completed or not, so once one chapter has ever
+  // finished a run, "completed" is a permanent answer — without this,
+  // runQa() below can't tell "a fresh completed job I haven't shown yet"
+  // (from the connect()-poll race) apart from "the same job I already
+  // displayed and the reviewer dismissed, or re-translated the chapter
+  // since" — and kept re-showing the old result forever instead of ever
+  // starting a new run.
   private handleKeydown = (event: KeyboardEvent) => {
     if ((event.ctrlKey || event.metaKey) && event.key === 's') {
       event.preventDefault()
@@ -169,11 +187,23 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
     this.toggleKorean()
     document.addEventListener('keydown', this.handleKeydown)
     this.element.addEventListener('click', this.handleQaPaneClick)
+    document.addEventListener('pointerdown', this.handleDocumentPointerDown)
+    window.addEventListener('resize', this.handleQaDetailReposition)
+    window.addEventListener('scroll', this.handleQaDetailReposition, true)
+    // Resume watching (or surface the result of) whatever chapter_qa job is
+    // already latest for this chapter server-side — otherwise a page reload
+    // mid-run always reverts to the idle "Run Quality Check" button even
+    // though the job kept running, and a completed run's suggestions are
+    // never shown until something happens to poll for them.
+    this.pollQaStatus(this.currentChapterId)
   }
 
   disconnect() {
     document.removeEventListener('keydown', this.handleKeydown)
     this.element.removeEventListener('click', this.handleQaPaneClick)
+    document.removeEventListener('pointerdown', this.handleDocumentPointerDown)
+    window.removeEventListener('resize', this.handleQaDetailReposition)
+    window.removeEventListener('scroll', this.handleQaDetailReposition, true)
     if (this.qaPollHandle !== null) window.clearTimeout(this.qaPollHandle)
     this.detachScrollSync()
   }
@@ -495,7 +525,43 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
     return editableText?.value ?? ""
   }
 
+  // Entry point for the "⚡ Run Quality Check" button. Checks server-side
+  // state first rather than assuming idle: the button can be visible while
+  // a job is still actually in flight (e.g. right after a page reload,
+  // before the connect()-time status check below has resolved), and firing
+  // a second chapter_qa job on top of a running one would waste an LLM run
+  // and leave two jobs racing to write qa_status's "latest" answer.
   runQa() {
+    const chapterId = this.currentChapterId
+    const url = this.qaStatusUrlValue.replace(":id", chapterId)
+
+    fetch(url, { headers: { Accept: "application/json" } })
+      .then(res => res.json())
+      .then((data: QaStatusResponse) => {
+        if (data.status === "queued" || data.status === "running") {
+          const cancelAndRerun = window.confirm(
+            "A quality check is already running for this chapter. Cancel it and start a new one?"
+          )
+          if (cancelAndRerun) {
+            this.cancelJob(data.id).then(() => this.startQa(chapterId))
+          } else {
+            this.pollQaStatus(chapterId)
+          }
+          return
+        }
+        // A completed run already sits server-side (e.g. connect()'s own
+        // status check just hasn't resolved yet) — show it instead of
+        // silently kicking off a second, redundant paid LLM run.
+        if (data.status === "completed") {
+          this.pollQaStatus(chapterId)
+          return
+        }
+        this.startQa(chapterId)
+      })
+      .catch(() => this.startQa(chapterId))
+  }
+
+  private startQa(chapterId: string) {
     const card = this.currentCard
     const chapterNumber = card.dataset.chapterNumber ?? ""
     this.qaBtnTarget.hidden = true
@@ -516,8 +582,17 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
       },
       body,
     })
-      .then(() => this.pollQaStatus(this.currentChapterId))
+      .then(() => this.pollQaStatus(chapterId))
       .catch(() => this.resetQaToIdle())
+  }
+
+  private cancelJob(jobId: number | null): Promise<void> {
+    if (jobId === null) return Promise.resolve()
+    const url = this.translationJobUrlValue.replace(":id", String(jobId))
+    return fetch(url, {
+      method: "DELETE",
+      headers: { "X-CSRF-Token": this.csrfToken(), Accept: "application/json" },
+    }).then(() => undefined, () => undefined)
   }
 
   private pollQaStatus(chapterId: string) {
@@ -528,10 +603,16 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
     const url = this.qaStatusUrlValue.replace(":id", chapterId)
     fetch(url, { headers: { Accept: "application/json" } })
       .then(res => res.json())
-      .then((data: { status: string; progress_pct: number | null; suggestions: QaSuggestion[] }) => {
+      .then((data: QaStatusResponse) => {
         if (chapterId !== this.currentChapterId) return
 
         if (data.status === "queued" || data.status === "running") {
+          // Set (not just update) visibility every tick — this same method
+          // now also runs once from connect() to resume watching a job that
+          // was already in flight before the page loaded, when the button
+          // is still in its default server-rendered visible state.
+          this.qaBtnTarget.hidden = true
+          this.qaRunningIndicatorTarget.hidden = false
           const pct = data.progress_pct ?? 0
           this.qaRunningLabelTarget.textContent = pct < 50 ? "Running factcheck pass…" : "Running editor pass…"
           this.qaPollHandle = window.setTimeout(() => this.pollQaStatus(chapterId), 2000)
@@ -645,6 +726,7 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
   }
 
   setQaFilter({ params: { filter } }: { params: { filter: QaFilter } }) {
+    this.closeQaDetail()
     this.qaFilter = filter
     const suggestions = this.qaSuggestionsByChapter.get(this.currentChapterId) ?? []
     const filtered = this.filteredPendingSuggestions(suggestions)
@@ -665,6 +747,7 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
     const suggestions = this.qaSuggestionsByChapter.get(this.currentChapterId) ?? []
     const filtered = this.filteredPendingSuggestions(suggestions)
     if (filtered.length === 0) return
+    this.closeQaDetail()
     const currentIndex = filtered.findIndex(s => s.id === this.qaFocusedId)
     const nextIndex = (currentIndex + delta + filtered.length) % filtered.length
     this.qaFocusedId = filtered[nextIndex]?.id ?? null
@@ -675,9 +758,21 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
   private scrollToFocusedSuggestion() {
     if (!this.qaFocusedId) return
     requestAnimationFrame(() => {
-      const el = this.element.querySelector(`[data-suggestion-id="${this.qaFocusedId}"]`)
-      el?.scrollIntoView({ behavior: "smooth", block: "center" })
+      this.findVisibleSuggestionAnchor(this.qaFocusedId)?.scrollIntoView({ behavior: "smooth", block: "center" })
     })
+  }
+
+  // buildTrackedChangesHtml renders the same suggestion markup into both
+  // qaPane (single-column) and qaPaneCompare (split view) — only one of the
+  // two is ever actually visible (see the CSS rule hiding non-compare
+  // qa-pane while --compare is active), but a blind element-wide
+  // querySelector for a suggestion id can still match the hidden copy,
+  // which has a zero-size bounding rect and breaks anything measuring it.
+  // Scope the lookup to whichever pane is actually on screen right now.
+  private findVisibleSuggestionAnchor(id: string | null): HTMLElement | null {
+    if (!id) return null
+    const pane = this.compareActive ? this.qaPaneCompareTargets[this.index] : this.qaPaneTargets[this.index]
+    return pane?.querySelector<HTMLElement>(`[data-suggestion-id="${id}"]`) ?? null
   }
 
   qaAcceptAll() {
@@ -721,6 +816,13 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
   }
 
   private openQaDetail(id: string) {
+    // Toggle: clicking the already-open suggestion again closes it — mirrors
+    // the prototype's onClick={() => onToggleTooltip(isOpen ? null : id)}.
+    if (!this.qaDetailTarget.hidden && this.qaFocusedId === id) {
+      this.closeQaDetail()
+      return
+    }
+
     const suggestions = this.qaSuggestionsByChapter.get(this.currentChapterId) ?? []
     const suggestion = suggestions.find(s => s.id === id)
     if (!suggestion) return
@@ -741,11 +843,64 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
     }
 
     this.qaDetailTarget.hidden = false
+    // Rebuilds the tracked-changes markup (adds the --focused highlight to
+    // this suggestion's span) — the span the click event actually fired on
+    // gets thrown away by that innerHTML rebuild, so positioning has to
+    // happen afterward, against the freshly-rendered node.
     this.renderQaForCurrentChapter()
+    this.positionQaDetail()
   }
 
   closeQaDetail() {
     this.qaDetailTarget.hidden = true
+  }
+
+  // Anchors the floating detail popup under (or, if too close to the
+  // viewport bottom, above) whichever suggestion span is currently focused
+  // — ported from the prototype's SuggestionTooltip placement logic.
+  private positionQaDetail() {
+    const anchor = this.findVisibleSuggestionAnchor(this.qaFocusedId)
+    if (!anchor) return
+
+    const detail = this.qaDetailTarget
+    const GAP = 8
+    const EDGE = 12
+    const ar = anchor.getBoundingClientRect()
+    const dr = detail.getBoundingClientRect()
+
+    let top = ar.bottom + GAP
+    if (top + dr.height + GAP > window.innerHeight) {
+      top = ar.top - dr.height - GAP
+    }
+    top = Math.max(EDGE, top)
+
+    let left = ar.left
+    if (left + dr.width > window.innerWidth - EDGE) {
+      left = window.innerWidth - dr.width - EDGE
+    }
+    left = Math.max(EDGE, left)
+
+    detail.style.top = `${top}px`
+    detail.style.left = `${left}px`
+  }
+
+  // Click-outside dismissal — matches the prototype's document pointerdown
+  // listener. Clicks on a suggestion span are excluded so openQaDetail's own
+  // toggle/retarget logic (above) stays the single source of truth for what
+  // happens when a span is clicked, rather than this handler racing it.
+  private handleDocumentPointerDown = (event: PointerEvent) => {
+    if (this.qaDetailTarget.hidden) return
+    const target = event.target as Node
+    if (this.qaDetailTarget.contains(target)) return
+    if ((target as HTMLElement).closest?.("[data-suggestion-id]")) return
+    this.closeQaDetail()
+  }
+
+  // Keeps the floating popup anchored correctly if the window resizes or
+  // the chapter text scrolls underneath it while it's open.
+  private handleQaDetailReposition = () => {
+    if (this.qaDetailTarget.hidden) return
+    this.positionQaDetail()
   }
 
   qaAcceptFocused() {

@@ -958,6 +958,18 @@
   color: var(--color-bg);
 }
 
+/* Same [hidden]-vs-declared-display conflict as .chapter-review__edit-textarea
+   above: chapter_review_controller.ts toggles qaBtn/qaRunningIndicator's
+   `hidden` between "Run Quality Check" and "Checking…" as a job starts,
+   polls, and completes, but the plain class rules' display:flex ties (and
+   wins source-order) against [hidden]'s display:none — so the toggle was a
+   silent no-op and both the button and the "Checking…" indicator stayed on
+   screen together at all times, regardless of whether a check was actually
+   running. */
+.chapter-review__qa-btn[hidden] {
+  display: none !important;
+}
+
 .chapter-review__qa-running {
   display: flex;
   align-items: center;
@@ -969,6 +981,10 @@
   color: var(--color-primary);
   background-color: var(--color-primary-subtle);
   border-radius: var(--radius-sm);
+}
+
+.chapter-review__qa-running[hidden] {
+  display: none !important;
 }
 
 .chapter-review__qa-spinner {
@@ -995,6 +1011,14 @@
   background-color: var(--color-surface-container);
   border-bottom: 1px solid var(--color-border);
   font-size: var(--text-xs);
+}
+
+/* Same [hidden]-vs-declared-display conflict as .chapter-review__qa-btn
+   above — without this the suggestions navigator (filter pills, position,
+   accept-all) stayed visible with all-zero counts even before any quality
+   check had ever run for the chapter. */
+.chapter-review__qa-navigator[hidden] {
+  display: none !important;
 }
 
 .chapter-review__qa-navigator-left,
@@ -1133,13 +1157,26 @@
   cursor: default;
 }
 
-/* --- Suggestion detail panel (docked, not a floating tooltip) --- */
+/* --- Suggestion detail panel: a floating popup anchored to the clicked
+   suggestion span (positioned via JS in chapter_review_controller.ts),
+   not a docked bar — ported from the prototype's SuggestionTooltip. --- */
 
 .chapter-review__qa-detail {
-  flex-shrink: 0;
-  padding: var(--space-4) var(--space-8);
+  position: fixed;
+  z-index: 50;
+  width: 300px;
+  padding: var(--space-4);
   background-color: var(--color-surface-manuscript);
-  border-bottom: 1px solid var(--color-border);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Same [hidden]-vs-declared-display conflict as the textareas above —
+   defensive override even though this rule doesn't declare `display`
+   itself, to match the established pattern in this file. */
+.chapter-review__qa-detail[hidden] {
+  display: none !important;
 }
 
 .chapter-review__qa-detail-badges {

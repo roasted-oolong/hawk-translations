@@ -64,6 +64,7 @@ class ChapterReviewController < ApplicationController
 
     payload = job.completed? ? (JSON.parse(job.result_payload) rescue {}) : {}
     render json: {
+      id: job.id,
       status: job.status,
       progress_pct: job.progress_pct,
       suggestions: payload["suggestions"] || []
