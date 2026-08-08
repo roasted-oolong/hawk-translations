@@ -115,3 +115,22 @@ Watch list:
 Translation-relevant context:
 - Chapter title 「희연이의 집착」 (Hee-yeon's Fixation) names something the POV character refuses to see. Kang's warm, amused rendering of the whole conversation should not be smoothed into agreement with Sung-ah or into denial — he genuinely reclassifies it as ordinary bonding.
 - The K-Concert writer is described as a person who swaps masks depending on who is on the other end of the line (pressure, refusal, or petty gatekeeping over a two-minute slot). Her pleading tone in this call is performance; render it as such.
+
+---
+
+Open arcs:
+- **Japan expansion (Jin-ah solo).** Na Team Leader dispatched to sign a Japanese agency, secure broadcast, or find non-contract stages; Jin-ah begins Japanese lessons. Contract deliberately excludes Blue Sherbet group activity — protects Kang's reserved plan to save the group reunion for a proper comeback (Ch. 75).
+- **K-Concert.** Lineup is being locked far in advance; Kang has explicitly deprioritised aligning the Japan schedule to it. Whether Jin-ah appears is still open.
+- **Album chart war.** Yumi's full album beat M&K outright, including on a track Golden Tree's fandom did not stream. Positioned as public/대중 firepower defeating organised fandom firepower — the thesis Kang stated to Yumi before release.
+- **Yumi international.** Closing beat is overseas comments predicting a Billboard entry. Flagged as forward-pointing.
+- **Hyun-woo.** New personal want established: recognition from the general public, not only the fandom. Watch for this to become a subplot.
+
+Watch list:
+- The sofa scene between Kang and Yumi. She asks what *he* wants to do and offers to accompany him; Kang deflects by attributing her success to her own talent and internally reframes the invitation as her wanting to go out herself. Nothing is stated. Given the Ch. 74 Hee-yeon/Sung-ah beat ("앙큼한 구석도 있었네"), a second member's ambiguous attachment to Kang may be forming. Do not sharpen either direction in translation — the ambiguity is the text.
+- Kang telling Yumi to stay off the internet, and her instant compliance while the TV plays M&K's fan chants. Her "...네. 안 볼게요." should carry the pause.
+- Director Park is absent from this chapter, but M&K's release timing versus Yumi's was flagged in Ch. 72 as possibly deliberate. The result (M&K loses) is unaddressed here — likely to surface.
+
+Translation-relevant context:
+- The nautical/rowing metaphor cluster does not recur here, but the "public carries the track" logic from Ch. 11 (순풍에 돛 단 배) is the same argument Kang makes to Yumi in different words. Consistency of that reasoning register is worth preserving.
+- The gallery section is written in forum register with deliberate typos and shorthand (걔주, ㄷ츄고, ㅇㅈㄹ). Cleaning this up flattens the scene — the point is that the fandom is arguing badly and inconclusively.
+- Kang's Japan reasoning passage is expository and unsentimental by design. It reads as a business briefing, not narration; resist warming it.

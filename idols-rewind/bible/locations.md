@@ -315,3 +315,12 @@ Last Updated: 2026-03-08
 - First appearance: 75
 - Last Updated: 2026-07-26
 - Significance: Host city for this year's K-Concert; the entry point for Jin-ah's Japanese debut and the start of the Japan expansion arc.
+
+---
+
+## Golden Tree Dormitory (골든트리 숙소)
+- Korean name: 골든트리 숙소
+- Romanisation: Golden Tree dorm
+- First appearance: 76
+- Last Updated: 2026-08-08
+- Significance: Setting of Hyun-woo's solo release-day POV scene; the emptiness (all other members out on schedules) is the point.

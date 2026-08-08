@@ -1049,3 +1049,104 @@ Last Updated: [date]
 - Last Updated: 2026-07-26
 - Definition: Performing another artist's song (or an older release) as a live stage rather than promoting new material. Kang treats it as filler — a reason not to send Blue Sherbet to K-Concert.
 - Usage notes: Render as "cover stage."
+
+---
+
+## Full-Length Album [New]
+- Korean term: 정규앨범
+- Category: Idol industry concept
+- First appearance: 76
+- Last Updated: 2026-08-08
+- Definition: A full studio album, as opposed to a single or mini-album (EP). Yumi's is 16 tracks with two title tracks (더블 타이틀).
+- Usage notes: Chapter title is 「정규앨범 발매」 — "Full Album Release." Kang notes her positioning and image differ substantially between the single and the full album, which is why he restricts event bookings.
+- Notes: —
+
+## Japanese-Language Release Requirement [New]
+- Korean term: 일본용 앨범 / 일본어로 가사 바꿔서 재녹음
+- Category: Industry concept (Japan market)
+- First appearance: 76
+- Last Updated: 2026-08-08
+- Definition: To appear on Japanese broadcast, a Korean act must sign with a local agency and re-record its songs with Japanese lyrics. English-language pop is exempt; Korean songs are not.
+- Usage notes: Some Korean fans object to the practice. Kang treats it as a fixed, non-negotiable route to yen revenue. Establishes the standard K-pop growth structure: succeed domestically → monetise in Japan/overseas.
+- Notes: Foundational context for the Japan arc; a translator should keep the mechanics clear rather than compressing them.
+
+## Chart Squatting [New]
+- Korean term: 차트 알박기
+- Category: Industry/fandom concept
+- First appearance: 76
+- Last Updated: 2026-08-08
+- Definition: One release occupying every top chart slot at once. M&K's four tracks take positions 1–4; Kang notes ten tracks would have taken ten slots.
+- Usage notes: 알박기 originally means holdout property speculation — squatting on land to block development. Render as "chart squatting," "locking down the chart," or "chart land-grab."
+- Notes: —
+
+## Streaming (fandom practice) [New]
+- Korean term: 스밍 (스트리밍)
+- Category: Fandom practice
+- First appearance: 76
+- Last Updated: 2026-08-08
+- Definition: Organised mass-streaming by a fandom to push a track up the charts. Fandoms circulate a "스밍 리스트" (streaming list) specifying track order.
+- Usage notes: "각 보면서 스밍" = timing the streaming push strategically rather than starting immediately. Render as "streaming," "streaming push," or "stream list."
+- Notes: The Golden Tree gallery argument in Ch. 76 turns entirely on whether Hyun-woo's featuring track deserves list priority against M&K's mini-album.
+
+## Firepower (fandom) [New]
+- Korean term: 화력
+- Category: Fandom concept
+- First appearance: 76
+- Last Updated: 2026-08-08
+- Definition: A fandom's (or the general public's) capacity to move charts through purchases and streams. Used of both organised fandoms and 대중 (the general public) as a bloc.
+- Usage notes: Render as "firepower," "muscle," or "chart power." The Ch. 76 conflict is framed as 대중 vs 키드 팬덤 — general public versus Kid's fandom.
+- Notes: —
+
+## Gallery (online community board) [New]
+- Korean term: 갤러리 (골든트리 갤러리)
+- Category: Organization / online space
+- First appearance: 76
+- Last Updated: 2026-08-08
+- Definition: A dedicated fan board for a specific group on a large Korean community site. Ch. 76 uses the Golden Tree gallery to show fandom deliberation from the inside.
+- Usage notes: Render as "gallery," "the Golden Tree board," or "the fan board." Post register is fast, abbreviated, mocking — "ㅇㅈㄹ," "각 보고," "걔주 머함" — and should read as authentic forum shorthand, not clean prose.
+- Notes: Comment threads accuse each other of being 개인팬 (a solo stan who prioritises one member over the group) — the insult is fandom-specific.
+
+## Solo Stan [New]
+- Korean term: 개인팬
+- Category: Fandom concept
+- First appearance: 76
+- Last Updated: 2026-08-08
+- Definition: A fan of one member rather than the group; used pejoratively by group fans as an accusation of divided loyalty.
+- Usage notes: Render as "solo stan" or "individual stan." In Ch. 76 it is thrown as an insult in both directions.
+- Notes: —
+
+## Bait / Teaser Drip [New]
+- Korean term: 떡밥
+- Category: Fandom/promotional concept
+- First appearance: 72 (standalone entry as of 76)
+- Last Updated: 2026-08-08
+- Definition: Promotional material released piecemeal to keep a fandom fed and speculating — teasers, making-of clips, photos.
+- Usage notes: Literally "fish bait/rice-cake bait." Render as "bait," "teaser drip," or "content to chew on." Ch. 76: M&K "떡밥을 미친 듯이 뿌려대며 데뷔한" — scattered bait like mad.
+- Notes: —
+
+## Aggro / Clickbait Headline [New]
+- Korean term: 어그로 (어그로를 끄는 기사)
+- Category: Media/internet concept
+- First appearance: 76
+- Last Updated: 2026-08-08
+- Definition: From the gaming term "aggro" — deliberately provoking attention/hostility. Applied to headlines engineered to bait clicks and conflict.
+- Usage notes: Render as "clickbait," "rage-bait," or "aggro-farming." Ch. 76 headline examples: "[M&K vs 조유미. 승자는 누구? D-1]".
+- Notes: —
+
+## Yumi's Album Tracks [New]
+- Korean term: I'm Your Baby (Feat. 현우 of 골든트리) / You Are Mine (Feat. 윤정호, 크레센도) / Endless Kiss (Feat. 크레센도)
+- Category: Song titles
+- First appearance: 76
+- Last Updated: 2026-08-08
+- Definition: Three named tracks from Yumi's 16-track full album; the first two are the double title tracks. Chart result on release: #1 "I'm Your Baby," #2 "You Are Mine," #4 "Endless Kiss," with M&K's "Day By Day" at #3.
+- Usage notes: English titles used as-is in source. Feature credits should be rendered "feat. Hyun-woo of Golden Tree" etc.
+- Notes: "You Are Mine" beat M&K despite Golden Tree's fandom not streaming it — this is the chapter's proof point.
+
+## Day By Day [New]
+- Korean term: Day By Day
+- Category: Song title (M&K)
+- First appearance: 76
+- Last Updated: 2026-08-08
+- Definition: M&K's release; charts at #3 behind two of Yumi's tracks.
+- Usage notes: English title as-is.
+- Notes: —

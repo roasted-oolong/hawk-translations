@@ -947,3 +947,77 @@ Last Updated: [date]
 - First appearance: 75
 - Last Updated: 2026-07-26
 - Notes: Source spelling appears to be a typo for 똥 씹은. YA register: "a face like she'd bitten into something rotten" / "sour-faced." Coarser renderings available if register allows.
+
+---
+
+## 관심법 — mind-reading [New]
+- Korean phrase: 21세기의 관심법
+- Literal translation: The dharma of observing minds — the 21st-century version
+- Intended meaning: Being able to read exactly what someone is thinking (or in this case, exactly what an article says) without needing to look
+- Context: Ch. 76 — Kang says he can see the contents of the clickbait articles from the headlines alone, and wonders whether this is how 관심법 manifests in the 21st century.
+- Established translation:
+- T/N written: no
+- T/N text:
+- First appearance: 76
+- Last Updated: 2026-08-08
+- Notes: 관심법 is associated with the Goryeo-era king Gung-ye, who claimed the power to read minds — the reference is broadly familiar in Korea (largely via historical drama) and carries a faintly absurd, self-mocking register. "Mind-reading," "X-ray vision for headlines," or a light gloss all work; a literal render without context will not land.
+
+## 난리부르스 [New]
+- Korean phrase: 난리부르스를 추고 있다
+- Literal translation: Dancing the chaos-blues
+- Intended meaning: Making an enormous, ridiculous fuss
+- Context: Ch. 76 — Kang on the press churning out D-1 versus-battle articles.
+- Established translation:
+- T/N written: no
+- T/N text:
+- First appearance: 76
+- Last Updated: 2026-08-08
+- Notes: Compound of 난리 (uproar) + 부르스 (blues, the dance). Comic and dismissive. "Going absolutely wild," "having a field day," "losing their minds."
+
+## 각 보다 [New]
+- Korean phrase: 각 보고 / 각 보면서
+- Literal translation: To watch the angle
+- Intended meaning: To wait for the right moment or read the situation before committing — timing a move rather than acting immediately
+- Context: Ch. 76 — Golden Tree fans argue over whether to stream Hyun-woo's featuring track immediately or hold and "각 보면서" so as not to lose #1 to the public.
+- Established translation:
+- T/N written: no
+- T/N text:
+- First appearance: 76
+- Last Updated: 2026-08-08
+- Notes: Gaming-origin slang. "Read the situation," "wait for the right window," "time it." Register is casual forum-speak — keep it short.
+
+## 요리 봐도 조리 봐도 [New]
+- Korean phrase: 요리 봐도 조리 봐도
+- Literal translation: Look at it this way, look at it that way
+- Intended meaning: However you examine it, the conclusion is the same
+- Context: Ch. 76 — Kang concluding that following the established Japan route is unambiguously the profitable choice.
+- Established translation:
+- T/N written: no
+- T/N text:
+- First appearance: 76
+- Last Updated: 2026-08-08
+- Notes: "Any way you slice it," "look at it from any angle."
+
+## 악덕사장 [New]
+- Korean phrase: 이 악덕사장
+- Literal translation: This wicked/unscrupulous company president
+- Intended meaning: Slave-driver boss; exploitative employer — used affectionately here
+- Context: Ch. 76 — Jin-ah, on being handed Japanese textbooks the moment she gets home from an event.
+- Established translation:
+- T/N written: no
+- T/N text:
+- First appearance: 76
+- Last Updated: 2026-08-08
+- Notes: 악덕 (惡德) carries a real legal/labour-abuse connotation in Korean usage, which is why it's funny applied to Kang. "Slave driver," "sweatshop boss," "tyrant." Should stay affectionate.
+
+## 갑론을박 [New]
+- Korean phrase: 갑론을박 (甲論乙駁)
+- Literal translation: A argues, B refutes
+- Intended meaning: Back-and-forth argument with no resolution
+- Context: Ch. 76 — introduces the Golden Tree gallery streaming dispute, which indeed ends unresolved (only half the fandom streams).
+- Established translation:
+- T/N written: no
+- T/N text:
+- First appearance: 76
+- Last Updated: 2026-08-08
+- Notes: Classical four-character idiom used in a mundane register. "Went back and forth," "argued in circles."
