@@ -271,7 +271,11 @@ export default class PrereadReviewController extends Controller<HTMLElement> {
       if (!card) return null
       return {
         ...JSON.parse(card.dataset.entryJson || '{}'),
-        category: card.dataset.category,
+        // NOTE: story entries have their own `category` field (main_plot/subplot/etc,
+        // set by BibleMarkdownParser#infer_story_category). Use a distinct key here so
+        // that field doesn't get clobbered by the bible-section selector below — see
+        // bible_import_controller#create, which reads this same key.
+        bible_category: card.dataset.category,
       }
     }).filter(Boolean)
 

@@ -8,8 +8,12 @@ class BibleImportController < ApplicationController
 
     approved.each do |item|
       if item.is_a?(Hash)
-        category = item["category"]
-        attrs    = item.except("category", "korean_key").transform_keys(&:to_sym)
+        # "bible_category" (characters/locations/.../story) is the section selector set
+        # by the JS payload — kept distinct from "category", which story entries use as
+        # their own field (main_plot/subplot/etc). Stripping "category" here would have
+        # silently dropped that field from every story entry's attrs.
+        category = item["bible_category"]
+        attrs    = item.except("bible_category", "korean_key").transform_keys(&:to_sym)
         count += 1 if import_entry(category, attrs)
       else
         pending  = @pending ||= BibleMarkdownParser.new(@novel).pending_entries
