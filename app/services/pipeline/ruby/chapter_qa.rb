@@ -70,10 +70,23 @@ module Pipeline
 
         write_progress(100)
 
-        [ JSON.generate({ suggestions: factcheck_suggestions + editor_suggestions }), "", true ]
+        ordered = order_by_position(factcheck_suggestions + editor_suggestions, english_text)
+        [ JSON.generate({ suggestions: ordered }), "", true ]
       end
 
       private
+
+      # factcheck_suggestions and editor_suggestions are two independent
+      # passes over the same chapter, so a naive concat groups all of one
+      # pass's findings before the other's regardless of where they actually
+      # fall in the chapter. The review UI's "next suggestion" navigation
+      # walks this array in order, so leaving it pass-grouped makes resolving
+      # an early finding jump the reviewer past mid-chapter suggestions
+      # straight into the other pass's — reading order (by quote position)
+      # is what "next" should mean instead.
+      def order_by_position(suggestions, checked_text)
+        suggestions.sort_by { |s| checked_text.index(s["quote"]) || Float::INFINITY }
+      end
 
       # Shared by both passes: call, parse, and normalize into the flat
       # suggestion shape the review UI expects (source/id/status added here

@@ -110,6 +110,41 @@ RSpec.describe Pipeline::Ruby::ChapterQa do
     end
   end
 
+  it "orders merged suggestions by where their quote sits in the chapter, not by which pass found them" do
+    with_env("HAWK_PROJECT_ROOT" => @project_root) do
+      # The editor pass's quote sits earlier in the text than either factcheck
+      # quote — a naive factcheck-then-editor concat would surface it last,
+      # which is exactly what makes the reviewer's "next suggestion" jump
+      # backward/forward across the chapter instead of moving in reading order.
+      english = "He grinned. Later, he smiled quietly. At the end, he sighed."
+      novel_dir = build_novel_dir(korean: "그는 웃었다.", english: english)
+      novel = Novel.find_by!(directory_name: File.basename(novel_dir))
+      @job = create_qa_job(novel)
+
+      factcheck_payload = { suggestions: [
+        { quote: "he sighed", issue: "wrong emotion", suggested_revision: "he wept",
+          severity: "advisory", korean_context: "그는 울었다" },
+        { quote: "smiled quietly", issue: "tone mismatch", suggested_revision: "chuckled",
+          severity: "advisory", korean_context: "조용히 웃었다" }
+      ] }
+      editor_payload = { suggestions: [
+        { quote: "He grinned", issue: "flat opener", suggested_revision: "He beamed", severity: "strong" }
+      ] }
+
+      Dir.mktmpdir do |bin_dir|
+        bin = scripted_claude(bin_dir,
+          factcheck_response: { is_error: false, result: factcheck_payload.to_json },
+          editor_response:    { is_error: false, result: editor_payload.to_json })
+
+        stdout, _stderr, success = described_class.call(@job, config: config_for(bin))
+
+        expect(success).to eq(true)
+        quotes_in_order = JSON.parse(stdout)["suggestions"].map { |s| s["quote"] }
+        expect(quotes_in_order).to eq([ "He grinned", "smiled quietly", "he sighed" ])
+      end
+    end
+  end
+
   it "uses factcheck_model for the factcheck call and translation_model for the editor call" do
     with_env("HAWK_PROJECT_ROOT" => @project_root) do
       novel_dir = build_novel_dir(korean: "한국어", english: "English text.")
