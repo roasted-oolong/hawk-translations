@@ -1987,6 +1987,156 @@ against a corrected local tsconfig, which caught and fixed one real
 `tsconfig.json` itself does not type-check clean under the installed
 TypeScript version (pre-existing, unrelated to this change, not fixed here).
 
+## 2026-08-02 · 5-step pipeline promoted to translate_batch's production path; paragraph-break reassembly bug fixed
+
+Until now the 5-step pipeline (segmentation → analysis → localization →
+factcheck + editor, 2026-08-01/2026-08-02 entries) existed only in the
+offline eval harness (`Pipeline::Ruby::TranslationEval`) — it had never
+generated a chapter that got saved to a `Chapter` record. Chapter QA
+(2026-08-01 entry) deliberately sidestepped this by reviewing an
+already-saved translation with two flat whole-chapter calls, specifically to
+avoid "QA silently producing an alternate translation from an unproven
+pipeline." This entry is the bigger step Chapter QA avoided: the user asked
+to wire the full pipeline in as `translate_batch`'s actual generation path,
+replacing the old single-pass `build_system_prompt` call outright — not
+kept as a fallback, not gated behind a flag.
+
+**Accepted, still-open risks — recorded here so they're traceable, not
+mistaken for regressions later:**
+- The register-mixing failure mode the whole 5-step redesign targeted
+  survived every mitigation tried, including the maximally-isolated
+  Korean-blind editor step (2026-08-01 "3-call pipeline replaced" entry).
+  Promoting to production does not fix this; it ships with it.
+- Factcheck-model (sonnet) vs translation-model (opus) sharpness was never
+  measured (2026-08-01 "Eval harness drops single-pass/structured calls"
+  entry).
+- Hybrid beat segmentation's determinism was live-validated on exactly one
+  chapter (2026-08-02 entry).
+
+**What shipped alongside the promotion, not carried forward as debt:**
+
+1. **Shared step-running logic extracted.** The "call the 5 LLM steps and
+   validate them" responsibility moved out of `TranslationEval` into a new
+   `Pipeline::Ruby::TranslateBatch::FiveStepRunner` — no file I/O, no
+   knowledge of `TranslationJob`/`Chapter`. Both the offline eval harness
+   (which now just maps a runner's output onto disk) and the new production
+   `Pipeline::Ruby::TranslateBatch` call through the same class, so the two
+   never drift out of sync on what "step 3 succeeded" means.
+
+2. **Paragraph-break loss on reassembly, fixed.** The bug named in the
+   2026-07-31 "Call 1 → Call 2 chaining" entry — reassembly was
+   `parsed["localized_passages"].map { |p| p["localized_translation"] }.join`,
+   a zero-separator join that silently welded passages together — is fixed
+   by `BeatSegmenter.assemble_chapter_text`. Every beat boundary
+   `BeatSegmenter.merge_beats` can produce sits exactly on a
+   `candidate_blocks` boundary, and every `candidate_blocks` boundary is, by
+   construction, a place the source Korean had a blank line — so
+   `to_passage` now stamps each passage with a structural
+   `paragraph_break_before` fact (true for every passage except a chapter's
+   first) rather than trusting the model to reproduce source whitespace on
+   its own. `assemble_chapter_text` joins on that fact, strips each
+   passage's own leading/trailing whitespace first (so an explicit `"\n\n"`
+   separator can't stack into extra blank lines), and drops empty
+   `localized_translation` strings without contributing a stray separator.
+   This is the fix the offline harness never got — production could not
+   ship the old zero-separator join as publishable chapter text.
+
+3. **Chapter-gating semantics, a real design decision.** Segmentation,
+   analysis, and localization gate a chapter's success — any failure among
+   the three means nothing gets written for that chapter. Factcheck and
+   editor deliberately do **not** gate: `assembled_text` is already computed
+   right after localization succeeds, and a transient CLI hiccup in an
+   independent QA pass must not un-translate an otherwise-good chapter
+   (today's old one-call design had no analogous QA step at all, so there
+   was no precedent for treating a QA failure as a translation failure). A
+   gating step's coverage-validation failure (JSON parsed, but didn't cover
+   its expected passages — not a call failure) has no `error_category` at
+   all, so it falls out of `FATAL_CATEGORIES` automatically and is always
+   treated as a recoverable, chapter-level failure, consistent with how
+   `:unparseable_output` was already reasoned about.
+
+4. **No schema changes.** Per-step JSON (segmentation/analysis/localization/
+   factcheck/editor, plus any per-step error/coverage-validation error) is
+   written into `TranslationJob#result_payload` per chapter — the same
+   free-form text column Chapter QA already uses for its findings.
+   `result_payload` is now a JSON string for `translate_batch` jobs instead
+   of the plain text every other job type stores, so the views that render
+   it verbatim (`translation_jobs/show.html.erb`, both jobs index tables)
+   were switched to a new `TranslationJob#result_summary` accessor that
+   extracts the human-readable summary and falls back to the raw string for
+   anything that doesn't parse (e.g. a failed job's payload, which appends
+   stderr text after the JSON).
+
+5. **Dead code removed.** `PromptBuilder.build_system_prompt` and
+   `.build_structured_system_prompt` (the old single-pass and superseded
+   structured-intent prompts) are deleted outright, along with their specs
+   and the now-unused `system_prompt_sample.txt` fixture — nothing else
+   called them.
+
+Spec coverage: `beat_segmenter_spec.rb` (`.assemble_chapter_text`, new),
+`five_step_runner_spec.rb` (new — happy path, a call failure at each of the
+5 steps, coverage-validation failures with `error_category` confirmed nil,
+factcheck-model-vs-translation-model usage), `translation_eval_spec.rb`
+(one reassembly assertion updated to expect the paragraph-break-preserving
+join; full existing suite otherwise unchanged), `translate_batch_spec.rb`
+(rewritten for 5 calls/chapter — happy path, recoverable vs. fatal gating
+failures, a coverage-validation failure, a factcheck/editor-only failure
+that still writes the chapter, model selection, end-to-end paragraph-break
+behavior, cancellation, fatal-abort), `translation_job_spec.rb`
+(`#result_summary`).
+
+---
+
+## 2026-08-02 · translate_batch narrowed to 3 steps — factcheck/editor removed from production generation
+
+Same-day follow-up to the promotion above, before any of it shipped to
+users: on review, the user decided `translate_batch` should only run
+segmentation → analysis → localization. factcheck/editor are optional QA,
+not part of chapter generation — the pre-existing, separately-prompted
+Chapter QA feature (`chapter_qa.rb`, 2026-08-01 entry) is the supported way
+to run them against a chapter's translation, on demand, not on every
+generation.
+
+This reverses item 3 above (the "factcheck/editor ride along but don't
+gate" design) — that design is no longer in production code. It's kept in
+this file's history rather than edited away because it explains a real
+decision that was made and then changed, not a mistake in reasoning at the
+time.
+
+**What changed:**
+
+- `FiveStepRunner#run_chapter` gained a `run_qa:` keyword (default `true`).
+  When `false`, `run_factcheck`/`run_editor` are never called at all —
+  `ChapterOutcome#factcheck`/`#editor` are `nil` (not a `StepOutcome`
+  recording a skip), signaling "not run" rather than "dependency failed."
+  `TranslationEval` keeps the default (`run_qa: true`) — the offline
+  harness still exists to validate all 5 steps together.
+- `TranslateBatch#run_batch` now calls `runner.run_chapter(num, korean_text,
+  run_qa: false)`. `chapter_payload` only reports on
+  `CHAPTER_GATING_STEPS` (segmentation/analysis/localization) — there's
+  nothing to report for factcheck/editor since they didn't run.
+  `gating_failure` is unchanged: it already only looked at those same 3
+  steps.
+- No change to `chapter_qa.rb` — it was never touched by the earlier
+  promotion and remains the only place factcheck/editor run in production,
+  under its own prompts (`build_chapter_qa_factcheck_system_prompt`/
+  `build_chapter_qa_editor_system_prompt`), independent of `FiveStepRunner`.
+
+The three accepted, still-open risks named above stand except the
+factcheck-model-sharpness one, which is now moot for `translate_batch`
+specifically (factcheck doesn't run there); it's still open for anyone
+who invokes Chapter QA.
+
+Spec coverage: `five_step_runner_spec.rb` gained a `run_qa: false` case
+(factcheck/editor never called, both `nil` on the outcome).
+`translate_batch_spec.rb`'s factcheck/editor-only-failure and
+factcheck-model-selection tests were removed (no longer reachable
+scenarios) and replaced with tests asserting translate_batch never calls
+factcheck/editor at all and that `chapter_payload` only has 3 keys; the
+cancellation test's trigger point moved from the editor call to the
+localization call, since localization is now the last step translate_batch
+actually runs per chapter.
+
 ## 2026-08-08 · Chapter QA suggestions ordered by position in text, not by pass
 
 Reported by the user: resolving a factcheck suggestion near the start of a

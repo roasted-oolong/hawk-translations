@@ -597,7 +597,10 @@ RSpec.describe Pipeline::Ruby::TranslationEval do
         r = results.first
 
         expect(r.localization_coverage_error).to be_nil
-        expect(File.read(File.join(@output_dir, "chapter_1", "localized_chapter.txt"))).to eq("Chapter one, Korean.")
+        # Passage 2 sits on a source paragraph break (two_passage_korean_text's two
+        # candidate blocks are separated by a blank line) — assemble_chapter_text
+        # reproduces it as "\n\n" rather than the old naive zero-separator join.
+        expect(File.read(File.join(@output_dir, "chapter_1", "localized_chapter.txt"))).to eq("Chapter one,\n\nKorean.")
         expect(r.factcheck_coverage_error).to be_nil
         expect(r.editor_coverage_error).to be_nil
       end

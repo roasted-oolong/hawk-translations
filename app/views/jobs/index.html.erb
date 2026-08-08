@@ -69,8 +69,8 @@
             <% if job.failed? && job.result_payload.present? %>
               <tr class="data-table__row job-error-row">
                 <td colspan="8" class="data-table__td">
-                  <span class="job-error-snippet" title="<%= job.result_payload %>">
-                    <%= job.result_payload.lines.first&.strip %>
+                  <span class="job-error-snippet" title="<%= job.result_summary %>">
+                    <%= job.result_summary.lines.first&.strip %>
                   </span>
                 </td>
               </tr>

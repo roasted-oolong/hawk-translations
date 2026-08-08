@@ -241,6 +241,29 @@ RSpec.describe TranslationJob, type: :model do
     end
   end
 
+  describe "#result_summary" do
+    it "extracts the summary field from a translate_batch JSON payload" do
+      job = build(:translation_job, :translate_batch,
+                  result_payload: { summary: "2 chapter(s) translated.", chapters: {} }.to_json)
+      expect(job.result_summary).to eq("2 chapter(s) translated.")
+    end
+
+    it "falls back to the raw payload when a translate_batch payload isn't valid JSON" do
+      job = build(:translation_job, :translate_batch, result_payload: "not json at all")
+      expect(job.result_summary).to eq("not json at all")
+    end
+
+    it "falls back to the raw payload when translate_batch JSON has no summary key" do
+      job = build(:translation_job, :translate_batch, result_payload: { chapters: {} }.to_json)
+      expect(job.result_summary).to eq({ chapters: {} }.to_json)
+    end
+
+    it "passes non-translate_batch job types through unchanged" do
+      job = build(:translation_job, job_type: "preread", result_payload: "plain text output")
+      expect(job.result_summary).to eq("plain text output")
+    end
+  end
+
   describe "#mark_dead!" do
     let(:novel) { create(:novel) }
     let(:user)  { create(:user) }
