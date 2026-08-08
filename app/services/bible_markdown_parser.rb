@@ -210,7 +210,7 @@ class BibleMarkdownParser
       relationships:            f["relationships"].presence,
       first_appearance_chapter: extract_chapter(f["first appearance"]),
       notes:                    notes,
-      korean_key:               f["korean name"].presence || korean || name,
+      korean_key:               normalize_key(f["korean name"].presence || korean || name),
     }.compact
   end
 
@@ -223,7 +223,7 @@ class BibleMarkdownParser
       significance:             f["significance"].presence,
       first_appearance_chapter: extract_chapter(f["first appearance"]),
       notes:                    notes,
-      korean_key:               f["korean name"].presence || korean || name,
+      korean_key:               normalize_key(f["korean name"].presence || korean || name),
     }.compact
   end
 
@@ -241,7 +241,7 @@ class BibleMarkdownParser
       usage_notes:              f["usage notes"].presence,
       first_appearance_chapter: extract_chapter(f["first appearance"]),
       notes:                    notes,
-      korean_key:               f["korean term"].presence || korean || name,
+      korean_key:               normalize_key(f["korean term"].presence || korean || name),
     }.compact
   end
 
@@ -261,7 +261,7 @@ class BibleMarkdownParser
       established_translation:  f["established translation"].presence,
       first_appearance_chapter: extract_chapter(f["first appearance"]),
       notes:                    notes,
-      korean_key:               f["korean phrase"].presence || korean || name,
+      korean_key:               normalize_key(f["korean phrase"].presence || korean || name),
     }.compact
   end
 
@@ -275,8 +275,21 @@ class BibleMarkdownParser
       title:      title,
       content:    content,
       category:   infer_story_category(title),
-      korean_key: title,
+      korean_key: normalize_key(title),
     }.compact
+  end
+
+  # Single point through which every korean_key is derived, so preread's
+  # per-entry identity — what gets stored in preread_dismissed_keys, and
+  # what a re-parse compares against it — is stable across runs even when
+  # the LLM's raw rendering drifts (whitespace, full/half-width chars,
+  # Latin casing). Without this, "skip" quietly stops being permanent: a
+  # later preread run re-derives a different key for the same underlying
+  # term, the old dismissal no longer matches, and the entry reappears in
+  # the review queue — usually with a new English rendering too, which is
+  # what makes it look like a different suggestion rather than a repeat.
+  def normalize_key(str)
+    Pipeline::BibleUtils.normalize_korean(str)
   end
 
   def infer_story_category(title)

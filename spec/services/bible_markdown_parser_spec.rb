@@ -52,6 +52,36 @@ RSpec.describe BibleMarkdownParser do
         expect(names).not_to include("Kim Minjun")
       end
     end
+
+    context "when the dismissed key and the re-parsed entry differ only by formatting drift" do
+      let(:bible_dir) { Dir.mktmpdir }
+
+      before do
+        FileUtils.mkdir_p(File.join(bible_dir, "bible"))
+        allow(ENV).to receive(:fetch).with("HAWK_PROJECT_ROOT", "").and_return(File.dirname(bible_dir))
+        allow(novel).to receive(:directory_name).and_return(File.basename(bible_dir))
+
+        # Full-width Latin script — a realistic form for a Korean-loanword term
+        # (e.g. "ＳＮＳ" for social media) — versus the half-width dismissed key.
+        File.write(File.join(bible_dir, "bible", "terminology.md"), <<~MD)
+          ## SNS Culture (ＳＮＳ)
+          - Korean term: ＳＮＳ
+          - Definition: social media presence expected of idols
+        MD
+
+        %w[characters.md locations.md cultural_phrases.md story.md].each do |f|
+          FileUtils.touch(File.join(bible_dir, "bible", f))
+        end
+      end
+
+      after { FileUtils.rm_rf(bible_dir) }
+
+      it "still excludes a previously-dismissed term reparsed with a different Unicode width/case" do
+        novel.update_column(:preread_dismissed_keys, '["terminology:sns"]')
+        result = described_class.new(novel).pending_entries
+        expect(result[:terminology]).to be_empty
+      end
+    end
   end
 
   describe "#dismissed_entries" do

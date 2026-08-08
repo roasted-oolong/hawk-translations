@@ -20,11 +20,25 @@ module Pipeline
     # strip any remaining parentheticals, lowercase and strip.
     def self.heading_key(raw_heading)
       korean_match = KOREAN_PARENTHETICAL.match(raw_heading)
-      return korean_match[1].strip.downcase if korean_match
+      return normalize_korean(korean_match[1]) if korean_match
 
       text = raw_heading.split(/\s+[—–-]\s+/, 2).first || raw_heading
       text = text.gsub(/\(.*?\)/, "")
-      text.strip.downcase
+      normalize_korean(text)
+    end
+
+    # Normalise a Korean (or mixed Korean/Latin) string for stable identity
+    # comparison — a dedup key, a preread_dismissed_keys entry, a bible-entry
+    # lookup key. The LLM's exact rendering of the same underlying term can
+    # drift run to run (stray whitespace, full-width vs half-width chars,
+    # Latin-script casing) even though the term itself hasn't changed; every
+    # caller that treats Korean text as an identity — not just as display
+    # text — should normalise through this one method so "the same term"
+    # reliably produces "the same key". Unicode-normalise (NFKC), collapse
+    # internal whitespace, strip, and downcase (a no-op on Hangul, but keeps
+    # any Latin-script terms case-insensitive too).
+    def self.normalize_korean(str)
+      str.to_s.unicode_normalize(:nfkc).gsub(/\s+/, " ").strip.downcase
     end
 
     # Return the set of canonical dedup keys for all ## headings in a
