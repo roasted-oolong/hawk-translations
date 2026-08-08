@@ -262,5 +262,44 @@ RSpec.describe PipelineJob, type: :job do
         end
       end
     end
+
+    context "when a chapter with an earlier chapter_qa run gets re-translated" do
+      # chapter_qa's own validation requires the chapter already be
+      # translated/reviewed — start these at "translated" rather than
+      # "preread" to represent a chapter that already went through one
+      # translate → chapter_qa cycle and is now being re-translated.
+      let!(:qa_chapter1) { create(:chapter, novel: novel, number: 3, status: "translated") }
+      let!(:qa_chapter2) { create(:chapter, novel: novel, number: 4, status: "translated") }
+      let(:retranslate_job) { create(:translation_job, :translate_batch, novel: novel, user: user,
+                                     chapter_start: 3, chapter_end: 4) }
+
+      it "discards that chapter's stale chapter_qa job(s), but leaves other chapters'/novels' alone" do
+        stale_qa = create(:translation_job, :chapter_qa, :completed, novel: novel, user: user,
+                          chapter_start: 3, chapter_end: 3)
+        other_chapter_qa = create(:translation_job, :chapter_qa, :completed, novel: novel, user: user,
+                                  chapter_start: 4, chapter_end: 4)
+        other_novel = create(:novel)
+        create(:chapter, novel: other_novel, number: 1, status: "translated")
+        other_novel_qa = create(:translation_job, :chapter_qa, :completed, novel: other_novel,
+                                chapter_start: 1, chapter_end: 1)
+
+        Dir.mktmpdir do |root|
+          with_project_root(root) do
+            write_output(root, 3, "Chapter three, retranslated.")
+            # No new output for chapter 4 — only chapter 3's chapter_qa
+            # history should be touched.
+
+            allow(PipelineDispatcher).to receive(:call)
+              .and_return([ "1 chapter(s) translated.", "", true ])
+
+            described_class.new.perform(retranslate_job.id)
+          end
+        end
+
+        expect(TranslationJob.exists?(stale_qa.id)).to be false
+        expect(TranslationJob.exists?(other_chapter_qa.id)).to be true
+        expect(TranslationJob.exists?(other_novel_qa.id)).to be true
+      end
+    end
   end
 end
