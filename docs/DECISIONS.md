@@ -2990,3 +2990,45 @@ before implementation.
 Spec coverage: `bible_utils_spec.rb` (+5, `.normalize_korean`),
 `bible_markdown_parser_spec.rb` (+1, a previously-dismissed term reparsed
 with a different Unicode width still excluded from pending).
+
+---
+
+## 2026-08-08 · Review tab's preread-entries card updates via Turbo Stream push, not polling
+
+First pass (same commit range) fixed the "Review tab doesn't update after
+preread finishes" bug by reusing the existing `poll_controller.ts`
+convention — a wrapper div, active only while the job is queued/running,
+that re-fetches the tab every 3s. That shipped, worked, and matched 5
+other places in the app already doing exactly this
+(`translation_jobs/show`, `voice_calibration/tab`, `chapters/index`,
+`dashboard/index`, `jobs/index`).
+
+Asked directly whether push was possible instead: yes — the app already
+broadcasts `TranslationJob` status changes over Turbo Streams
+(`broadcast_status_change`, wired to the `"translation_jobs"` stream
+consumed by the dashboard/novels-index cards). Chose to extend that
+rather than keep the poll, since polling was a consistency choice, not
+a necessity. Superseded the polling commit with a push implementation in
+the same session: `TranslationJob#broadcast_preread_entries_status` now
+fires alongside `broadcast_status_change` for any `preread`-type job,
+broadcasting a `turbo_stream.replace` for the `preread-entries-status`
+element to a new per-novel stream (`"novel_#{novel_id}_preread"`).
+
+The one real subtlety: the `turbo_stream_from` subscription has to live
+in `novels/show.html.erb` — the persistent page shell — not inside
+`chapter_review/tab.html.erb`'s own content, because that content is
+fully replaced on every tab-frame render and would drop/re-establish the
+ActionCable subscription each time. Confirmed via `tabs_controller.ts`
+that this is safe: all four tab panels get their `src` set eagerly on
+`connect()` and stay in the DOM (just `hidden`) rather than lazy-loading
+per click, so the `preread-entries-status` target is always present to
+receive the push regardless of which tab is currently visible.
+
+Extracted the card markup into a shared partial
+(`chapter_review/_preread_entries_status`) and the count computation
+into `BibleMarkdownParser#pending_breakdown`, so the controller's initial
+render and the model's broadcast can't drift from each other.
+
+No poll interval, no idle requests while a job runs — this is the
+precedent for making the other 5 poll-based spots in the app push-based
+too, if that's ever worth doing; not done here, out of scope for this fix.
