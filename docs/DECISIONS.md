@@ -1986,3 +1986,25 @@ against a corrected local tsconfig, which caught and fixed one real
 `noUncheckedIndexedAccess` issue in the new code; the repo's own
 `tsconfig.json` itself does not type-check clean under the installed
 TypeScript version (pre-existing, unrelated to this change, not fixed here).
+
+## 2026-08-08 · Chapter QA suggestions ordered by position in text, not by pass
+
+Reported by the user: resolving a factcheck suggestion near the start of a
+chapter would jump the review screen to an editor suggestion near the end,
+skipping past everything in between. Cause: `Pipeline::Ruby::ChapterQa#call`
+returned `factcheck_suggestions + editor_suggestions` — a flat concat
+grouped by which pass found each finding, not by where it sits in the
+chapter. The review UI's "next suggestion" navigation (`remaining[0]` in
+`chapter_review_controller.ts`) walks that array in order, so an early
+factcheck fix could jump straight to a late editor finding instead of the
+next one down the page.
+
+Fixed by sorting the merged suggestions by `english_text.index(quote)`
+before returning them (`Pipeline::Ruby::ChapterQa#order_by_position`) —
+"next" now means next by position in the chapter, regardless of which pass
+raised it.
+
+Spec coverage: new case in `chapter_qa_spec.rb` — a factcheck quote placed
+after an editor quote in the source text still comes back after it in the
+merged array.
+
