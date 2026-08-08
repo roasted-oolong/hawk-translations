@@ -2954,3 +2954,39 @@ Spec coverage: `translation_config_spec.rb` (+2, default and override),
 no prior coverage). `bible_entry_suggestion_spec.rb` unchanged — its
 fake-`claude` scripts don't assert on the `--model` argv value, only on
 stdin/stdout behavior, so the model swap needed no new fixtures there.
+
+---
+
+## 2026-08-08 · `Pipeline::BibleUtils.normalize_korean` is the one normalisation point for Korean-text identity
+
+Root cause of "skip a preread suggestion and it comes back as something
+different": `BibleMarkdownParser`'s `korean_key` (what
+`preread_dismissed_keys` stores and compares against on every later
+parse) was the raw Korean text pulled out of that run's markdown,
+un-normalised. The LLM's exact rendering of the same term drifts run to
+run — stray whitespace, full-width vs half-width characters, Latin-script
+casing — so a dismissed term's key silently stops matching and the
+suggestion resurfaces, usually with a new English rendering too (which is
+what makes it look like a different suggestion rather than a repeat).
+
+`Pipeline::BibleUtils` already owned canonical dedup-key derivation for
+the bible-file writer (`heading_key`, keyed off Korean when present, see
+2026-07 entry above it in the file). Rather than let
+`BibleMarkdownParser` grow its own separate normalisation, added
+`BibleUtils.normalize_korean` (NFKC-normalise, collapse internal
+whitespace, strip, downcase) as the one method both `heading_key` and
+every `korean_key` in `BibleMarkdownParser` route through. Any future
+code that needs to treat Korean text as an identity — not display text —
+should normalise through this method rather than comparing raw strings.
+
+Not addressed here (separate, larger issue, deliberately deferred):
+`filter_pending`'s existing-record match still falls back to exact
+English-string comparison when the Korean lookup misses, which is a
+different bug — one Korean term with multiple valid English translations
+still produces duplicate bible rows. That needs schema-level changes
+(Korean as the unique/required key) and is being discussed separately
+before implementation.
+
+Spec coverage: `bible_utils_spec.rb` (+5, `.normalize_korean`),
+`bible_markdown_parser_spec.rb` (+1, a previously-dismissed term reparsed
+with a different Unicode width still excluded from pending).
