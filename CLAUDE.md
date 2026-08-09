@@ -11,7 +11,7 @@ Ruby 3.4.2 · PostgreSQL · Hotwire (Turbo + Stimulus) · Solid Queue · Active 
 | Chapter upload, status, file download | `app/controllers/chapters_controller.rb`, `app/views/chapters/` | `docs/SCHEMA.md` |
 | Translation job trigger, status, output | `app/controllers/translation_jobs_controller.rb`, `app/views/translation_jobs/` | `docs/SCHEMA.md` |
 | Bible entries (characters, locations, etc.) | `app/controllers/bible_*_controller.rb`, `app/views/bible*/` | `docs/SCHEMA.md` |
-| Rendering Guide (dialogue/thoughts/titles/onomatopoeia rendering conventions — global defaults + per-novel overrides; no controller/UI yet, model + writer only) | `app/models/rendering_rule.rb`, `app/services/rendering_rule_doc_writer.rb` | `docs/SCHEMA.md`, `docs/DECISIONS.md` (2026-08-09) |
+| Rendering Guide (dialogue/thoughts/titles/onomatopoeia rendering conventions — global defaults + per-novel overrides; CRUD keyed by rule_key, not id — see RenderingRulesController's header comment) | `app/controllers/rendering_rules_controller.rb`, `app/views/rendering_rules/`, `app/models/rendering_rule.rb`, `app/services/rendering_rule_doc_writer.rb` | `docs/SCHEMA.md`, `docs/DECISIONS.md` (2026-08-09 entries) |
 | Bible landing page + search | `app/controllers/bible_controller.rb`, `app/controllers/bible_search_controller.rb` | |
 | Dashboard | `app/controllers/dashboard_controller.rb`, `app/views/dashboard/` | |
 | Auth (currently disabled — solo dev) | `app/controllers/application_controller.rb#current_user` | `docs/DECISIONS.md` (2026-06-07) |

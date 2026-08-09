@@ -3205,3 +3205,70 @@ phrasing). `spec/models` + `spec/services` full suites green; `spec/requests`
 run with 19 pre-existing failures confirmed unrelated (`config/routes.rb`
 has no `login`/session routes at all — the documented, deliberate
 "auth disabled" state, not something this change touched).
+
+---
+
+## 2026-08-09 · Rendering Guide: controller, views, and doc-writer wiring
+
+Closes the gap the previous entry left open: `RenderingRulesController` now
+exists, and `bible/rendering_guide.md` is actually written.
+
+**Keyed by rule_key, not id.** Every action (`edit`/`update`/`destroy`)
+takes `params[:rule_key]` (`resources :rendering_rules, param: :rule_key`
+in `config/routes.rb`), not a row id. Reason: a novel's index page shows
+the *effective* set (`RenderingRule.effective_for`) — some rows its own
+overrides, most still inherited defaults with no row of the novel's own
+to `id`-address. `edit`/`update` `find_or_initialize_by(rule_key:)` under
+`@novel.rendering_rules`, so the same link works whether this novel has
+overridden that rule_key yet or not; the first successful save is what
+creates the override row. `rule_key` itself is immutable past creation —
+`update` strips it from the permitted params and always trusts the URL
+segment instead, since it's the join key `.effective_for` matches an
+override to its default by; letting the form body change it would
+silently detach the two. `new`/`create` is the separate path for a
+pure novel-specific addition (a rule_key with no default counterpart),
+where the user does type a fresh `rule_key`.
+
+**Never touches `novel_id: nil` rows.** `edit` builds an unsaved
+`@novel.rendering_rules.build(...)` copy of the matching default's
+attributes when the novel has no override yet — it does not load and
+re-save the default row itself. The global defaults stay seed-managed
+only (per the prior entry); this controller can create/update/destroy
+overrides and nothing else.
+
+**Doc-writer call site**, resolved: every `create`/`update`/`destroy`
+calls a private `regenerate_guide`, which re-resolves
+`RenderingRule.effective_for(@novel)` and passes it to
+`RenderingRuleDocWriter.new(novel_dir).write(...)` — matching the doc
+writer's own "always fully rewrite" contract, so there's never a
+patch-in-place path to keep in sync. `novel_dir` is resolved in the
+controller (`ENV.fetch("HAWK_PROJECT_ROOT", "")` + `directory_name`,
+blank-safe), mirroring `PostTranslationReviewController#novel_dir` —
+consistent with the prior entry's point that `RenderingRuleDocWriter`
+deliberately takes a plain path rather than doing its own `Novel`/`ENV`
+lookup.
+
+**UI**: plain server-rendered CRUD (`app/views/rendering_rules/`),
+styled like the existing `bible_*` entry controllers — no Stimulus, no
+port of the `hawk-translations-ui-prototype` accordion/live-preview
+treatment. The index table marks each effective rule "Default" or
+"Custom", and the removal action reads "Revert" when there's a default
+underneath to fall back to, "Remove" when it's a pure addition. Also
+added a "Rendering Guide" card to the Bible landing page
+(`bible#show`) linking to `novel_rendering_rules_path` — the feature
+had no entry point in the UI at all until now.
+
+**Not part of this change**: no reordering UI for `position` (a plain
+number field on the form is enough for now), no bulk "reset all to
+defaults," no `show` action (the index table is the whole read view;
+edit-in-place covers everything `show` would have).
+
+Spec coverage: `spec/requests/rendering_rules_spec.rb` (index, new,
+create incl. validation failure, edit incl. default-prefill and 404,
+update incl. first-override-creates-the-row / updates-in-place /
+rule_key-is-not-mass-assignable, destroy incl. revert-to-default and
+404). Confirmed against a stashed diff that the two request-spec
+failures seen in this run (`bible_characters_spec.rb`,
+`bible_story_entries_spec.rb`, both a stale `redirect_to show` vs.
+actual `redirect_to edit` assertion) are pre-existing and untouched by
+this change.
