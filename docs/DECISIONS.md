@@ -3032,3 +3032,76 @@ render and the model's broadcast can't drift from each other.
 No poll interval, no idle requests while a job runs — this is the
 precedent for making the other 5 poll-based spots in the app push-based
 too, if that's ever worth doing; not done here, out of scope for this fix.
+
+---
+
+## 2026-08-08 · Cultural phrases: Korean identity, no forced English label
+
+Closes out the #3 discussion from the two entries above (korean_key
+normalisation, Korean-vs-English search). Two separate but related asks:
+searching the bible while translating needs to be Korean-first in
+general (already mostly true — see the search-surfaces entry below), and
+cultural phrases specifically needed their forced single English
+"translation" dropped, because unlike a character name or a location, a
+cultural phrase's correct English rendering is often genuinely
+context-dependent — the same idiom lands differently scene to scene.
+
+Confirmed the second point concretely against real preread output before
+touching anything: `bible_cultural_phrases.established_translation` was
+explicitly designed to defer to translation time (`preread_runner/
+prompt_builder.rb`'s old template said "leave Established translation
+blank"), but the heading itself still forced the model to invent *some*
+English label with zero scene context. Checked this novel's actual data
+— every one of 77 existing rows had `phrase == korean_phrase` (a literal
+copy, not a translation choice) and `established_translation` was empty
+in all 77. The deferral half-worked; the forced-label half didn't.
+
+**Schema** (`db/migrate/20260808231828_...`): `korean_phrase` becomes
+`NOT NULL` + unique per novel (DB index for exact matches, a model-level
+check via `Pipeline::BibleUtils.normalize_korean` on top for
+formatting-drift near-duplicates). `phrase` and `established_translation`
+dropped. New `translation_examples` (jsonb array of `{context,
+translation}`) holds however many renderings have actually been decided,
+instead of forcing one. Found and, with the user's confirmation, resolved
+one live duplicate pair this exact bug had already produced (ids 48/119)
+before adding the uniqueness constraint.
+
+**Preread** (`preread_runner/prompt_builder.rb`, mirrored in the
+sunset-but-still-triggerable `post_translation_review/prompt_builder.rb`):
+heading template is now `## [Korean phrase]` — no English label requested
+at all. Deliberate departure from Python parity, documented inline;
+Python's `src/preread/prompt_builder.py` is unmodified and unused at
+runtime (`PIPELINE_IMPL_PREREAD=ruby`).
+
+**Matching** (`BibleMarkdownParser`): cultural_phrases' `filter_pending`/
+`dismissed_entries_for` drop the `by_name` English-string fallback
+entirely — Korean-only match, same normalisation as the preread
+dismiss-key fix.
+
+**Search/lookup**: `BibleSearchService`'s name-match config and
+`entry_name` drop the phrase column. `Pipeline::Skills::BibleLookup` (the
+tool the AI calls mid-translation) now surfaces
+`translation_examples_text` in its formatted result, so the model
+actually sees logged context-dependent renderings instead of one forced
+answer. Frontend (`combobox_controller.ts`, `bible_lookup_controller.ts`)
+keys display on `korean_phrase`; the quick-create dialog's "English" slot
+is repurposed to hold `korean_phrase` (no separate Korean-suggestion
+step needed — there's only one field now).
+
+**Not fixed here, explicitly out of scope**: the bible-lookup Tab
+shortcut still only attaches to editable text (the English translated
+pane) — the Korean source pane in `chapter_review/show.html.erb` is
+plain, non-editable `<p>` tags, so there's still no way to select Korean
+source text and trigger a lookup from it. This is the already-deferred
+"Korean-first" entry point from `docs/ROADMAP.md`'s "Add Bible Entry From
+Korean Text" item — a real gap, but a UI-trigger problem, not a schema
+or search problem, and out of scope for this change.
+
+Spec coverage: `bible_cultural_phrase_spec.rb` (uniqueness incl.
+formatting-drift, `translation_examples_text` round-trip,
+`embeddable_text`), `bible_markdown_parser_spec.rb` (Korean-only parsing
+and matching), `bible_cultural_phrases_spec.rb` (CRUD against the new
+schema), `bible_lookup_spec.rb`/`prompt_builder_spec.rb`s updated for the
+new field shape. Full suite (minus `spec/system` — Capybara/Chromium
+unavailable in this sandbox) run clean against a baseline of pre-existing,
+unrelated failures confirmed via a clean-checkout diff.
