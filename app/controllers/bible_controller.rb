@@ -19,7 +19,8 @@ class BibleController < ApplicationController
       locations:        @novel.bible_locations.count,
       terminology:      @novel.bible_terminologies.count,
       cultural_phrases: @novel.bible_cultural_phrases.count,
-      story_entries:    @novel.bible_story_entries.count
+      story_entries:    @novel.bible_story_entries.count,
+      rendering_rules:  RenderingRule.effective_for(@novel).count
     }
   end
 
