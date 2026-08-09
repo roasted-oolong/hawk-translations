@@ -20,11 +20,23 @@ RSpec.describe "RenderingRules", type: :request do
   end
 
   describe "GET /novels/:novel_id/rendering_rules" do
-    it "returns 200 and lists the resolved (default) rule" do
+    it "returns 200 and lists the resolved (default) rule, prefilled with its current value" do
       get novel_rendering_rules_path(novel)
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Dialogue")
+      expect(response.body).to include("Use double quotes.")
+      expect(response.body).to include("Default")
+    end
+
+    it "shows a novel's own override instead of the default it replaces" do
+      create(:rendering_rule, :override, novel: novel, rule_key: "dialogue", name: "Dialogue", guidance: "Custom guidance.")
+
+      get novel_rendering_rules_path(novel)
+
+      expect(response.body).to include("Custom guidance.")
+      expect(response.body).not_to include("Use double quotes.")
+      expect(response.body).to include("Custom for this novel")
     end
   end
 
@@ -63,28 +75,19 @@ RSpec.describe "RenderingRules", type: :request do
     end
   end
 
-  describe "GET /novels/:novel_id/rendering_rules/:rule_key/edit" do
-    it "builds an unsaved override from the default when the novel has none yet" do
-      get edit_novel_rendering_rule_path(novel, "dialogue")
-
-      expect(response).to have_http_status(:ok)
-      expect(response.body).to include("Use double quotes.")
-    end
-
-    it "returns 404 for a rule_key with no default and no override" do
-      get edit_novel_rendering_rule_path(novel, "nonexistent")
-      expect(response).to have_http_status(:not_found)
-    end
-  end
-
   describe "PATCH /novels/:novel_id/rendering_rules/:rule_key" do
-    it "creates the novel's override on first save and regenerates the guide" do
+    # The rendered form always carries `name` along via a hidden field (see
+    # _rule_card.html.erb) so these PATCHes include it explicitly, matching
+    # what a real submission sends.
+    it "creates the novel's override on first save, carrying the default's name forward, and regenerates the guide" do
       expect {
         patch novel_rendering_rule_path(novel, "dialogue"), params: {
           rendering_rule: { name: "Dialogue", guidance: "Use single quotes here instead." }
         }
       }.to change { novel.rendering_rules.count }.by(1)
 
+      override = novel.rendering_rules.find_by(rule_key: "dialogue")
+      expect(override.name).to eq("Dialogue")
       expect(File.read(guide_path)).to include("Use single quotes here instead.")
       expect(File.read(guide_path)).not_to include("Use double quotes.")
     end
@@ -108,6 +111,16 @@ RSpec.describe "RenderingRules", type: :request do
 
       expect(novel.rendering_rules.find_by(rule_key: "dialogue")).to be_present
       expect(novel.rendering_rules.find_by(rule_key: "hijacked")).to be_nil
+    end
+
+    it "re-renders the index with the attempted edit and its errors when validation fails" do
+      patch novel_rendering_rule_path(novel, "dialogue"), params: {
+        rendering_rule: { guidance: "" }
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.body).to include("can&#39;t be blank").or include("can't be blank")
+      expect(novel.rendering_rules.find_by(rule_key: "dialogue")).to be_nil
     end
   end
 

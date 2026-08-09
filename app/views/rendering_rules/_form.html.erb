@@ -1,9 +1,9 @@
-<%# app/views/rendering_rules/_form.html.erb %>
-<%# Explicit url/method (passed in from new/edit) rather than relying on
-    form_with's polymorphic route inference — @rule is unpersisted on both
-    "add a new rule" and "override a default for the first time", and those
-    two cases need different target URLs despite the record looking the same. %>
-<%= form_with model: @rule, url: form_url, method: form_method, data: { testid: "rendering-rule-form" } do |f| %>
+<%# app/views/rendering_rules/_form.html.erb
+    Used by new.html.erb only — a pure novel-specific addition (a rule_key
+    with no default counterpart). Overriding an existing default happens
+    inline on the index page instead (see _rule_card.html.erb). %>
+<%= form_with model: @rule, url: novel_rendering_rules_path(@novel), method: :post,
+      data: { testid: "rendering-rule-form" } do |f| %>
   <% if @rule.errors.any? %>
     <div class="form-errors" data-testid="form-errors">
       <p class="form-errors__summary"><%= pluralize(@rule.errors.count, "error") %> prevented this from saving:</p>
@@ -18,12 +18,8 @@
   <div class="bible-form__grid">
     <div class="form-group">
       <%= f.label :rule_key, "Rule key", class: "form-label" %>
-      <% if @rule.persisted? || params[:rule_key].present? %>
-        <%= f.text_field :rule_key, class: "form-input", readonly: true %>
-        <p class="form-hint">Fixed once set — it's how this override is matched to the default it replaces.</p>
-      <% else %>
-        <%= f.text_field :rule_key, class: "form-input", placeholder: "e.g. em-dash" %>
-      <% end %>
+      <%= f.text_field :rule_key, class: "form-input", placeholder: "e.g. em-dash" %>
+      <p class="form-hint">A short, stable identifier — used internally to track this rule, not shown in the guide.</p>
     </div>
 
     <div class="form-group">

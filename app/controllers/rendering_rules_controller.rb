@@ -5,13 +5,16 @@
 # novel_id set) — never the global defaults (novel_id: nil), which are
 # seed-managed only (see db/seeds.rb, docs/DECISIONS.md 2026-08-09).
 #
-# Actions are keyed by rule_key, not id: the resolver (RenderingRule
-# .effective_for) and the doc writer both think in rule_key, and a novel's
-# index page shows the *effective* set — some rows its own overrides, some
-# inherited defaults — so "edit" has to work uniformly on a rule_key whether
-# or not this novel has overridden it yet. Editing an inherited default
-# builds a fresh override in memory (see #edit); it never mutates the
-# shared default row.
+# The index page *is* the editor: it renders RenderingRule.effective_for as
+# a set of accordion cards, each with its guidance/examples inline-editable
+# and saved immediately on submit — no separate edit page. update is keyed
+# by rule_key, not id, and works uniformly whether or not this novel has
+# overridden that rule_key yet: #update finds this novel's own override row
+# if one exists, else builds a fresh one scoped to the novel. It never loads
+# or mutates the shared default row itself. On a validation failure, index
+# re-renders with the failed (unsaved) rule spliced into its normal spot in
+# the effective set, so the user's attempted edit and its errors show up in
+# the same card they were editing rather than a separate page.
 #
 # Every mutation that can change this novel's effective rule set
 # (create/update/destroy) re-renders bible/rendering_guide.md from the
@@ -23,14 +26,12 @@ class RenderingRulesController < ApplicationController
 
   def index
     @rules = RenderingRule.effective_for(@novel)
-    # Lets the view tell "override of a default" (revertible) apart from
-    # "pure novel-specific addition" (only removable) without an N+1 lookup.
-    @default_rule_keys = RenderingRule.defaults.pluck(:rule_key).to_set
+    load_default_rule_keys
   end
 
   # A blank form for a pure novel-specific addition (a rule_key with no
-  # matching default). Overriding an existing default happens via #edit
-  # instead, keyed by that default's rule_key.
+  # matching default). Overriding an existing default happens inline from
+  # the index page instead, keyed by that default's rule_key.
   def new
     @rule = @novel.rendering_rules.build
   end
@@ -45,18 +46,16 @@ class RenderingRulesController < ApplicationController
     end
   end
 
-  def edit
-    @rule = find_override(params[:rule_key]) || build_override_from_default(params[:rule_key])
-    head :not_found and return unless @rule
-  end
-
   def update
     @rule = find_override(params[:rule_key]) || @novel.rendering_rules.build(rule_key: params[:rule_key])
     if @rule.update(update_params)
       regenerate_guide
       redirect_to novel_rendering_rules_path(@novel), notice: "Rendering rule saved."
     else
-      render :edit, status: :unprocessable_entity
+      @rules = replace_in_effective_set(@rule)
+      @open_rule_key = params[:rule_key]
+      load_default_rule_keys
+      render :index, status: :unprocessable_entity
     end
   end
 
@@ -83,13 +82,22 @@ class RenderingRulesController < ApplicationController
     @novel.rendering_rules.find_by!(rule_key: rule_key)
   end
 
-  def build_override_from_default(rule_key)
-    default = RenderingRule.defaults.find_by(rule_key: rule_key)
-    return nil unless default
+  # Lets the view tell "override of a default" (revertible) apart from
+  # "pure novel-specific addition" (only removable) without an N+1 lookup.
+  def load_default_rule_keys
+    @default_rule_keys = RenderingRule.defaults.pluck(:rule_key).to_set
+  end
 
-    @novel.rendering_rules.build(
-      default.attributes.slice("rule_key", "name", "guidance", "example_input", "example_output", "position")
-    )
+  # Swaps a just-attempted (possibly invalid) rule into its normal position
+  # in the effective set, so re-rendering index shows the user's own edit
+  # and its errors in place rather than silently reverting to the old value.
+  def replace_in_effective_set(rule)
+    resolved = RenderingRule.effective_for(@novel)
+    if resolved.any? { |r| r.rule_key == rule.rule_key }
+      resolved.map { |r| r.rule_key == rule.rule_key ? rule : r }
+    else
+      resolved + [ rule ]
+    end
   end
 
   def create_params

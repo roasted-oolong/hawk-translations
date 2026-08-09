@@ -1,0 +1,79 @@
+<%# app/views/rendering_rules/_rule_card.html.erb
+    Locals: rule, index, novel, overridden, open, default_rule_keys
+
+    One accordion card per effective rule. `rule` is whatever
+    RenderingRule.effective_for resolved for this rule_key — the novel's own
+    override if it has one, otherwise the shared default — so the form below
+    is always prefilled with the value currently in effect. Submitting it
+    always PATCHes novel_rendering_rule_path(novel, rule.rule_key); the
+    controller creates the novel's own override on first save regardless of
+    whether `rule` started out as a default or an existing override. %>
+<% has_default = default_rule_keys.include?(rule.rule_key) %>
+<details class="rg-card <%= "rg-card--invalid" if rule.errors.any? %>"
+          data-testid="rendering-rule-card"
+          data-rule-key="<%= rule.rule_key %>"
+          <%= "open" if open || rule.errors.any? %>>
+  <summary class="rg-card__summary" data-testid="rendering-rule-summary">
+    <span class="rg-card__index" aria-hidden="true"><%= format("%02d", index + 1) %></span>
+    <span class="rg-card__heading">
+      <span class="rg-card__name"><%= rule.name %></span>
+      <span class="rg-card__source <%= overridden ? "text-secondary" : "text-muted" %>" data-testid="rendering-rule-source">
+        <%= overridden ? "Custom for this novel" : "Default" %>
+      </span>
+    </span>
+    <svg class="rg-card__chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+         stroke-width="2" stroke="currentColor" width="16" height="16" aria-hidden="true" focusable="false">
+      <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+    </svg>
+  </summary>
+
+  <div class="rg-card__body">
+    <%= form_with model: rule, url: novel_rendering_rule_path(novel, rule.rule_key), method: :patch,
+          data: { testid: "rendering-rule-form" } do |f| %>
+
+      <% if rule.errors.any? %>
+        <div class="form-errors" data-testid="form-errors">
+          <p class="form-errors__summary"><%= pluralize(rule.errors.count, "error") %> prevented this from saving:</p>
+          <ul class="form-errors__list">
+            <% rule.errors.full_messages.each do |msg| %>
+              <li><%= msg %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <%# name/position ride along unedited so a first-time override of a
+          default carries its name and ordering forward automatically. %>
+      <%= f.hidden_field :name %>
+      <%= f.hidden_field :position %>
+
+      <div class="form-group">
+        <%= f.label :guidance, "Guidance / notes", class: "form-label" %>
+        <%= f.text_area :guidance, rows: 5, class: "form-input" %>
+      </div>
+
+      <div class="rg-card__grid">
+        <div class="rg-example">
+          <span class="rg-example__label">Example input (Korean)</span>
+          <%= f.text_area :example_input, rows: 3, class: "form-input" %>
+        </div>
+        <div class="rg-example">
+          <span class="rg-example__label">Example output (English)</span>
+          <%= f.text_area :example_output, rows: 3, class: "form-input" %>
+        </div>
+      </div>
+
+      <div class="rg-card__actions">
+        <%= f.submit "Save", class: "btn btn--primary btn--sm" %>
+        <% if overridden %>
+          <%= modal_button_to has_default ? "Revert to default" : "Remove",
+                novel_rendering_rule_path(novel, rule.rule_key),
+                method:        :delete,
+                message:       has_default ? "Revert \"#{rule.name}\" to the default?" : "Remove \"#{rule.name}\"?",
+                confirm_label: has_default ? "Revert" : "Remove",
+                button_class:  "btn btn--danger btn--sm" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</details>
