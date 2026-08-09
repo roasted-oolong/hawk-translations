@@ -20,6 +20,18 @@
 # (create/update/destroy) re-renders bible/rendering_guide.md from the
 # fresh resolved set afterward, so the file can never drift from the DB —
 # mirrors RenderingRuleDocWriter#write's own "always fully rewrite" contract.
+#
+# index also regenerates the file (best-effort — see #regenerate_guide!).
+# Without that, a novel with zero override activity ever (the common case:
+# every novel starts on pure defaults) would never get a
+# bible/rendering_guide.md at all, since nothing else in the app ever
+# triggers the write — unlike the other bible/*.md files, rendering rules
+# aren't discovered by any pipeline run; the DB is already the complete
+# picture the moment the migration seeds the defaults. Regenerating on every
+# view is safe because .write is idempotent for unchanged DB state, and it
+# means the guide self-heals into existence the first time anyone opens
+# this tab rather than requiring a save first (see docs/DECISIONS.md,
+# 2026-08-09 "self-healing" entry).
 # ---------------------------------------------------------------------------
 class RenderingRulesController < ApplicationController
   before_action :set_novel
@@ -27,6 +39,7 @@ class RenderingRulesController < ApplicationController
   def index
     @rules = RenderingRule.effective_for(@novel)
     load_default_rule_keys
+    regenerate_guide!(raise_on_error: false)
   end
 
   # A blank form for a pure novel-specific addition (a rule_key with no
@@ -39,7 +52,7 @@ class RenderingRulesController < ApplicationController
   def create
     @rule = @novel.rendering_rules.build(create_params)
     if @rule.save
-      regenerate_guide
+      regenerate_guide!
       redirect_to novel_rendering_rules_path(@novel), notice: "Rendering rule added."
     else
       render :new, status: :unprocessable_entity
@@ -49,7 +62,7 @@ class RenderingRulesController < ApplicationController
   def update
     @rule = find_override(params[:rule_key]) || @novel.rendering_rules.build(rule_key: params[:rule_key])
     if @rule.update(update_params)
-      regenerate_guide
+      regenerate_guide!
       redirect_to novel_rendering_rules_path(@novel), notice: "Rendering rule saved."
     else
       @rules = replace_in_effective_set(@rule)
@@ -64,7 +77,7 @@ class RenderingRulesController < ApplicationController
   # .effective_for resolve it fresh is simpler than special-casing which.
   def destroy
     find_override!(params[:rule_key]).destroy
-    regenerate_guide
+    regenerate_guide!
     redirect_to novel_rendering_rules_path(@novel), notice: "Override removed."
   end
 
@@ -117,7 +130,16 @@ class RenderingRulesController < ApplicationController
     File.join(root, @novel.directory_name)
   end
 
-  def regenerate_guide
+  # raise_on_error: false is used from #index, where a transient disk/
+  # permission problem shouldn't turn merely *viewing* the guide into a
+  # 500 — the page still renders correctly from the DB either way, just
+  # without the file having caught up. create/update/destroy leave it
+  # true: those are explicit save actions, so a write failure there
+  # should surface rather than silently claim success.
+  def regenerate_guide!(raise_on_error: true)
     RenderingRuleDocWriter.new(novel_dir).write(RenderingRule.effective_for(@novel))
+  rescue StandardError => e
+    raise if raise_on_error
+    Rails.logger.error("[RenderingRulesController] failed to regenerate rendering_guide.md for novel=#{@novel.id}: #{e.class}: #{e.message}")
   end
 end

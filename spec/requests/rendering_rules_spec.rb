@@ -38,6 +38,35 @@ RSpec.describe "RenderingRules", type: :request do
       expect(response.body).not_to include("Use double quotes.")
       expect(response.body).to include("Custom for this novel")
     end
+
+    # Regression: a novel with zero override activity would otherwise never
+    # get a bible/rendering_guide.md at all, since nothing else in the app
+    # ever triggers the write for pure-defaults novels.
+    it "self-heals bible/rendering_guide.md into existence on a novel that has never had one written" do
+      expect(File.exist?(guide_path)).to be false
+
+      get novel_rendering_rules_path(novel)
+
+      expect(File.exist?(guide_path)).to be true
+      expect(File.read(guide_path)).to include("Use double quotes.")
+    end
+
+    it "does not 500 when the guide can't be written (e.g. HAWK_PROJECT_ROOT unset)" do
+      ENV["HAWK_PROJECT_ROOT"] = ""
+
+      get novel_rendering_rules_path(novel)
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "renders successfully even when the self-heal write itself raises" do
+      allow_any_instance_of(RenderingRuleDocWriter).to receive(:write).and_raise(Errno::EACCES, "permission denied")
+
+      get novel_rendering_rules_path(novel)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Dialogue")
+    end
   end
 
   describe "GET /novels/:novel_id/rendering_rules/new" do
