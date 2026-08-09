@@ -34,16 +34,21 @@ module Pipeline
       module PromptBuilder
         TranslationContext = Data.define(
           :novel_info, :translation_guidelines, :narrator_note, :characters,
-          :cultural_phrases, :locations, :story, :terminology, :voice_calibration
+          :cultural_phrases, :locations, :story, :terminology, :voice_calibration,
+          :rendering_guide
         )
 
         # Keys match TranslationContext field names. Ported verbatim from
         # config.py's NOVEL_FILES — chapter_log.md is intentionally excluded
         # there (archive only, never sent to the API), so it has no entry here.
+        # rendering_guide is not part of that port — it's a Rails-only
+        # addition (RenderingRule -> RenderingRuleDocWriter), same :bible
+        # location convention as the other generated bible files.
         NOVEL_FILES = {
           novel_info:             [ "novel_info.md", :novel ],
           translation_guidelines: [ "translation_guidelines.md", :novel ],
           voice_calibration:      [ "voice_calibration.md", :bible ],
+          rendering_guide:        [ "rendering_guide.md", :bible ],
           characters:             [ "characters.md", :bible ],
           cultural_phrases:       [ "cultural_phrases.md", :bible ],
           locations:              [ "locations.md", :bible ],
@@ -448,7 +453,7 @@ module Pipeline
             - `facts_preserved`: every concrete detail — events, promises, threats, numbers, timelines — in the Korean is intact in the English, with nothing invented or dropped.
             - `cultural_significance_preserved`: honorifics, status moves, indirect refusals, face-saving, and other cultural cues identified in `cultural_signals` are still felt in the English, even if not translated literally.
             - `cultural_dynamic_enacted`: true if `localization_strategy.category` is "none", or if it isn't "none" and the English actually carries out the described dynamic rather than just naming it.
-            - `style_guidelines_followed`: the passage complies with any explicit, checkable rule stated in the Translation Guidelines section of the Reference Material below — most commonly a stated narration tense (e.g. narration written in present tense when the guidelines require past tense). This is a compliance check against a stated rule, not a subjective judgment of how natural the prose reads, so it belongs here rather than the prose-quality call. Dialogue that intentionally departs from a stated rule to reflect a character's natural speech is not a violation if the guidelines allow for that.
+            - `style_guidelines_followed`: the passage complies with any explicit, checkable rule stated in the Translation Guidelines or Rendering Guide sections of the Reference Material below — most commonly a stated narration tense (e.g. narration written in present tense when the guidelines require past tense) or a rendering convention (e.g. thoughts rendered in italics when the guide calls for single quotation marks instead). This is a compliance check against a stated rule, not a subjective judgment of how natural the prose reads, so it belongs here rather than the prose-quality call. Dialogue that intentionally departs from a stated rule to reflect a character's natural speech is not a violation if the guidelines allow for that.
 
             Also compare the passage's analysis to its English translation directly: if `core_message` or `emphasis` named something important that doesn't show up anywhere in `localized_translation`, that's a missing-coverage problem — flag it as a finding even if it doesn't cleanly fail one of the checks above.
 
@@ -612,7 +617,7 @@ module Pipeline
 
             Go through the chapter and flag every place where a name, place, organization, concrete fact (event, promise, threat, number, timeline), or culturally load-bearing cue (honorific, status move, indirect refusal, face-saving gesture) was lost, changed, or flattened between the Korean and the English. For every character, place, and organization name, also check it against the established English spelling in the Character Bible / Locations / Terminology sections of the Reference Material below — a name can be a self-consistent, Korean-faithful romanization and still be wrong if it doesn't match the bible's established spelling for that entity (e.g. "Jun-ho" vs. a bible entry for "Junho"); flag that mismatch even though nothing was "lost" from the Korean. If a name isn't covered by the Reference Material or you're unsure of its established form, use the `bible_lookup` tool to check before deciding.
 
-            Separately, flag any place where the English narration violates an explicit, checkable rule stated in the Translation Guidelines section of the Reference Material below — most commonly a stated narration tense (e.g. narration written in present tense when the guidelines require past tense). This is a compliance check against a stated rule, not a judgment of how natural the prose reads, so it belongs here rather than the editor pass. Dialogue that intentionally departs from a stated rule to reflect a character's natural speech is not a violation if the guidelines allow for that.
+            Separately, flag any place where the English narration violates an explicit, checkable rule stated in the Translation Guidelines or Rendering Guide sections of the Reference Material below — most commonly a stated narration tense (e.g. narration written in present tense when the guidelines require past tense) or a rendering convention (e.g. thoughts rendered in italics when the guide calls for single quotation marks instead). This is a compliance check against a stated rule, not a judgment of how natural the prose reads, so it belongs here rather than the editor pass. Dialogue that intentionally departs from a stated rule to reflect a character's natural speech is not a violation if the guidelines allow for that.
 
             Only flag real problems — an empty `suggestions` array is a claim you're prepared to defend, not a default; go looking for a problem before you settle on finding none.
 
@@ -753,6 +758,7 @@ module Pipeline
           reference_sections = [
             Pipeline::PromptUtils.section("Novel Info", context.novel_info),
             Pipeline::PromptUtils.section("Translation Guidelines", context.translation_guidelines),
+            Pipeline::PromptUtils.section("Rendering Guide", context.rendering_guide),
             Pipeline::PromptUtils.section("Voice Calibration", context.voice_calibration),
             Pipeline::PromptUtils.section("Narrator Note", context.narrator_note),
             Pipeline::PromptUtils.section("Character Bible", context.characters),
