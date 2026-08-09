@@ -199,23 +199,28 @@ Scope: `by_name` — orders alphabetically by name.
 Scope: `by_term` — orders alphabetically by term.
 
 ### bible_cultural_phrases
+Identity is `korean_phrase`, not an English label — a cultural phrase's
+correct English rendering is often context-dependent (see docs/DECISIONS.md,
+2026-08-08 "Cultural phrases: Korean identity, no forced English label"),
+so unlike every other bible table here, there's no single canonical English
+column.
+
 | Column | Type | Notes |
 |--------|------|-------|
 | id | bigint PK | |
 | novel_id | bigint FK | not null |
-| phrase | string | not null |
-| korean_phrase | string | |
+| korean_phrase | string | not null; unique per novel (DB index + a model-level check via `Pipeline::BibleUtils.normalize_korean` for formatting-drift near-duplicates) |
 | literal_translation | text | |
 | intended_meaning | text | |
 | context | text | |
-| established_translation | string | |
+| translation_examples | jsonb | default `[]`; array of `{"context" => ..., "translation" => ...}` — however many context-dependent renderings have actually been decided, not one forced answer. Edited via the model's `translation_examples_text`/`=` virtual accessor (one "context: translation" per line) |
 | first_appearance_chapter | integer | |
 | notes | text | |
 | last_updated_at | datetime | set via before_save |
 | created_at | datetime | |
 | updated_at | datetime | |
 
-Scope: `by_phrase` — orders alphabetically by phrase.
+Scope: `by_korean_phrase` — orders alphabetically by korean_phrase.
 
 ### bible_story_entries
 | Column | Type | Notes |
