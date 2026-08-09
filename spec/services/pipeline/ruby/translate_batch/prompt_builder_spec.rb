@@ -23,7 +23,8 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
         locations: "## K Management — English\n- Significance: protagonist's new agency",
         story: "",
         terminology: "## Comeback — English\n- Definition: a group's return with new material",
-        voice_calibration: "## Passage 1 — Dry deflection\n> quote here"
+        voice_calibration: "## Passage 1 — Dry deflection\n> quote here",
+        rendering_guide: ""
       )
 
       expect(described_class.build_system_prompt(context)).to eq(fixture("system_prompt_sample.txt"))
@@ -33,7 +34,7 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
       context = described_class::TranslationContext.new(
         novel_info: "info", translation_guidelines: "", narrator_note: "",
         characters: "", cultural_phrases: "", locations: "", story: "",
-        terminology: "", voice_calibration: ""
+        terminology: "", voice_calibration: "", rendering_guide: ""
       )
 
       expect(described_class.build_system_prompt(context)).not_to include("web_search")
@@ -43,12 +44,26 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
       context = described_class::TranslationContext.new(
         novel_info: "", translation_guidelines: "", narrator_note: "",
         characters: "", cultural_phrases: "", locations: "", story: "",
-        terminology: "", voice_calibration: ""
+        terminology: "", voice_calibration: "", rendering_guide: ""
       )
 
       message = described_class.build_system_prompt(context)
       expect(message).not_to include("Character Bible")
       expect(message).not_to include("Narrator Note")
+      expect(message).not_to include("Rendering Guide")
+    end
+
+    it "includes the Rendering Guide section when rendering_guide is present" do
+      context = described_class::TranslationContext.new(
+        novel_info: "", translation_guidelines: "", narrator_note: "",
+        characters: "", cultural_phrases: "", locations: "", story: "",
+        terminology: "", voice_calibration: "",
+        rendering_guide: "## Internal thoughts\n\nSingle quotation marks, never italics."
+      )
+
+      message = described_class.build_system_prompt(context)
+      expect(message).to include("Rendering Guide")
+      expect(message).to include("Single quotation marks, never italics.")
     end
   end
 
@@ -118,7 +133,8 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
         **{
           novel_info: "Genre: romance fantasy", translation_guidelines: "Be faithful.",
           narrator_note: "Kang narrates dryly.", characters: "## Hyuk Kang\n- Role: protagonist",
-          cultural_phrases: "", locations: "", story: "", terminology: "", voice_calibration: ""
+          cultural_phrases: "", locations: "", story: "", terminology: "", voice_calibration: "",
+          rendering_guide: ""
         }.merge(overrides)
       )
     end
@@ -217,7 +233,8 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
         **{
           novel_info: "Genre: romance fantasy", translation_guidelines: "Be faithful.",
           narrator_note: "Kang narrates dryly.", characters: "## Hyuk Kang\n- Role: protagonist",
-          cultural_phrases: "", locations: "", story: "", terminology: "", voice_calibration: ""
+          cultural_phrases: "", locations: "", story: "", terminology: "", voice_calibration: "",
+          rendering_guide: ""
         }.merge(overrides)
       )
     end
@@ -332,7 +349,8 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
         **{
           novel_info: "Genre: romance fantasy", translation_guidelines: "Be faithful.",
           narrator_note: "Kang narrates dryly.", characters: "## Hyuk Kang\n- Role: protagonist",
-          cultural_phrases: "", locations: "", story: "", terminology: "", voice_calibration: ""
+          cultural_phrases: "", locations: "", story: "", terminology: "", voice_calibration: "",
+          rendering_guide: ""
         }.merge(overrides)
       )
     end
@@ -451,7 +469,8 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
         **{
           novel_info: "Genre: romance fantasy", translation_guidelines: "Be faithful.",
           narrator_note: "Kang narrates dryly.", characters: "## Hyuk Kang\n- Role: protagonist",
-          cultural_phrases: "", locations: "", story: "", terminology: "", voice_calibration: ""
+          cultural_phrases: "", locations: "", story: "", terminology: "", voice_calibration: "",
+          rendering_guide: ""
         }.merge(overrides)
       )
     end
@@ -616,7 +635,8 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
         **{
           novel_info: "Genre: romance fantasy", translation_guidelines: "Be faithful.",
           narrator_note: "Kang narrates dryly.", characters: "## Hyuk Kang\n- Role: protagonist",
-          cultural_phrases: "", locations: "", story: "", terminology: "", voice_calibration: ""
+          cultural_phrases: "", locations: "", story: "", terminology: "", voice_calibration: "",
+          rendering_guide: ""
         }.merge(overrides)
       )
     end
@@ -663,10 +683,11 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
       expect(prompt).to include("bible_lookup")
     end
 
-    it "flags Translation Guidelines violations like narration tense, separately from prose quality" do
+    it "flags Translation Guidelines / Rendering Guide violations like narration tense, separately from prose quality" do
       prompt = described_class.build_chapter_qa_factcheck_system_prompt(context)
 
-      expect(prompt).to include("Translation Guidelines section")
+      expect(prompt).to include("Translation Guidelines")
+      expect(prompt).to include("Rendering Guide")
       expect(prompt).to include("narration tense")
     end
 
@@ -827,13 +848,14 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
   end
 
   describe ".load_reference_files" do
-    it "reads all 8 NOVEL_FILES from the novel/bible directories, empty string for missing ones" do
+    it "reads all 9 NOVEL_FILES from the novel/bible directories, empty string for missing ones" do
       Dir.mktmpdir do |novel_dir|
         FileUtils.mkdir_p(File.join(novel_dir, "bible"))
         File.write(File.join(novel_dir, "novel_info.md"), "novel info content")
         File.write(File.join(novel_dir, "bible", "characters.md"), "characters content")
-        # translation_guidelines.md, voice_calibration.md, cultural_phrases.md,
-        # locations.md, story.md, terminology.md deliberately absent.
+        # translation_guidelines.md, voice_calibration.md, rendering_guide.md,
+        # cultural_phrases.md, locations.md, story.md, terminology.md
+        # deliberately absent.
 
         data = described_class.load_reference_files(novel_dir)
 
@@ -841,6 +863,7 @@ RSpec.describe Pipeline::Ruby::TranslateBatch::PromptBuilder do
         expect(data[:characters]).to eq("characters content")
         expect(data[:translation_guidelines]).to eq("")
         expect(data[:voice_calibration]).to eq("")
+        expect(data[:rendering_guide]).to eq("")
         expect(data[:cultural_phrases]).to eq("")
         expect(data[:locations]).to eq("")
         expect(data[:story]).to eq("")
