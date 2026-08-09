@@ -11,6 +11,11 @@
 # build_system_prompt; ..."` run during development, with the date field
 # replaced by a sentinel so the rest of the text could be diffed exactly) —
 # see PrereadRunner::PromptBuilderSpec's byte-match test.
+#
+# Exception: the CULTURAL PHRASES section (2026-08-08) is a deliberate
+# departure from Python parity, not a porting gap — src/preread/
+# prompt_builder.py is unmodified and no longer read at runtime, since
+# PIPELINE_IMPL_PREREAD=ruby in this app's .env. See docs/DECISIONS.md.
 # ---------------------------------------------------------------------------
 module Pipeline
   module Ruby
@@ -130,16 +135,15 @@ Template:
 
 ### CULTURAL PHRASES
 - Any idiom, proverb, honorific pattern, or culturally specific expression that cannot
-  be directly translated without losing meaning: record it. Leave "Established translation"
-  blank — that is set during translation. Label [New] or [Edited].
+  be directly translated without losing meaning: record it. Do not invent an English
+  label or translation here — the correct rendering is often context-dependent and is
+  decided during actual translation, not while cataloging. Label [New] or [Edited].
 
 Template:
-## [Phrase — English or descriptive label]
-- Korean phrase: 
+## [Korean phrase]
 - Literal translation: 
 - Intended meaning: 
 - Context: [when/how it's used]
-- Established translation: 
 - T/N written: [yes/no]
 - T/N text: 
 - First appearance: [chapter number]
