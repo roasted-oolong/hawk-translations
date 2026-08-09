@@ -546,6 +546,43 @@ ALTER SEQUENCE public.organizations_id_seq OWNED BY public.organizations.id;
 
 
 --
+-- Name: rendering_rules; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.rendering_rules (
+    id bigint NOT NULL,
+    novel_id bigint,
+    rule_key character varying NOT NULL,
+    name character varying NOT NULL,
+    guidance text NOT NULL,
+    example_input text,
+    example_output text,
+    "position" integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: rendering_rules_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.rendering_rules_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: rendering_rules_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.rendering_rules_id_seq OWNED BY public.rendering_rules.id;
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1230,6 +1267,13 @@ ALTER TABLE ONLY public.organizations ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: rendering_rules id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rendering_rules ALTER COLUMN id SET DEFAULT nextval('public.rendering_rules_id_seq'::regclass);
+
+
+--
 -- Name: series id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1466,6 +1510,14 @@ ALTER TABLE ONLY public.novels
 
 ALTER TABLE ONLY public.organizations
     ADD CONSTRAINT organizations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: rendering_rules rendering_rules_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rendering_rules
+    ADD CONSTRAINT rendering_rules_pkey PRIMARY KEY (id);
 
 
 --
@@ -1799,6 +1851,27 @@ CREATE INDEX index_novels_on_poc_user_id ON public.novels USING btree (poc_user_
 --
 
 CREATE INDEX index_novels_on_series_id ON public.novels USING btree (series_id);
+
+
+--
+-- Name: index_rendering_rules_on_novel_and_rule_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_rendering_rules_on_novel_and_rule_key ON public.rendering_rules USING btree (novel_id, rule_key);
+
+
+--
+-- Name: index_rendering_rules_on_novel_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_rendering_rules_on_novel_id ON public.rendering_rules USING btree (novel_id);
+
+
+--
+-- Name: index_rendering_rules_on_rule_key_when_default; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_rendering_rules_on_rule_key_when_default ON public.rendering_rules USING btree (rule_key) WHERE (novel_id IS NULL);
 
 
 --
@@ -2241,6 +2314,14 @@ ALTER TABLE ONLY public.memberships
 
 
 --
+-- Name: rendering_rules fk_rails_bb38629339; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rendering_rules
+    ADD CONSTRAINT fk_rails_bb38629339 FOREIGN KEY (novel_id) REFERENCES public.novels(id);
+
+
+--
 -- Name: active_storage_attachments fk_rails_c3b3935057; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2319,6 +2400,7 @@ ALTER TABLE ONLY public.voice_calibration_passages
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260809034936'),
 ('20260808231828'),
 ('20260613071048'),
 ('20260609000001'),
