@@ -34,6 +34,13 @@ module Pipeline
     # rather than a fourth naming scheme. BibleStoryEntry has no Korean
     # field and isn't listed here — "find the Korean equivalent" doesn't
     # apply to it (see docs/DECISIONS.md).
+    #
+    # bible_cultural_phrase isn't listed either, as of 2026-08-08 —
+    # korean_phrase is its only identity field (no separate English name to
+    # select and find a Korean equivalent FOR), so
+    # CREATE_TYPE_CONFIG.koreanField is null for this type and the
+    # suggestion fetch this class backs never fires for it (see
+    # bible_lookup_controller.ts and docs/DECISIONS.md).
     FIELD_SPECS = {
       "bible_character" => {
         korean_key:   "korean_name",
@@ -61,15 +68,6 @@ module Pipeline
           { key: "notes",        label: "Notes",         hint: "anything else worth flagging" }
         ]
       },
-      "bible_cultural_phrase" => {
-        korean_key:   "korean_phrase",
-        korean_label: "Korean phrase",
-        fields: [
-          { key: "established_translation", label: "Established translation", hint: "the rendering actually used in the English text" },
-          { key: "intended_meaning",        label: "Intended meaning",        hint: "the literal meaning and intended nuance" },
-          { key: "notes",                   label: "Notes",                   hint: "when it's used, recurrence, anything else worth flagging" }
-        ]
-      }
     }.freeze
 
     Result = Struct.new(:fields, :error_category, :error_message, keyword_init: true) do

@@ -10,6 +10,13 @@
 # import build_system_prompt; ..."` run, with today/chapter_num replaced by
 # sentinels so the rest of the text could be diffed exactly) — see
 # PromptBuilderSpec's byte-match test.
+#
+# Exception: the cultural_phrases.md section (2026-08-08) deliberately
+# departs from Python parity, mirroring preread_runner/prompt_builder.rb's
+# same change — this job type is sunset/disable-only (docs/DECISIONS.md
+# 2026-07-30) but kept consistent with the still-live preread path rather
+# than left to drift and produce a shared bible/cultural_phrases.md file in
+# two incompatible shapes if this is ever triggered directly again.
 # ---------------------------------------------------------------------------
 module Pipeline
   module Ruby
@@ -120,16 +127,16 @@ Template:
 
 ### cultural_phrases.md
 - Any idiom, proverb, honorific pattern, or culturally specific expression that cannot
-  be directly translated without losing meaning: record it. If the translation has
-  established an English rendering, fill in "Established translation". Label [New].
+  be directly translated without losing meaning: record it. Do not invent an English
+  label or translation here — cultural phrases have no English identity field; a
+  chosen rendering is logged as a translation example against the Korean phrase
+  separately, not written into this file. Label [New].
 
 Template:
-## [Phrase — English or descriptive label]
-- Korean phrase: 
+## [Korean phrase]
 - Literal translation: 
 - Intended meaning: 
 - Context: [when/how it's used]
-- Established translation: 
 - T/N written: [yes/no]
 - T/N text: 
 - First appearance: [chapter number]
