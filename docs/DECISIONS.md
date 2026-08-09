@@ -3351,3 +3351,60 @@ Spec coverage updated: `spec/requests/rendering_rules_spec.rb` — the
 cases for override-shows-instead-of-default on `index`, and for the
 validation-failure path re-rendering `index` with the error message
 rather than a 404 or a different template.
+
+---
+
+## 2026-08-09 · Rendering Guide: self-heal bible/rendering_guide.md on view
+
+Found via a real user report ("Chapter 76 still has thoughts as
+*thoughts*"): `idols-rewind` — a novel with real translated chapters —
+had zero `rendering_rules` override rows and no
+`bible/rendering_guide.md` at all, despite the seeded defaults (which
+already say single-quoted, non-italicized thoughts) existing since the
+migration. Root cause: the doc writer was only ever called from
+create/update/destroy. A novel that never has override activity
+(the common case — most novels are expected to run on pure defaults)
+never triggers a write, so the guide silently never exists and the
+translation prompt's Reference Material section for it stays empty
+forever. This is unlike every other `bible/*.md` file, which gets
+materialized by some pipeline run (preread, translation) discovering
+content — rendering rules have no such discovery step; the DB already
+has the complete picture the moment the migration seeds the defaults,
+so nothing was ever going to trigger that first write on its own.
+
+**Fix**: `#index` now also calls the regenerate step, best-effort. A
+`regenerate_guide!(raise_on_error:)` replaces the old `regenerate_guide`
+— `true` (default) for create/update/destroy, where a write failure
+should surface since it's an explicit save action; `false` from
+`#index`, where a transient disk/permission problem must not turn
+*viewing* the tab into a 500 (the page still renders correctly from
+the DB regardless — the guide file catching up is secondary). Errors
+in the `false` path are logged via `Rails.logger.error`, not swallowed
+silently.
+
+This is a deliberate GET-time side effect, which is unusual for this
+codebase (every other bible-file writer fires from an explicit
+user-initiated save/commit action). Justified here because
+`RenderingRuleDocWriter#write` is idempotent for unchanged DB state —
+re-running it on every view is a no-op rewrite, not a mutation with
+observable side effects to the user — and because there's no better
+trigger point available without either scaffolding bible files at
+Novel-creation time (a new precedent nothing else in the app follows)
+or reaching into the translation pipeline itself (which only ever
+*reads* bible files, never writes them — see the original schema
+entry's `PromptBuilder` wiring section).
+
+**Immediate fix for `idols-rewind`**: manually ran the same write once
+via `rails runner` so `bible/rendering_guide.md` exists now. This does
+*not* retroactively reformat Chapter 76 (translated `2026-08-09
+06:24 UTC`, after the defaults existed but before any guide file did)
+— the guide is a prompt-time input, consulted at translation/QA time,
+not a post-hoc formatter. Chapter 76 keeps its current *italicized*
+thoughts until it's re-translated or hand-edited; only chapters
+translated or QA'd from now on will see the guide.
+
+Spec coverage: `spec/requests/rendering_rules_spec.rb` — GET index on
+a novel with no prior guide file now asserts the file gets created
+with default content (regression test for the exact bug reported);
+a companion case stubs `RenderingRuleDocWriter#write` to raise and
+asserts `index` still returns 200 rather than 500.
