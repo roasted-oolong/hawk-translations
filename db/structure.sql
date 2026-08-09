@@ -189,17 +189,16 @@ ALTER SEQUENCE public.bible_characters_id_seq OWNED BY public.bible_characters.i
 CREATE TABLE public.bible_cultural_phrases (
     id bigint NOT NULL,
     novel_id bigint NOT NULL,
-    phrase character varying NOT NULL,
-    korean_phrase character varying,
+    korean_phrase character varying NOT NULL,
     literal_translation text,
     intended_meaning text,
     context text,
-    established_translation character varying,
     first_appearance_chapter integer,
     notes text,
     last_updated_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    translation_examples jsonb DEFAULT '[]'::jsonb NOT NULL
 );
 
 
@@ -1656,6 +1655,13 @@ CREATE INDEX index_bible_cultural_phrases_on_novel_id ON public.bible_cultural_p
 
 
 --
+-- Name: index_bible_cultural_phrases_on_novel_id_and_korean_phrase; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_bible_cultural_phrases_on_novel_id_and_korean_phrase ON public.bible_cultural_phrases USING btree (novel_id, korean_phrase);
+
+
+--
 -- Name: index_bible_embeddings_on_embeddable; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2313,6 +2319,7 @@ ALTER TABLE ONLY public.voice_calibration_passages
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260808231828'),
 ('20260613071048'),
 ('20260609000001'),
 ('20260608000001'),
