@@ -82,6 +82,56 @@ RSpec.describe BibleMarkdownParser do
         expect(result[:terminology]).to be_empty
       end
     end
+
+    context "cultural phrases — Korean-only heading, no English fallback" do
+      let(:bible_dir) { Dir.mktmpdir }
+
+      before do
+        FileUtils.mkdir_p(File.join(bible_dir, "bible"))
+        allow(ENV).to receive(:fetch).with("HAWK_PROJECT_ROOT", "").and_return(File.dirname(bible_dir))
+        allow(novel).to receive(:directory_name).and_return(File.basename(bible_dir))
+
+        File.write(File.join(bible_dir, "bible", "cultural_phrases.md"), <<~MD)
+          ## 눈치 없다
+          - Literal translation: Doesn't have "nunchi" (social awareness)
+          - Intended meaning: Oblivious to the room's mood
+          - Context: Used when a character misses an obvious social cue.
+          - Notes: Renders differently depending on scene tone.
+        MD
+
+        %w[characters.md locations.md terminology.md story.md].each do |f|
+          FileUtils.touch(File.join(bible_dir, "bible", f))
+        end
+      end
+
+      after { FileUtils.rm_rf(bible_dir) }
+
+      it "parses the heading itself as korean_phrase, with no phrase/established_translation keys" do
+        entry = described_class.new(novel).pending_entries[:cultural_phrases].first
+        expect(entry[:korean_phrase]).to eq("눈치 없다")
+        expect(entry).not_to have_key(:phrase)
+        expect(entry).not_to have_key(:established_translation)
+      end
+
+      it "matches an existing record by korean_phrase alone, never by an English field" do
+        create(:bible_cultural_phrase, novel: novel, korean_phrase: "눈치 없다", context: "old context")
+
+        entry = described_class.new(novel).pending_entries[:cultural_phrases].first
+        expect(entry[:is_existing]).to be true
+        expect(entry[:field_changes]).to have_key(:context)
+      end
+
+      it "reports no pending change once the DB record matches the reparsed entry exactly" do
+        create(:bible_cultural_phrase, novel: novel, korean_phrase: "눈치 없다",
+               literal_translation: "Doesn't have \"nunchi\" (social awareness)",
+               intended_meaning: "Oblivious to the room's mood",
+               context: "Used when a character misses an obvious social cue.",
+               notes: "Renders differently depending on scene tone.")
+
+        result = described_class.new(novel).pending_entries[:cultural_phrases]
+        expect(result).to be_empty
+      end
+    end
   end
 
   describe "#pending_breakdown" do

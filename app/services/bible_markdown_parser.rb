@@ -15,8 +15,8 @@ class BibleMarkdownParser
                          first_appearance_chapter notes],
     locations:        %i[name korean_name significance first_appearance_chapter notes],
     terminology:      %i[term korean_term definition usage_notes first_appearance_chapter notes],
-    cultural_phrases: %i[phrase korean_phrase literal_translation intended_meaning context
-                         established_translation first_appearance_chapter notes],
+    cultural_phrases: %i[korean_phrase literal_translation intended_meaning context
+                         first_appearance_chapter notes],
     story:            %i[title content category],
   }.freeze
 
@@ -85,11 +85,9 @@ class BibleMarkdownParser
           (by_korean[e[:korean_key]] || by_name[e[:term]]).nil?
       }
     when :cultural_phrases
-      by_korean = @novel.bible_cultural_phrases.index_by(&:korean_phrase)
-      by_name   = @novel.bible_cultural_phrases.index_by(&:phrase)
+      by_korean = @novel.bible_cultural_phrases.index_by { |r| normalize_key(r.korean_phrase) }
       parse_file(cat).select { |e|
-        dismissed.include?("#{cat}:#{e[:korean_key]}") &&
-          (by_korean[e[:korean_key]] || by_name[e[:phrase]]).nil?
+        dismissed.include?("#{cat}:#{e[:korean_key]}") && by_korean[e[:korean_key]].nil?
       }
     when :story
       by_title = @novel.bible_story_entries.index_by(&:title)
@@ -258,18 +256,22 @@ class BibleMarkdownParser
       f["t/n written"].presence&.then { "T/N written: #{_1}" },
       f["t/n text"].presence&.then   { "T/N text: #{_1}" }
     )
-    notes = join_notes(f["notes"], tn)
+    notes         = join_notes(f["notes"], tn)
+    # No English fallback here — see docs/DECISIONS.md 2026-08-08. The
+    # heading is Korean-only now (PromptBuilder's template asks for
+    # "## [Korean phrase]", nothing else), so `name` is already the Korean
+    # phrase text in the common case; `korean`/the explicit field only
+    # matter when the LLM still drifts to an annotated heading.
+    korean_phrase = f["korean phrase"].presence || korean || name
 
     {
-      phrase:                   name,
-      korean_phrase:            f["korean phrase"].presence || korean,
+      korean_phrase:            korean_phrase,
       literal_translation:      f["literal translation"].presence,
       intended_meaning:         f["intended meaning"].presence,
       context:                  f["context"].presence,
-      established_translation:  f["established translation"].presence,
       first_appearance_chapter: extract_chapter(f["first appearance"]),
       notes:                    notes,
-      korean_key:               normalize_key(f["korean phrase"].presence || korean || name),
+      korean_key:               normalize_key(korean_phrase),
     }.compact
   end
 
@@ -338,11 +340,14 @@ class BibleMarkdownParser
         classify_entry(e, record, fields)
       }
     when :cultural_phrases
-      by_korean = @novel.bible_cultural_phrases.index_by(&:korean_phrase)
-      by_name   = @novel.bible_cultural_phrases.index_by(&:phrase)
+      # Korean-only match — no English fallback. See docs/DECISIONS.md
+      # 2026-08-08: matching by English string is exactly what produced
+      # duplicate rows for the same Korean phrase with different (both
+      # legitimate) English rendering choices.
+      by_korean = @novel.bible_cultural_phrases.index_by { |r| normalize_key(r.korean_phrase) }
       entries.filter_map { |e|
         next if dismissed.include?("#{cat}:#{e[:korean_key]}")
-        record = by_korean[e[:korean_key]] || by_name[e[:phrase]]
+        record = by_korean[e[:korean_key]]
         classify_entry(e, record, fields)
       }
     when :story
