@@ -131,6 +131,16 @@
       Voice Calibration
     </button>
 
+    <button class="novel-tab"
+            role="tab"
+            data-action="click->tabs#select"
+            data-tabs-key-param="rendering-guide"
+            data-testid="tab-rendering-guide"
+            aria-controls="tab-panel-rendering-guide"
+            aria-selected="false">
+      Rendering Guide
+    </button>
+
   </div><%# /.novel-tabs__strip %>
 
   <%# Tab panels — Turbo Frames; src set eagerly by tabs_controller on connect %>
@@ -164,6 +174,14 @@
                data-testid="tab-panel-voice-calibration"
                role="tabpanel"
                aria-labelledby="tab-voice-calibration">
+    <%# src set by tabs_controller on connect(); content loads immediately. %>
+  </turbo-frame>
+
+  <turbo-frame id="tab-panel-rendering-guide"
+               data-tabs-src-value="<%= novel_rendering_rules_path(@novel) %>"
+               data-testid="tab-panel-rendering-guide"
+               role="tabpanel"
+               aria-labelledby="tab-rendering-guide">
     <%# src set by tabs_controller on connect(); content loads immediately. %>
   </turbo-frame>
 

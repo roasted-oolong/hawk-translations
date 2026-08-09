@@ -3272,3 +3272,82 @@ failures seen in this run (`bible_characters_spec.rb`,
 `bible_story_entries_spec.rb`, both a stale `redirect_to show` vs.
 actual `redirect_to edit` assertion) are pre-existing and untouched by
 this change.
+
+---
+
+## 2026-08-09 · Rendering Guide: own tab, inline accordion editor
+
+Superseded the previous entry's UI within the same day, before it saw
+real use: user feedback was that the feature belonged in its own
+top-level tab (`novels/show.html.erb`'s tab strip — Chapters / Bible /
+Review / Voice Calibration / **Rendering Guide**), not a card buried
+inside the Bible landing page, and that it should look like the
+`hawk-translations-ui-prototype`'s accordion treatment rather than a
+plain data table. The Bible-landing-page card and `@bible_counts`
+entry added in the previous entry are removed.
+
+**Own tab, not a Bible sub-page.** `tab-panel-rendering-guide`'s frame
+src points straight at `novel_rendering_rules_path` (index doubles as
+both the tab's embedded content and a directly-visitable full page,
+same convention `bible#show` already uses — breadcrumb outside the
+`turbo_frame_tag`, everything else inside). `tabs_controller.ts` needed
+no changes; it discovers panels/buttons by `data-tabs-key-param` /
+`turbo-frame[id^='tab-panel-']` rather than a hardcoded tab list.
+
+**The index page *is* the editor now — `edit` action removed.**
+Previously `edit`/`update` were separate: `edit` built an in-memory
+override copy of the matching default for a novel that hadn't
+overridden it yet, then a distinct page displayed it. That's now
+inline: each accordion card's `<details>` body holds a
+`form_with model: rule, url: novel_rendering_rule_path(novel,
+rule.rule_key), method: :patch` — `rule` is whatever
+`RenderingRule.effective_for` resolved for that rule_key (the novel's
+own override, or the shared default), so the form is prefilled with
+whatever's currently in effect without any separate prefill step.
+Submitting always PATCHes the same URL; `#update`'s
+`find_or_initialize_by`-equivalent (`find_override || build`) is
+unchanged and still what actually creates the override row on first
+save. The `name` and `position` fields ride along as hidden fields
+(their current value off `rule`) rather than being user-editable in
+the card, since the prototype never exposed them either — that's also
+what carries a default's `name` forward onto a first-time override; a
+request that omits them (bypassing the rendered form) fails the
+`name` presence validation, which the spec now exercises explicitly
+rather than relying on controller-side prefill logic.
+
+**Failed validation re-renders `index`, not a separate `edit` page.**
+`#update` on failure calls a new private `replace_in_effective_set`,
+which splices the just-attempted (unsaved, errored) `rule` into its
+normal spot in a fresh `RenderingRule.effective_for` array — so
+re-rendering `index` shows the user's own attempted edit and its
+errors inside the same card, auto-expanded via `@open_rule_key`,
+rather than losing the attempt or bouncing to a different page.
+
+**CSS**: new `_rendering_guide.css`, ported onto this app's existing
+design tokens rather than the prototype's literal hex values —
+`--color-accent`/`--color-accent-subtle` (already commented "bible /
+literary identity" violet in `application.css`) for the hero banner
+and example panels, `--font-family-serif` for headings, matching
+`.text-serif-display`/`.card` conventions used elsewhere. The
+accordion itself is native `<details>`/`<summary>` (chevron rotated
+via `[open] .rg-card__chevron`) rather than a Stimulus controller —
+no JS needed for expand/collapse, and it keeps each card's open state
+independent (unlike the prototype's single-open `expandedId` state,
+a deliberate simplification).
+
+**`new`/`create` (pure novel-specific additions with no default
+counterpart) kept as a separate full page** — reached via "Add Rule"
+with `turbo_frame: "_top"` to break out of the tab frame — since the
+prototype has no equivalent flow (its 7 rules are fixed) and this is
+expected to be rare.
+
+Verified against a headless-Chrome (Cuprite) system-spec screenshot,
+not just request specs — confirms the hero banner, numbered accordion
+cards with Default/"Custom for this novel" labels, side-by-side
+example panels, and the "At a glance" preview all render as intended.
+
+Spec coverage updated: `spec/requests/rendering_rules_spec.rb` — the
+`edit`-specific examples are gone (no route left to hit); added
+cases for override-shows-instead-of-default on `index`, and for the
+validation-failure path re-rendering `index` with the error message
+rather than a 404 or a different template.

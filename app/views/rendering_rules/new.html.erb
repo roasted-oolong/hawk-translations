@@ -4,7 +4,6 @@
 <%= render "layouts/breadcrumb", crumbs: [
       ["Novels", novels_path],
       [@novel.title, novel_path(@novel)],
-      ["Bible", novel_bible_path(@novel)],
       ["Rendering Guide", novel_rendering_rules_path(@novel)],
       ["Add Rule", nil]
     ] %>
@@ -15,5 +14,5 @@
 </div>
 
 <div class="card">
-  <%= render "form", form_url: novel_rendering_rules_path(@novel), form_method: :post %>
+  <%= render "form" %>
 </div>

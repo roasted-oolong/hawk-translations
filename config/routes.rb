@@ -43,12 +43,12 @@ Rails.application.routes.draw do
     resources :bible_cultural_phrases, only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
     resources :bible_story_entries,    only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
 
-    # Rendering Guide overrides — keyed by rule_key (not id), so the same
-    # edit/update path works whether this novel already overrides that
-    # rule_key or is still inheriting the default. See
-    # RenderingRulesController.
+    # Rendering Guide overrides — the index page is itself the inline
+    # accordion editor (see RenderingRulesController), keyed by rule_key
+    # (not id) so the same update path works whether this novel already
+    # overrides that rule_key or is still inheriting the default.
     resources :rendering_rules, param: :rule_key,
-      only: [ :index, :new, :create, :edit, :update, :destroy ]
+      only: [ :index, :new, :create, :update, :destroy ]
 
     # Translation jobs — trigger, list, show output, cancel
     resources :translation_jobs, only: [ :index, :show, :create, :destroy ] do

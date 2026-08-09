@@ -1,61 +1,83 @@
 <%# app/views/rendering_rules/index.html.erb %>
 <% content_for :title, "Rendering Guide — #{@novel.title} — Hawk" %>
 
+<%# Breadcrumb outside the frame — shown on direct page visits, ignored in the tab panel %>
 <%= render "layouts/breadcrumb", crumbs: [
       ["Novels", novels_path],
       [@novel.title, novel_path(@novel)],
-      ["Bible", novel_bible_path(@novel)],
       ["Rendering Guide", nil]
     ] %>
 
-<div class="page-header">
-  <div class="page-header__row">
-    <div>
-      <h1 class="page-title">Rendering Guide</h1>
-      <p class="page-subtitle">
-        How dialogue, thoughts, titles, and onomatopoeia render into English for this novel.
-        Every novel starts from the same defaults below — edit one to override it just for
-        <%= @novel.title %>.
-      </p>
+<%= turbo_frame_tag "tab-panel-rendering-guide" do %>
+
+<div class="rg-tab" data-testid="rendering-guide-tab">
+
+  <%# ------------------------------------------------------------------ %>
+  <%# Hero                                                                %>
+  <%# ------------------------------------------------------------------ %>
+  <div class="rg-hero">
+    <div class="rg-hero__kicker">House style &middot; living document</div>
+    <h1 class="rg-hero__title text-serif-display">Rendering Guide</h1>
+    <p class="rg-hero__desc">
+      A quiet set of decisions for the moments where translation becomes voice —
+      dialogue, thoughts, titles, onomatopoeia. Every novel starts from the same
+      defaults below; open one to override it just for <%= @novel.title %>.
+    </p>
+    <div class="rg-hero__meta">
+      <span data-testid="rendering-rules-count"><%= pluralize(@rules.size, "active rule") %></span>
+      <span class="rg-hero__dot" aria-hidden="true"></span>
+      <span>Overrides saved to this novel only</span>
     </div>
-    <%= link_to "Add Rule", new_novel_rendering_rule_path(@novel), class: "btn btn--primary btn--sm" %>
   </div>
+
+  <%# ------------------------------------------------------------------ %>
+  <%# Rule list                                                           %>
+  <%# ------------------------------------------------------------------ %>
+  <div>
+    <div class="rg-section-header">
+      <div>
+        <h2 class="rg-section-header__title text-serif-display">Rules of rendering</h2>
+        <p class="rg-section-header__desc">Open a rule to edit its guidance and working example.</p>
+      </div>
+      <%= link_to "Add Rule", new_novel_rendering_rule_path(@novel),
+            class: "btn btn--primary btn--sm",
+            data: { turbo_frame: "_top" } %>
+    </div>
+
+    <div class="rg-list" data-testid="rendering-rules-list">
+      <% @rules.each_with_index do |rule, index| %>
+        <%= render "rule_card", rule: rule, index: index, novel: @novel,
+              overridden: rule.novel_id == @novel.id,
+              open: @open_rule_key == rule.rule_key,
+              default_rule_keys: @default_rule_keys %>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ------------------------------------------------------------------ %>
+  <%# At a glance                                                         %>
+  <%# ------------------------------------------------------------------ %>
+  <% previewable = @rules.select { |r| r.example_output.present? } %>
+  <% if previewable.any? %>
+    <div class="rg-preview">
+      <div class="rg-preview__header">
+        <div>
+          <h2 class="rg-preview__title text-serif-display">At a glance</h2>
+          <p class="rg-preview__desc">The current examples, together as they'll read on the page.</p>
+        </div>
+        <span class="rg-preview__tag">Live preview</span>
+      </div>
+      <div class="rg-preview__list">
+        <% previewable.each do |rule| %>
+          <div class="rg-preview__row" data-testid="rendering-rule-preview-row">
+            <span class="rg-preview__name"><%= rule.name %></span>
+            <p class="rg-preview__text text-serif"><%= rule.example_output %></p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
 </div>
 
-<div class="data-table-wrapper">
-  <table class="data-table" data-testid="rendering-rules-table">
-    <thead>
-      <tr>
-        <th class="data-table__th">Rule</th>
-        <th class="data-table__th">Guidance</th>
-        <th class="data-table__th">Source</th>
-        <th class="data-table__th data-table__th--actions"></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @rules.each do |rule| %>
-        <% overridden = rule.novel_id == @novel.id %>
-        <tr class="data-table__row" data-testid="rendering-rule-row" data-rule-key="<%= rule.rule_key %>">
-          <td class="data-table__td data-table__td--title"><%= rule.name %></td>
-          <td class="data-table__td"><%= truncate(rule.guidance.to_s, length: 90) %></td>
-          <td class="data-table__td">
-            <span class="<%= overridden ? "text-secondary" : "text-muted" %>" data-testid="rendering-rule-source">
-              <%= overridden ? "Custom" : "Default" %>
-            </span>
-          </td>
-          <td class="data-table__td data-table__td--actions">
-            <%= link_to "Edit", edit_novel_rendering_rule_path(@novel, rule.rule_key), class: "btn btn--ghost btn--sm" %>
-            <% if overridden %>
-              <% has_default = @default_rule_keys.include?(rule.rule_key) %>
-              <%= modal_button_to has_default ? "Revert" : "Remove", novel_rendering_rule_path(@novel, rule.rule_key),
-                    method:        :delete,
-                    message:       has_default ? "Revert \"#{rule.name}\" to the default?" : "Remove \"#{rule.name}\"?",
-                    confirm_label: has_default ? "Revert" : "Remove",
-                    button_class:  "btn btn--danger btn--sm" %>
-            <% end %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-</div>
+<% end %><%# /turbo-frame tab-panel-rendering-guide %>

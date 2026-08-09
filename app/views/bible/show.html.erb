@@ -148,26 +148,6 @@
       </div>
     </div>
 
-    <div class="bible-category-card"
-         data-testid="bible-category-card"
-         data-category="rendering-guide">
-      <div class="bible-category-card__header">
-        <%= link_to "Rendering Guide", novel_rendering_rules_path(@novel),
-              class: "bible-category-card__title",
-              data: { turbo_frame: "_top" } %>
-      </div>
-      <p class="bible-category-card__description">
-        How dialogue, thoughts, titles, and onomatopoeia render into English — global
-        defaults plus this novel's overrides.
-      </p>
-      <div class="bible-category-card__footer">
-        <span class="bible-category-card__count"><%= @bible_counts[:rendering_rules] %></span>
-        <span class="bible-category-card__count-label">
-          <%= "rule".pluralize(@bible_counts[:rendering_rules]) %>
-        </span>
-      </div>
-    </div>
-
   </div>
 </div>
 
