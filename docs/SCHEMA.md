@@ -289,3 +289,42 @@ Indexes:
 - `search_text` GIN — keyword/Korean tsvector search
 - `novel_id` — novel-scoped filtering
 - `organization_id` — org-scoped filtering
+
+## Milestone 13 — Rendering Guide ✅
+
+### rendering_rules
+A rendering convention (dialogue, thoughts, titles, onomatopoeia, etc.) —
+either a global default (`novel_id: nil`) or one novel's override/addition,
+keyed by `rule_key`. Defaults are American-literary-convention starting
+points, not mandates; `RenderingRule.effective_for(novel)` resolves the two
+into the set a novel actually translates under. See docs/DECISIONS.md,
+2026-08-09.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint PK | |
+| novel_id | bigint FK | nullable — nil is a global default row |
+| rule_key | string | not null — stable identifier a novel's override matches against (e.g. "dialogue") |
+| name | string | not null |
+| guidance | text | not null |
+| example_input | text | |
+| example_output | text | |
+| position | integer | not null, default 0 |
+| created_at | datetime | |
+| updated_at | datetime | |
+
+Indexes:
+- `(novel_id, rule_key)` unique — one row per rule_key per novel
+- `rule_key` unique, partial (`WHERE novel_id IS NULL`) — one default per
+  rule_key; a plain composite index doesn't cover this, since Postgres
+  treats every `NULL` as distinct
+
+Scopes: `defaults` (`novel_id: nil`), `for_novel(novel)`, `ordered`
+(`position, id`).
+
+`RenderingRuleDocWriter` (`app/services/`) materializes
+`RenderingRule.effective_for(novel)` to `bible/rendering_guide.md`, the
+file `PromptBuilder::NOVEL_FILES` reads into the translation prompt's
+Reference Material. Nothing currently calls the writer — that's wired up
+once a controller exists to edit `RenderingRule` rows; until then only the
+seeded defaults exist and nothing writes the file yet.

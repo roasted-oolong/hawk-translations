@@ -3105,3 +3105,103 @@ schema), `bible_lookup_spec.rb`/`prompt_builder_spec.rb`s updated for the
 new field shape. Full suite (minus `spec/system` — Capybara/Chromium
 unavailable in this sandbox) run clean against a baseline of pre-existing,
 unrelated failures confirmed via a clean-checkout diff.
+
+## 2026-08-09 · Rendering Guide: schema, resolver, doc writer, and prompt wiring
+
+New feature: a rendering-conventions guide (dialogue quoting, thoughts,
+titles, onomatopoeia — how Korean gets typographically rendered in
+English) that's actually enforced by the pipeline, not just a reference
+doc a translator might or might not follow. Originated from a UI
+prototype (`hawk-translations-ui-prototype`) whose `RenderingRule` shape
+(name/kicker/value/guidance/input/output — see that repo's
+`rendering-guide.tsx`) was reviewed and only partly carried over; see
+below for what was dropped.
+
+**Why not just append to `translation_guidelines.md`**: that file already
+exists per-novel and is already read into the prompt and QA-checked
+(`style_guidelines_followed`), so the cheapest version of this feature
+would have been a new section there. Rejected in favor of a proper
+schema: mixing process instructions (phases, tense, the dash ban) with
+mechanical rendering conventions in one prose file was judged worse
+long-term than giving rendering rules their own table and their own
+generated file, mirroring the separation `voice_calibration.md` already
+has from `translation_guidelines.md`.
+
+**Schema** (`db/migrate/20260809034936_create_rendering_rules.rb`):
+`rendering_rules` — nullable `novel_id`; `novel_id: nil` rows are global
+defaults, non-null rows are that novel's override or addition, matched by
+`rule_key`. Two unique indexes: a composite `(novel_id, rule_key)` for the
+per-novel case, plus a **partial** index on `rule_key WHERE novel_id IS
+NULL` — the composite index alone would not catch two default rows with
+the same `rule_key`, since Postgres treats every `NULL` as distinct in a
+uniqueness check.
+
+**Resolver** (`RenderingRule.effective_for(novel)`): for each default
+`rule_key`, substitutes that novel's override if one exists, in the
+default's own position/order; novel-specific `rule_key`s with no matching
+default are appended after. Neither side knows about the other — `Novel`
+doesn't special-case defaults, defaults don't know about novels.
+
+**Defaults are explicitly not mandates.** Seeded content
+(`db/seeds.rb`, idempotent via `find_or_create_by!`'s block form so
+re-seeding never clobbers hand edits) follows American literary
+convention (double-quoted dialogue, single-quoted un-italicized thoughts,
+angle-bracketed titles, onomatopoeia folded into the sentence) —
+deliberately framed as a starting point a novel can override, not a
+rule. Two candidate rules were cut from the prototype's original 7 before
+seeding: **honorifics** (already handled per-character via the Bible +
+existing prompt instructions — a general rendering rule risked
+contradicting character-specific entries) and **emphasis** (subjective —
+"use sparingly" isn't a checkable rule the way the QA gate needs).
+**Foreign/multilingual text** was also considered and dropped — it
+already has a home in `translation_guidelines.md`'s T/N-format section;
+adding a second, differently-worded rule for the same situation would
+have been exactly the "this prompt, that prompt" duplication this
+feature was meant to avoid, not add.
+
+**Doc writer** (`RenderingRuleDocWriter`): takes a plain `novel_dir`
+string and a `rules` array — not a `Novel` + `ENV["HAWK_PROJECT_ROOT"]`
+lookup, and not `RenderingRule.effective_for` called internally.
+Deliberate departure from `VoiceCalibrationDocWriter`'s shape (which
+resolves its own path from `Novel`/`ENV`) — and exactly why that class
+has no spec at all. Decoupling path resolution and rule resolution out to
+the caller is what makes this one testable with `Dir.mktmpdir` and bare
+`RenderingRule.new(...)` instances, no DB writes, mirroring
+`BibleReviewWriter`'s spec shape instead. Always fully rewrites the file
+rather than patching it in place (so it can never drift from what the DB
+currently resolves to), and removes the file entirely given zero rules
+rather than leaving an empty "Rendering Guide" section to show up in the
+prompt.
+
+**Prompt wiring** (`PromptBuilder`): one new `NOVEL_FILES` entry
+(`rendering_guide.md`, `:bible` location, same convention as every other
+bible file), one new `TranslationContext` field, one new
+`reference_material` line. Both production call sites
+(`translate_batch.rb`, `chapter_qa.rb`) needed no changes — they already
+build the context via `**load_reference_files(novel_dir)`, so the new
+field flows through automatically. Both `style_guidelines_followed` QA
+descriptions (factcheck + chapter_qa passes) broadened to name the
+Rendering Guide alongside Translation Guidelines, with a concrete example
+(thoughts italicized when the guide calls for single quotes) so the
+check has something specific to flag.
+
+**Not fixed here, explicitly out of scope**: nothing yet calls
+`RenderingRuleDocWriter.new(novel_dir).write(RenderingRule.effective_for(novel))`
+— that orchestration (and deciding whether it fires from a controller
+action vs. some other trigger) is deferred until a controller exists to
+create/edit `RenderingRule` overrides. Until then, only the 4 seeded
+defaults exist anywhere and `bible/rendering_guide.md` is never written,
+so the new Reference Material section is inert (empty string, filtered
+out by `reference_material`) for every novel today.
+
+Spec coverage: `rendering_rule_spec.rb` (validations incl. the
+nil-scoped-uniqueness case, cascade, scopes, all four `.effective_for`
+resolution behaviors), `rendering_rule_doc_writer_spec.rb` (tmpdir-based,
+mirroring `bible_review_writer_spec.rb`), `prompt_builder_spec.rb` updated
+(8 hand-built `TranslationContext` call sites, the `.load_reference_files`
+"9 files" count, new inclusion/omission assertions for the Rendering
+Guide section, one QA-wording assertion updated for the broadened
+phrasing). `spec/models` + `spec/services` full suites green; `spec/requests`
+run with 19 pre-existing failures confirmed unrelated (`config/routes.rb`
+has no `login`/session routes at all — the documented, deliberate
+"auth disabled" state, not something this change touched).
