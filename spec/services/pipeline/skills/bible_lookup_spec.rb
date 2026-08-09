@@ -151,12 +151,21 @@ RSpec.describe Pipeline::Skills::BibleLookup do
     end
 
     it "formats a BibleCulturalPhrase result with a [Cultural Phrase] header" do
-      phrase = build_stubbed(:bible_cultural_phrase, novel: novel, phrase: "aigoo", literal_translation: "oh dear")
+      phrase = build_stubbed(:bible_cultural_phrase, novel: novel, korean_phrase: "아이고", literal_translation: "oh dear")
       stub_results([ { embeddable_type: "BibleCulturalPhrase", record: phrase } ])
 
-      expect(skill.execute("query" => "aigoo")).to eq(
-        "[Cultural Phrase]\nPhrase: aigoo\nLiteral translation: oh dear"
+      expect(skill.execute("query" => "아이고")).to eq(
+        "[Cultural Phrase]\nKorean phrase: 아이고\nLiteral translation: oh dear"
       )
+    end
+
+    it "includes translation_examples_text for a BibleCulturalPhrase result that has logged examples" do
+      phrase = build_stubbed(:bible_cultural_phrase, novel: novel, korean_phrase: "아이고")
+      phrase.translation_examples_text = "sighing: oh dear\nexasperated: for goodness' sake"
+      stub_results([ { embeddable_type: "BibleCulturalPhrase", record: phrase } ])
+
+      result = skill.execute("query" => "아이고")
+      expect(result).to include("Translation examples: sighing: oh dear\nexasperated: for goodness' sake")
     end
 
     it "formats a BibleStoryEntry result with a [Story Entry] header" do

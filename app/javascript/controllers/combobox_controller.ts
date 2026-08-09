@@ -33,13 +33,16 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 // Derive the primary display label from a search result record.
 // Each bible type uses a different column for its human-readable name.
+// BibleCulturalPhrase has no English name column at all — korean_phrase is
+// the whole identity (2026-08-08) — so its label is Korean, unlike every
+// other type here.
 function recordLabel(type: string, record: Record<string, unknown>): string {
   switch (type) {
-    case "BibleCharacter":      return String(record["name"]   ?? "")
-    case "BibleLocation":       return String(record["name"]   ?? "")
-    case "BibleTerminology":    return String(record["term"]   ?? "")
-    case "BibleCulturalPhrase": return String(record["phrase"] ?? "")
-    case "BibleStoryEntry":     return String(record["title"]  ?? "")
+    case "BibleCharacter":      return String(record["name"]          ?? "")
+    case "BibleLocation":       return String(record["name"]          ?? "")
+    case "BibleTerminology":    return String(record["term"]          ?? "")
+    case "BibleCulturalPhrase": return String(record["korean_phrase"] ?? "")
+    case "BibleStoryEntry":     return String(record["title"]         ?? "")
     default:                    return String(record["name"] ?? record["title"] ?? "Unknown")
   }
 }
