@@ -597,6 +597,19 @@ this item: the Korean-first entry point (select Korean source text, suggest
 the English side instead), and the find-and-correct-existing-instances half
 below.
 
+**Cultural phrases went further, same day** — see `docs/DECISIONS.md`'s
+"Cultural phrases: Korean identity, no forced English label" entry:
+`bible_cultural_phrases` now has no English field at all —
+`korean_phrase` is the whole identity, `translation_examples` holds
+however many context-dependent renderings are actually known. This
+sharpens, but doesn't close, the Korean-first gap above: search and the
+schema are Korean-first for this type now, but the in-editor Tab lookup
+still can't be *triggered* from Korean source text — that pane isn't an
+editable/selectable field (`chapter_review/show.html.erb`'s
+`.chapter-review__korean-pane` is plain `<p>` tags). Wiring the Tab
+shortcut onto that pane is still what "Korean-first entry point" above
+means and is still not done.
+
 ---
 
 ## Future — AI-Generated Bible Entry
