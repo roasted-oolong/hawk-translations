@@ -302,19 +302,24 @@ phrase_blocks.each do |block|
   # Skip the template placeholder block
   next if phrase_name == "[Phrase]"
 
-  if novel.bible_cultural_phrases.exists?(phrase: phrase_name)
+  # phrase_name is the heading text — an English label with editorial
+  # markers stripped, for the old cultural_phrases.md format this script
+  # was written against. Against the current (2026-08-08) Korean-only
+  # heading format, the strip regexes above are simply no-ops and
+  # phrase_name ends up holding the Korean text directly, which is exactly
+  # what korean_phrase (the schema's real identity now — see
+  # docs/DECISIONS.md) needs.
+  if novel.bible_cultural_phrases.exists?(korean_phrase: phrase_name)
     log "  SKIP phrase already exists: #{phrase_name}"
     skipped += 1
     next
   end
 
   novel.bible_cultural_phrases.create!(
-    phrase:                   phrase_name,
-    korean_phrase:            presence_str(fields["korean_phrase"]),
+    korean_phrase:            presence_str(fields["korean_phrase"]) || phrase_name,
     literal_translation:      presence_str(fields["literal_translation"]),
     intended_meaning:         presence_str(fields["intended_meaning"]),
     context:                  presence_str(fields["context"]),
-    established_translation:  presence_str(fields["established_translation"]),
     first_appearance_chapter: parse_chapter(fields["first_appearance"]),
     notes:                    presence_str(fields["notes"])
   )
