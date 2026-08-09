@@ -1,0 +1,19 @@
+<%# app/views/rendering_rules/new.html.erb %>
+<% content_for :title, "Add Rendering Rule — #{@novel.title} — Hawk" %>
+
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Bible", novel_bible_path(@novel)],
+      ["Rendering Guide", novel_rendering_rules_path(@novel)],
+      ["Add Rule", nil]
+    ] %>
+
+<div class="page-header">
+  <h1 class="page-title">Add Rendering Rule</h1>
+  <p class="page-subtitle">A novel-specific convention with no default equivalent.</p>
+</div>
+
+<div class="card">
+  <%= render "form", form_url: novel_rendering_rules_path(@novel), form_method: :post %>
+</div>

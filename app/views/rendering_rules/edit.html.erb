@@ -1,0 +1,24 @@
+<%# app/views/rendering_rules/edit.html.erb %>
+<% content_for :title, "Edit #{@rule.name} — Hawk" %>
+
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Bible", novel_bible_path(@novel)],
+      ["Rendering Guide", novel_rendering_rules_path(@novel)],
+      [@rule.name, nil]
+    ] %>
+
+<div class="page-header">
+  <h1 class="page-title">Edit Rendering Rule</h1>
+  <p class="page-subtitle">
+    <%= @rule.name %>
+    <% unless @rule.persisted? %>
+      &mdash; not yet overridden for <%= @novel.title %>; saving creates the override.
+    <% end %>
+  </p>
+</div>
+
+<div class="card">
+  <%= render "form", form_url: novel_rendering_rule_path(@novel, params[:rule_key]), form_method: :patch %>
+</div>

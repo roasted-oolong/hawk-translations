@@ -1,0 +1,61 @@
+<%# app/views/rendering_rules/index.html.erb %>
+<% content_for :title, "Rendering Guide — #{@novel.title} — Hawk" %>
+
+<%= render "layouts/breadcrumb", crumbs: [
+      ["Novels", novels_path],
+      [@novel.title, novel_path(@novel)],
+      ["Bible", novel_bible_path(@novel)],
+      ["Rendering Guide", nil]
+    ] %>
+
+<div class="page-header">
+  <div class="page-header__row">
+    <div>
+      <h1 class="page-title">Rendering Guide</h1>
+      <p class="page-subtitle">
+        How dialogue, thoughts, titles, and onomatopoeia render into English for this novel.
+        Every novel starts from the same defaults below — edit one to override it just for
+        <%= @novel.title %>.
+      </p>
+    </div>
+    <%= link_to "Add Rule", new_novel_rendering_rule_path(@novel), class: "btn btn--primary btn--sm" %>
+  </div>
+</div>
+
+<div class="data-table-wrapper">
+  <table class="data-table" data-testid="rendering-rules-table">
+    <thead>
+      <tr>
+        <th class="data-table__th">Rule</th>
+        <th class="data-table__th">Guidance</th>
+        <th class="data-table__th">Source</th>
+        <th class="data-table__th data-table__th--actions"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @rules.each do |rule| %>
+        <% overridden = rule.novel_id == @novel.id %>
+        <tr class="data-table__row" data-testid="rendering-rule-row" data-rule-key="<%= rule.rule_key %>">
+          <td class="data-table__td data-table__td--title"><%= rule.name %></td>
+          <td class="data-table__td"><%= truncate(rule.guidance.to_s, length: 90) %></td>
+          <td class="data-table__td">
+            <span class="<%= overridden ? "text-secondary" : "text-muted" %>" data-testid="rendering-rule-source">
+              <%= overridden ? "Custom" : "Default" %>
+            </span>
+          </td>
+          <td class="data-table__td data-table__td--actions">
+            <%= link_to "Edit", edit_novel_rendering_rule_path(@novel, rule.rule_key), class: "btn btn--ghost btn--sm" %>
+            <% if overridden %>
+              <% has_default = @default_rule_keys.include?(rule.rule_key) %>
+              <%= modal_button_to has_default ? "Revert" : "Remove", novel_rendering_rule_path(@novel, rule.rule_key),
+                    method:        :delete,
+                    message:       has_default ? "Revert \"#{rule.name}\" to the default?" : "Remove \"#{rule.name}\"?",
+                    confirm_label: has_default ? "Revert" : "Remove",
+                    button_class:  "btn btn--danger btn--sm" %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

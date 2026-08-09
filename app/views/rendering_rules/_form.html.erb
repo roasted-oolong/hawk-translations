@@ -1,0 +1,61 @@
+<%# app/views/rendering_rules/_form.html.erb %>
+<%# Explicit url/method (passed in from new/edit) rather than relying on
+    form_with's polymorphic route inference — @rule is unpersisted on both
+    "add a new rule" and "override a default for the first time", and those
+    two cases need different target URLs despite the record looking the same. %>
+<%= form_with model: @rule, url: form_url, method: form_method, data: { testid: "rendering-rule-form" } do |f| %>
+  <% if @rule.errors.any? %>
+    <div class="form-errors" data-testid="form-errors">
+      <p class="form-errors__summary"><%= pluralize(@rule.errors.count, "error") %> prevented this from saving:</p>
+      <ul class="form-errors__list">
+        <% @rule.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="bible-form__grid">
+    <div class="form-group">
+      <%= f.label :rule_key, "Rule key", class: "form-label" %>
+      <% if @rule.persisted? || params[:rule_key].present? %>
+        <%= f.text_field :rule_key, class: "form-input", readonly: true %>
+        <p class="form-hint">Fixed once set — it's how this override is matched to the default it replaces.</p>
+      <% else %>
+        <%= f.text_field :rule_key, class: "form-input", placeholder: "e.g. em-dash" %>
+      <% end %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :name, class: "form-label" %>
+      <%= f.text_field :name, class: "form-input" %>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <%= f.label :guidance, class: "form-label" %>
+    <%= f.text_area :guidance, rows: 5, class: "form-input" %>
+  </div>
+
+  <div class="bible-form__grid">
+    <div class="form-group">
+      <%= f.label :example_input, "Example input (Korean)", class: "form-label" %>
+      <%= f.text_area :example_input, rows: 3, class: "form-input" %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :example_output, "Example output (English)", class: "form-label" %>
+      <%= f.text_area :example_output, rows: 3, class: "form-input" %>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <%= f.label :position, class: "form-label" %>
+    <%= f.number_field :position, class: "form-input" %>
+  </div>
+
+  <div class="form-actions">
+    <%= f.submit "Save", class: "btn btn--primary" %>
+    <%= link_to "Cancel", novel_rendering_rules_path(@novel), class: "btn btn--ghost" %>
+  </div>
+<% end %>
