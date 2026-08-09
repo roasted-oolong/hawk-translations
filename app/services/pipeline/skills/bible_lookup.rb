@@ -142,13 +142,17 @@ module Pipeline
             [ "Notes", record.notes ]
           )
         when "BibleCulturalPhrase"
+          # No English name — korean_phrase is the whole identity
+          # (2026-08-08). translation_examples_text surfaces whatever
+          # context-dependent renderings have actually been decided at
+          # prior translation time, if any — there may be none yet for a
+          # phrase preread just cataloged.
           lines(
-            [ "Phrase", record.phrase ],
             [ "Korean phrase", record.korean_phrase ],
             [ "Literal translation", record.literal_translation ],
             [ "Intended meaning", record.intended_meaning ],
             [ "Context", record.context ],
-            [ "Established translation", record.established_translation ],
+            [ "Translation examples", record.translation_examples_text ],
             [ "Notes", record.notes ]
           )
         when "BibleStoryEntry"

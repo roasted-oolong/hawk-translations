@@ -45,11 +45,12 @@ class BibleSearchService
   # Per-type config for the name-match supplemental query: which table to JOIN
   # and which columns hold the primary name (English + Korean where applicable).
   NAME_ENTRY_CONFIG = {
-    "BibleCharacter"      => { table: "bible_characters",       name_cols: %w[name korean_name]    },
-    "BibleLocation"       => { table: "bible_locations",        name_cols: %w[name korean_name]    },
-    "BibleTerminology"    => { table: "bible_terminologies",    name_cols: %w[term korean_term]    },
-    "BibleCulturalPhrase" => { table: "bible_cultural_phrases", name_cols: %w[phrase korean_phrase] },
-    "BibleStoryEntry"     => { table: "bible_story_entries",    name_cols: %w[title]               },
+    "BibleCharacter"      => { table: "bible_characters",       name_cols: %w[name korean_name] },
+    "BibleLocation"       => { table: "bible_locations",        name_cols: %w[name korean_name] },
+    "BibleTerminology"    => { table: "bible_terminologies",    name_cols: %w[term korean_term] },
+    # No English name column — korean_phrase is the whole identity (2026-08-08).
+    "BibleCulturalPhrase" => { table: "bible_cultural_phrases", name_cols: %w[korean_phrase]    },
+    "BibleStoryEntry"     => { table: "bible_story_entries",    name_cols: %w[title]            },
   }.freeze
 
   def initialize(scope:, query:, categories: nil, limit: DEFAULT_LIMIT)
@@ -278,7 +279,7 @@ class BibleSearchService
     case type
     when "BibleCharacter", "BibleLocation" then "#{record.name} #{record.korean_name}"
     when "BibleTerminology"                then "#{record.term} #{record.korean_term}"
-    when "BibleCulturalPhrase"             then "#{record.phrase} #{record.korean_phrase}"
+    when "BibleCulturalPhrase"             then record.korean_phrase.to_s
     when "BibleStoryEntry"                 then record.title.to_s
     else ""
     end

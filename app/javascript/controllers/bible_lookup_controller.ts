@@ -56,12 +56,19 @@ const EDIT_FIELDS: Record<string, EditFieldConfig[]> = {
     { label: "Usage Notes", field: "usage_notes", type: "textarea", placeholder: "Do not translate as… / Retain as… / Capitalisation rules…" },
     { label: "Notes",       field: "notes",       type: "textarea", placeholder: "Any other context worth flagging" },
   ],
+  // No English field — korean_phrase is the whole identity (2026-08-08).
+  // translation_examples isn't editable from this popover: it's a jsonb
+  // list, not a plain column, and this form's save path writes each field's
+  // raw submitted value straight back into the local result cache — fine
+  // for plain string fields, but it would leave the cached
+  // `translation_examples` array stale until the next fresh search. Edited
+  // on the full /edit page instead, via the model's
+  // translation_examples_text virtual attribute.
   BibleCulturalPhrase: [
-    { label: "Phrase",                  field: "phrase",                  type: "text"     },
-    { label: "Korean Phrase",           field: "korean_phrase",           type: "text"     },
-    { label: "Established Translation", field: "established_translation", type: "text",     placeholder: "e.g. eating elevation for a week" },
-    { label: "Intended Meaning",        field: "intended_meaning",        type: "textarea", placeholder: "Literal meaning and intended nuance…" },
-    { label: "Notes",                   field: "notes",                   type: "textarea", placeholder: "When it's used, author's preferred rendering, recurrence…" },
+    { label: "Korean Phrase",       field: "korean_phrase",       type: "text"     },
+    { label: "Literal Translation", field: "literal_translation", type: "textarea", placeholder: "Word-for-word literal meaning…" },
+    { label: "Intended Meaning",    field: "intended_meaning",    type: "textarea", placeholder: "What the phrase actually conveys…" },
+    { label: "Notes",               field: "notes",               type: "textarea", placeholder: "When it's used, recurrence, tone…" },
   ],
   BibleStoryEntry: [
     { label: "Title",    field: "title",    type: "text"     },
@@ -93,7 +100,13 @@ const CREATE_TYPE_SOURCE: Array<Omit<CreateTypeConfig, "extraFields">> = [
   { modelType: "BibleCharacter",      label: "Character",       path: "bible_characters",       param: "bible_character",       englishField: "name",   englishLabel: "English Name", englishPlaceholder: "e.g. Ryu Seongjun",                koreanField: "korean_name",   koreanLabel: "Korean Name",   koreanPlaceholder: "e.g. 류성준"    },
   { modelType: "BibleLocation",       label: "Location",        path: "bible_locations",        param: "bible_location",        englishField: "name",   englishLabel: "English Name", englishPlaceholder: "e.g. Crimson Peak",                koreanField: "korean_name",   koreanLabel: "Korean Name",   koreanPlaceholder: "e.g. 붉은 봉우리" },
   { modelType: "BibleTerminology",    label: "Terminology",     path: "bible_terminologies",    param: "bible_terminology",     englishField: "term",   englishLabel: "Term",         englishPlaceholder: "e.g. Phoenix Flame",               koreanField: "korean_term",   koreanLabel: "Korean Term",   koreanPlaceholder: "e.g. 봉황의 불꽃" },
-  { modelType: "BibleCulturalPhrase", label: "Cultural Phrase", path: "bible_cultural_phrases", param: "bible_cultural_phrase", englishField: "phrase", englishLabel: "Phrase",       englishPlaceholder: "e.g. eating elevation for a week", koreanField: "korean_phrase", koreanLabel: "Korean Phrase", koreanPlaceholder: "e.g. 고도를 씹다" },
+  // No separate Korean-suggestion step — korean_phrase IS the one required
+  // field, so it's slotted into "english" (the always-rendered, required
+  // input) with koreanField: null, same as Story Entry's shape below. This
+  // does not fix the underlying "can only prefill from an English
+  // selection" limitation — that's the deferred "Korean-first" entry point
+  // from docs/ROADMAP.md, out of scope here.
+  { modelType: "BibleCulturalPhrase", label: "Cultural Phrase", path: "bible_cultural_phrases", param: "bible_cultural_phrase", englishField: "korean_phrase", englishLabel: "Korean Phrase", englishPlaceholder: "e.g. 고도를 씹다", koreanField: null, koreanLabel: null, koreanPlaceholder: null },
   { modelType: "BibleStoryEntry",     label: "Story Entry",     path: "bible_story_entries",    param: "bible_story_entry",     englishField: "title",  englishLabel: "Title",        englishPlaceholder: "Short descriptive title",          koreanField: null,            koreanLabel: null,            koreanPlaceholder: null              },
 ]
 
@@ -119,24 +132,26 @@ function esc(str: string): string {
     .replace(/"/g, "&quot;")
 }
 
+// BibleCulturalPhrase has no separate English name — korean_phrase IS the
+// display name, so it's returned here (not from koreanName below, which
+// stays empty for this type so callers don't render the Korean badge twice).
 function displayName(type: string, r: Record<string, unknown>): string {
   switch (type) {
-    case "BibleCharacter":      return String(r["name"]   ?? "")
-    case "BibleLocation":       return String(r["name"]   ?? "")
-    case "BibleTerminology":    return String(r["term"]   ?? "")
-    case "BibleCulturalPhrase": return String(r["phrase"] ?? "")
-    case "BibleStoryEntry":     return String(r["title"]  ?? "")
+    case "BibleCharacter":      return String(r["name"]          ?? "")
+    case "BibleLocation":       return String(r["name"]          ?? "")
+    case "BibleTerminology":    return String(r["term"]          ?? "")
+    case "BibleCulturalPhrase": return String(r["korean_phrase"] ?? "")
+    case "BibleStoryEntry":     return String(r["title"]         ?? "")
     default:                    return ""
   }
 }
 
 function koreanName(type: string, r: Record<string, unknown>): string {
   switch (type) {
-    case "BibleCharacter":      return String(r["korean_name"]   ?? "")
-    case "BibleLocation":       return String(r["korean_name"]   ?? "")
-    case "BibleTerminology":    return String(r["korean_term"]   ?? "")
-    case "BibleCulturalPhrase": return String(r["korean_phrase"] ?? "")
-    default:                    return ""
+    case "BibleCharacter":   return String(r["korean_name"] ?? "")
+    case "BibleLocation":    return String(r["korean_name"] ?? "")
+    case "BibleTerminology": return String(r["korean_term"] ?? "")
+    default:                 return ""
   }
 }
 
@@ -152,6 +167,18 @@ function snippet(type: string, r: Record<string, unknown>): string {
   return text.length > 90 ? text.slice(0, 90).trimEnd() + "…" : text
 }
 
+// translation_examples is a jsonb array of {context, translation} pairs, not
+// a plain string column — format it the same way the model's
+// translation_examples_text does server-side, for display here.
+function translationExamplesText(r: Record<string, unknown>): string {
+  const examples = r["translation_examples"]
+  if (!Array.isArray(examples)) return ""
+  return examples
+    .map((ex: { context?: string; translation?: string }) =>
+      ex?.context ? `${ex.context}: ${ex.translation ?? ""}` : String(ex?.translation ?? ""))
+    .join(" · ")
+}
+
 function detailFields(type: string, r: Record<string, unknown>): Array<{ label: string; value: string }> {
   const f = (label: string, v: unknown) => ({ label, value: String(v ?? "").trim() })
   const rows = (() => {
@@ -163,7 +190,7 @@ function detailFields(type: string, r: Record<string, unknown>): Array<{ label: 
       case "BibleTerminology":
         return [ f("Definition", r["definition"]), f("Usage Notes", r["usage_notes"]), f("Notes", r["notes"]) ]
       case "BibleCulturalPhrase":
-        return [ f("Meaning", r["intended_meaning"]), f("Literal", r["literal_translation"]), f("Translation", r["established_translation"]), f("Notes", r["notes"]) ]
+        return [ f("Meaning", r["intended_meaning"]), f("Literal", r["literal_translation"]), f("Translation Examples", translationExamplesText(r)), f("Notes", r["notes"]) ]
       case "BibleStoryEntry":
         return [ f("Category", r["category"]), f("Content", r["content"]), f("Notes", r["notes"]) ]
       default:
