@@ -1,9 +1,9 @@
 <%# locals: (entries:, novel:, category:) %>
 <%
   name_key   = { characters: :name, locations: :name, terminology: :term,
-                 cultural_phrases: :phrase, story: :title }[category]
+                 cultural_phrases: :korean_phrase, story: :title }[category]
   korean_key = { characters: :korean_name, locations: :korean_name,
-                 terminology: :korean_term, cultural_phrases: :korean_phrase,
+                 terminology: :korean_term, cultural_phrases: nil,
                  story: nil }[category]
 %>
 <section class="preread-pending" data-testid="preread-pending-section">

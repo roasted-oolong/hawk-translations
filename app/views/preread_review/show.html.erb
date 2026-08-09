@@ -3,11 +3,11 @@
 
 <%
   preread_categories = [
-    [ :characters,       :name,   :korean_name  ],
-    [ :locations,        :name,   :korean_name  ],
-    [ :terminology,      :term,   :korean_term  ],
-    [ :cultural_phrases, :phrase, :korean_phrase ],
-    [ :story,            :title,  nil           ],
+    [ :characters,       :name,          :korean_name ],
+    [ :locations,        :name,          :korean_name ],
+    [ :terminology,      :term,          :korean_term ],
+    [ :cultural_phrases, :korean_phrase, nil          ],
+    [ :story,            :title,         nil          ],
   ].freeze
 
   preread_display_fields = {
@@ -34,12 +34,11 @@
       [ "Notes",         :notes                    ],
     ],
     cultural_phrases: [
-      [ "Literal translation",     :literal_translation    ],
-      [ "Intended meaning",        :intended_meaning       ],
-      [ "Context",                 :context                ],
-      [ "Established translation", :established_translation ],
-      [ "First appears",           :first_appearance_chapter ],
-      [ "Notes",                   :notes                  ],
+      [ "Literal translation", :literal_translation      ],
+      [ "Intended meaning",    :intended_meaning         ],
+      [ "Context",             :context                  ],
+      [ "First appears",       :first_appearance_chapter ],
+      [ "Notes",               :notes                    ],
     ],
     story: [
       [ "Category",      :category                 ],
@@ -79,14 +78,12 @@
       [ "Notes",               :notes,                    :textarea ],
     ],
     cultural_phrases: [
-      [ "Phrase",                  :phrase,                   :text     ],
-      [ "Korean phrase",           :korean_phrase,            :text     ],
-      [ "Literal translation",     :literal_translation,      :textarea ],
-      [ "Intended meaning",        :intended_meaning,         :textarea ],
-      [ "Context",                 :context,                  :textarea ],
-      [ "Established translation", :established_translation,  :text     ],
-      [ "First appears (ch.)",     :first_appearance_chapter, :number   ],
-      [ "Notes",                   :notes,                    :textarea ],
+      [ "Korean phrase",       :korean_phrase,            :text     ],
+      [ "Literal translation", :literal_translation,      :textarea ],
+      [ "Intended meaning",    :intended_meaning,         :textarea ],
+      [ "Context",             :context,                  :textarea ],
+      [ "First appears (ch.)", :first_appearance_chapter, :number   ],
+      [ "Notes",               :notes,                    :textarea ],
     ],
     story: [
       [ "Title",               :title,                    :text     ],

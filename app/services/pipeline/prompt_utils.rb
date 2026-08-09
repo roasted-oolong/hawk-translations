@@ -13,7 +13,8 @@ module Pipeline
     EMPTY_MARKERS = [
       "[Character Name",
       "[Term —",
-      "[Phrase —",
+      "[Phrase —",     # pre-2026-08-08 cultural-phrases template (English-labeled heading)
+      "[Korean phrase]", # current cultural-phrases template — see docs/DECISIONS.md
       "[Location Name",
       "Current summary: \n- Key turning points:"
     ].freeze

@@ -7,14 +7,14 @@ class BibleCulturalPhrasesController < ApplicationController
   include BibleEntryChapterPrefill
 
   def index
-    @entries = @novel.bible_cultural_phrases.by_phrase
+    @entries = @novel.bible_cultural_phrases.by_korean_phrase
   end
 
   def show; end
 
   def new
     @entry = @novel.bible_cultural_phrases.build
-    @entry.phrase = params[:prefill_name] if params[:prefill_name].present?
+    @entry.korean_phrase = params[:prefill_name] if params[:prefill_name].present?
   end
 
   def create
@@ -23,7 +23,7 @@ class BibleCulturalPhrasesController < ApplicationController
     respond_to do |format|
       if @entry.save
         format.html { redirect_to edit_novel_bible_cultural_phrase_path(@novel, @entry), notice: "Phrase added. Fill in the details below." }
-        format.json { render json: { id: @entry.id, display_name: @entry.phrase, edit_url: edit_novel_bible_cultural_phrase_path(@novel, @entry) }, status: :created }
+        format.json { render json: { id: @entry.id, display_name: @entry.korean_phrase, edit_url: edit_novel_bible_cultural_phrase_path(@novel, @entry) }, status: :created }
       else
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: { errors: @entry.errors.full_messages }, status: :unprocessable_entity }
@@ -37,7 +37,7 @@ class BibleCulturalPhrasesController < ApplicationController
     respond_to do |format|
       if @entry.update(entry_params)
         format.html { redirect_to novel_bible_cultural_phrase_path(@novel, @entry), notice: "Phrase updated." }
-        format.json { render json: { id: @entry.id, display_name: @entry.phrase }, status: :ok }
+        format.json { render json: { id: @entry.id, display_name: @entry.korean_phrase }, status: :ok }
       else
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: { errors: @entry.errors.full_messages }, status: :unprocessable_entity }
@@ -62,8 +62,8 @@ class BibleCulturalPhrasesController < ApplicationController
 
   def entry_params
     params.require(:bible_cultural_phrase).permit(
-      :phrase, :korean_phrase, :literal_translation, :intended_meaning,
-      :context, :established_translation, :first_appearance_chapter, :notes
+      :korean_phrase, :literal_translation, :intended_meaning,
+      :context, :translation_examples_text, :first_appearance_chapter, :notes
     )
   end
 end

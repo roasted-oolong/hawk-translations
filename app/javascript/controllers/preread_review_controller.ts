@@ -218,11 +218,13 @@ export default class PrereadReviewController extends Controller<HTMLElement> {
       card.dataset.displayName = newName
     }
 
+    // cultural_phrases has no entry here — its Korean text is the main
+    // title now (see preread_categories in the view), not a separate
+    // .preread-review__korean subtitle element.
     const koreanKeyMap: Record<string, string> = {
       characters: 'korean_name',
       locations: 'korean_name',
       terminology: 'korean_term',
-      cultural_phrases: 'korean_phrase',
     }
     const koreanKey = koreanKeyMap[card.dataset.category!]
     if (koreanKey) {
