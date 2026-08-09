@@ -1,18 +1,18 @@
 <%# app/views/bible_cultural_phrases/edit.html.erb %>
-<% content_for :title, "Edit #{@entry.phrase} — Hawk" %>
+<% content_for :title, "Edit #{@entry.korean_phrase} — Hawk" %>
 
 <%= render "layouts/breadcrumb", crumbs: [
       ["Novels", novels_path],
       [@novel.title, novel_path(@novel)],
       ["Bible", novel_bible_path(@novel)],
       ["Cultural Phrases", novel_bible_cultural_phrases_path(@novel)],
-      [@entry.phrase, novel_bible_cultural_phrase_path(@novel, @entry)],
+      [@entry.korean_phrase, novel_bible_cultural_phrase_path(@novel, @entry)],
       ["Edit", nil]
     ] %>
 
 <div class="page-header">
   <h1 class="page-title">Edit Cultural Phrase</h1>
-  <p class="page-subtitle"><%= @entry.phrase %></p>
+  <p class="page-subtitle bible-entry__korean" lang="ko"><%= @entry.korean_phrase %></p>
 </div>
 
 <div class="card">

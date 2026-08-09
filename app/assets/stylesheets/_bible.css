@@ -226,10 +226,28 @@
   color: var(--color-text-secondary);
 }
 
-/* Established translation gets a slightly more prominent treatment */
+/* A resolved value (e.g. one logged translation example) gets a slightly
+   more prominent treatment */
 .bible-entry__meta-value--highlight {
   font-weight: var(--font-weight-semibold);
   color: var(--color-accent);
+}
+
+/* Cultural phrase translation-examples list — {context, translation} pairs,
+   since one Korean phrase can have several correct renderings depending on
+   context rather than a single established translation */
+.bible-entry__translation-examples {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.bible-entry__translation-examples li {
+  font-size: var(--text-base);
+  color: var(--color-text);
 }
 
 /* Long-form content section */

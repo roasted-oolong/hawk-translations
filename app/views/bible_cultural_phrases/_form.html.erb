@@ -13,18 +13,8 @@
 
   <div class="bible-form__grid">
     <div class="form-group">
-      <%= f.label :phrase, class: "form-label" %>
-      <%= f.text_field :phrase, class: "form-input" %>
-    </div>
-
-    <div class="form-group">
       <%= f.label :korean_phrase, "Korean Phrase", class: "form-label" %>
-      <%= f.text_field :korean_phrase, class: "form-input" %>
-    </div>
-
-    <div class="form-group">
-      <%= f.label :established_translation, "Established Translation", class: "form-label" %>
-      <%= f.text_field :established_translation, class: "form-input" %>
+      <%= f.text_field :korean_phrase, class: "form-input", lang: "ko" %>
     </div>
 
     <div class="form-group">
@@ -46,6 +36,14 @@
   <div class="form-group">
     <%= f.label :context, class: "form-label" %>
     <%= f.text_area :context, rows: 3, class: "form-input" %>
+  </div>
+
+  <div class="form-group">
+    <%= f.label :translation_examples_text, "Translation Examples", class: "form-label" %>
+    <p class="form-hint">One per line: <code>context: translation</code> (context is optional).
+      A cultural phrase can have several correct renderings depending on how/where it's used.</p>
+    <%= f.text_area :translation_examples_text, rows: 4, class: "form-input",
+          placeholder: "sarcastic tone: yeah, no big deal\nsincere tone: it's really nothing" %>
   </div>
 
   <div class="form-group">

@@ -12,6 +12,7 @@ RSpec.describe Pipeline::PromptUtils do
       expect(described_class.empty?("## [Character Name — English]\n- Korean name: ")).to eq(true)
       expect(described_class.empty?("## [Term — English]\n- Korean term: ")).to eq(true)
       expect(described_class.empty?("## [Phrase — English]\n- Korean phrase: ")).to eq(true)
+      expect(described_class.empty?("## [Korean phrase]\n- Literal translation: ")).to eq(true)
       expect(described_class.empty?("## [Location Name — English]\n- Korean name: ")).to eq(true)
       expect(described_class.empty?("Current summary: \n- Key turning points:\n")).to eq(true)
     end

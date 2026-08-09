@@ -1,27 +1,24 @@
 <%# app/views/bible_cultural_phrases/show.html.erb %>
-<% content_for :title, "#{@entry.phrase} — Cultural Phrases — Hawk" %>
+<% content_for :title, "#{@entry.korean_phrase} — Cultural Phrases — Hawk" %>
 
 <%= render "layouts/breadcrumb", crumbs: [
       ["Novels", novels_path],
       [@novel.title, novel_path(@novel)],
       ["Bible", novel_bible_path(@novel)],
       ["Cultural Phrases", novel_bible_cultural_phrases_path(@novel)],
-      [@entry.phrase, nil]
+      [@entry.korean_phrase, nil]
     ] %>
 
 <div class="page-header">
   <div class="page-header__row">
     <div>
-      <h1 class="page-title" data-testid="entry-title"><%= @entry.phrase %></h1>
-      <% if @entry.korean_phrase.present? %>
-        <p class="page-subtitle bible-entry__korean"><%= @entry.korean_phrase %></p>
-      <% end %>
+      <h1 class="page-title bible-entry__korean" data-testid="entry-title" lang="ko"><%= @entry.korean_phrase %></h1>
     </div>
     <div class="btn-group">
       <%= link_to "Edit", edit_novel_bible_cultural_phrase_path(@novel, @entry), class: "btn btn--secondary btn--sm" %>
       <%= modal_button_to "Remove", novel_bible_cultural_phrase_path(@novel, @entry),
             method:        :delete,
-            message:       "Remove \"#{@entry.phrase}\"?",
+            message:       "Remove \"#{@entry.korean_phrase}\"?",
             confirm_label: "Remove" %>
     </div>
   </div>
@@ -29,12 +26,6 @@
 
 <div class="card bible-entry">
   <div class="bible-entry__meta">
-    <% if @entry.established_translation.present? %>
-      <div class="bible-entry__meta-item">
-        <span class="bible-entry__meta-label">Established translation</span>
-        <span class="bible-entry__meta-value bible-entry__meta-value--highlight"><%= @entry.established_translation %></span>
-      </div>
-    <% end %>
     <% if @entry.first_appearance_chapter.present? %>
       <div class="bible-entry__meta-item">
         <span class="bible-entry__meta-label">First appears</span>
@@ -42,6 +33,22 @@
       </div>
     <% end %>
   </div>
+
+  <% if @entry.translation_examples.any? %>
+    <div class="bible-entry__section">
+      <h2 class="bible-entry__section-title">Translation Examples</h2>
+      <ul class="bible-entry__translation-examples">
+        <% @entry.translation_examples.each do |ex| %>
+          <li>
+            <% if ex["context"].present? %>
+              <span class="bible-entry__meta-label"><%= ex["context"] %>:</span>
+            <% end %>
+            <span class="bible-entry__meta-value--highlight"><%= ex["translation"] %></span>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
 
   <% if @entry.literal_translation.present? %>
     <div class="bible-entry__section">

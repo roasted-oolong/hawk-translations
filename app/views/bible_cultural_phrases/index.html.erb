@@ -54,9 +54,8 @@
         <table class="data-table" data-testid="cultural-phrases-table">
           <thead>
             <tr>
-              <th class="data-table__th">Phrase</th>
               <th class="data-table__th">Korean Phrase</th>
-              <th class="data-table__th">Established Translation</th>
+              <th class="data-table__th">Translation Examples</th>
               <th class="data-table__th">First Appears</th>
               <th class="data-table__th data-table__th--actions"></th>
             </tr>
@@ -64,17 +63,16 @@
           <tbody>
             <% @entries.each do |entry| %>
               <tr class="data-table__row">
-                <td class="data-table__td data-table__td--title">
-                  <%= link_to entry.phrase, novel_bible_cultural_phrase_path(@novel, entry), class: "data-table__link" %>
+                <td class="data-table__td data-table__td--title bible-td--korean">
+                  <%= link_to entry.korean_phrase, novel_bible_cultural_phrase_path(@novel, entry), class: "data-table__link" %>
                 </td>
-                <td class="data-table__td bible-td--korean"><%= entry.korean_phrase.presence || "—" %></td>
-                <td class="data-table__td"><%= entry.established_translation.presence || "—" %></td>
+                <td class="data-table__td"><%= entry.translation_examples.size > 0 ? "#{entry.translation_examples.size} logged" : "—" %></td>
                 <td class="data-table__td"><%= entry.first_appearance_chapter ? "Ch. #{entry.first_appearance_chapter}" : "—" %></td>
                 <td class="data-table__td data-table__td--actions">
                   <%= link_to "Edit", edit_novel_bible_cultural_phrase_path(@novel, entry), class: "btn btn--ghost btn--sm" %>
                   <%= modal_button_to "Remove", novel_bible_cultural_phrase_path(@novel, entry),
                         method:        :delete,
-                        message:       "Remove \"#{entry.phrase}\"?",
+                        message:       "Remove \"#{entry.korean_phrase}\"?",
                         confirm_label: "Remove",
                         button_class:  "btn btn--danger btn--sm" %>
                 </td>
