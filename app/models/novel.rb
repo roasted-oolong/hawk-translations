@@ -19,6 +19,7 @@ class Novel < ApplicationRecord
   has_many :bible_story_entries,         dependent: :destroy
   has_many :voice_calibration_passages,  dependent: :destroy
   has_many :rendering_rules,             dependent: :destroy
+  has_many :bible_entry_proposals,       dependent: :destroy
 
   # Cover art — optional, single image attachment
   has_one_attached :cover_art
@@ -39,6 +40,19 @@ class Novel < ApplicationRecord
 
   validate :cover_art_content_type, if: -> { cover_art.attached? }
   validate :cover_art_size,         if: -> { cover_art.attached? }
+
+  # ---------------------------------------------------------------------------
+  # Preread dismissed keys
+  # ---------------------------------------------------------------------------
+
+  # Appends one or more keys to preread_dismissed_keys (a JSON array column),
+  # de-duplicated, bypassing validations/callbacks — mirrors the direct
+  # update_column writes this replaced. Shared by BibleImportController,
+  # PrereadDismissController, and BibleEntryProposal#skip!.
+  def append_preread_dismissed_key!(*keys)
+    existing = JSON.parse(preread_dismissed_keys || "[]") rescue []
+    update_column(:preread_dismissed_keys, (existing + keys.flatten).uniq.to_json)
+  end
 
   private
 

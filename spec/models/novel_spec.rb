@@ -128,5 +128,51 @@ RSpec.describe Novel, type: :model do
       create(:translation_job, novel: novel, user: user)
       expect { novel.destroy }.to change(TranslationJob, :count).by(-1)
     end
+
+    it "has many bible_entry_proposals and destroys them on deletion" do
+      novel_dir = Dir.mktmpdir
+      orig_root = ENV["HAWK_PROJECT_ROOT"]
+      ENV["HAWK_PROJECT_ROOT"] = File.dirname(novel_dir)
+
+      novel = create(:novel, directory_name: File.basename(novel_dir))
+      create(:bible_entry_proposal, novel: novel)
+      expect { novel.destroy }.to change(BibleEntryProposal, :count).by(-1)
+    ensure
+      ENV["HAWK_PROJECT_ROOT"] = orig_root
+      FileUtils.rm_rf(novel_dir)
+    end
+  end
+
+  describe "#append_preread_dismissed_key!" do
+    it "adds a key to an empty preread_dismissed_keys" do
+      novel = create(:novel)
+      novel.append_preread_dismissed_key!("character:sung-ah")
+      expect(JSON.parse(novel.reload.preread_dismissed_keys)).to eq([ "character:sung-ah" ])
+    end
+
+    it "appends onto existing keys without dropping them" do
+      novel = create(:novel, preread_dismissed_keys: [ "character:kang" ].to_json)
+      novel.append_preread_dismissed_key!("location:hs-entertainment")
+      expect(JSON.parse(novel.reload.preread_dismissed_keys))
+        .to contain_exactly("character:kang", "location:hs-entertainment")
+    end
+
+    it "de-duplicates repeated keys" do
+      novel = create(:novel, preread_dismissed_keys: [ "character:kang" ].to_json)
+      novel.append_preread_dismissed_key!("character:kang")
+      expect(JSON.parse(novel.reload.preread_dismissed_keys)).to eq([ "character:kang" ])
+    end
+
+    it "accepts multiple keys at once" do
+      novel = create(:novel)
+      novel.append_preread_dismissed_key!("character:a", "character:b")
+      expect(JSON.parse(novel.reload.preread_dismissed_keys)).to contain_exactly("character:a", "character:b")
+    end
+
+    it "recovers from unparseable existing JSON rather than raising" do
+      novel = create(:novel, preread_dismissed_keys: "not json")
+      novel.append_preread_dismissed_key!("character:kang")
+      expect(JSON.parse(novel.reload.preread_dismissed_keys)).to eq([ "character:kang" ])
+    end
   end
 end

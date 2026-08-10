@@ -259,6 +259,43 @@ ALTER SEQUENCE public.bible_embeddings_id_seq OWNED BY public.bible_embeddings.i
 
 
 --
+-- Name: bible_entry_proposals; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.bible_entry_proposals (
+    id bigint NOT NULL,
+    novel_id bigint NOT NULL,
+    chapter_id bigint NOT NULL,
+    entry_type character varying NOT NULL,
+    existing_record_id bigint,
+    korean_key character varying NOT NULL,
+    fields jsonb DEFAULT '{}'::jsonb NOT NULL,
+    status character varying DEFAULT 'pending'::character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: bible_entry_proposals_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.bible_entry_proposals_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: bible_entry_proposals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.bible_entry_proposals_id_seq OWNED BY public.bible_entry_proposals.id;
+
+
+--
 -- Name: bible_locations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1211,6 +1248,13 @@ ALTER TABLE ONLY public.bible_embeddings ALTER COLUMN id SET DEFAULT nextval('pu
 
 
 --
+-- Name: bible_entry_proposals id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bible_entry_proposals ALTER COLUMN id SET DEFAULT nextval('public.bible_entry_proposals_id_seq'::regclass);
+
+
+--
 -- Name: bible_locations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1446,6 +1490,14 @@ ALTER TABLE ONLY public.bible_cultural_phrases
 
 ALTER TABLE ONLY public.bible_embeddings
     ADD CONSTRAINT bible_embeddings_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bible_entry_proposals bible_entry_proposals_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bible_entry_proposals
+    ADD CONSTRAINT bible_entry_proposals_pkey PRIMARY KEY (id);
 
 
 --
@@ -1746,6 +1798,27 @@ CREATE INDEX index_bible_embeddings_on_organization_id ON public.bible_embedding
 --
 
 CREATE INDEX index_bible_embeddings_on_search_text ON public.bible_embeddings USING gin (search_text);
+
+
+--
+-- Name: index_bible_entry_proposals_on_chapter_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_bible_entry_proposals_on_chapter_id ON public.bible_entry_proposals USING btree (chapter_id);
+
+
+--
+-- Name: index_bible_entry_proposals_on_novel_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_bible_entry_proposals_on_novel_id ON public.bible_entry_proposals USING btree (novel_id);
+
+
+--
+-- Name: index_bible_entry_proposals_on_novel_type_and_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_bible_entry_proposals_on_novel_type_and_key ON public.bible_entry_proposals USING btree (novel_id, entry_type, korean_key);
 
 
 --
@@ -2282,6 +2355,14 @@ ALTER TABLE ONLY public.solid_queue_ready_executions
 
 
 --
+-- Name: bible_entry_proposals fk_rails_924c9c9d71; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bible_entry_proposals
+    ADD CONSTRAINT fk_rails_924c9c9d71 FOREIGN KEY (chapter_id) REFERENCES public.chapters(id);
+
+
+--
 -- Name: memberships fk_rails_99326fb65d; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2303,6 +2384,14 @@ ALTER TABLE ONLY public.active_storage_variant_records
 
 ALTER TABLE ONLY public.solid_queue_claimed_executions
     ADD CONSTRAINT fk_rails_9cfe4d4944 FOREIGN KEY (job_id) REFERENCES public.solid_queue_jobs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: bible_entry_proposals fk_rails_a434542cbf; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bible_entry_proposals
+    ADD CONSTRAINT fk_rails_a434542cbf FOREIGN KEY (novel_id) REFERENCES public.novels(id);
 
 
 --
@@ -2400,6 +2489,7 @@ ALTER TABLE ONLY public.voice_calibration_passages
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260810000001'),
 ('20260809034936'),
 ('20260808231828'),
 ('20260613071048'),
