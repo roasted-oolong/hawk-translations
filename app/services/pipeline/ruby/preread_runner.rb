@@ -12,15 +12,20 @@ require "set"
 # R6 — "one runner, two callers", mirroring run_preread.py/run_bible_build.py
 # both calling the same run_preread()).
 #
-# Per batch: re-read the 5 bible files + novel_info.md fresh (so the
-# previous batch's writes are visible — cross-batch dedup depends on this),
-# build the prompt, call Pipeline::ClaudeCode, parse the response, hand the
-# parsed sections to Pipeline::PrereadBibleWriter, advance the job's
-# progress file. On any batch's call failure or a response missing its
-# section markers entirely, the loop stops — batches already written keep
-# their writes, since each batch's write already landed atomically before
-# the next batch started (no partial-batch corruption to roll back, only
-# "fewer batches completed than requested").
+# Per batch: re-read the 5 bible files + novel_info.md fresh (so a human
+# concurrently approving another preread run's proposals is visible to this
+# one), build the prompt, call Pipeline::ClaudeCode, parse the response,
+# hand the parsed sections to Pipeline::BibleEntryProposalIngester, advance
+# the job's progress file. Bible files are prompt context only now — see
+# docs/PREREAD_STAGING_DESIGN.md's Part 1 — so a batch's own proposals never
+# feed the next batch's context within the same job; cross-batch dedup for
+# this job's own output is the ingester's find_or_initialize_by against
+# bible_entry_proposals, not a file re-read. On any batch's call failure or
+# a response missing its section markers entirely, the loop stops —
+# batches already ingested keep their proposal rows, since each batch's
+# ingestion already landed atomically before the next batch started (no
+# partial-batch corruption to roll back, only "fewer batches completed than
+# requested").
 # ---------------------------------------------------------------------------
 module Pipeline
   module Ruby
@@ -48,7 +53,7 @@ module Pipeline
         @config       = config
         @novel_dir    = File.join(project_root, job.novel.directory_name)
         @chapters_dir = File.join(@novel_dir, "chapters")
-        @writer       = Pipeline::PrereadBibleWriter.new(@novel_dir)
+        @ingester     = Pipeline::BibleEntryProposalIngester.new(job.novel)
         @log          = []
       end
 
@@ -113,7 +118,7 @@ module Pipeline
           return { success: false, error: "response missing section markers for chapters #{batch_nums.inspect}" }
         end
 
-        status = @writer.write_batch(parsed.sections)
+        status = @ingester.ingest_batch(parsed.sections, batch_nums)
         @log << "Chapters #{batch_nums.join(', ')} — #{summarize_status(status)}"
         { success: true }
       end
