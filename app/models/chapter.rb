@@ -4,6 +4,8 @@ class Chapter < ApplicationRecord
   # ---------------------------------------------------------------------------
   belongs_to :novel
 
+  has_many :bible_entry_proposals, dependent: :destroy
+
   has_one_attached :korean_source, dependent: :purge_later
   has_one_attached :translated_output, dependent: :purge_later
 
