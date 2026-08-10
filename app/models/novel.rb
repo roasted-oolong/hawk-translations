@@ -47,11 +47,24 @@ class Novel < ApplicationRecord
 
   # Appends one or more keys to preread_dismissed_keys (a JSON array column),
   # de-duplicated, bypassing validations/callbacks — mirrors the direct
-  # update_column writes this replaced. Shared by BibleImportController,
-  # PrereadDismissController, and BibleEntryProposal#skip!.
+  # update_column writes this replaced. Shared by BibleEntryProposal#skip!
+  # (the only writer now — see PrereadDismissController#destroy for the
+  # sole remaining reader/remover of a key).
   def append_preread_dismissed_key!(*keys)
     existing = JSON.parse(preread_dismissed_keys || "[]") rescue []
     update_column(:preread_dismissed_keys, (existing + keys.flatten).uniq.to_json)
+  end
+
+  # Preread proposals breakdown — powers the "N pending" badge in
+  # ChapterReviewController#tab's initial render and the live push from
+  # TranslationJob#broadcast_preread_entries_status. Counting
+  # bible_entry_proposals directly (rather than BibleMarkdownParser's old
+  # file-vs-DB diff) matters as of docs/PREREAD_STAGING_DESIGN.md's Part 1:
+  # bible/*.md now only ever holds approved content (BibleDocSynced keeps
+  # it that way), so a diff against it would never find anything pending.
+  def pending_preread_breakdown
+    by_category = bible_entry_proposals.group(:entry_type).count
+    { total: by_category.values.sum, by_category: by_category }
   end
 
   private

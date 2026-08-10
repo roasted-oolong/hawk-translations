@@ -207,7 +207,7 @@ class TranslationJob < ApplicationRecord
   # the swappable tab-frame content, so the subscription survives tab
   # switches) via turbo_stream_from "novel_#{novel_id}_preread".
   def broadcast_preread_entries_status
-    breakdown = BibleMarkdownParser.new(novel).pending_breakdown
+    breakdown = novel.pending_preread_breakdown
     broadcast_replace_later_to(
       "novel_#{novel_id}_preread",
       target: "preread-entries-status",

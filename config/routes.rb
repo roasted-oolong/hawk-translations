@@ -83,14 +83,26 @@ Rails.application.routes.draw do
     get   "chapter_review/chapters/:id/qa",                            to: "chapter_review#qa_status",          as: :chapter_review_qa
     patch "chapter_review/chapters/:id/qa/suggestions/:suggestion_id", to: "chapter_review#update_qa_suggestion", as: :update_chapter_review_qa_suggestion
 
-    # Preread results review + bible import + dismiss/restore
-    # GET    /novels/:novel_id/preread_review   → novel_preread_review_path
-    # POST   /novels/:novel_id/bible_import     → novel_bible_import_path
-    # POST   /novels/:novel_id/preread_dismiss  → novel_preread_dismiss_path (dismiss a pending suggestion)
-    # DELETE /novels/:novel_id/preread_dismiss  → novel_preread_dismiss_path (restore a dismissed one)
-    get      "preread_review", to: "preread_review#show",  as: :preread_review
-    post     "bible_import",   to: "bible_import#create",  as: :bible_import
-    resource :preread_dismiss, only: [ :create, :destroy ], controller: "preread_dismiss"
+    # Preread results review + proposal resolution + dismissed-key restore
+    # GET    /novels/:novel_id/preread_review                     → novel_preread_review_path
+    # POST   /novels/:novel_id/bible_entry_proposals/:id/approve  → approve_novel_bible_entry_proposal_path
+    # POST   /novels/:novel_id/bible_entry_proposals/:id/skip     → skip_novel_bible_entry_proposal_path
+    # DELETE /novels/:novel_id/preread_dismiss                    → novel_preread_dismiss_path (restore a dismissed key)
+    #
+    # No bible_import#create / preread_dismiss#create — a proposal is a real
+    # row now (docs/PREREAD_STAGING_DESIGN.md, Part 1): approving or skipping
+    # one is a single resource action, not a batch JSON payload or a
+    # standalone "dismiss by string key" action.
+    get  "preread_review", to: "preread_review#show", as: :preread_review
+
+    resources :bible_entry_proposals, only: [] do
+      member do
+        post :approve
+        post :skip
+      end
+    end
+
+    resource :preread_dismiss, only: [ :destroy ], controller: "preread_dismiss"
 
     # Voice calibration tab (Turbo Frame) + full-page review
     # GET   /novels/:novel_id/voice_calibration               → novel_voice_calibration_tab_path

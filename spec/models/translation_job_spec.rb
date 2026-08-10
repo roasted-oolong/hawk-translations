@@ -339,5 +339,17 @@ RSpec.describe TranslationJob, type: :model do
       expect(kwargs[:partial]).to eq("chapter_review/preread_entries_status")
       expect(kwargs[:locals][:novel]).to eq(novel)
     end
+
+    it "counts bible_entry_proposals for pending_count/pending_breakdown, not the bible files" do
+      chapter = create(:chapter, novel: novel)
+      create(:bible_entry_proposal, novel: novel, chapter: chapter, entry_type: "character", korean_key: "a")
+      job = create(:translation_job, :queued, novel: novel, user: user, job_type: "preread")
+
+      calls = capture_broadcasts(job) { job.update!(status: "running") }
+
+      _target, kwargs = calls.find { |(target, _)| target == "novel_#{novel.id}_preread" }
+      expect(kwargs[:locals][:pending_count]).to eq(1)
+      expect(kwargs[:locals][:pending_breakdown]).to eq("character" => 1)
+    end
   end
 end

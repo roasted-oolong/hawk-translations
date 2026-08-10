@@ -10,7 +10,7 @@ class ChapterReviewController < ApplicationController
     # Turbo Streams as preread jobs progress — see
     # TranslationJob#broadcast_preread_entries_status — so this is just the
     # initial render.
-    breakdown           = BibleMarkdownParser.new(@novel).pending_breakdown
+    breakdown           = @novel.pending_preread_breakdown
     @pending_count     = breakdown[:total]
     @pending_breakdown = breakdown[:by_category]
   end
