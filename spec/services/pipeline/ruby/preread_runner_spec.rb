@@ -52,22 +52,32 @@ RSpec.describe Pipeline::Ruby::PrereadRunner do
     novel
   end
 
-  it "runs one batch per chapter, writing parsed findings and advancing the progress file" do
+  # Pipeline::BibleEntryProposalIngester attributes each proposal to a real
+  # Chapter row (chapter_id is a required FK) — chapter discovery itself is
+  # disk-based and doesn't need one, but any test whose fake claude response
+  # actually proposes an entry (not "NOTHING TO ADD") needs the DB rows a
+  # real upload flow would already have created for those chapter numbers.
+  def create_chapters(novel, numbers)
+    numbers.each { |n| create(:chapter, novel: novel, number: n) }
+  end
+
+  it "runs one batch per chapter, ingesting parsed findings as proposals and advancing the progress file" do
     with_env("HAWK_PROJECT_ROOT" => @project_root) do
       novel = build_novel_dir(chapter_files: { "Chapter 1 (Korean).txt" => "one", "Chapter 2 (Korean).txt" => "two" })
+      create_chapters(novel, [ 1, 2 ])
       @job = create(:translation_job, novel: novel, job_type: "preread", chapter_start: 1, chapter_end: 2)
 
       Dir.mktmpdir do |bin_dir|
-        # The second call only succeeds if its prompt already contains "Nova"
-        # — proving the bible is re-read fresh before each batch, not built
-        # once from a stale pre-loop snapshot.
+        # Chapter 1's batch proposes a new character; chapter 2's has
+        # nothing to add — proves ingestion happens per batch, not only on
+        # the job's last one.
         bin = fake_claude(bin_dir, <<~RUBY)
           require "json"
           stdin = STDIN.read
-          if stdin.include?("CHAPTER 2") && !stdin.include?("Nova")
-            puts({ is_error: true, subtype: "stale_bible_snapshot", result: "expected Nova in chapter 2 prompt" }.to_json)
+          if stdin.include?("CHAPTER 2")
+            puts({ is_error: false, result: #{five_section_response.inspect} }.to_json)
           else
-            puts({ is_error: false, result: #{five_section_response(characters: "## Nova (노바) — English\\n- Role: idol").inspect} }.to_json)
+            puts({ is_error: false, result: #{five_section_response(characters: "## Nova (노바)\n- Role: idol").inspect} }.to_json)
           end
         RUBY
 
@@ -82,8 +92,16 @@ RSpec.describe Pipeline::Ruby::PrereadRunner do
         expect(stderr).to eq("")
         expect(stdout).to include("Chapters 1").and include("Chapters 2")
 
-        characters_content = File.read(File.join(@project_root, novel.directory_name, "bible/characters.md"))
-        expect(characters_content.scan("## Nova").length).to eq(1)
+        proposal = BibleEntryProposal.find_by!(novel: novel, entry_type: "character")
+        expect(proposal.fields["name"]).to eq("Nova")
+        expect(proposal.fields["role"]).to eq("idol")
+        expect(proposal.chapter.number).to eq(1)
+        expect(proposal.existing_record_id).to be_nil
+
+        # Part 3 (docs/PREREAD_STAGING_DESIGN.md) owns bible/*.md now —
+        # preread ingesting a proposal must not touch the file directly.
+        characters_path = File.join(@project_root, novel.directory_name, "bible/characters.md")
+        expect(File.exist?(characters_path) ? File.read(characters_path) : "").not_to include("Nova")
 
         expect(File.read("/tmp/hawk_job_#{@job.id}.progress")).to eq("100")
       end
@@ -146,9 +164,10 @@ RSpec.describe Pipeline::Ruby::PrereadRunner do
     end
   end
 
-  it "stops the batch loop and returns failure when a batch's claude call fails, keeping earlier batches' writes" do
+  it "stops the batch loop and returns failure when a batch's claude call fails, keeping earlier batches' proposals" do
     with_env("HAWK_PROJECT_ROOT" => @project_root) do
       novel = build_novel_dir(chapter_files: { "Chapter 1 (Korean).txt" => "one", "Chapter 2 (Korean).txt" => "two" })
+      create_chapters(novel, [ 1, 2 ])
       @job = create(:translation_job, novel: novel, job_type: "preread", chapter_start: 1, chapter_end: 2)
 
       Dir.mktmpdir do |bin_dir|
@@ -158,7 +177,7 @@ RSpec.describe Pipeline::Ruby::PrereadRunner do
           if stdin.include?("CHAPTER 2")
             puts({ is_error: true, subtype: "boom", result: "failed" }.to_json)
           else
-            puts({ is_error: false, result: #{five_section_response(characters: "## Nova (노바) — English\\n- Role: idol").inspect} }.to_json)
+            puts({ is_error: false, result: #{five_section_response(characters: "## Nova (노바)\n- Role: idol").inspect} }.to_json)
           end
         RUBY
 
@@ -173,8 +192,8 @@ RSpec.describe Pipeline::Ruby::PrereadRunner do
         expect(stderr).to include("chapters [2]")
         expect(stdout).to include("Chapters 1")
 
-        characters_content = File.read(File.join(@project_root, novel.directory_name, "bible/characters.md"))
-        expect(characters_content).to include("## Nova")
+        proposal = BibleEntryProposal.find_by!(novel: novel, entry_type: "character")
+        expect(proposal.fields["name"]).to eq("Nova")
       end
     end
   end
