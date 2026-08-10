@@ -7,6 +7,38 @@ RSpec.describe "BibleEntryProposals", type: :request do
 
   before { sign_in(user) }
 
+  describe "PATCH /novels/:novel_id/bible_entry_proposals/:id" do
+    let!(:proposal) do
+      create(:bible_entry_proposal, novel: novel, chapter: chapter, entry_type: "character",
+             korean_key: "성아", fields: { "name" => "Sung-ah", "role" => "Lead" })
+    end
+
+    it "merges a valid field already present in fields" do
+      patch novel_bible_entry_proposal_path(novel, proposal), params: { fields: { role: "Rewritten role" } }, as: :json
+      expect(proposal.reload.fields["role"]).to eq("Rewritten role")
+    end
+
+    it "adds a valid field the original proposal never populated (compacted out at parse time)" do
+      patch novel_bible_entry_proposal_path(novel, proposal), params: { fields: { aliases: "Newly added alias" } }, as: :json
+      expect(proposal.reload.fields["aliases"]).to eq("Newly added alias")
+    end
+
+    it "ignores a key that is not a valid field for this entry_type" do
+      patch novel_bible_entry_proposal_path(novel, proposal), params: { fields: { not_a_real_field: "nope" } }, as: :json
+      expect(proposal.reload.fields).not_to have_key("not_a_real_field")
+    end
+
+    it "leaves fields not included in the request untouched" do
+      patch novel_bible_entry_proposal_path(novel, proposal), params: { fields: { role: "New role" } }, as: :json
+      expect(proposal.reload.fields["name"]).to eq("Sung-ah")
+    end
+
+    it "does not resolve the proposal — it still exists afterward" do
+      patch novel_bible_entry_proposal_path(novel, proposal), params: { fields: { role: "New role" } }, as: :json
+      expect(BibleEntryProposal.exists?(proposal.id)).to be true
+    end
+  end
+
   describe "POST /novels/:novel_id/bible_entry_proposals/:id/approve" do
     let!(:proposal) do
       create(:bible_entry_proposal, novel: novel, chapter: chapter, entry_type: "character",

@@ -3472,3 +3472,84 @@ Not yet built: the `bible_entry_proposals` staging table, the
 `TranslationJob` translate-lock validation, and the backfill/deletion
 of `BibleMarkdownParser`/`PrereadBibleWriter` (Groups B–D) — see
 `docs/PREREAD_STAGING_DESIGN.md`.
+
+## 2026-08-10 · Preread staging Part 1, Group B: bible_entry_proposals staging table + rebuilt review UI
+
+Ships the other half of `docs/PREREAD_STAGING_DESIGN.md`: preread
+findings now land as `bible_entry_proposals` rows, never straight into
+`bible/*.md` (Part 1's bug — a proposal reaching the translation
+prompt before a human reviewed it — closes for good). Seven commits,
+`BibleEntryProposal` model → `Novel#append_preread_dismissed_key!`
+extraction → `Pipeline::BibleEntryMatcher` extraction → `Pipeline::
+BibleEntryProposalIngester` → `PrereadRunner` wiring → rebuilt
+controllers/routes → rebuilt `/preread_review` slideshow view + JS.
+
+**Vocabulary split, deliberate:** `bible_entry_proposals.entry_type` is
+singular (`"character"`); the legacy `preread_dismissed_keys` format
+and `Pipeline::BibleEntryMatcher`'s internal category param stay
+plural (`"characters:..."`), matching `BibleMarkdownParser::
+CATEGORIES` — unchanged, since that format is shared with the
+still-live legacy pending-entries flow until Group D. `BibleEntryProposal
+::ENTRY_TYPE_TO_LEGACY_SECTION` and `::ALLOWED_FIELD_KEYS` are the two
+bridges between the vocabularies; `#skip!` shipped against the *wrong*
+one initially (singular, not the legacy plural the matcher's dismissed
+check actually looks for) — caught by `bible_entry_proposal_ingester_spec.rb`
+before either commit was pushed anywhere, fixed same day as its own
+small commit rather than folded back in (no `git rebase -i` available
+in this environment).
+
+**`BibleMarkdownParser` is dead code as of this entry** — zero
+remaining callers anywhere in `app/` — but stays in place, not deleted:
+Group D's backfill task (D1) still needs its `pending_entries` output
+as the migration source before D2 deletes both it and
+`Pipeline::PrereadBibleWriter`. Two callers that *would* have gone
+silently stale were caught and rewired instead of left alone:
+`TranslationJob#broadcast_preread_entries_status` and
+`ChapterReviewController#tab`'s "N pending" badge both read
+`BibleMarkdownParser#pending_breakdown` — a file-vs-DB diff that would
+now permanently read zero, since `bible/*.md` only ever holds approved
+content post-Part-3. Both now call new `Novel#pending_preread_breakdown`
+(`bible_entry_proposals.group(:entry_type).count`).
+
+**UX regression, accepted:** the slideshow no longer shows word-level
+was/now diffs for entries updating an existing record — `fields`
+stores flat proposed values only (this doc's own Part 1 schema table
+already said so), so the diff `BibleMarkdownParser#compute_field_changes`
+used to compute at parse time doesn't exist once an entry is a
+proposal row, and recomputing it in the view would mean duplicating
+matcher logic for a display-only feature. The "New entry" / "Updating
+existing entry" badge stays; the per-field before/after coloring
+doesn't. `/preread_review`'s summary/tally screen is also gone per the
+implementation plan's confirmed UX decision (per-card immediate
+persist has nothing left to batch-summarize) — its now-dead CSS
+(`.preread-review__summary-table`, `.preread-review__diff-*`,
+`.btn--approved`) was removed in the same commit; the shared
+`.chapter-review__summary*`/`.chapter-review__nav-item--approved`
+classes were not touched, since `chapter_review/show.html.erb` (a
+different feature) still uses them.
+
+**Inline editing now persists immediately**, not just at final import:
+a new `BibleEntryProposalsController#update` (PATCH) fires on "Save
+changes," allowlisted against `BibleEntryProposal::ALLOWED_FIELD_KEYS`
+for that proposal's `entry_type` — deliberately *not* against the
+proposal's own current `fields.keys`, since a field a preread pass
+left blank (and `.compact`ed out at parse time) must still be settable
+by hand; allowlisting against present keys would have silently
+discarded exactly that edit.
+
+Spec coverage: `spec/models/bible_entry_proposal_spec.rb` (`#approve!`
+create/update/dangling-id-fallback, `#skip!`, `ALLOWED_FIELD_KEYS`),
+`spec/services/pipeline/bible_entry_matcher_spec.rb` (parse/classify
+against raw markdown strings, no file I/O), `spec/services/pipeline/
+bible_entry_proposal_ingester_spec.rb` (classification cases, both
+chapter-attribution branches, idempotent re-ingestion, a `RecordNotUnique`
+race reproduced against a real DB unique-index violation, not a mock),
+`spec/requests/bible_entry_proposals_spec.rb` and `preread_review_spec.rb`
+(new controllers, full slideshow render). Full suite green throughout;
+diffed against a stashed pre-change baseline after B1–B4 (identical 55
+pre-existing failures both sides — all auth/Capybara, no Chrome in
+this WSL environment) and re-confirmed after B5–B7. Zero regressions.
+
+Not yet built: the `TranslationJob` translate-lock validation (Group
+C) and the backfill/deletion of `BibleMarkdownParser`/
+`PrereadBibleWriter` (Group D) — see `docs/PREREAD_STAGING_DESIGN.md`.

@@ -1,6 +1,19 @@
 require "rails_helper"
 
 RSpec.describe BibleEntryProposal, type: :model do
+  describe "ALLOWED_FIELD_KEYS" do
+    it "covers all five entry_types" do
+      expect(BibleEntryProposal::ALLOWED_FIELD_KEYS.keys).to contain_exactly(
+        :character, :location, :terminology, :cultural_phrase, :story
+      )
+    end
+
+    it "matches Pipeline::BibleEntryMatcher::COMPARABLE_FIELDS for each entry_type, as strings" do
+      expect(BibleEntryProposal::ALLOWED_FIELD_KEYS[:character])
+        .to eq(Pipeline::BibleEntryMatcher::COMPARABLE_FIELDS[:characters].map(&:to_s))
+    end
+  end
+
   describe "validations" do
     it "is valid with all required attributes" do
       expect(build(:bible_entry_proposal)).to be_valid

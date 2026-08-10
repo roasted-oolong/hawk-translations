@@ -2,104 +2,116 @@
 <% content_for :title, "Preread Review — #{@novel.title} — Hawk" %>
 
 <%
+  # entry_type (singular, BibleEntryProposal's own vocabulary) -> the field
+  # this category displays as its title/Korean subtitle. Field keys are
+  # strings — proposal.fields is a jsonb column, string keys after every
+  # DB round-trip.
   preread_categories = [
-    [ :characters,       :name,          :korean_name ],
-    [ :locations,        :name,          :korean_name ],
-    [ :terminology,      :term,          :korean_term ],
-    [ :cultural_phrases, :korean_phrase, nil          ],
-    [ :story,            :title,         nil          ],
+    [ "character",       "name",          "korean_name" ],
+    [ "location",        "name",          "korean_name" ],
+    [ "terminology",     "term",          "korean_term" ],
+    [ "cultural_phrase", "korean_phrase", nil           ],
+    [ "story",           "title",         nil           ],
   ].freeze
 
   preread_display_fields = {
-    characters: [
-      [ "Role",                   :role                   ],
-      [ "First appears",          :first_appearance_chapter ],
-      [ "Aliases",                :aliases                ],
-      [ "Physical description",   :physical_description   ],
-      [ "Speech pattern",         :speech_pattern         ],
-      [ "Honorifics toward them", :honorifics_used_toward ],
-      [ "Honorifics they use",    :honorifics_they_use    ],
-      [ "Relationships",          :relationships          ],
-      [ "Notes",                  :notes                  ],
+    "character" => [
+      [ "Role",                   "role"                   ],
+      [ "First appears",          "first_appearance_chapter" ],
+      [ "Aliases",                "aliases"                ],
+      [ "Physical description",   "physical_description"   ],
+      [ "Speech pattern",         "speech_pattern"         ],
+      [ "Honorifics toward them", "honorifics_used_toward" ],
+      [ "Honorifics they use",    "honorifics_they_use"    ],
+      [ "Relationships",          "relationships"          ],
+      [ "Notes",                  "notes"                  ],
     ],
-    locations: [
-      [ "First appears",  :first_appearance_chapter ],
-      [ "Significance",   :significance             ],
-      [ "Notes",          :notes                    ],
+    "location" => [
+      [ "First appears",  "first_appearance_chapter" ],
+      [ "Significance",   "significance"             ],
+      [ "Notes",          "notes"                    ],
     ],
-    terminology: [
-      [ "Definition",    :definition               ],
-      [ "First appears", :first_appearance_chapter ],
-      [ "Usage notes",   :usage_notes              ],
-      [ "Notes",         :notes                    ],
+    "terminology" => [
+      [ "Definition",    "definition"               ],
+      [ "First appears", "first_appearance_chapter" ],
+      [ "Usage notes",   "usage_notes"              ],
+      [ "Notes",         "notes"                    ],
     ],
-    cultural_phrases: [
-      [ "Literal translation", :literal_translation      ],
-      [ "Intended meaning",    :intended_meaning         ],
-      [ "Context",             :context                  ],
-      [ "First appears",       :first_appearance_chapter ],
-      [ "Notes",               :notes                    ],
+    "cultural_phrase" => [
+      [ "Literal translation", "literal_translation"      ],
+      [ "Intended meaning",    "intended_meaning"         ],
+      [ "Context",             "context"                  ],
+      [ "First appears",       "first_appearance_chapter" ],
+      [ "Notes",               "notes"                    ],
     ],
-    story: [
-      [ "Category",      :category                 ],
-      [ "First appears", :first_appearance_chapter ],
-      [ "Content",       :content                  ],
-      [ "Notes",         :notes                    ],
+    "story" => [
+      [ "Category",      "category"                 ],
+      [ "First appears", "first_appearance_chapter" ],
+      [ "Content",       "content"                  ],
+      [ "Notes",         "notes"                    ],
     ],
   }.freeze
 
   preread_edit_fields = {
-    characters: [
-      [ "Name",                   :name,                     :text     ],
-      [ "Korean name",            :korean_name,              :text     ],
-      [ "Role",                   :role,                     :text     ],
-      [ "Aliases",                :aliases,                  :text     ],
-      [ "Physical description",   :physical_description,     :textarea ],
-      [ "Speech pattern",         :speech_pattern,           :textarea ],
-      [ "Honorifics toward them", :honorifics_used_toward,   :text     ],
-      [ "Honorifics they use",    :honorifics_they_use,      :text     ],
-      [ "Relationships",          :relationships,            :textarea ],
-      [ "First appears (ch.)",    :first_appearance_chapter, :number   ],
-      [ "Notes",                  :notes,                    :textarea ],
+    "character" => [
+      [ "Name",                   "name",                     :text     ],
+      [ "Korean name",            "korean_name",              :text     ],
+      [ "Role",                   "role",                     :text     ],
+      [ "Aliases",                "aliases",                  :text     ],
+      [ "Physical description",   "physical_description",     :textarea ],
+      [ "Speech pattern",         "speech_pattern",           :textarea ],
+      [ "Honorifics toward them", "honorifics_used_toward",   :text     ],
+      [ "Honorifics they use",    "honorifics_they_use",      :text     ],
+      [ "Relationships",          "relationships",            :textarea ],
+      [ "First appears (ch.)",    "first_appearance_chapter", :number   ],
+      [ "Notes",                  "notes",                    :textarea ],
     ],
-    locations: [
-      [ "Name",                :name,                     :text     ],
-      [ "Korean name",         :korean_name,              :text     ],
-      [ "Significance",        :significance,             :textarea ],
-      [ "First appears (ch.)", :first_appearance_chapter, :number   ],
-      [ "Notes",               :notes,                    :textarea ],
+    "location" => [
+      [ "Name",                "name",                     :text     ],
+      [ "Korean name",         "korean_name",              :text     ],
+      [ "Significance",        "significance",             :textarea ],
+      [ "First appears (ch.)", "first_appearance_chapter", :number   ],
+      [ "Notes",               "notes",                    :textarea ],
     ],
-    terminology: [
-      [ "Term",                :term,                     :text     ],
-      [ "Korean term",         :korean_term,              :text     ],
-      [ "Definition",          :definition,               :textarea ],
-      [ "Usage notes",         :usage_notes,              :textarea ],
-      [ "First appears (ch.)", :first_appearance_chapter, :number   ],
-      [ "Notes",               :notes,                    :textarea ],
+    "terminology" => [
+      [ "Term",                "term",                     :text     ],
+      [ "Korean term",         "korean_term",              :text     ],
+      [ "Definition",          "definition",               :textarea ],
+      [ "Usage notes",         "usage_notes",              :textarea ],
+      [ "First appears (ch.)", "first_appearance_chapter", :number   ],
+      [ "Notes",               "notes",                    :textarea ],
     ],
-    cultural_phrases: [
-      [ "Korean phrase",       :korean_phrase,            :text     ],
-      [ "Literal translation", :literal_translation,      :textarea ],
-      [ "Intended meaning",    :intended_meaning,         :textarea ],
-      [ "Context",             :context,                  :textarea ],
-      [ "First appears (ch.)", :first_appearance_chapter, :number   ],
-      [ "Notes",               :notes,                    :textarea ],
+    "cultural_phrase" => [
+      [ "Korean phrase",       "korean_phrase",            :text     ],
+      [ "Literal translation", "literal_translation",      :textarea ],
+      [ "Intended meaning",    "intended_meaning",         :textarea ],
+      [ "Context",             "context",                  :textarea ],
+      [ "First appears (ch.)", "first_appearance_chapter", :number   ],
+      [ "Notes",               "notes",                    :textarea ],
     ],
-    story: [
-      [ "Title",               :title,                    :text     ],
-      [ "Category",            :category,                 :text     ],
-      [ "Content",             :content,                  :textarea ],
-      [ "First appears (ch.)", :first_appearance_chapter, :number   ],
-      [ "Notes",               :notes,                    :textarea ],
+    "story" => [
+      [ "Title",               "title",                    :text     ],
+      [ "Category",            "category",                 :text     ],
+      [ "Content",             "content",                  :textarea ],
+      [ "First appears (ch.)", "first_appearance_chapter", :number   ],
+      [ "Notes",               "notes",                    :textarea ],
     ],
   }.freeze
 
-  total_pending = @pending_entries.values.sum(&:size)
+  # @proposals is already ordered by [entry_type, korean_key] (see
+  # PrereadReviewController#show) — group_by would follow that order
+  # (alphabetical on entry_type), not preread_categories' display order, so
+  # bucket explicitly instead.
+  proposals_by_type = preread_categories.to_h { |type, _, _| [ type, @proposals.select { |p| p.entry_type == type } ] }
+  total_pending = @proposals.size
 %>
 
 <div class="chapter-review"
      data-controller="preread-review"
-     data-preread-review-import-url-value="<%= novel_bible_import_path(@novel) %>"
+     data-preread-review-novel-url-value="<%= novel_path(@novel) %>"
+     data-preread-review-approve-url-value="<%= approve_novel_bible_entry_proposal_path(@novel, ":id") %>"
+     data-preread-review-skip-url-value="<%= skip_novel_bible_entry_proposal_path(@novel, ":id") %>"
+     data-preread-review-update-url-value="<%= novel_bible_entry_proposal_path(@novel, id: ":id") %>"
      data-testid="preread-review-shell">
 
   <%# ------------------------------------------------------------------ %>
@@ -135,24 +147,19 @@
 
       <nav class="chapter-review__chapter-list" aria-label="Entries" data-testid="preread-nav">
         <% flat_index = 0 %>
-        <% preread_categories.each do |cat, name_key, _| %>
-          <% next if @pending_entries[cat].empty? %>
+        <% preread_categories.each do |type, name_key, _| %>
+          <% next if proposals_by_type[type].empty? %>
           <div class="preread-review__nav-group">
-            <p class="preread-review__nav-group-label"><%= cat.to_s.humanize %></p>
-            <% @pending_entries[cat].each do |entry| %>
+            <p class="preread-review__nav-group-label"><%= type.humanize %></p>
+            <% proposals_by_type[type].each do |entry| %>
               <button class="chapter-review__nav-item"
                       data-preread-review-target="navItem"
                       data-action="click->preread-review#jumpTo"
-                      data-preread-review-index-param="<%= flat_index %>"
-                      data-category="<%= cat %>"
-                      data-korean-key="<%= entry[:korean_key] %>"
                       type="button"
                       data-testid="preread-nav-item-<%= flat_index %>">
                 <span class="chapter-review__nav-number"><%= flat_index + 1 %></span>
                 <div class="chapter-review__nav-text">
-                  <p class="chapter-review__nav-title"><%= entry[name_key] %></p>
-                  <p class="chapter-review__nav-status"
-                     data-preread-review-target="navStatus"></p>
+                  <p class="chapter-review__nav-title"><%= entry.fields[name_key] %></p>
                 </div>
               </button>
               <% flat_index += 1 %>
@@ -186,12 +193,7 @@
   <main class="chapter-review__main" data-testid="preread-review-main">
 
     <div class="chapter-review__topbar">
-        <span data-preread-review-target="topbarTitle">
-          <% first_cat, first_key, _ = preread_categories.find { |c, _, _| @pending_entries[c].any? } %>
-          <% if first_cat %>
-            <%= first_cat.to_s.humanize %> — <%= @pending_entries[first_cat].first[first_key] %>
-          <% end %>
-        </span>
+        <span data-preread-review-target="topbarTitle"></span>
         <span class="chapter-review__saved"
               data-preread-review-target="savedIndicator"
               hidden
@@ -205,55 +207,42 @@
            data-preread-review-target="slideshowScreen"
            data-testid="preread-slideshow-screen">
         <% first_card = true %>
-        <% preread_categories.each do |cat, name_key, korean_key| %>
-          <% @pending_entries[cat].each do |entry| %>
+        <% preread_categories.each do |type, name_key, korean_key| %>
+          <% proposals_by_type[type].each do |entry| %>
             <div class="chapter-review__chapter-card"
                  data-preread-review-target="entryCard"
-                 data-category="<%= cat %>"
-                 data-korean-key="<%= entry[:korean_key] %>"
-                 data-display-name="<%= entry[name_key] %>"
-                 data-category-label="<%= cat.to_s.humanize %>"
+                 data-proposal-id="<%= entry.id %>"
+                 data-category="<%= type %>"
+                 data-display-name="<%= entry.fields[name_key] %>"
+                 data-category-label="<%= type.humanize %>"
                  data-name-key="<%= name_key %>"
-                 data-entry-json="<%= entry.except(:korean_key, :is_existing, :field_changes).to_json %>"
+                 data-entry-json="<%= entry.fields.to_json %>"
                  <%= first_card ? "" : "hidden" %>
                  data-testid="preread-entry-card">
 
               <%# -- View panel -- %>
               <div class="preread-review__view-panel" data-preread-review-target="viewPanel">
                 <div class="chapter-review__chapter-header">
-                  <p class="chapter-review__chapter-label preread-review__category-badge preread-review__category-badge--<%= cat.to_s.tr("_", "-") %>">
-                    <%= cat.to_s.humanize %>
+                  <p class="chapter-review__chapter-label preread-review__category-badge preread-review__category-badge--<%= type.tr("_", "-") %>">
+                    <%= type.humanize %>
                   </p>
-                  <% if entry[:is_existing] %>
+                  <% if entry.existing_record_id %>
                     <span class="preread-review__entry-type preread-review__entry-type--existing">Updating existing entry</span>
                   <% else %>
                     <span class="preread-review__entry-type preread-review__entry-type--new">New entry</span>
                   <% end %>
-                  <h2 class="chapter-review__chapter-title"><%= entry[name_key] %></h2>
+                  <h2 class="chapter-review__chapter-title"><%= entry.fields[name_key] %></h2>
                   <% if korean_key %>
-                    <p class="preread-review__korean" <%= entry[korean_key].blank? ? "hidden" : "" %>><%= entry[korean_key] %></p>
+                    <p class="preread-review__korean" <%= entry.fields[korean_key].blank? ? "hidden" : "" %>><%= entry.fields[korean_key] %></p>
                   <% end %>
                 </div>
 
-                <% field_changes = entry[:field_changes] %>
                 <table class="preread-review__fields" data-testid="entry-fields">
                   <tbody>
-                    <% preread_display_fields[cat].each do |label, key| %>
-                      <% change = field_changes&.[](key) %>
-                      <tr <%= (entry[key].blank? && change.nil?) ? "hidden" : "" %>>
+                    <% preread_display_fields[type].each do |label, key| %>
+                      <tr <%= entry.fields[key].blank? ? "hidden" : "" %>>
                         <th class="preread-review__field-label"><%= label %></th>
-                        <td class="preread-review__field-value" data-field="<%= key %>">
-                          <% if change %>
-                            <% if change[:was].present? %>
-                              <span class="preread-review__diff-removed"><%= change[:was] %></span>
-                            <% end %>
-                            <% if change[:now].present? %>
-                              <span class="preread-review__diff-added"><%= change[:now] %></span>
-                            <% end %>
-                          <% else %>
-                            <%= entry[key] %>
-                          <% end %>
-                        </td>
+                        <td class="preread-review__field-value" data-field="<%= key %>"><%= entry.fields[key] %></td>
                       </tr>
                     <% end %>
                   </tbody>
@@ -272,22 +261,22 @@
               <%# -- Edit panel -- %>
               <div class="preread-review__edit-panel" data-preread-review-target="editPanel" hidden>
                 <div class="chapter-review__chapter-header">
-                  <p class="chapter-review__chapter-label preread-review__category-badge preread-review__category-badge--<%= cat.to_s.tr("_", "-") %>">
-                    <%= cat.to_s.humanize %> — Edit
+                  <p class="chapter-review__chapter-label preread-review__category-badge preread-review__category-badge--<%= type.tr("_", "-") %>">
+                    <%= type.humanize %> — Edit
                   </p>
-                  <h2 class="chapter-review__chapter-title"><%= entry[name_key] %></h2>
+                  <h2 class="chapter-review__chapter-title"><%= entry.fields[name_key] %></h2>
                 </div>
 
                 <div class="preread-review__edit-form">
-                  <% preread_edit_fields[cat].each do |label, key, type| %>
+                  <% preread_edit_fields[type].each do |label, key, kind| %>
                     <div class="preread-review__edit-field">
                       <label class="form-label"><%= label %></label>
-                      <% if type == :textarea %>
-                        <textarea class="form-input preread-review__edit-textarea" data-field="<%= key %>" rows="3"><%= entry[key] %></textarea>
-                      <% elsif type == :number %>
-                        <input type="number" class="form-input" data-field="<%= key %>" value="<%= entry[key] %>">
+                      <% if kind == :textarea %>
+                        <textarea class="form-input preread-review__edit-textarea" data-field="<%= key %>" rows="3"><%= entry.fields[key] %></textarea>
+                      <% elsif kind == :number %>
+                        <input type="number" class="form-input" data-field="<%= key %>" value="<%= entry.fields[key] %>">
                       <% else %>
-                        <input type="text" class="form-input" data-field="<%= key %>" value="<%= entry[key] %>">
+                        <input type="text" class="form-input" data-field="<%= key %>" value="<%= entry.fields[key] %>">
                       <% end %>
                     </div>
                   <% end %>
@@ -313,69 +302,6 @@
             <% first_card = false %>
           <% end %>
         <% end %>
-      </div>
-
-      <%# ---- Summary screen ---- %>
-      <div class="chapter-review__screen"
-           data-preread-review-target="summaryScreen"
-           hidden
-           data-testid="preread-summary-screen">
-        <div class="chapter-review__summary">
-          <div class="chapter-review__summary-icon">✓</div>
-          <h2>Review complete</h2>
-          <p>Ready to import entries into the bible for <strong><%= @novel.title %></strong>.</p>
-
-          <table class="preread-review__summary-table" data-testid="preread-summary-table">
-            <thead>
-              <tr>
-                <th>Category</th>
-                <th>Approved</th>
-                <th>Skipped</th>
-                <th>Pending</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% preread_categories.each do |cat, _, _| %>
-                <% count = @pending_entries[cat].size %>
-                <% next if count == 0 %>
-                <tr data-preread-review-target="summaryRow"
-                    data-category="<%= cat %>"
-                    data-total="<%= count %>">
-                  <td><%= cat.to_s.humanize %></td>
-                  <td data-preread-review-target="summaryApproved">0</td>
-                  <td data-preread-review-target="summarySkipped">0</td>
-                  <td data-preread-review-target="summaryPending"><%= count %></td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-
-          <div class="chapter-review__summary-actions">
-            <%= form_with url: novel_bible_import_path(@novel),
-                  method: :post,
-                  data: {
-                    preread_review_target: "importForm",
-                    action: "submit->preread-review#onImportSubmit",
-                    turbo: false,
-                    testid: "import-form"
-                  } do |f| %>
-              <%= f.button "Import 0 entries to Bible",
-                    class: "btn btn--primary",
-                    data: {
-                      preread_review_target: "importBtn",
-                      testid: "button-import"
-                    },
-                    disabled: true %>
-            <% end %>
-
-            <button type="button"
-                    class="chapter-review__back-to-editing"
-                    data-action="click->preread-review#backToSlideshow"
-                    data-testid="button-back-editing">
-              Go back and keep editing
-            </button>
-          </div>
-        </div>
       </div>
 
       <%# ---- Footer navigation ---- %>

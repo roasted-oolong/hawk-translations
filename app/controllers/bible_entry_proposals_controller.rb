@@ -11,6 +11,19 @@ class BibleEntryProposalsController < ApplicationController
   before_action :set_novel
   before_action :set_proposal
 
+  # Persists an inline edit made in the slideshow's edit panel, immediately
+  # — matches the rest of this design's "persist as you go" shape rather
+  # than accumulating edits for a later batch submit. Allowlisted against
+  # BibleEntryProposal::ALLOWED_FIELD_KEYS for this proposal's entry_type
+  # (not against fields.keys — a field a preread pass left blank and
+  # compacted out must still be settable by hand here).
+  def update
+    incoming = params.require(:fields).permit!.to_h
+    allowed  = incoming.slice(*BibleEntryProposal::ALLOWED_FIELD_KEYS.fetch(@proposal.entry_type.to_sym))
+    @proposal.update!(fields: @proposal.fields.merge(allowed))
+    respond_to_resolution
+  end
+
   def approve
     @proposal.approve!
     respond_to_resolution

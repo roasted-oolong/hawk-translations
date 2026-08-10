@@ -1,12 +1,20 @@
 import { Controller } from "@hotwired/stimulus"
 
+// Per-card immediate persist: approve/skip fire a fetch to
+// BibleEntryProposalsController the moment they're clicked (or triggered by
+// a keyboard shortcut) — no accumulating decisions client-side for a later
+// batch submit (see docs/PREREAD_STAGING_DESIGN.md, Group B7). The card is
+// then removed from the DOM, which is also how the (shrinking) card/nav
+// list and progress bar stay in sync — no separate approved/skipped Set to
+// reconcile against a fixed total. Reaching zero remaining cards redirects
+// to the novel page; there's no summary/tally screen to land on instead,
+// since nothing is left to summarize that isn't already reflected by the
+// live bible tables and the dismissed-keys list.
 export default class PrereadReviewController extends Controller<HTMLElement> {
   static targets = [
     "entryCard",
     "navItem",
-    "navStatus",
     "slideshowScreen",
-    "summaryScreen",
     "footer",
     "prevBtn",
     "approveBtn",
@@ -14,25 +22,21 @@ export default class PrereadReviewController extends Controller<HTMLElement> {
     "progressText",
     "counterText",
     "topbarTitle",
-    "summaryRow",
-    "summaryApproved",
-    "summarySkipped",
-    "summaryPending",
-    "importForm",
-    "importBtn",
+    "savedIndicator",
     "viewPanel",
     "editPanel",
   ]
 
   static values = {
-    importUrl: String,
+    novelUrl: String,
+    approveUrl: String,
+    skipUrl: String,
+    updateUrl: String,
   }
 
   declare entryCardTargets: HTMLElement[]
   declare navItemTargets: HTMLElement[]
-  declare navStatusTargets: HTMLElement[]
   declare slideshowScreenTarget: HTMLElement
-  declare summaryScreenTarget: HTMLElement
   declare footerTarget: HTMLElement
   declare prevBtnTarget: HTMLButtonElement
   declare approveBtnTarget: HTMLButtonElement
@@ -40,18 +44,17 @@ export default class PrereadReviewController extends Controller<HTMLElement> {
   declare progressTextTarget: HTMLElement
   declare counterTextTarget: HTMLElement
   declare topbarTitleTarget: HTMLElement
-  declare summaryRowTargets: HTMLElement[]
-  declare summaryApprovedTargets: HTMLElement[]
-  declare summarySkippedTargets: HTMLElement[]
-  declare summaryPendingTargets: HTMLElement[]
-  declare importFormTarget: HTMLFormElement
-  declare importBtnTarget: HTMLButtonElement
+  declare savedIndicatorTarget: HTMLElement
   declare viewPanelTargets: HTMLElement[]
   declare editPanelTargets: HTMLElement[]
 
+  declare novelUrlValue: string
+  declare approveUrlValue: string
+  declare skipUrlValue: string
+  declare updateUrlValue: string
+
   private index = 0
-  private approved = new Set<string>()
-  private skipped = new Set<string>()
+  private originalTotal = 0
 
   private handleKeydown = (event: KeyboardEvent) => {
     const editPanel = this.editPanelTargets[this.index]
@@ -99,8 +102,7 @@ export default class PrereadReviewController extends Controller<HTMLElement> {
 
   connect() {
     this.index = 0
-    this.approved = new Set()
-    this.skipped = new Set()
+    this.originalTotal = this.total
     this.renderCurrent()
     document.addEventListener('keydown', this.handleKeydown)
   }
@@ -117,10 +119,6 @@ export default class PrereadReviewController extends Controller<HTMLElement> {
     return this.entryCardTargets[this.index]
   }
 
-  private compositeKey(card: HTMLElement): string {
-    return `${card.dataset.category}:${card.dataset.koreanKey}`
-  }
-
   prev() {
     this.closeCurrentEditPanel()
     if (this.index > 0) {
@@ -130,45 +128,28 @@ export default class PrereadReviewController extends Controller<HTMLElement> {
   }
 
   approve() {
-    const key = this.compositeKey(this.currentCard)
-    this.approved.add(key)
-    this.skipped.delete(key)
-
-    if (this.index >= this.total - 1) {
-      this.showSummary()
-    } else {
-      this.index++
-      this.renderCurrent()
-    }
+    this.resolveCurrentCard(id => this.persist(this.approveUrlValue, id))
   }
 
   skip() {
-    const key = this.compositeKey(this.currentCard)
-    this.skipped.add(key)
-    this.approved.delete(key)
-
-    if (this.index >= this.total - 1) {
-      this.showSummary()
-    } else {
-      this.index++
-      this.renderCurrent()
-    }
+    this.resolveCurrentCard(id => this.persist(this.skipUrlValue, id))
   }
 
   skipAll() {
-    this.entryCardTargets.forEach(card => {
-      const key = this.compositeKey(card)
-      if (!this.approved.has(key)) {
-        this.skipped.add(key)
-      }
-    })
-    this.showSummary()
+    // Each call resolves whatever is now at this.index (0) — resolving
+    // removes that card, shifting the next one into its place — so
+    // looping this.total times (re-read each iteration) clears every
+    // remaining card without needing to snapshot the list up front.
+    while (this.total > 0) {
+      this.skip()
+    }
   }
 
-  jumpTo({ params: { index } }: { params: { index: number } }) {
+  jumpTo(event: Event) {
     this.closeCurrentEditPanel()
-    if (index >= 0 && index < this.total) {
-      this.index = index
+    const idx = this.navItemTargets.indexOf(event.currentTarget as HTMLElement)
+    if (idx >= 0) {
+      this.index = idx
       this.renderCurrent()
     }
   }
@@ -188,10 +169,12 @@ export default class PrereadReviewController extends Controller<HTMLElement> {
     if (!card || !editPanel || !viewPanel) return
 
     const entryData: Record<string, unknown> = JSON.parse(card.dataset.entryJson || '{}')
+    const changedFields: Record<string, string> = {}
 
     editPanel.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-field]').forEach(field => {
       const key = field.dataset.field!
       const value = field.value.trim()
+      changedFields[key] = value
       if (value !== '') {
         entryData[key] = value
       } else {
@@ -218,12 +201,12 @@ export default class PrereadReviewController extends Controller<HTMLElement> {
       card.dataset.displayName = newName
     }
 
-    // cultural_phrases has no entry here — its Korean text is the main
+    // cultural_phrase has no entry here — its Korean text is the main
     // title now (see preread_categories in the view), not a separate
     // .preread-review__korean subtitle element.
     const koreanKeyMap: Record<string, string> = {
-      characters: 'korean_name',
-      locations: 'korean_name',
+      character: 'korean_name',
+      location: 'korean_name',
       terminology: 'korean_term',
     }
     const koreanKey = koreanKeyMap[card.dataset.category!]
@@ -239,6 +222,20 @@ export default class PrereadReviewController extends Controller<HTMLElement> {
     editPanel.hidden = true
     viewPanel.hidden = false
     this.renderCurrent()
+
+    const id = card.dataset.proposalId!
+    const url = this.updateUrlValue.replace(':id', id)
+    fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'X-CSRF-Token': this.csrfToken(),
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ fields: changedFields }),
+    }).then(() => this.flashSaved()).catch(() => {
+      // Best-effort, same reasoning as #persist below.
+    })
   }
 
   cancelEdit() {
@@ -256,44 +253,48 @@ export default class PrereadReviewController extends Controller<HTMLElement> {
     viewPanel.hidden = false
   }
 
-  backToSlideshow() {
-    this.summaryScreenTarget.hidden = true
-    this.slideshowScreenTarget.hidden = false
-    this.footerTarget.hidden = false
+  private flashSaved() {
+    this.savedIndicatorTarget.hidden = false
+    setTimeout(() => {
+      this.savedIndicatorTarget.hidden = true
+    }, 2000)
+  }
+
+  // Removes the current card immediately and fires its persist request in
+  // the background rather than waiting on the response — a failed request
+  // here isn't destructive (worst case: the suggestion resurfaces on a
+  // later preread pass, same as if it were never actioned at all), and
+  // this is a solo-dev internal tool with no concurrent-editor conflicts
+  // to guard against.
+  private resolveCurrentCard(action: (id: string) => void) {
+    if (this.total === 0) return
+    const card = this.currentCard
+    const id = card.dataset.proposalId!
+    action(id)
+
+    const navItem = this.navItemTargets[this.index]
+    card.remove()
+    navItem?.remove()
+
+    if (this.total === 0) {
+      window.location.href = this.novelUrlValue
+      return
+    }
+
+    if (this.index >= this.total) this.index = this.total - 1
     this.renderCurrent()
   }
 
-  onImportSubmit(event: Event) {
-    event.preventDefault()
-    const form = this.importFormTarget
-    form.querySelectorAll("input[name='approved_entries'], input[name='skipped_entries']").forEach(el => el.remove())
+  private persist(urlTemplate: string, id: string) {
+    const url = urlTemplate.replace(':id', id)
+    fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': this.csrfToken(), Accept: 'application/json' },
+    }).catch(() => {})
+  }
 
-    const approvedData = Array.from(this.approved).map(compositeKey => {
-      const card = this.entryCardTargets.find(c => this.compositeKey(c) === compositeKey)
-      if (!card) return null
-      return {
-        ...JSON.parse(card.dataset.entryJson || '{}'),
-        // NOTE: story entries have their own `category` field (main_plot/subplot/etc,
-        // set by BibleMarkdownParser#infer_story_category). Use a distinct key here so
-        // that field doesn't get clobbered by the bible-section selector below — see
-        // bible_import_controller#create, which reads this same key.
-        bible_category: card.dataset.category,
-      }
-    }).filter(Boolean)
-
-    const approvedInput = document.createElement("input")
-    approvedInput.type = "hidden"
-    approvedInput.name = "approved_entries"
-    approvedInput.value = JSON.stringify(approvedData)
-    form.appendChild(approvedInput)
-
-    const skippedInput = document.createElement("input")
-    skippedInput.type = "hidden"
-    skippedInput.name = "skipped_entries"
-    skippedInput.value = JSON.stringify(Array.from(this.skipped))
-    form.appendChild(skippedInput)
-
-    form.submit()
+  private csrfToken(): string {
+    return document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? ''
   }
 
   private closeCurrentEditPanel() {
@@ -306,25 +307,18 @@ export default class PrereadReviewController extends Controller<HTMLElement> {
   }
 
   private renderCurrent() {
+    if (this.total === 0) return
+
     this.entryCardTargets.forEach((card, i) => {
       card.hidden = i !== this.index
     })
 
     this.prevBtnTarget.disabled = this.index === 0
 
-    const card = this.currentCard
-    const key = this.compositeKey(card)
     const isLast = this.index >= this.total - 1
-    const isApproved = this.approved.has(key)
+    this.approveBtnTarget.textContent = isLast ? "Approve & Finish" : "Approve & Next"
 
-    if (isApproved) {
-      this.approveBtnTarget.textContent = isLast ? "Approved — Finish" : "Approved — Next"
-      this.approveBtnTarget.classList.add("btn--approved")
-    } else {
-      this.approveBtnTarget.textContent = isLast ? "Approve & Finish" : "Approve & Next"
-      this.approveBtnTarget.classList.remove("btn--approved")
-    }
-
+    const card = this.currentCard
     const catLabel = card.dataset.categoryLabel ?? ""
     const displayName = card.dataset.displayName ?? ""
     this.topbarTitleTarget.textContent = `${catLabel} — ${displayName}`
@@ -334,63 +328,13 @@ export default class PrereadReviewController extends Controller<HTMLElement> {
   }
 
   private renderProgress() {
-    const done = this.approved.size + this.skipped.size
-    const pct = this.total > 0 ? (done / this.total) * 100 : 0
+    const done = this.originalTotal - this.total
+    const pct = this.originalTotal > 0 ? (done / this.originalTotal) * 100 : 0
     this.progressFillTarget.style.width = `${pct}%`
-    this.progressTextTarget.textContent = `${done} / ${this.total}`
+    this.progressTextTarget.textContent = `${done} / ${this.originalTotal}`
 
     this.navItemTargets.forEach((item, i) => {
-      const card = this.entryCardTargets[i]
-      const key = card ? this.compositeKey(card) : ""
-      item.classList.remove(
-        "chapter-review__nav-item--active",
-        "chapter-review__nav-item--approved",
-        "chapter-review__nav-item--skipped",
-      )
-      if (i === this.index) {
-        item.classList.add("chapter-review__nav-item--active")
-      } else if (this.approved.has(key)) {
-        item.classList.add("chapter-review__nav-item--approved")
-      } else if (this.skipped.has(key)) {
-        item.classList.add("chapter-review__nav-item--skipped")
-      }
-
-      const statusEl = this.navStatusTargets[i]
-      if (statusEl) {
-        if (this.approved.has(key))      statusEl.textContent = "Approved"
-        else if (this.skipped.has(key)) statusEl.textContent = "Skipped"
-        else                             statusEl.textContent = ""
-      }
+      item.classList.toggle("chapter-review__nav-item--active", i === this.index)
     })
-  }
-
-  private showSummary() {
-    this.slideshowScreenTarget.hidden = true
-    this.footerTarget.hidden = true
-    this.summaryScreenTarget.hidden = false
-    this.counterTextTarget.textContent = "Review complete"
-
-    this.summaryRowTargets.forEach((row, rowIdx) => {
-      const cat = row.dataset.category ?? ""
-      const total = parseInt(row.dataset.total ?? "0", 10)
-
-      const approvedCount = Array.from(this.approved).filter(k => k.startsWith(`${cat}:`)).length
-      const skippedCount  = Array.from(this.skipped).filter(k => k.startsWith(`${cat}:`)).length
-      const pendingCount  = total - approvedCount - skippedCount
-
-      if (this.summaryApprovedTargets[rowIdx]) {
-        this.summaryApprovedTargets[rowIdx].textContent = String(approvedCount)
-      }
-      if (this.summarySkippedTargets[rowIdx]) {
-        this.summarySkippedTargets[rowIdx].textContent = String(skippedCount)
-      }
-      if (this.summaryPendingTargets[rowIdx]) {
-        this.summaryPendingTargets[rowIdx].textContent = String(pendingCount)
-      }
-    })
-
-    const count = this.approved.size
-    this.importBtnTarget.textContent = `Import ${count} ${count === 1 ? "entry" : "entries"} to Bible`
-    this.importBtnTarget.disabled = false
   }
 }
