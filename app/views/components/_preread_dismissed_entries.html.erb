@@ -1,30 +1,28 @@
 <%# locals: (entries:, novel:, category:) %>
-<%
-  name_key   = { characters: :name, locations: :name, terminology: :term,
-                 cultural_phrases: :korean_phrase, story: :title }[category]
-  korean_key = { characters: :korean_name, locations: :korean_name,
-                 terminology: :korean_term, cultural_phrases: nil,
-                 story: nil }[category]
-%>
+<%# entries are bare Korean-key strings now. Restoring a proposal record
+    isn't possible: BibleEntryProposal#skip! deletes the row it came from,
+    so there's nothing left to show beyond the key itself or to instantly
+    reinstate — see PrereadDismissController#destroy's copy for what
+    "restore" actually means now. %>
 <section class="preread-dismissed" data-testid="preread-dismissed-section">
   <h2 class="preread-dismissed__heading">Dismissed preread entries</h2>
   <p class="preread-dismissed__hint">
-    These entries were skipped during preread review. Restore any to add them back to the pending queue.
+    These entries were skipped during preread review. Only the Korean key
+    is kept once dismissed — restoring makes it eligible to be
+    re-suggested on the next preread pass, not an instant return to the
+    pending queue.
   </p>
 
   <div class="preread-dismissed__list">
-    <% entries.each do |entry| %>
+    <% entries.each do |korean_key| %>
       <div class="preread-dismissed__entry" data-testid="dismissed-entry">
         <div class="preread-dismissed__entry-info">
-          <span class="preread-dismissed__entry-name"><%= entry[name_key] %></span>
-          <% if korean_key && entry[korean_key].present? %>
-            <span class="preread-dismissed__entry-korean"><%= entry[korean_key] %></span>
-          <% end %>
+          <span class="preread-dismissed__entry-korean"><%= korean_key %></span>
         </div>
         <%= form_with url: novel_preread_dismiss_path(novel), method: :delete, data: { turbo: false } do |f| %>
-          <%= f.hidden_field :key, value: "#{category}:#{entry[:korean_key]}" %>
+          <%= f.hidden_field :key, value: "#{category}:#{korean_key}" %>
           <%= f.submit "Restore", class: "btn btn--sm btn--ghost",
-                data: { testid: "btn-restore-#{entry[:korean_key]}" } %>
+                data: { testid: "btn-restore-#{korean_key}" } %>
         <% end %>
       </div>
     <% end %>

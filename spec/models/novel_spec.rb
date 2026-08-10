@@ -175,4 +175,31 @@ RSpec.describe Novel, type: :model do
       expect(JSON.parse(novel.reload.preread_dismissed_keys)).to eq([ "character:kang" ])
     end
   end
+
+  describe "#pending_preread_breakdown" do
+    it "returns a zero total and empty by_category with no proposals" do
+      novel = create(:novel)
+      result = novel.pending_preread_breakdown
+      expect(result).to eq(total: 0, by_category: {})
+    end
+
+    it "sums per-entry_type counts into a total" do
+      novel = create(:novel)
+      create(:bible_entry_proposal, novel: novel, entry_type: "character", korean_key: "a")
+      create(:bible_entry_proposal, novel: novel, entry_type: "character", korean_key: "b")
+      create(:bible_entry_proposal, novel: novel, entry_type: "location", korean_key: "c")
+
+      result = novel.pending_preread_breakdown
+
+      expect(result[:total]).to eq(3)
+      expect(result[:by_category]).to eq("character" => 2, "location" => 1)
+    end
+
+    it "does not count another novel's proposals" do
+      novel = create(:novel)
+      create(:bible_entry_proposal, novel: create(:novel))
+
+      expect(novel.pending_preread_breakdown[:total]).to eq(0)
+    end
+  end
 end

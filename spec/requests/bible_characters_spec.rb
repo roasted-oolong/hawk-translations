@@ -136,24 +136,11 @@ RSpec.describe "BibleCharacters", type: :request do
   end
 
   describe "GET /novels/:novel_id/bible_characters — pending preread suggestions tab" do
-    let(:bible_dir) { Dir.mktmpdir }
-
-    before do
-      FileUtils.mkdir_p(File.join(bible_dir, "bible"))
-      allow(ENV).to receive(:fetch).with("HAWK_PROJECT_ROOT", "").and_return(File.dirname(bible_dir))
-      allow_any_instance_of(Novel).to receive(:directory_name).and_return(File.basename(bible_dir))
-
-      File.write(File.join(bible_dir, "bible", "characters.md"), <<~MD)
-        ## Yoo Areum (유아름)
-        - Korean name: 유아름
-        - Role: Sidekick
-      MD
-      %w[locations.md terminology.md cultural_phrases.md story.md].each do |f|
-        FileUtils.touch(File.join(bible_dir, "bible", f))
-      end
+    let!(:proposal) do
+      chapter = create(:chapter, novel: novel)
+      create(:bible_entry_proposal, novel: novel, chapter: chapter, entry_type: "character",
+             korean_key: "유아름", fields: { "name" => "Yoo Areum", "korean_name" => "유아름", "role" => "Sidekick" })
     end
-
-    after { FileUtils.rm_rf(bible_dir) }
 
     it "lists the pending suggestion with a Dismiss action" do
       get novel_bible_characters_path(novel)
@@ -163,13 +150,13 @@ RSpec.describe "BibleCharacters", type: :request do
       expect(response.body).to include("Pending suggestions")
     end
 
-    it "dismissing it via preread_dismiss moves it out of the pending list and into dismissed" do
-      post novel_preread_dismiss_path(novel), params: { key: "characters:유아름" }
+    it "dismissing it via bible_entry_proposals#skip moves it out of the pending list and into dismissed" do
+      post skip_novel_bible_entry_proposal_path(novel, proposal)
 
       get novel_bible_characters_path(novel)
       expect(response.body).to include("No pending preread suggestions")
       expect(response.body).to include("Dismissed preread")
-      expect(response.body).to include("Yoo Areum") # now shown in the dismissed panel instead
+      expect(response.body).to include("유아름") # now shown in the dismissed panel as a bare Korean key
     end
   end
 end
