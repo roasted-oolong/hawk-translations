@@ -4,8 +4,9 @@
 # Ruby port of src/bible_utils.py — the single source of truth for
 # deriving a canonical dedup key from a bible-entry "## heading" line.
 # The Korean name/term is the canonical unique identifier for every bible
-# entry; this module is what every reader/writer of bible files (R6's
-# PrereadBibleWriter now, R5's BibleReviewWriter later) keys dedup on.
+# entry; this module is what Pipeline::BibleEntryMatcher, BibleReviewWriter
+# (R5's post_translation_review writer), and BibleCulturalPhrase's own
+# uniqueness validation all key dedup on.
 # ---------------------------------------------------------------------------
 module Pipeline
   module BibleUtils

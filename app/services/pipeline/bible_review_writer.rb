@@ -3,12 +3,14 @@
 #
 # The sole code path that decides *what* bible-file mutation a
 # post_translation_review card requires. Performs no file I/O, locking, or
-# atomic-write logic itself — every write goes through Pipeline::BibleFileEditor
-# (shared with Pipeline::PrereadBibleWriter/R6), which owns the
-# lock -> fresh-read -> revalidate -> atomic-write mechanics. This class only
-# ever sees a card and returns what happened to it; PostTranslationReviewController
-# decides which cards get committed (only "accepted"/"accepted_revised" ones)
-# and records each outcome back onto the job.
+# atomic-write logic itself — every write goes through Pipeline::BibleFileEditor,
+# which owns the lock -> fresh-read -> revalidate -> atomic-write mechanics
+# (the only other caller was R6's preread writer, retired in
+# docs/PREREAD_STAGING_DESIGN.md's Group D — see BibleFileEditor's own
+# header). This class only ever sees a card and returns what happened to
+# it; PostTranslationReviewController decides which cards get committed
+# (only "accepted"/"accepted_revised" ones) and records each outcome back
+# onto the job.
 #
 # card is a plain hash with string keys, as stored in a TranslationJob's
 # result_payload (post JSON round-trip) — see

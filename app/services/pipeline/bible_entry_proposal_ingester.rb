@@ -8,13 +8,12 @@
 # docs/PREREAD_STAGING_DESIGN.md and its "gap #1" chapter-attribution
 # writeup.
 #
-# Input/output shape mirrors Pipeline::PrereadBibleWriter#write_batch
-# (plural section keys from PrereadRunner::ResponseParser, a
-# :written/:no_new_entries/:empty status per section) so PrereadRunner can
-# swap one writer for the other with minimal changes (see the design doc's
-# Group B5). Internally translates plural section keys to
-# BibleEntryProposal's singular entry_type vocabulary — the wire format is
-# legacy, the persisted domain vocabulary isn't.
+# Input/output shape (plural section keys from PrereadRunner::ResponseParser,
+# a :written/:no_new_entries/:empty status per section) mirrors the writer
+# this replaced (see the design doc's Group B5). Internally translates
+# plural section keys to BibleEntryProposal's singular entry_type
+# vocabulary — the wire format is legacy, the persisted domain vocabulary
+# isn't.
 # ---------------------------------------------------------------------------
 module Pipeline
   class BibleEntryProposalIngester
@@ -42,32 +41,6 @@ module Pipeline
       end
     end
 
-    # find_or_initialize_by + save is the primary idempotency mechanism —
-    # ingesting the same entry twice (a re-run, or two batches' ranges
-    # overlapping) updates the one existing pending row instead of creating
-    # a duplicate. The unique index on [novel_id, entry_type, korean_key] is
-    # the concurrency safety net for two ingestions racing on the same
-    # novel; RecordNotUnique means the other process's insert won the race
-    # between our find and our save, so we re-find and update instead of
-    # failing the batch.
-    #
-    # Public (not just #ingest_batch's own private helper) — chapter
-    # attribution is the caller's job, not this method's, so anything that
-    # already knows which chapter an entry belongs to can persist it the
-    # same way #ingest_batch does. Pipeline::BibleEntryProposalBackfill
-    # (Group D1) is the other caller: it classifies via
-    # BibleMarkdownParser#pending_entries instead of a preread batch and
-    # has its own (simpler, no batch_nums) chapter-attribution rule.
-    def upsert_proposal(entry_type, entry, chapter)
-      proposal = @novel.bible_entry_proposals.find_or_initialize_by(entry_type: entry_type, korean_key: entry[:korean_key])
-      assign_proposal_attrs(proposal, entry, chapter)
-      proposal.save!
-    rescue ActiveRecord::RecordNotUnique
-      proposal = @novel.bible_entry_proposals.find_by!(entry_type: entry_type, korean_key: entry[:korean_key])
-      assign_proposal_attrs(proposal, entry, chapter)
-      proposal.save!
-    end
-
     private
 
     def ingest_section(section, content, batch_nums)
@@ -77,6 +50,24 @@ module Pipeline
       entry_type = SECTION_TO_ENTRY_TYPE.fetch(section)
       entries.each { |entry| upsert_proposal(entry_type, entry, attribute_chapter(entry, batch_nums)) }
       :written
+    end
+
+    # find_or_initialize_by + save is the primary idempotency mechanism —
+    # ingesting the same entry twice (a re-run, or two batches' ranges
+    # overlapping) updates the one existing pending row instead of creating
+    # a duplicate. The unique index on [novel_id, entry_type, korean_key] is
+    # the concurrency safety net for two ingestions racing on the same
+    # novel; RecordNotUnique means the other process's insert won the race
+    # between our find and our save, so we re-find and update instead of
+    # failing the batch.
+    def upsert_proposal(entry_type, entry, chapter)
+      proposal = @novel.bible_entry_proposals.find_or_initialize_by(entry_type: entry_type, korean_key: entry[:korean_key])
+      assign_proposal_attrs(proposal, entry, chapter)
+      proposal.save!
+    rescue ActiveRecord::RecordNotUnique
+      proposal = @novel.bible_entry_proposals.find_by!(entry_type: entry_type, korean_key: entry[:korean_key])
+      assign_proposal_attrs(proposal, entry, chapter)
+      proposal.save!
     end
 
     def assign_proposal_attrs(proposal, entry, chapter)

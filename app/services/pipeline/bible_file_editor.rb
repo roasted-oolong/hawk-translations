@@ -5,10 +5,13 @@ require "fileutils"
 #
 # The sole code path in the app that touches File, flock, or .tmp-then-rename
 # for any bible file. Mechanics only — no bible-domain knowledge (no
-# reference to characters, terminology, cards, or headings). Shared by
-# Pipeline::PrereadBibleWriter (R6) and, later, R5's BibleReviewWriter, so
-# every hardening measure lives in exactly one place rather than being
-# reinvented per writer. See docs/RAILS_REFACTOR_PLAN.md's R6 section.
+# reference to characters, terminology, cards, or headings). Built for R6's
+# preread writer and R5's BibleReviewWriter to share, so every hardening
+# measure lives in exactly one place rather than being reinvented per
+# writer; only BibleReviewWriter remains as of docs/PREREAD_STAGING_DESIGN.md's
+# Group D, which retired the preread writer this was originally built
+# alongside — kept regardless, since BibleReviewWriter still depends on it.
+# See docs/RAILS_REFACTOR_PLAN.md's R6 section.
 #
 # Locking uses a dedicated sidecar "<file>.lock" path that is itself never
 # renamed or replaced — locking the target file's own path directly would
@@ -25,9 +28,8 @@ require "fileutils"
 # pessimistic critical section, not optimistic concurrency control.
 #
 # Only the file(s) a caller actually touches are locked, never all bible
-# files preemptively; when a caller (e.g. PrereadBibleWriter) needs more
-# than one, it is the caller's responsibility to acquire them in canonical
-# filename order.
+# files preemptively; when a caller needs more than one, it is the
+# caller's responsibility to acquire them in canonical filename order.
 # ---------------------------------------------------------------------------
 module Pipeline
   class BibleFileEditor
