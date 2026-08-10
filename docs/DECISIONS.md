@@ -3553,3 +3553,32 @@ this WSL environment) and re-confirmed after B5–B7. Zero regressions.
 Not yet built: the `TranslationJob` translate-lock validation (Group
 C) and the backfill/deletion of `BibleMarkdownParser`/
 `PrereadBibleWriter` (Group D) — see `docs/PREREAD_STAGING_DESIGN.md`.
+
+## 2026-08-10 · Preread staging Part 2, Group C: translate_batch blocked by unresolved bible proposals
+
+Closes `docs/PREREAD_STAGING_DESIGN.md`'s Part 2 — a chapter with
+unresolved `bible_entry_proposals` can no longer be sent through
+`translate_batch`. `TranslationJob#chapter_bible_proposals_resolved`
+is a straight mirror of the existing `voice_calibration_chapter_reviewed`
+guard's shape (same file, same `validate ..., if: -> { job_type? &&
+chapter_start.present? }` pattern): joins the novel's chapters in
+`chapter_start..chapter_end` against `bible_entry_proposals`, fails if
+any exist.
+
+Checked against the *translate* job's own range, not whatever range
+the preread job that produced the proposals used — chapter 77 being
+fully reviewed doesn't unlock chapter 76, and a proposal sitting on a
+chapter outside the translate job's own range doesn't block it. Spec
+covers both directions.
+
+This is Group C entirely — no other code changed. Group B (2026-08-10,
+above) already guarantees no *new* unapproved content reaches
+`bible/*.md`; this closes the other half, that a chapter can't be
+translated while content proposed *for it* still sits unreviewed.
+
+Full spec/requests + spec/models + spec/services + spec/jobs (1219
+examples): 19 pre-existing baseline failures, zero regressions.
+
+Not yet built: the backfill Rake task and deletion of
+`BibleMarkdownParser`/`Pipeline::PrereadBibleWriter` (Group D) — see
+`docs/PREREAD_STAGING_DESIGN.md`.
