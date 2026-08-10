@@ -3408,3 +3408,67 @@ a novel with no prior guide file now asserts the file gets created
 with default content (regression test for the exact bug reported);
 a companion case stubs `RenderingRuleDocWriter#write` to raise and
 asserts `index` still returns 200 rather than 500.
+
+---
+
+## 2026-08-09 · Preread staging Part 3, Group A: bible/*.md self-heals from the DB on every write
+
+First shipped slice of `docs/PREREAD_STAGING_DESIGN.md` (Part 3, Group A
+of the approved implementation plan) — the DB/file drift half of that
+design, independent of the staging-table half (Groups B–D, not started).
+
+Closes the second of the design doc's two bugs: correcting a bible entry
+through its own edit page updated the DB but never touched
+`bible/*.md`, so the translation prompt kept reading the stale value
+until something else happened to rewrite that file. `Pipeline::
+BibleEntryDocWriter` (one class, parameterized by category, mirroring
+`RenderingRuleDocWriter`'s shape) fully regenerates a category's file
+from every current row every time; `BibleDocSynced` (`app/models/
+concerns/`, mirrors `Embeddable`'s declarative-contract shape) fires it
+via `after_commit` on all five bible models — create, update, *and*
+destroy, so a deleted entry disappears from the file too. Best-effort:
+a write failure is logged and swallowed, never raised, since the DB
+save already committed by the time this runs and the DB — not the
+file — is the actual source of truth.
+
+**Round-trip constraint:** until Group B ships, `BibleMarkdownParser`
+still reads these same files back (`pending_entries`/
+`dismissed_entries_for`, used by preread's own dedup and the chapter
+review "N pending" count). Every `BibleMarkdownParser::
+COMPARABLE_FIELDS` value is written in the exact case-insensitive
+`- Field: value` shape `#parse_fields` expects, so a same-second
+re-parse of a freshly-synced file reports zero field changes against
+the record that produced it — otherwise Part 3 would trade one drift
+bug for another (a permanently "pending" false positive on every
+entry). Known, accepted narrower gap: a multi-paragraph `notes` value
+(the field is a `<textarea>`) gets flattened to one line to survive
+`#parse_fields`' single-physical-line format at all, so it can still
+show up as a spurious pending change until Group D retires this
+comparison entirely — preferable to the alternative, which is the edit
+not reaching the file at all.
+
+Cultural phrases' heading is Korean-only (no English label/parens),
+matching the 2026-08-08 decision above. `translation_examples` (added
+in that same migration) had no writer of any kind before this — it's
+included here despite having no legacy parser field to round-trip
+against, since leaving it out would mean a translator's example never
+reaches the translation prompt at all.
+
+Spec coverage: `spec/services/pipeline/bible_entry_doc_writer_spec.rb`
+(per-category round-trip via `BibleMarkdownParser#pending_entries`,
+plus the shared create/overwrite/delete-on-empty/blank-novel_dir cases
+mirroring `rendering_rule_doc_writer_spec.rb`); `spec/models/concerns/
+bible_doc_synced_spec.rb` (shared contract, mirroring
+`embeddable_spec.rb`, plus create/update/destroy integration via
+`bible_character`). One existing `BibleMarkdownParser` spec
+(`"matches an existing record by korean_phrase alone..."`) had to
+re-write its hand-authored stale fixture file *after* creating the
+now-auto-syncing record — the record's own creation immediately
+resolved the drift it existed to test, so the stale-file premise has
+to be re-established explicitly to still exercise the diffing logic in
+isolation.
+
+Not yet built: the `bible_entry_proposals` staging table, the
+`TranslationJob` translate-lock validation, and the backfill/deletion
+of `BibleMarkdownParser`/`PrereadBibleWriter` (Groups B–D) — see
+`docs/PREREAD_STAGING_DESIGN.md`.
