@@ -24,10 +24,7 @@ class BibleImportController < ApplicationController
       end
     end
 
-    if skipped.any?
-      existing = JSON.parse(@novel.preread_dismissed_keys || "[]") rescue []
-      @novel.update_column(:preread_dismissed_keys, (existing + skipped).uniq.to_json)
-    end
+    @novel.append_preread_dismissed_key!(*skipped) if skipped.any?
 
     redirect_to novel_path(@novel),
       notice: "#{count} #{"entry".pluralize(count)} imported into the bible."
