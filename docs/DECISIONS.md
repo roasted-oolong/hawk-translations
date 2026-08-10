@@ -3582,3 +3582,73 @@ examples): 19 pre-existing baseline failures, zero regressions.
 Not yet built: the backfill Rake task and deletion of
 `BibleMarkdownParser`/`Pipeline::PrereadBibleWriter` (Group D) — see
 `docs/PREREAD_STAGING_DESIGN.md`.
+
+## 2026-08-10 · Preread staging Group D: backfill run + legacy parser/writer deleted
+
+Closes out `docs/PREREAD_STAGING_DESIGN.md` entirely — Groups A
+through D all shipped. Two commits.
+
+**D1** added `Pipeline::BibleEntryProposalBackfill` (+ `rake
+bible:backfill_proposals[novel_id]`/`_all`), reconciling a novel's
+current `bible/*.md` pending findings — `BibleMarkdownParser
+#pending_entries`, the legacy file-vs-DB diff — into real
+`bible_entry_proposals` rows ahead of deleting the class that diff
+depends on. No batch context to attribute chapters from here (unlike
+the live ingester's per-preread-run attribution): an entry's own
+parsed `first_appearance_chapter` wins when it names a real `Chapter`
+row, otherwise falls back to the novel's own most recent chapter; a
+novel with zero `Chapter` rows skips that entry rather than raising.
+`Pipeline::BibleEntryProposalIngester#upsert_proposal` was made public
+(taking an already-resolved `chapter` instead of `batch_nums`) so the
+backfill could reuse the same persistence path instead of
+reimplementing it.
+
+Ran `rake bible:backfill_proposals[1]` (the app's one real novel)
+before touching anything else: **0 created, 0 updated, 0 skipped**.
+Every genuinely-new-or-changed entry the old diffing was still
+tracking had already synced into the live tables and `bible/*.md` via
+Group A's `BibleDocSynced` by the time this ran — nothing was left to
+migrate, and the named stale mismatches from this doc's earlier
+sessions (Elly/Café/AD-AP/국힙원탑) turned out to already be resolved.
+This confirmed D2 was safe to proceed.
+
+**D2** deleted `BibleMarkdownParser` and `Pipeline::PrereadBibleWriter`
+(+ specs) — both zero-caller dead code since Group B, reconfirmed by
+grep immediately before deleting. `Pipeline::BibleFileEditor` was
+*not* touched — grep-verified `BibleReviewWriter`
+(`post_translation_review`'s writer) still depends on it, exactly as
+this doc always said it would. The `preread_dismissed_keys` column
+stays too; only the file-diffing logic goes. `Pipeline::
+BibleEntryProposalBackfill` and its rake task were deleted in this
+same commit — a one-time tool whose sole dependency (`BibleMarkdownParser`)
+was gone and whose one job (the D1 run above) was done.
+
+`Pipeline::BibleEntryDocWriter` gained its own `FILE_MAP` constant
+(moved from `BibleMarkdownParser::FILE_MAP`, its last real code
+dependency) — it's the sole remaining writer of these files now, the
+natural owner of the category→filename mapping.
+`bible_entry_doc_writer_spec.rb`'s round-trip assertion goes through
+`Pipeline::BibleEntryMatcher` directly instead of `BibleMarkdownParser
+#pending_entries` — same guarantee, matcher instead of parser.
+`Pipeline::BibleEntryProposalIngester#upsert_proposal` reverted to
+private once the backfill (its only other caller) was gone.
+
+**One comment caught and corrected, not just tidied:**
+`BibleEntryProposal`'s note on `ENTRY_TYPE_TO_LEGACY_SECTION` claimed
+the legacy plural dismissed-key vocabulary (`"characters:..."`) would
+be retired by this very commit. It won't be — `Pipeline::
+BibleEntryMatcher#dismissed_keys` (permanent, untouched by this
+deletion) keys its own check on that exact format, so the bridge
+between the two vocabularies is staying indefinitely, not a
+transitional shim. Every other stale reference to the deleted classes
+(`bible_utils.rb`, `bible_review_writer.rb`, `bible_file_editor.rb`,
+`bible_preread_dismissed.rb`, `bible_entry_matcher.rb`, `novel.rb`,
+`bible_doc_synced.rb`) was just wording, updated in the same pass.
+
+Full spec/requests + spec/models + spec/services + spec/jobs (1200
+examples): 19 pre-existing baseline failures (auth/Capybara — no
+Chrome in this WSL environment — and the known bible-controllers
+create-redirects-to-edit bug), zero regressions.
+
+`docs/PREREAD_STAGING_DESIGN.md` is now a historical record of a
+completed migration — nothing left to build against it.
