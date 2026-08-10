@@ -45,6 +45,21 @@ class BibleEntryProposal < ApplicationRecord
     story:           :bible_story_entries
   }.freeze
 
+  # entry_type (this table's singular vocabulary) -> the plural section key
+  # BibleMarkdownParser/Pipeline::BibleEntryMatcher's dismissed-key format
+  # still uses ("characters:...", not "character:...") — that format
+  # predates this table and is shared with the legacy pending-entries flow
+  # until docs/PREREAD_STAGING_DESIGN.md's Group D retires it. #skip! must
+  # write in the format the matcher's dismissed check actually looks for,
+  # or a skipped suggestion silently comes right back on the next pass.
+  ENTRY_TYPE_TO_LEGACY_SECTION = {
+    character:       "characters",
+    location:        "locations",
+    terminology:     "terminology",
+    cultural_phrase: "cultural_phrases",
+    story:           "story"
+  }.freeze
+
   # ---------------------------------------------------------------------------
   # Resolution
   # ---------------------------------------------------------------------------
@@ -66,7 +81,8 @@ class BibleEntryProposal < ApplicationRecord
   # propose the same content again next pass.
   def skip!
     transaction do
-      novel.append_preread_dismissed_key!("#{entry_type}:#{korean_key}")
+      section = ENTRY_TYPE_TO_LEGACY_SECTION.fetch(entry_type.to_sym)
+      novel.append_preread_dismissed_key!("#{section}:#{korean_key}")
       destroy!
     end
   end

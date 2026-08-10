@@ -122,13 +122,15 @@ RSpec.describe BibleEntryProposal, type: :model do
       expect { proposal.skip! }.to change(BibleEntryProposal, :count).by(-1)
     end
 
-    it "appends entry_type:korean_key onto the novel's preread_dismissed_keys" do
+    it "appends the legacy-section:korean_key form onto the novel's preread_dismissed_keys" do
       novel = create(:novel)
       proposal = create(:bible_entry_proposal, novel: novel, entry_type: "character", korean_key: "sung-ah")
 
       proposal.skip!
 
-      expect(JSON.parse(novel.reload.preread_dismissed_keys)).to include("character:sung-ah")
+      # "characters" (plural), not entry_type's own "character" — see
+      # BibleEntryProposal::ENTRY_TYPE_TO_LEGACY_SECTION.
+      expect(JSON.parse(novel.reload.preread_dismissed_keys)).to include("characters:sung-ah")
     end
 
     it "does not create any live bible record" do
