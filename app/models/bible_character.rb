@@ -5,6 +5,7 @@ class BibleCharacter < ApplicationRecord
   # Concerns
   # ---------------------------------------------------------------------------
   include Embeddable
+  include BibleDocSynced
 
   # ---------------------------------------------------------------------------
   # Associations
@@ -49,6 +50,13 @@ class BibleCharacter < ApplicationRecord
       relationships,
       notes
     ].compact.reject(&:blank?).join(" ")
+  end
+
+  # ---------------------------------------------------------------------------
+  # BibleDocSynced implementation
+  # ---------------------------------------------------------------------------
+  def bible_doc_category
+    :characters
   end
 
   private

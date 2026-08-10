@@ -5,6 +5,7 @@ class BibleStoryEntry < ApplicationRecord
   # Concerns
   # ---------------------------------------------------------------------------
   include Embeddable
+  include BibleDocSynced
 
   # ---------------------------------------------------------------------------
   # Associations
@@ -52,6 +53,13 @@ class BibleStoryEntry < ApplicationRecord
       content,
       notes
     ].compact.reject(&:blank?).join(" ")
+  end
+
+  # ---------------------------------------------------------------------------
+  # BibleDocSynced implementation
+  # ---------------------------------------------------------------------------
+  def bible_doc_category
+    :story
   end
 
   private

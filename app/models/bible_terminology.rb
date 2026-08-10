@@ -5,6 +5,7 @@ class BibleTerminology < ApplicationRecord
   # Concerns
   # ---------------------------------------------------------------------------
   include Embeddable
+  include BibleDocSynced
 
   # ---------------------------------------------------------------------------
   # Associations
@@ -37,6 +38,13 @@ class BibleTerminology < ApplicationRecord
       usage_notes,
       notes
     ].compact.reject(&:blank?).join(" ")
+  end
+
+  # ---------------------------------------------------------------------------
+  # BibleDocSynced implementation
+  # ---------------------------------------------------------------------------
+  def bible_doc_category
+    :terminology
   end
 
   private
