@@ -34,6 +34,7 @@ class TranslationJob < ApplicationRecord
   validate :chapter_range_valid
   validate :voice_calibration_chapter_reviewed, if: -> { voice_calibration? && chapter_start.present? }
   validate :chapter_qa_single_chapter_translated, if: -> { chapter_qa? && chapter_start.present? }
+  validate :chapter_bible_proposals_resolved, if: -> { translate_batch? && chapter_start.present? }
 
   # ---------------------------------------------------------------------------
   # Scopes
@@ -159,6 +160,22 @@ class TranslationJob < ApplicationRecord
   def voice_calibration_chapter_reviewed
     unless novel.chapters.reviewed.exists?(number: chapter_start)
       errors.add(:chapter_start, "must be a reviewed chapter")
+    end
+  end
+
+  # Blocks translate_batch while any chapter in *this job's own* range has
+  # an unresolved bible_entry_proposal — checked against the translate
+  # job's range, not whatever range the preread job that produced the
+  # proposals used. Chapter 77 being fully reviewed doesn't unlock chapter
+  # 76: each chapter's proposals are its own gate. See
+  # docs/PREREAD_STAGING_DESIGN.md, Part 2.
+  def chapter_bible_proposals_resolved
+    unresolved = novel.chapters
+                       .where(number: chapter_start..chapter_end)
+                       .joins(:bible_entry_proposals)
+                       .distinct
+    if unresolved.exists?
+      errors.add(:chapter_start, "has unresolved bible proposals — resolve them at /preread_review first")
     end
   end
 

@@ -97,6 +97,62 @@ RSpec.describe TranslationJob, type: :model do
         expect(job.errors[:chapter_start]).to be_present
       end
     end
+
+    describe "chapter_bible_proposals_resolved (translate_batch only)" do
+      it "is invalid when a chapter in the job's own range has an unresolved bible proposal" do
+        novel   = create(:novel)
+        chapter = create(:chapter, novel: novel, number: 1)
+        create(:bible_entry_proposal, novel: novel, chapter: chapter)
+
+        job = build(:translation_job, :translate_batch, novel: novel, chapter_start: 1, chapter_end: 1)
+
+        expect(job).not_to be_valid
+        expect(job.errors[:chapter_start]).to be_present
+      end
+
+      it "is valid when every chapter in range has no unresolved proposals" do
+        novel = create(:novel)
+        create(:chapter, novel: novel, number: 1)
+
+        job = build(:translation_job, :translate_batch, novel: novel, chapter_start: 1, chapter_end: 1)
+
+        expect(job).to be_valid
+      end
+
+      it "a fully-reviewed chapter 77 does not unlock chapter 76's own unresolved proposals" do
+        novel      = create(:novel)
+        chapter76  = create(:chapter, novel: novel, number: 76)
+        create(:chapter, novel: novel, number: 77)
+        create(:bible_entry_proposal, novel: novel, chapter: chapter76)
+
+        job_76 = build(:translation_job, :translate_batch, novel: novel, chapter_start: 76, chapter_end: 76)
+        job_77 = build(:translation_job, :translate_batch, novel: novel, chapter_start: 77, chapter_end: 77)
+
+        expect(job_76).not_to be_valid
+        expect(job_77).to be_valid
+      end
+
+      it "checks the translate job's own range, not the range the proposal's own chapter falls outside of" do
+        novel      = create(:novel)
+        chapter5   = create(:chapter, novel: novel, number: 5)
+        create(:chapter, novel: novel, number: 10)
+        create(:bible_entry_proposal, novel: novel, chapter: chapter5)
+
+        job = build(:translation_job, :translate_batch, novel: novel, chapter_start: 10, chapter_end: 10)
+
+        expect(job).to be_valid
+      end
+
+      it "does not apply to non-translate_batch job types" do
+        novel   = create(:novel)
+        chapter = create(:chapter, novel: novel, number: 1)
+        create(:bible_entry_proposal, novel: novel, chapter: chapter)
+
+        job = build(:translation_job, job_type: "preread", novel: novel, chapter_start: 1, chapter_end: 1)
+
+        expect(job).to be_valid
+      end
+    end
   end
 
   # ---------------------------------------------------------------------------
