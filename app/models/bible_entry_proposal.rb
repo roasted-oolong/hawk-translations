@@ -60,6 +60,18 @@ class BibleEntryProposal < ApplicationRecord
     story:           "story"
   }.freeze
 
+  # entry_type -> the field keys valid for it, derived from
+  # Pipeline::BibleEntryMatcher::COMPARABLE_FIELDS via
+  # ENTRY_TYPE_TO_LEGACY_SECTION rather than a fresh literal (same 5
+  # categories, one more copy would just be one more place to drift).
+  # BibleEntryProposalsController#update's allowlist for inline edits: a
+  # field a preread pass never populated (compacted out at parse time)
+  # must still be settable by hand, so "keys already in fields" isn't a
+  # safe allowlist — "keys valid for this entry_type" is.
+  ALLOWED_FIELD_KEYS = ENTRY_TYPE_TO_LEGACY_SECTION.transform_values { |section|
+    Pipeline::BibleEntryMatcher::COMPARABLE_FIELDS.fetch(section.to_sym).map(&:to_s)
+  }.freeze
+
   # ---------------------------------------------------------------------------
   # Resolution
   # ---------------------------------------------------------------------------

@@ -85,6 +85,7 @@ Rails.application.routes.draw do
 
     # Preread results review + proposal resolution + dismissed-key restore
     # GET    /novels/:novel_id/preread_review                     → novel_preread_review_path
+    # PATCH  /novels/:novel_id/bible_entry_proposals/:id          → novel_bible_entry_proposal_path (save an inline edit)
     # POST   /novels/:novel_id/bible_entry_proposals/:id/approve  → approve_novel_bible_entry_proposal_path
     # POST   /novels/:novel_id/bible_entry_proposals/:id/skip     → skip_novel_bible_entry_proposal_path
     # DELETE /novels/:novel_id/preread_dismiss                    → novel_preread_dismiss_path (restore a dismissed key)
@@ -95,7 +96,7 @@ Rails.application.routes.draw do
     # standalone "dismiss by string key" action.
     get  "preread_review", to: "preread_review#show", as: :preread_review
 
-    resources :bible_entry_proposals, only: [] do
+    resources :bible_entry_proposals, only: [ :update ] do
       member do
         post :approve
         post :skip
