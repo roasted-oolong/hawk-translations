@@ -5,9 +5,10 @@ require "rails_helper"
 #
 # Mirrors RenderingRuleDocWriter's own spec shape (tmpdir novel_dir,
 # create/overwrite/delete-on-empty), plus the one guarantee this writer adds
-# on top of that shape: round-tripping back through BibleMarkdownParser must
-# reproduce the same field values the DB record actually has — that's the
-# whole point of Part 3 (docs/PREREAD_STAGING_DESIGN.md) existing at all.
+# on top of that shape: round-tripping back through Pipeline::BibleEntryMatcher
+# (the same parser the live preread ingestion path uses) must reproduce the
+# same field values the DB record actually has — that's the whole point of
+# Part 3 (docs/PREREAD_STAGING_DESIGN.md) existing at all.
 # =============================================================================
 RSpec.describe Pipeline::BibleEntryDocWriter do
   around do |example|
@@ -19,10 +20,6 @@ RSpec.describe Pipeline::BibleEntryDocWriter do
 
   let(:novel) { create(:novel, directory_name: File.basename(@novel_dir)) }
 
-  def parent_dir
-    File.dirname(@novel_dir)
-  end
-
   def read_file(relative)
     File.read(File.join(@novel_dir, "bible", relative))
   end
@@ -31,13 +28,12 @@ RSpec.describe Pipeline::BibleEntryDocWriter do
     File.join(@novel_dir, "bible", relative)
   end
 
-  # Round-trips a just-written category file back through the legacy parser
-  # and asserts no field_changes are detected against the given record —
-  # i.e. the file the writer just produced reads back as "already current".
+  # Round-trips a just-written category file back through the matcher and
+  # asserts no field_changes are detected against the given record — i.e.
+  # the file the writer just produced reads back as "already current".
   def expect_no_drift(record, category:)
-    allow(ENV).to receive(:fetch).with("HAWK_PROJECT_ROOT", "").and_return(parent_dir)
-    parser = BibleMarkdownParser.new(novel)
-    pending = parser.pending_entries[category]
+    content = read_file(Pipeline::BibleEntryDocWriter::FILE_MAP.fetch(category))
+    pending = Pipeline::BibleEntryMatcher.new(novel).classify(category, content)
     expect(pending).to be_empty
   end
 
@@ -53,7 +49,7 @@ RSpec.describe Pipeline::BibleEntryDocWriter do
         expect(read_file("characters.md")).to include("## Hyuk Kang (강혁)")
       end
 
-      it "writes fields the legacy parser reads back with no drift" do
+      it "writes fields the matcher reads back with no drift" do
         character = create(:bible_character,
           novel: novel, name: "Hyuk Kang", korean_name: "강혁",
           role: "Protagonist", aliases: "강실장", notes: "Founded K Management.",
@@ -113,7 +109,7 @@ RSpec.describe Pipeline::BibleEntryDocWriter do
     context "locations" do
       subject(:writer) { described_class.new(@novel_dir, :locations) }
 
-      it "writes fields the legacy parser reads back with no drift" do
+      it "writes fields the matcher reads back with no drift" do
         location = create(:bible_location,
           novel: novel, name: "HS Entertainment", korean_name: "HS엔터테인먼트",
           significance: "Major agency.", first_appearance_chapter: 1)
@@ -126,7 +122,7 @@ RSpec.describe Pipeline::BibleEntryDocWriter do
     context "terminology" do
       subject(:writer) { described_class.new(@novel_dir, :terminology) }
 
-      it "writes fields the legacy parser reads back with no drift" do
+      it "writes fields the matcher reads back with no drift" do
         term = create(:bible_terminology,
           novel: novel, term: "Blue Sherbet", korean_term: "블루샤벳",
           definition: "Kang's former idol group.", usage_notes: "Proper noun.")
@@ -146,7 +142,7 @@ RSpec.describe Pipeline::BibleEntryDocWriter do
         expect(read_file("cultural_phrases.md")).to include("## 떡줄 사람은 생각도 않는데")
       end
 
-      it "writes fields the legacy parser reads back with no drift" do
+      it "writes fields the matcher reads back with no drift" do
         phrase = create(:bible_cultural_phrase,
           novel: novel, korean_phrase: "떡줄 사람은 생각도 않는데",
           literal_translation: "The one giving rice cake isn't even thinking about it.",
@@ -160,7 +156,7 @@ RSpec.describe Pipeline::BibleEntryDocWriter do
     context "story" do
       subject(:writer) { described_class.new(@novel_dir, :story) }
 
-      it "writes fields the legacy parser reads back with no drift" do
+      it "writes fields the matcher reads back with no drift" do
         entry = create(:bible_story_entry,
           novel: novel, title: "Main Plot", category: "main_plot",
           content: "Kang rebuilds his agency after regression.")

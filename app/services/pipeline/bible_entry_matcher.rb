@@ -8,11 +8,11 @@
 # match), changed (matches an existing record with different field values),
 # or unchanged (matches with no differences, dropped — nothing to review).
 #
-# No persistence, no file I/O — BibleMarkdownParser (reading bible/*.md for
-# the legacy pending-entries flow) and Pipeline::BibleEntryProposalIngester
-# (writing bible_entry_proposals rows from a preread LLM response) both
-# wrap this with their own I/O; the parsing/classification logic itself
-# lives here exactly once. See docs/PREREAD_STAGING_DESIGN.md.
+# No persistence, no file I/O — Pipeline::BibleEntryProposalIngester (the
+# sole caller, writing bible_entry_proposals rows from a preread LLM
+# response) and Pipeline::BibleEntryDocWriter's own round-trip spec wrap
+# this with their own I/O; the parsing/classification logic itself lives
+# here exactly once. See docs/PREREAD_STAGING_DESIGN.md.
 # ---------------------------------------------------------------------------
 module Pipeline
   class BibleEntryMatcher
@@ -59,8 +59,8 @@ module Pipeline
       classify_parsed(category, parse(category, content))
     end
 
-    # Classifies already-parsed entries — for callers (BibleMarkdownParser)
-    # that cache #parse's output and don't want to re-parse for it.
+    # Classifies already-parsed entries — for callers that cache #parse's
+    # output and don't want to re-parse for it.
     #
     # Drops anything whose korean_key is already dismissed, and anything
     # that matches an existing record with no actual field differences
@@ -80,8 +80,8 @@ module Pipeline
 
     # The live record (if any) a parsed entry's korean_key/name matches, by
     # the same per-category lookup #classify_parsed uses internally. Public
-    # so callers doing their own dismissed-filtering (e.g.
-    # BibleMarkdownParser#dismissed_entries_for) don't duplicate this.
+    # so callers doing their own dismissed-filtering don't have to
+    # duplicate this.
     def matching_record(category, entry)
       record_index(category).call(entry)
     end

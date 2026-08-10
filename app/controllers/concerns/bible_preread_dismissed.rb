@@ -1,17 +1,17 @@
 module BiblePrereadDismissed
   extend ActiveSupport::Concern
 
-  # PREREAD_CATEGORY (each including controller's own plural symbol,
-  # e.g. :characters — same vocabulary as BibleMarkdownParser::CATEGORIES)
-  # -> BibleEntryProposal's own singular entry_type. Same shape as
+  # PREREAD_CATEGORY (each including controller's own plural symbol, e.g.
+  # :characters — the legacy plural vocabulary preread_dismissed_keys and
+  # Pipeline::BibleEntryMatcher's category param still use) -> BibleEntryProposal's
+  # own singular entry_type. Same shape as
   # BibleEntryProposal::ENTRY_TYPE_TO_LEGACY_SECTION (inverted) and
   # Pipeline::BibleEntryProposalIngester::SECTION_TO_ENTRY_TYPE — each of
   # the three lives with the class that actually needs that direction of
   # the mapping, matching how this app already keeps a "5 bible
-  # categories" table per class that needs one (BibleMarkdownParser::
-  # FILE_MAP, Pipeline::BibleEntryMatcher::COMPARABLE_FIELDS, Pipeline::
-  # BibleEntryDocWriter::HEADER_TITLE) rather than a single shared constant
-  # every unrelated class reaches into.
+  # categories" table per class that needs one (Pipeline::BibleEntryDocWriter::
+  # FILE_MAP/HEADER_TITLE, Pipeline::BibleEntryMatcher::COMPARABLE_FIELDS)
+  # rather than a single shared constant every unrelated class reaches into.
   CATEGORY_TO_ENTRY_TYPE = {
     characters:       "character",
     locations:        "location",

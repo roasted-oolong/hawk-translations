@@ -18,13 +18,12 @@
 # the heading looks like differ.
 #
 # Unlike RenderingRuleDocWriter, this class's output is also read back by
-# BibleMarkdownParser (until docs/PREREAD_STAGING_DESIGN.md's Group D
-# retires it) — #pending_entries/#dismissed_entries_for still diff a
-# freshly-parsed file against these same live tables via
-# Pipeline::BibleEntryMatcher. Every
-# Pipeline::BibleEntryMatcher::COMPARABLE_FIELDS value is written so that a
-# same-second re-parse reports no field_changes for an untouched record;
-# see #flatten for the one known narrower exception (multi-line notes).
+# Pipeline::BibleEntryMatcher — the preread/backfill ingestion path
+# reclassifies a fresh parse of this file against these same live tables.
+# Every Pipeline::BibleEntryMatcher::COMPARABLE_FIELDS value is written so
+# that a same-second re-parse reports no field_changes for an untouched
+# record; see #flatten for the one known narrower exception (multi-line
+# notes).
 # ---------------------------------------------------------------------------
 module Pipeline
   class BibleEntryDocWriter
@@ -34,6 +33,18 @@ module Pipeline
       terminology:      "Terminology",
       cultural_phrases: "Cultural Phrases",
       story:            "Story Bible"
+    }.freeze
+
+    # category -> bible/*.md filename. Formerly BibleMarkdownParser::FILE_MAP
+    # (deleted in docs/PREREAD_STAGING_DESIGN.md's Group D2) — this class is
+    # the sole remaining writer of these files, so it's the natural owner of
+    # the mapping now.
+    FILE_MAP = {
+      characters:       "characters.md",
+      locations:        "locations.md",
+      terminology:      "terminology.md",
+      cultural_phrases: "cultural_phrases.md",
+      story:            "story.md",
     }.freeze
 
     def initialize(novel_dir, category)
@@ -59,7 +70,7 @@ module Pipeline
     private
 
     def path
-      File.join(@novel_dir, "bible", BibleMarkdownParser::FILE_MAP.fetch(@category))
+      File.join(@novel_dir, "bible", FILE_MAP.fetch(@category))
     end
 
     def format_file(records)
@@ -80,10 +91,10 @@ module Pipeline
 
     # ---------------------------------------------------------------------
     # Per-category formatting. Field labels are chosen to match the exact
-    # (case-insensitive) keys BibleMarkdownParser#parse_fields expects for
-    # every BibleMarkdownParser::COMPARABLE_FIELDS entry, plus any remaining
-    # real DB columns for human readability (harmless extras the legacy
-    # parser simply doesn't look for).
+    # (case-insensitive) keys Pipeline::BibleEntryMatcher#parse_fields
+    # expects for every Pipeline::BibleEntryMatcher::COMPARABLE_FIELDS
+    # entry, plus any remaining real DB columns for human readability
+    # (harmless extras the matcher simply doesn't look for).
     # ---------------------------------------------------------------------
 
     def format_character(r)
@@ -161,9 +172,9 @@ module Pipeline
     end
 
     # nil when value is blank, so callers can .compact it away entirely
-    # rather than writing a dangling "- Field: " line — BibleMarkdownParser
-    # treats an empty value the same either way, but an omitted line reads
-    # cleaner for humans browsing the file.
+    # rather than writing a dangling "- Field: " line — the matcher treats
+    # an empty value the same either way, but an omitted line reads cleaner
+    # for humans browsing the file.
     def field(label, value)
       return nil if value.blank?
 
@@ -171,16 +182,15 @@ module Pipeline
     end
 
     # Collapses embedded newlines/runs of whitespace to a single space.
-    # BibleMarkdownParser#parse_fields only recognizes "- Key: value" as a
-    # single physical line, so a multi-paragraph note (possible today —
-    # notes are a plain <textarea>) has to be flattened to survive at all.
-    # Known, narrower limitation this accepts: re-parsing a flattened
-    # multi-paragraph note no longer byte-matches the DB's real
-    # (newline-containing) value, so it can keep showing up as a pending
-    # "changed" diff via BibleMarkdownParser until docs/PREREAD_STAGING_
-    # DESIGN.md's Group D retires that comparison entirely. Preferable to
-    # today's alternative, which is dropping the edit from the file
-    # completely.
+    # Pipeline::BibleEntryMatcher#parse_fields only recognizes "- Key:
+    # value" as a single physical line, so a multi-paragraph note (possible
+    # today — notes are a plain <textarea>) has to be flattened to survive
+    # at all. Known, permanent limitation this accepts: re-parsing a
+    # flattened multi-paragraph note no longer byte-matches the DB's real
+    # (newline-containing) value, so a live preread/backfill pass over this
+    # file can keep reporting a spurious "changed" diff for that one field.
+    # Preferable to the alternative, which is dropping the edit from the
+    # file completely.
     def flatten(value)
       value.to_s.gsub(/\s+/, " ").strip
     end

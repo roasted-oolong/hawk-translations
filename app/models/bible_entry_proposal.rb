@@ -46,12 +46,14 @@ class BibleEntryProposal < ApplicationRecord
   }.freeze
 
   # entry_type (this table's singular vocabulary) -> the plural section key
-  # BibleMarkdownParser/Pipeline::BibleEntryMatcher's dismissed-key format
-  # still uses ("characters:...", not "character:...") — that format
-  # predates this table and is shared with the legacy pending-entries flow
-  # until docs/PREREAD_STAGING_DESIGN.md's Group D retires it. #skip! must
-  # write in the format the matcher's dismissed check actually looks for,
-  # or a skipped suggestion silently comes right back on the next pass.
+  # Pipeline::BibleEntryMatcher's dismissed-key format still uses
+  # ("characters:...", not "character:...") — that format predates this
+  # table, and stays: the matcher's own #dismissed_keys check is unrelated
+  # to (and outlived) the now-deleted BibleMarkdownParser, so this mapping
+  # isn't a transitional shim due to be retired, it's the permanent bridge
+  # between the two vocabularies. #skip! must write in the format the
+  # matcher's dismissed check actually looks for, or a skipped suggestion
+  # silently comes right back on the next pass.
   ENTRY_TYPE_TO_LEGACY_SECTION = {
     character:       "characters",
     location:        "locations",

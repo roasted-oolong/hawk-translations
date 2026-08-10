@@ -24,10 +24,9 @@
 # sync.
 #
 # 1. Each including class MUST implement #bible_doc_category — a symbol
-#    key into Pipeline::BibleEntryDocWriter::HEADER_TITLE / the shared
-#    BibleMarkdownParser::FILE_MAP, identifying which bible/*.md file and
-#    field layout this model writes to. Raises NotImplementedError at call
-#    time if not overridden.
+#    key into Pipeline::BibleEntryDocWriter::HEADER_TITLE/FILE_MAP,
+#    identifying which bible/*.md file and field layout this model writes
+#    to. Raises NotImplementedError at call time if not overridden.
 #
 # Usage:
 #   class BibleCharacter < ApplicationRecord
