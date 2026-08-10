@@ -116,6 +116,20 @@ RSpec.describe BibleMarkdownParser do
       it "matches an existing record by korean_phrase alone, never by an English field" do
         create(:bible_cultural_phrase, novel: novel, korean_phrase: "눈치 없다", context: "old context")
 
+        # BibleDocSynced (docs/PREREAD_STAGING_DESIGN.md, Part 3) just
+        # regenerated cultural_phrases.md from the record above as part of
+        # creating it, so it no longer differs from the DB. Re-write the
+        # file's original (pre-record) content to restore the stale-file
+        # premise this test exercises — it's BibleMarkdownParser's own
+        # diffing this test is after, independent of doc-sync.
+        File.write(File.join(bible_dir, "bible", "cultural_phrases.md"), <<~MD)
+          ## 눈치 없다
+          - Literal translation: Doesn't have "nunchi" (social awareness)
+          - Intended meaning: Oblivious to the room's mood
+          - Context: Used when a character misses an obvious social cue.
+          - Notes: Renders differently depending on scene tone.
+        MD
+
         entry = described_class.new(novel).pending_entries[:cultural_phrases].first
         expect(entry[:is_existing]).to be true
         expect(entry[:field_changes]).to have_key(:context)
