@@ -20,8 +20,9 @@
 # Unlike RenderingRuleDocWriter, this class's output is also read back by
 # BibleMarkdownParser (until docs/PREREAD_STAGING_DESIGN.md's Group D
 # retires it) — #pending_entries/#dismissed_entries_for still diff a
-# freshly-parsed file against these same live tables. Every
-# BibleMarkdownParser::COMPARABLE_FIELDS value is written so that a
+# freshly-parsed file against these same live tables via
+# Pipeline::BibleEntryMatcher. Every
+# Pipeline::BibleEntryMatcher::COMPARABLE_FIELDS value is written so that a
 # same-second re-parse reports no field_changes for an untouched record;
 # see #flatten for the one known narrower exception (multi-line notes).
 # ---------------------------------------------------------------------------

@@ -9,33 +9,16 @@ class BibleMarkdownParser
     story:            "story.md",
   }.freeze
 
-  COMPARABLE_FIELDS = {
-    characters:       %i[name korean_name aliases role physical_description speech_pattern
-                         honorifics_used_toward honorifics_they_use relationships
-                         first_appearance_chapter notes],
-    locations:        %i[name korean_name significance first_appearance_chapter notes],
-    terminology:      %i[term korean_term definition usage_notes first_appearance_chapter notes],
-    cultural_phrases: %i[korean_phrase literal_translation intended_meaning context
-                         first_appearance_chapter notes],
-    story:            %i[title content category],
-  }.freeze
-
-  STORY_CATEGORY_PATTERNS = [
-    [ /main.?plot/i,  "main_plot"   ],
-    [ /subplot/i,     "subplot"     ],
-    [ /watch.?list/i, "watch_list"  ],
-    [ /theme|motif/i, "theme"       ],
-  ].freeze
-
   def initialize(novel)
     @novel = novel
+    @matcher = Pipeline::BibleEntryMatcher.new(novel)
   end
 
   def pending_entries
     return empty_result if bible_dir.nil?
 
     CATEGORIES.each_with_object({}) do |cat, h|
-      h[cat] = filter_pending(cat, parse_file(cat))
+      h[cat] = @matcher.classify_parsed(cat, parse_file(cat))
     end
   end
 
@@ -61,42 +44,8 @@ class BibleMarkdownParser
     return [] if bible_dir.nil?
 
     dismissed = dismissed_keys.to_set
-
-    case cat
-    when :characters
-      by_korean = @novel.bible_characters.index_by(&:korean_name)
-      by_name   = @novel.bible_characters.index_by(&:name)
-      parse_file(cat).select { |e|
-        dismissed.include?("#{cat}:#{e[:korean_key]}") &&
-          (by_korean[e[:korean_key]] || by_name[e[:name]]).nil?
-      }
-    when :locations
-      by_korean = @novel.bible_locations.index_by(&:korean_name)
-      by_name   = @novel.bible_locations.index_by(&:name)
-      parse_file(cat).select { |e|
-        dismissed.include?("#{cat}:#{e[:korean_key]}") &&
-          (by_korean[e[:korean_key]] || by_name[e[:name]]).nil?
-      }
-    when :terminology
-      by_korean = @novel.bible_terminologies.index_by(&:korean_term)
-      by_name   = @novel.bible_terminologies.index_by(&:term)
-      parse_file(cat).select { |e|
-        dismissed.include?("#{cat}:#{e[:korean_key]}") &&
-          (by_korean[e[:korean_key]] || by_name[e[:term]]).nil?
-      }
-    when :cultural_phrases
-      by_korean = @novel.bible_cultural_phrases.index_by { |r| normalize_key(r.korean_phrase) }
-      parse_file(cat).select { |e|
-        dismissed.include?("#{cat}:#{e[:korean_key]}") && by_korean[e[:korean_key]].nil?
-      }
-    when :story
-      by_title = @novel.bible_story_entries.index_by(&:title)
-      parse_file(cat).select { |e|
-        dismissed.include?("#{cat}:#{e[:korean_key]}") &&
-          by_title[e[:title]].nil?
-      }
-    else
-      []
+    parse_file(cat).select do |e|
+      dismissed.include?("#{cat}:#{e[:korean_key]}") && @matcher.matching_record(cat, e).nil?
     end
   end
 
@@ -113,7 +62,10 @@ class BibleMarkdownParser
   end
 
   # ---------------------------------------------------------------------------
-  # File I/O
+  # File I/O — reads bible/*.md and hands the raw content to the matcher.
+  # Parsed (not classified) entries are memoized per category so
+  # #pending_entries, #dismissed_entries, and #dismissed_entries_for can
+  # each read a category's file without re-parsing it more than once.
   # ---------------------------------------------------------------------------
 
   def parse_file(cat)
@@ -122,243 +74,9 @@ class BibleMarkdownParser
       path = File.join(bible_dir, FILE_MAP[cat])
       content = File.read(path, encoding: "UTF-8")
       content.encode!("UTF-8", invalid: :replace, undef: :replace, replace: "")
-      parse_entries(cat, content)
+      @matcher.parse(cat, content)
     rescue Errno::ENOENT, Errno::EACCES
       []
-    end
-  end
-
-  # ---------------------------------------------------------------------------
-  # Entry splitting
-  # ---------------------------------------------------------------------------
-
-  def parse_entries(cat, content)
-    content
-      .split(/\n(?=## )/)
-      .map(&:strip)
-      .select { |chunk| chunk.start_with?("## ") }
-      .map { |chunk| parse_chunk(cat, chunk) }
-      .compact
-  end
-
-  def parse_chunk(cat, chunk)
-    lines = chunk.split("\n")
-    heading = lines.shift&.strip
-    return nil unless heading&.start_with?("## ")
-
-    cat == :story ? parse_story_entry(heading, lines) : parse_structured_entry(cat, heading, lines)
-  end
-
-  # ---------------------------------------------------------------------------
-  # Heading + field parsing
-  # ---------------------------------------------------------------------------
-
-  def parse_heading(heading)
-    m = heading.match(/\A## (.+?)\s*(?:\((.+)\))?\s*\z/)
-    return [ nil, nil ] unless m
-
-    [ m[1].strip, m[2]&.strip ]
-  end
-
-  def parse_fields(lines)
-    lines.each_with_object({}) do |line, h|
-      m = line.match(/\A-\s+(.+?):\s*(.*)\z/)
-      next unless m
-
-      key   = m[1].strip.downcase
-      value = m[2].strip
-      h[key] = value unless value.empty? || value.match?(/\A\[.*\]\z/)
-    end
-  end
-
-  def extract_chapter(value)
-    value.to_s.scan(/\d+/).first&.to_i
-  end
-
-  def join_notes(*parts)
-    parts.flatten.compact_blank.join("\n").presence
-  end
-
-  # ---------------------------------------------------------------------------
-  # Per-category parsers
-  # ---------------------------------------------------------------------------
-
-  def parse_structured_entry(cat, heading, lines)
-    name, korean = parse_heading(heading)
-    return nil unless name.present?
-
-    fields = parse_fields(lines)
-
-    case cat
-    when :characters       then parse_character(name, korean, fields)
-    when :locations        then parse_location(name, korean, fields)
-    when :terminology      then parse_terminology(name, korean, fields)
-    when :cultural_phrases then parse_cultural_phrase(name, korean, fields)
-    end
-  end
-
-  def parse_character(name, korean, f)
-    speech = join_notes(f["speech pattern"], f["dialogue cues"])
-    notes  = join_notes(
-      f["notes"],
-      f["story bible reference"].presence&.then { "Bible ref: #{_1}" }
-    )
-
-    {
-      name:                     name,
-      korean_name:              f["korean name"].presence || korean,
-      aliases:                  f["aliases/titles"].presence,
-      role:                     f["role"].presence,
-      physical_description:     f["physical description"].presence,
-      speech_pattern:           speech,
-      honorifics_used_toward:   f["honorifics used toward them"].presence,
-      honorifics_they_use:      f["honorifics they use toward others"].presence,
-      relationships:            f["relationships"].presence,
-      first_appearance_chapter: extract_chapter(f["first appearance"]),
-      notes:                    notes,
-      korean_key:               normalize_key(f["korean name"].presence || korean || name),
-    }.compact
-  end
-
-  def parse_location(name, korean, f)
-    notes = f["romanisation"].presence&.then { "Romanisation: #{_1}" }
-
-    {
-      name:                     name,
-      korean_name:              f["korean name"].presence || korean,
-      significance:             f["significance"].presence,
-      first_appearance_chapter: extract_chapter(f["first appearance"]),
-      notes:                    notes,
-      korean_key:               normalize_key(f["korean name"].presence || korean || name),
-    }.compact
-  end
-
-  def parse_terminology(name, korean, f)
-    notes = join_notes(
-      f["notes"],
-      f["category"].presence&.then { "Category: #{_1}" },
-      f["story bible reference"].presence&.then { "Bible ref: #{_1}" }
-    )
-
-    {
-      term:                     name,
-      korean_term:              f["korean term"].presence || korean,
-      definition:               f["definition"].presence,
-      usage_notes:              f["usage notes"].presence,
-      first_appearance_chapter: extract_chapter(f["first appearance"]),
-      notes:                    notes,
-      korean_key:               normalize_key(f["korean term"].presence || korean || name),
-    }.compact
-  end
-
-  def parse_cultural_phrase(name, korean, f)
-    tn = join_notes(
-      f["t/n written"].presence&.then { "T/N written: #{_1}" },
-      f["t/n text"].presence&.then   { "T/N text: #{_1}" }
-    )
-    notes         = join_notes(f["notes"], tn)
-    # No English fallback here — see docs/DECISIONS.md 2026-08-08. The
-    # heading is Korean-only now (PromptBuilder's template asks for
-    # "## [Korean phrase]", nothing else), so `name` is already the Korean
-    # phrase text in the common case; `korean`/the explicit field only
-    # matter when the LLM still drifts to an annotated heading.
-    korean_phrase = f["korean phrase"].presence || korean || name
-
-    {
-      korean_phrase:            korean_phrase,
-      literal_translation:      f["literal translation"].presence,
-      intended_meaning:         f["intended meaning"].presence,
-      context:                  f["context"].presence,
-      first_appearance_chapter: extract_chapter(f["first appearance"]),
-      notes:                    notes,
-      korean_key:               normalize_key(korean_phrase),
-    }.compact
-  end
-
-  def parse_story_entry(heading, lines)
-    title   = heading.sub(/\A## /, "").strip
-    content = lines.reject { |l| l.strip == "---" }.join("\n").strip
-
-    return nil if content.blank?
-
-    {
-      title:      title,
-      content:    content,
-      category:   infer_story_category(title),
-      korean_key: normalize_key(title),
-    }.compact
-  end
-
-  # Single point through which every korean_key is derived, so preread's
-  # per-entry identity — what gets stored in preread_dismissed_keys, and
-  # what a re-parse compares against it — is stable across runs even when
-  # the LLM's raw rendering drifts (whitespace, full/half-width chars,
-  # Latin casing). Without this, "skip" quietly stops being permanent: a
-  # later preread run re-derives a different key for the same underlying
-  # term, the old dismissal no longer matches, and the entry reappears in
-  # the review queue — usually with a new English rendering too, which is
-  # what makes it look like a different suggestion rather than a repeat.
-  def normalize_key(str)
-    Pipeline::BibleUtils.normalize_korean(str)
-  end
-
-  def infer_story_category(title)
-    STORY_CATEGORY_PATTERNS.each { |pat, cat| return cat if title.match?(pat) }
-    "world_building"
-  end
-
-  # ---------------------------------------------------------------------------
-  # Classification — new entries pass through; existing ones carry a diff
-  # ---------------------------------------------------------------------------
-
-  def filter_pending(cat, entries)
-    dismissed = dismissed_keys
-    fields    = COMPARABLE_FIELDS[cat]
-    case cat
-    when :characters
-      by_korean = @novel.bible_characters.index_by(&:korean_name)
-      by_name   = @novel.bible_characters.index_by(&:name)
-      entries.filter_map { |e|
-        next if dismissed.include?("#{cat}:#{e[:korean_key]}")
-        record = by_korean[e[:korean_key]] || by_name[e[:name]]
-        classify_entry(e, record, fields)
-      }
-    when :locations
-      by_korean = @novel.bible_locations.index_by(&:korean_name)
-      by_name   = @novel.bible_locations.index_by(&:name)
-      entries.filter_map { |e|
-        next if dismissed.include?("#{cat}:#{e[:korean_key]}")
-        record = by_korean[e[:korean_key]] || by_name[e[:name]]
-        classify_entry(e, record, fields)
-      }
-    when :terminology
-      by_korean = @novel.bible_terminologies.index_by(&:korean_term)
-      by_name   = @novel.bible_terminologies.index_by(&:term)
-      entries.filter_map { |e|
-        next if dismissed.include?("#{cat}:#{e[:korean_key]}")
-        record = by_korean[e[:korean_key]] || by_name[e[:term]]
-        classify_entry(e, record, fields)
-      }
-    when :cultural_phrases
-      # Korean-only match — no English fallback. See docs/DECISIONS.md
-      # 2026-08-08: matching by English string is exactly what produced
-      # duplicate rows for the same Korean phrase with different (both
-      # legitimate) English rendering choices.
-      by_korean = @novel.bible_cultural_phrases.index_by { |r| normalize_key(r.korean_phrase) }
-      entries.filter_map { |e|
-        next if dismissed.include?("#{cat}:#{e[:korean_key]}")
-        record = by_korean[e[:korean_key]]
-        classify_entry(e, record, fields)
-      }
-    when :story
-      by_title = @novel.bible_story_entries.index_by(&:title)
-      entries.filter_map { |e|
-        next if dismissed.include?("#{cat}:#{e[:korean_key]}")
-        record = by_title[e[:title]]
-        classify_entry(e, record, fields)
-      }
-    else
-      entries.map { |e| e.merge(is_existing: false) }
     end
   end
 
@@ -366,28 +84,5 @@ class BibleMarkdownParser
     @dismissed_keys ||= JSON.parse(@novel.preread_dismissed_keys || "[]")
   rescue JSON::ParserError
     []
-  end
-
-  def classify_entry(entry, record, fields)
-    return entry.merge(is_existing: false) if record.nil?
-
-    changes = compute_field_changes(entry, record, fields)
-    return nil if changes.empty?
-
-    entry.merge(is_existing: true, existing_id: record.id, field_changes: changes)
-  end
-
-  def compute_field_changes(entry, record, fields)
-    fields.each_with_object({}) do |field, h|
-      new_val = normalize_compare(entry[field])
-      old_val = normalize_compare(record.respond_to?(field) ? record.public_send(field) : nil)
-      next if new_val == old_val
-      h[field] = { was: old_val, now: new_val }
-    end
-  end
-
-  def normalize_compare(val)
-    return nil if val.nil?
-    val.to_s.strip.presence
   end
 end
