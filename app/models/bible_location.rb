@@ -5,6 +5,7 @@ class BibleLocation < ApplicationRecord
   # Concerns
   # ---------------------------------------------------------------------------
   include Embeddable
+  include BibleDocSynced
 
   # ---------------------------------------------------------------------------
   # Associations
@@ -38,6 +39,13 @@ class BibleLocation < ApplicationRecord
       significance,
       notes
     ].compact.reject(&:blank?).join(" ")
+  end
+
+  # ---------------------------------------------------------------------------
+  # BibleDocSynced implementation
+  # ---------------------------------------------------------------------------
+  def bible_doc_category
+    :locations
   end
 
   private

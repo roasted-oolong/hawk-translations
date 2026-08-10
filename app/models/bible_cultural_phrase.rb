@@ -17,6 +17,7 @@ class BibleCulturalPhrase < ApplicationRecord
   # Concerns
   # ---------------------------------------------------------------------------
   include Embeddable
+  include BibleDocSynced
 
   # ---------------------------------------------------------------------------
   # Associations
@@ -73,6 +74,13 @@ class BibleCulturalPhrase < ApplicationRecord
       translation_examples_text,
       notes
     ].compact.reject(&:blank?).join(" ")
+  end
+
+  # ---------------------------------------------------------------------------
+  # BibleDocSynced implementation
+  # ---------------------------------------------------------------------------
+  def bible_doc_category
+    :cultural_phrases
   end
 
   private
