@@ -51,8 +51,7 @@ export default class ChapterViewerController extends Controller<HTMLElement> {
 
     if (this.compareActive) {
       this.paneTextTarget.value = this.editableTextTarget.value
-      this.paneTextTarget.style.height = "auto"
-      this.paneTextTarget.style.height = `${this.paneTextTarget.scrollHeight}px`
+      this.growTextarea(this.paneTextTarget)
       this.attachScrollSync()
     } else {
       this.editableTextTarget.value = this.paneTextTarget.value
@@ -62,15 +61,11 @@ export default class ChapterViewerController extends Controller<HTMLElement> {
   }
 
   autoResize(event: Event) {
-    const textarea = event.target as HTMLTextAreaElement
-    textarea.style.height = "auto"
-    textarea.style.height = `${textarea.scrollHeight}px`
+    this.growTextarea(event.target as HTMLTextAreaElement)
   }
 
   autoResizePane(event: Event) {
-    const textarea = event.target as HTMLTextAreaElement
-    textarea.style.height = "auto"
-    textarea.style.height = `${textarea.scrollHeight}px`
+    this.growTextarea(event.target as HTMLTextAreaElement)
   }
 
   saveText() {
@@ -106,8 +101,22 @@ export default class ChapterViewerController extends Controller<HTMLElement> {
   }
 
   private resizeTextarea() {
-    this.editableTextTarget.style.height = "auto"
-    this.editableTextTarget.style.height = `${this.editableTextTarget.scrollHeight}px`
+    this.growTextarea(this.editableTextTarget)
+  }
+
+  // Collapsing a focused textarea to height:auto (to remeasure scrollHeight
+  // after text shrinks) and then growing it back is what lets the browser
+  // recompute layout — but a focused element that moves during that
+  // collapse/grow gets auto-scrolled back into view by the browser itself,
+  // which is what made every keystroke jump the page to wherever the caret
+  // happened to land. Pinning window.scrollY across the resize (synchronously,
+  // same tick, before the browser paints) cancels that unwanted scroll
+  // without touching the actual height calculation.
+  private growTextarea(textarea: HTMLTextAreaElement) {
+    const scrollY = window.scrollY
+    textarea.style.height = "auto"
+    textarea.style.height = `${textarea.scrollHeight}px`
+    window.scrollTo(0, scrollY)
   }
 
   private flashSaved() {
