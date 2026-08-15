@@ -3652,3 +3652,52 @@ create-redirects-to-edit bug), zero regressions.
 
 `docs/PREREAD_STAGING_DESIGN.md` is now a historical record of a
 completed migration — nothing left to build against it.
+
+## 2026-08-15 · Chapter review: passive resume-position tracking
+
+Reviewing a single chapter routinely spans several days. The only way to
+find your way back was manually typing a `[START HERE]` marker into the
+chapter text itself — which lives inside `translated_output`, the file
+that actually ships, so forgetting to delete it before Continue/Approve
+means it ships in the chapter. It also doesn't survive the KO compare
+toggle or the QA tracked-changes pane, since those render the text
+differently from the plain textarea.
+
+Replaced with the VSCode/Kindle/Google Docs model: position is tracked as
+state, not content, and restored automatically with no manual step.
+`chapters.last_scroll_position` (float, 0.0–1.0, fraction of scrollable
+distance) and `novels.last_reviewed_chapter_id` are written by a new
+`PATCH .../chapter_review/chapters/:id/position` endpoint
+(`ChapterReviewController#update_position`) — debounced 500ms while the
+reviewer scrolls (`slideshowScreen`, the actual scroll container; the
+textareas auto-resize to fit content rather than scrolling internally),
+flushed immediately before any chapter switch (`prev`/`skip`/`approve`/
+`jumpTo`), and flushed again on `beforeunload` via `fetch(..., {
+keepalive: true })` so the save survives page teardown. Plain
+`update_column` writes, not `update!` — this fires often
+and carries no validation/callback surface worth paying for on every
+scroll tick.
+
+`ChapterReviewController#show` resolves `@resume_index` from
+`novel.last_reviewed_chapter_id` against the current `.translated`
+chapter list, falling back to 0 if the saved chapter has since left that
+list (e.g. already marked reviewed). The Stimulus controller reads it
+from a `resumeIndex` value instead of always starting at chapter 0, and
+restores scroll position via a `data-chapter-scroll-position` attribute
+per chapter card — cached back into that attribute on every save too, so
+revisiting a chapter later in the same session (no server round trip)
+still restores correctly.
+
+Deliberately left out of v1, per user request to keep this simple: no
+explicit "bookmark" action, no transient highlight/flash on restore, no
+distinction between "last edited" and "last scrolled" position, no
+per-user scoping (matches the rest of the app's current single
+hardcoded-`User.first` reviewer — see 2026-06-07 auth-disabled entry).
+
+Covered by `spec/requests/chapter_review_position_spec.rb`. Not covered
+by a system spec — this sandbox's Cuprite/Chromium system specs don't
+render JS-driven content correctly (pre-existing environment limitation,
+unrelated to this change; `spec/system/chapter_review_spec.rb` fails the
+same way on `main`). Needs a manual check: scroll partway into a long
+chapter, reload the page (or revisit chapter_review later), confirm it
+reopens at the same spot.
