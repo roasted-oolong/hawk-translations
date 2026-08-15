@@ -5,6 +5,9 @@ class Novel < ApplicationRecord
   belongs_to :organization
   belongs_to :series,   optional: true
   belongs_to :poc_user, class_name: "User", optional: true
+  # Which chapter chapter_review's slideshow should reopen on — see
+  # ChapterReviewController#show / #update_position.
+  belongs_to :last_reviewed_chapter, class_name: "Chapter", optional: true
 
   has_many :novel_team_assignments, dependent: :destroy
   has_many :teams, through: :novel_team_assignments

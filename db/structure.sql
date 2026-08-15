@@ -420,7 +420,8 @@ CREATE TABLE public.chapters (
     title character varying,
     status character varying DEFAULT 'untranslated'::character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    last_scroll_position double precision DEFAULT 0.0 NOT NULL
 );
 
 
@@ -528,7 +529,8 @@ CREATE TABLE public.novels (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     directory_name character varying,
-    preread_dismissed_keys text DEFAULT '[]'::text NOT NULL
+    preread_dismissed_keys text DEFAULT '[]'::text NOT NULL,
+    last_reviewed_chapter_id bigint
 );
 
 
@@ -1899,6 +1901,13 @@ CREATE INDEX index_novel_team_assignments_on_team_id ON public.novel_team_assign
 
 
 --
+-- Name: index_novels_on_last_reviewed_chapter_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_novels_on_last_reviewed_chapter_id ON public.novels USING btree (last_reviewed_chapter_id);
+
+
+--
 -- Name: index_novels_on_organization_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2339,6 +2348,14 @@ ALTER TABLE ONLY public.bible_embeddings
 
 
 --
+-- Name: novels fk_rails_6e2a96cb4e; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.novels
+    ADD CONSTRAINT fk_rails_6e2a96cb4e FOREIGN KEY (last_reviewed_chapter_id) REFERENCES public.chapters(id);
+
+
+--
 -- Name: bible_characters fk_rails_7f8c0d6faf; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2489,6 +2506,7 @@ ALTER TABLE ONLY public.voice_calibration_passages
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260815120000'),
 ('20260810000001'),
 ('20260809034936'),
 ('20260808231828'),

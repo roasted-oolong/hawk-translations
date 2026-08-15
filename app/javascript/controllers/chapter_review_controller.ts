@@ -27,6 +27,8 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
   static values = {
     approveUrl: String,
     saveUrl: String,
+    positionUrl: String,
+    resumeIndex: Number,
     qaCreateUrl: String,
     qaStatusUrl: String,
     qaSuggestionUrl: String,
@@ -78,6 +80,8 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
 
   declare approveUrlValue: string
   declare saveUrlValue: string
+  declare positionUrlValue: string
+  declare resumeIndexValue: number
   declare qaCreateUrlValue: string
   declare qaStatusUrlValue: string
   declare qaSuggestionUrlValue: string
@@ -129,6 +133,12 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
   private skipped = new Set<string>()
   private scrollHandlers = new Map<HTMLElement, () => void>()
   private lastEnglishScrollTop = 0
+
+  // Passive resume-position tracking — see restoreScrollPosition/
+  // saveScrollPosition below. Debounced while scrolling; flushed immediately
+  // before any chapter switch and on page unload, since those are the
+  // moments scrollTop is about to become meaningless for this chapter.
+  private scrollSaveHandle: number | null = null
 
   // QA state, keyed by chapter id so switching chapters restores each
   // chapter's own run rather than bleeding one chapter's suggestions into
@@ -196,17 +206,26 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
   }
 
   connect() {
-    this.index = 0
+    // Reopen on whichever chapter the reviewer was last on (see
+    // ChapterReviewController#show), clamped in case the server-rendered
+    // index is stale against this chapter list.
+    this.index = this.clampIndex(this.resumeIndexValue)
     this.approved = new Set()
     this.skipped = new Set()
     this.renderCurrent()
     this.resizeCurrentTextarea()
     this.toggleKorean()
+    this.restoreScrollPosition()
     document.addEventListener('keydown', this.handleKeydown)
     this.element.addEventListener('click', this.handleQaPaneClick)
     document.addEventListener('pointerdown', this.handleDocumentPointerDown)
     window.addEventListener('resize', this.handleQaDetailReposition)
     window.addEventListener('scroll', this.handleQaDetailReposition, true)
+    this.slideshowScreenTarget.addEventListener('scroll', this.handleReviewScroll)
+    // keepalive fetch (see saveScrollPosition) is what actually makes this
+    // reliable during teardown, not the event itself — a plain fetch can get
+    // cancelled mid-flight once the page starts unloading.
+    window.addEventListener('beforeunload', this.handleBeforeUnload)
     // Resume watching (or surface the result of) whatever chapter_qa job is
     // already latest for this chapter server-side — otherwise a page reload
     // mid-run always reverts to the idle "Run Quality Check" button even
@@ -221,8 +240,16 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
     document.removeEventListener('pointerdown', this.handleDocumentPointerDown)
     window.removeEventListener('resize', this.handleQaDetailReposition)
     window.removeEventListener('scroll', this.handleQaDetailReposition, true)
+    this.slideshowScreenTarget.removeEventListener('scroll', this.handleReviewScroll)
+    window.removeEventListener('beforeunload', this.handleBeforeUnload)
+    if (this.scrollSaveHandle !== null) window.clearTimeout(this.scrollSaveHandle)
     if (this.qaPollHandle !== null) window.clearTimeout(this.qaPollHandle)
     this.detachScrollSync()
+  }
+
+  private clampIndex(index: number): number {
+    if (!Number.isFinite(index) || index < 0) return 0
+    return Math.min(index, Math.max(this.total - 1, 0))
   }
 
   private get total(): number {
@@ -239,14 +266,17 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
 
   prev() {
     if (this.index > 0) {
+      this.saveScrollPosition()
       this.index--
       this.renderCurrent()
       this.resizeCurrentTextarea()
+      this.restoreScrollPosition()
     }
   }
 
   approve() {
     const id = this.currentChapterId
+    this.saveScrollPosition()
     this.saveCurrentText()
     this.approved.add(id)
     this.skipped.delete(id)
@@ -258,11 +288,13 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
       this.index++
       this.renderCurrent()
       this.resizeCurrentTextarea()
+      this.restoreScrollPosition()
     }
   }
 
   skip() {
     const id = this.currentChapterId
+    this.saveScrollPosition()
     this.skipped.add(id)
     this.approved.delete(id)
 
@@ -272,14 +304,17 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
       this.index++
       this.renderCurrent()
       this.resizeCurrentTextarea()
+      this.restoreScrollPosition()
     }
   }
 
   jumpTo({ params: { index } }: { params: { index: number } }) {
     if (index >= 0 && index < this.total) {
+      this.saveScrollPosition()
       this.index = index
       this.renderCurrent()
       this.resizeCurrentTextarea()
+      this.restoreScrollPosition()
     }
   }
 
@@ -386,6 +421,75 @@ export default class ChapterReviewController extends Controller<HTMLElement> {
       },
       body: JSON.stringify({ text: textarea.value }),
     }).then(() => this.flashSaved())
+  }
+
+  // ── Resume-position tracking ──────────────────────────────────────────
+  //
+  // slideshowScreen is the actual scroll container (editableText/paneText
+  // auto-resize to fit their content rather than scrolling internally — see
+  // autoResize/autoResizePane), so "where the reviewer is" for any given
+  // chapter card is just that element's scrollTop while that card is
+  // showing. Stored server-side as a 0..1 fraction of scrollable distance
+  // rather than a raw pixel offset, since it has to survive being read back
+  // against a viewport that may have resized between visits.
+
+  private handleReviewScroll = () => {
+    if (this.scrollSaveHandle !== null) window.clearTimeout(this.scrollSaveHandle)
+    this.scrollSaveHandle = window.setTimeout(() => this.saveScrollPosition(), 500)
+  }
+
+  private handleBeforeUnload = () => {
+    this.saveScrollPosition()
+  }
+
+  private computeScrollFraction(): number {
+    const screen = this.slideshowScreenTarget
+    const max = screen.scrollHeight - screen.clientHeight
+    if (max <= 0) return 0
+    return Math.min(1, Math.max(0, screen.scrollTop / max))
+  }
+
+  private saveScrollPosition() {
+    if (this.scrollSaveHandle !== null) {
+      window.clearTimeout(this.scrollSaveHandle)
+      this.scrollSaveHandle = null
+    }
+
+    const fraction = this.computeScrollFraction()
+    const card = this.currentCard
+    // Cached on the card itself so revisiting this chapter later in the same
+    // session (via jumpTo/prev/next) restores from the freshest value
+    // without waiting on a round trip to the server.
+    card.dataset.scrollPosition = String(fraction)
+
+    const url = this.positionUrlValue.replace(":id", this.currentChapterId)
+    fetch(url, {
+      method: "PATCH",
+      headers: {
+        "X-CSRF-Token": this.csrfToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ scroll_position: fraction }),
+      // Keeps this request alive past page teardown — the only thing that
+      // makes the beforeunload call above actually land instead of getting
+      // cancelled mid-flight.
+      keepalive: true,
+    }).catch(() => {})
+  }
+
+  private restoreScrollPosition() {
+    const card = this.currentCard
+    const fraction = parseFloat(card.dataset.scrollPosition ?? "0") || 0
+    if (fraction <= 0) return
+
+    // Textarea heights (set via scrollHeight reads in resizeCurrentTextarea)
+    // need a layout pass to settle before scrollHeight/clientHeight below
+    // are trustworthy.
+    requestAnimationFrame(() => {
+      const screen = this.slideshowScreenTarget
+      const max = screen.scrollHeight - screen.clientHeight
+      if (max > 0) screen.scrollTop = fraction * max
+    })
   }
 
   private persistApproval(id: string) {

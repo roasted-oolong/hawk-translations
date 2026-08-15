@@ -30,6 +30,7 @@ class Chapter < ApplicationRecord
                      numericality: { only_integer: true, greater_than: 0 },
                      uniqueness: { scope: :novel_id }
   validates :status, presence: true
+  validates :last_scroll_position, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 1 }
 
   # ---------------------------------------------------------------------------
   # Scopes

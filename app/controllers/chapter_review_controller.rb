@@ -27,6 +27,14 @@ class ChapterReviewController < ApplicationController
     @korean_texts = @chapters.each_with_object({}) do |ch, h|
       h[ch.id] = ch.korean_source.attached? ? ch.korean_source.download.force_encoding("UTF-8") : nil
     end
+
+    # Reopen the slideshow on whichever chapter the reviewer was last on,
+    # not always chapter 1 — the whole point of resume tracking. Falls back
+    # to 0 if there's no saved chapter, or it's since left @chapters (e.g.
+    # already marked reviewed, so filtered out by the .translated scope
+    # above) rather than raising or silently pinning to the last chapter.
+    @resume_index = @chapters.index { |c| c.id == @novel.last_reviewed_chapter_id } || 0
+
     render layout: "review"
   end
 
@@ -44,6 +52,25 @@ class ChapterReviewController < ApplicationController
       filename: "chapter_#{chapter.number}.txt",
       content_type: "text/plain"
     )
+    head :ok
+  end
+
+  # PATCH .../chapter_review/chapters/:id/position
+  #
+  # Fired on a debounce while the reviewer scrolls, plus immediately before
+  # any chapter switch and on page unload — see chapter_review_controller.ts.
+  # update_column/update_columns rather than update!: this fires often and
+  # carries no meaningful validation or callback surface (last_scroll_position
+  # is clamped client-side already; nothing else on Chapter/Novel needs to
+  # react to a scroll position changing), so a plain write keeps a frequent,
+  # low-stakes ping cheap instead of running full save machinery for it.
+  def update_position
+    chapter = @novel.chapters.find(params[:id])
+    position = params.require(:scroll_position).to_f.clamp(0.0, 1.0)
+
+    chapter.update_column(:last_scroll_position, position)
+    @novel.update_column(:last_reviewed_chapter_id, chapter.id)
+
     head :ok
   end
 

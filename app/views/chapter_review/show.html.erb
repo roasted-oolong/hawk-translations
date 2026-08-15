@@ -5,6 +5,8 @@
      data-controller="chapter-review bible-lookup"
      data-chapter-review-approve-url-value="<%= approve_novel_chapter_path(@novel, ":id") %>"
      data-chapter-review-save-url-value="<%= novel_update_chapter_review_text_path(@novel, id: ":id") %>"
+     data-chapter-review-position-url-value="<%= novel_update_chapter_review_position_path(@novel, id: ":id") %>"
+     data-chapter-review-resume-index-value="<%= @resume_index %>"
      data-chapter-review-qa-create-url-value="<%= novel_translation_jobs_path(@novel) %>"
      data-chapter-review-qa-status-url-value="<%= novel_chapter_review_qa_path(@novel, id: ":id") %>"
      data-chapter-review-qa-suggestion-url-value="<%= novel_update_chapter_review_qa_suggestion_path(@novel, id: ":id", suggestion_id: ":suggestionId") %>"
@@ -191,6 +193,7 @@
              data-chapter-id="<%= chapter.id %>"
              data-chapter-number="<%= chapter.number %>"
              data-chapter-title="<%= chapter.title.to_s %>"
+             data-chapter-scroll-position="<%= chapter.last_scroll_position %>"
              <%= i == 0 ? "" : "hidden" %>
              data-testid="chapter-card-<%= chapter.number %>">
           <div class="chapter-review__chapter-header">
