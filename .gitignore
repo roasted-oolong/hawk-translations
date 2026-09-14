@@ -64,3 +64,11 @@ db/development.sqlite3
 # BibleFileEditor sidecar flock files — never renamed/replaced, exist only
 # for in-process locking mechanics, no content of their own.
 */bible/*.md.lock
+
+# Novel working content — synced on-disk from Active Storage / bible DB
+# tables by KoreanSourceDiskWriter, ChapterDiskWriter, BibleFileEditor, etc.
+# Durable source of truth is the DB + Active Storage; these are a disk-
+# resident working cache the Python pipeline reads/writes directly, not
+# meant to be version-controlled (already excluded from prod image via
+# .dockerignore).
+/idols-rewind/
