@@ -209,7 +209,7 @@ Deliverables:
 - ✅ Cloudflare Origin Certificate — in `/etc/nginx/ssl/` on VM and passed to kamal-proxy via secrets
 - ✅ Oracle Cloud security list — ports 80 and 443 open from `0.0.0.0/0`
 - ✅ iptables — `172.16.0.0/12` ACCEPT rule; saved via `netfilter-persistent`
-- ✅ Domain — `hawk-translations.com` via Cloudflare; A record → `[redacted]`; SSL/TLS Full (strict)
+- ✅ Domain — `hawk-translations.com` via Cloudflare; A record → server IP (redacted; see `.kamal/servers`, gitignored); SSL/TLS Full (strict)
 - ✅ Google OAuth — production callback URL added to Google Cloud Console
 - ✅ Production credentials — `secret_key_base` + Google OAuth in `config/credentials/production.yml.enc`
 - ✅ `kamal deploy` — succeeds; app live at https://hawk-translations.com

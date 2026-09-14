@@ -8,7 +8,7 @@
 #
 # Server IP:
 #   Stored in .kamal/servers (gitignored). One IP per line.
-#   Create before deploying: echo "[redacted]" > .kamal/servers
+#   Create before deploying: echo "<server-ip>" > .kamal/servers
 #   Kamal reads this file at deploy time via ERB interpolation below.
 #
 # ARM64 migration path: change builder.arch to arm64, run kamal deploy.
