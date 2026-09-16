@@ -87,6 +87,6 @@ group :development do
 end
 
 gem "honeybadger", "~> 6.5"
-gem "rubyzip", "~> 2.3"
+gem "rubyzip", "~> 3.6"
 
 gem "solid_cable", "~> 4.0"
