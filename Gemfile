@@ -86,7 +86,7 @@ group :development do
   gem "dotenv-rails"
 end
 
-gem "honeybadger", "~> 6.5"
+gem "honeybadger", "~> 6.9"
 gem "rubyzip", "~> 2.3"
 
 gem "solid_cable", "~> 4.0"
