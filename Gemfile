@@ -42,7 +42,7 @@ gem "image_processing", "~> 1.2"
 # server, dev/test only) at 0.8.0; pinned here to keep it compatible with
 # rubocop's `~> 0.6` constraint and to make it reachable in production,
 # since the bridge script is production code, not a dev tool.
-gem "mcp", "~> 0.8"
+gem "mcp", "~> 1.5"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
